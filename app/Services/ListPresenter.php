@@ -1,0 +1,227 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Services;
+
+use App\Core\Dates;
+use App\Models\ListRepository;
+use App\Models\ProductRepository;
+use DateTimeZone;
+
+/**
+ * docs/10 §3–§4 nesnelerini üretir — API'nin dışa gösterdiği TEK biçim burasıdır.
+ *
+ * Para: TL değerleri DB'de saklanmaz, listenin kilitli kuruyla burada hesaplanır (K24).
+ * Hesap MoneyService'ten geçer; bu sınıfta bcmath çağrısı YOKTUR (K29).
+ */
+final class ListPresenter
+{
+    public function __construct(
+        private readonly ListRepository $lists,
+        private readonly ProductRepository $products,
+        private readonly MoneyService $money,
+        private readonly DateTimeZone $timezone,
+    ) {
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     *
+     * @return array<string, mixed>
+     */
+    public function list(array $row): array
+    {
+        $listId = (int) $row['id'];
+        $productRows = $this->products->forList($listId);
+        $yuanRate = $this->money->formatRate((string) $row['yuan_rate']);
+        $usdRate = $this->money->formatRate((string) $row['usd_rate']);
+
+        $lastExport = $this->lists->lastExport($listId);
+        $revision = (int) $row['revision'];
+
+        return [
+            'id' => $listId,
+            'name' => (string) $row['name'],
+            'period' => $this->nullableString($row['period']),
+            'supplier_name' => $this->nullableString($row['supplier_name']),
+            'note' => $this->nullableString($row['note']),
+            'status' => (string) $row['status'],
+            'visibility' => (string) $row['visibility'],
+            'yuan_rate' => $yuanRate,
+            'usd_rate' => $usdRate,
+            'rate_locked_at' => $this->nullableDate($row['rate_locked_at']),
+            'revision' => $revision,
+            'share_token_prefix' => $this->nullableString($row['share_token_prefix']),
+            'share_expires_at' => $this->nullableDate($row['share_expires_at']),
+            'product_count' => count($productRows),
+            'progress' => $this->progress($productRows),
+            'totals' => $this->totals($productRows, $yuanRate, $usdRate),
+            'last_export' => $lastExport === null ? null : [
+                'format' => (string) $lastExport['format'],
+                'created_at' => Dates::toIso((string) $lastExport['created_at'], $this->timezone),
+                'list_revision' => (int) $lastExport['list_revision'],
+            ],
+            // K25: "çıktı güncel değil" artık revision karşılaştırmasıdır, updated_at değil.
+            'is_export_stale' => $lastExport !== null && (int) $lastExport['list_revision'] !== $revision,
+            'created_at' => Dates::toIso((string) $row['created_at'], $this->timezone),
+            'updated_at' => Dates::toIso((string) $row['updated_at'], $this->timezone),
+            'archived_at' => $this->nullableDate($row['archived_at']),
+            'deleted_at' => $this->nullableDate($row['deleted_at']),
+        ];
+    }
+
+    /**
+     * @param list<array<string, mixed>> $rows
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function lists(array $rows): array
+    {
+        return array_map(fn (array $row): array => $this->list($row), $rows);
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     * @param array<string, mixed> $listRow
+     *
+     * @return array<string, mixed>
+     */
+    public function product(array $row, array $listRow): array
+    {
+        $yuanRate = $this->money->formatRate((string) $listRow['yuan_rate']);
+        $usdRate = $this->money->formatRate((string) $listRow['usd_rate']);
+        $priceYuan = $this->money->format((string) $row['price_yuan']);
+        $priceDdp = $this->money->format((string) $row['price_ddp_usd']);
+        $qty = (int) $row['qty'];
+
+        return [
+            'id' => (int) $row['id'],
+            'list_id' => (int) $row['list_id'],
+            'sort_no' => (int) $row['sort_no'],
+            'category_id' => $this->nullableInt($row['category_id']),
+            'platform' => $this->nullableString($row['platform']),
+            'external_id' => $this->nullableString($row['external_id']),
+            'name' => (string) $row['name'],
+            'name_original' => $this->nullableString($row['name_original']),
+            'detail' => $this->nullableString($row['detail']),
+            'url' => $this->nullableString($row['url']),
+            'vendor_name' => $this->nullableString($row['vendor_name']),
+            'vendor_url' => $this->nullableString($row['vendor_url']),
+            'sku_selection' => $this->decodeJson($row['sku_selection']),
+            'sku_matrix' => $this->decodeJson($row['sku_matrix']),
+            'main_image' => $this->nullableString($row['main_image']),
+            'video_url' => $this->nullableString($row['video_url']),
+            'qty' => $qty,
+            'price_yuan' => $priceYuan,
+            'price_ddp_usd' => $priceDdp,
+            // Birim fiyatın TL karşılığı (referans Excel'deki TL sütunu): ¥9,00 × 7,04 = ₺63,36
+            'price_yuan_tl' => $this->money->convert($priceYuan, $yuanRate),
+            'price_ddp_tl' => $this->money->convert($priceDdp, $usdRate),
+            'line_total_yuan' => $this->money->lineTotal($priceYuan, $qty),
+            'line_total_yuan_tl' => $this->money->lineTotalInTl($priceYuan, $qty, $yuanRate),
+            'units_per_carton' => $this->nullableInt($row['units_per_carton']),
+            'tracking_no' => $this->nullableString($row['tracking_no']),
+            'status' => (string) $row['status'],
+            'note' => $this->nullableString($row['note']),
+            'images' => $this->products->images((int) $row['id']),
+            'created_at' => Dates::toIso((string) $row['created_at'], $this->timezone),
+            'updated_at' => Dates::toIso((string) $row['updated_at'], $this->timezone),
+            'deleted_at' => $this->nullableDate($row['deleted_at']),
+        ];
+    }
+
+    /**
+     * @param list<array<string, mixed>> $rows
+     * @param array<string, mixed> $listRow
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function productsOf(array $rows, array $listRow): array
+    {
+        return array_map(fn (array $row): array => $this->product($row, $listRow), $rows);
+    }
+
+    /**
+     * @param list<array<string, mixed>> $productRows
+     *
+     * @return array<string, int>
+     */
+    private function progress(array $productRows): array
+    {
+        $progress = array_fill_keys(array_keys(StateMachine::PRODUCT_TRANSITIONS), 0);
+        foreach ($productRows as $row) {
+            $status = (string) $row['status'];
+            if (array_key_exists($status, $progress)) {
+                $progress[$status]++;
+            }
+        }
+
+        return $progress;
+    }
+
+    /**
+     * Liste toplamları — K24: her satır ayrı yuvarlanır, sonra toplanır.
+     *
+     * @param list<array<string, mixed>> $productRows
+     *
+     * @return array<string, int|string>
+     */
+    private function totals(array $productRows, string $yuanRate, string $usdRate): array
+    {
+        $qty = 0;
+        $yuanLines = [];
+        $yuanTlLines = [];
+        $ddpLines = [];
+        $ddpTlLines = [];
+
+        foreach ($productRows as $row) {
+            // İptal edilen ürün toplamlara girmez: sipariş edilmeyecek mala para bağlanmaz.
+            if ((string) $row['status'] === StateMachine::PRODUCT_CANCELLED) {
+                continue;
+            }
+
+            $lineQty = (int) $row['qty'];
+            $priceYuan = $this->money->format((string) $row['price_yuan']);
+            $priceDdp = $this->money->format((string) $row['price_ddp_usd']);
+
+            $qty += $lineQty;
+            $yuanLines[] = $this->money->lineTotal($priceYuan, $lineQty);
+            $yuanTlLines[] = $this->money->lineTotalInTl($priceYuan, $lineQty, $yuanRate);
+            $ddpLines[] = $this->money->lineTotal($priceDdp, $lineQty);
+            $ddpTlLines[] = $this->money->lineTotalInTl($priceDdp, $lineQty, $usdRate);
+        }
+
+        return [
+            'qty' => $qty,
+            'yuan' => $this->money->sum($yuanLines),
+            'yuan_tl' => $this->money->sum($yuanTlLines),
+            'ddp_usd' => $this->money->sum($ddpLines),
+            'ddp_tl' => $this->money->sum($ddpTlLines),
+        ];
+    }
+
+    private function nullableString(mixed $value): ?string
+    {
+        return $value === null ? null : (string) $value;
+    }
+
+    private function nullableInt(mixed $value): ?int
+    {
+        return $value === null ? null : (int) $value;
+    }
+
+    private function nullableDate(mixed $value): ?string
+    {
+        return $value === null || $value === '' ? null : Dates::toIso((string) $value, $this->timezone);
+    }
+
+    private function decodeJson(mixed $value): mixed
+    {
+        if (!is_string($value) || $value === '') {
+            return null;
+        }
+
+        return json_decode($value, true) ?? null;
+    }
+}

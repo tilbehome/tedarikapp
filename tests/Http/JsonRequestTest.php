@@ -7,6 +7,7 @@ namespace Tests\Http;
 use Psr\Http\Message\ResponseInterface;
 use Slim\Psr7\Factory\StreamFactory;
 use Tests\Support\AuthTestCase;
+use Tests\Support\UnknownSizeStream;
 
 /**
  * docs/10 §1 · İE#5 §8: API yalnızca JSON konuşur.
@@ -87,6 +88,33 @@ final class JsonRequestTest extends AuthTestCase
 
         self::assertNotSame(415, $response->getStatusCode());
         self::assertSame(401, $response->getStatusCode(), 'Oturum yok: kimlik doğrulama hatası beklenir.');
+    }
+
+    /**
+     * Regresyon: gerçek sunucuda `php://input` akışının boyutu BİLİNMEZ (null döner).
+     * Middleware bunu "gövde var" sayınca gövdesiz bir POST (ör. /duplicate) 415'e
+     * düşüyordu — canlı testte yakalandı. HTTP'de gövdenin varlığını Content-Length
+     * veya Transfer-Encoding belirler; ikisi de yoksa gövde yoktur.
+     */
+    public function testBoyutuBilinmeyenAmaGovdesizIstek415Donmez(): void
+    {
+        $request = $this->rawRequest('POST', '/api/auth/logout')
+            ->withBody(new UnknownSizeStream());
+
+        $response = $this->app()->handle($request);
+
+        self::assertNotSame(415, $response->getStatusCode());
+        self::assertSame(401, $response->getStatusCode(), 'Oturum yok: kimlik doğrulama hatası beklenir.');
+    }
+
+    public function testBoyutuBilinmeyenAmaContentLengthliIstekDenetlenir(): void
+    {
+        $request = $this->rawRequest('POST', '/api/auth/login')
+            ->withBody(new UnknownSizeStream('email=a@b.co'))
+            ->withHeader('Content-Length', '12')
+            ->withHeader('Content-Type', 'application/x-www-form-urlencoded');
+
+        self::assertSame(415, $this->app()->handle($request)->getStatusCode());
     }
 
     public function testOkumaIstekleriEtkilenmez(): void

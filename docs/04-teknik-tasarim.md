@@ -238,7 +238,8 @@ tedarikapp/
 │   ├── Auth/                 AuthServices · AuthSession · SessionInterface · NativeSession
 │   │                         UserRepository · User · PasswordHasher · TotpService
 │   │                         RecoveryCodeService · RememberTokenService/Match/Status · LoginThrottle
-│   ├── Controllers/          AuthController · SetupController · SystemController
+│   ├── Controllers/          ApiController (temel) · AuthController · SetupController
+│   │                         SystemController · ListController · ProductController · TrashController
 │   ├── Core/                 AppBuilder · SetupAppBuilder · Config · Connection · Database
 │   │                         Clock/SystemClock · Response · Cookie · ClientIp · Dates · Encrypter
 │   │                         Ulid · AppVersion · RequestContext · Logger · LogRedactor
@@ -247,11 +248,12 @@ tedarikapp/
 │   │                         JsonRequest · SetupGuard · SetupCsrf
 │   ├── Setup/                SetupLock · SetupState · RequirementChecker · DatabaseProbe
 │   │                         EnvWriter · QrCodeSvg
-│   ├── Services/             ActivityLog
-│   ├── Models/            ⏳ (PDO erişim katmanı — liste/ürün emirlerinde)
+│   ├── Services/             ActivityLog · MoneyService (K29) · StateMachine · ListPresenter
+│   │                         InputValidator · TrashPolicy · StateTransitionException
+│   ├── Models/               ListRepository · ProductRepository · SettingsRepository
 │   └── Parsers/            ⏳ (backend doğrulama adaptörleri — Faz 3)
-├── bin/                      migrate.php · user-create.php   (yalnızca CLI)
-├── migrations/               0001_create_users … 0007_create_activity_log (K23: 1 dosya = 1 DDL)
+├── bin/                      migrate.php · user-create.php · purge-trash.php   (yalnızca CLI)
+├── migrations/               0001_create_users … 0012_create_exports (K23: 1 dosya = 1 DDL)
 ├── public/                   index.php · .htaccess · media/ (görseller)  ⏳ assets/ (React build)
 ├── setup/views/              wizard.html · wizard.js · wizard.css
 │                             (docroot DIŞINDA; rotalardan servis edilir, kurulum sonrası kilitlenir)

@@ -51,6 +51,8 @@
 | K29 | 16 Ağu 2026 | Para hesapları tek merkezi `MoneyService` sınıfında toplanır (K24 politikasının uygulanışı): birim×adet, kur çevirimi, satır/genel toplam, yuvarlama YALNIZCA bu servisten geçer; controller/component içinde bcmath çağrısı yasak. Faz 1C (listeler/ürünler) iş emrinin kabul kriteridir | Aynı hesabın farklı yerlerde tekrar yazılması = kuruş tutarsızlığı riski; tek nokta = tek test yüzeyi (R5) |
 | K30 | 16 Ağu 2026 | Eklenti CORS politikası: wildcard YASAK; production'da yalnız yayınlanan extension ID'si origin allowlist'inde; development/production extension ayrımı yapılır. Faz 3 (eklenti) iş emrinin kabul kriteridir | Capture API'sinin herhangi bir web sayfasından çağrılabilmesini engeller; token sızıntısında ikinci savunma hattı (K16) |
 
+| K32 | 16 Ağu 2026 | Capture sözleşmesi Faz 3 iş emrinde TEK SEFERDE v2'ye revize edilecek (parser raporları + F30 teknik profil alanları); o güne kadar docs/04 §2c SABİTTİR | Şema parça parça değişirse eklenti, backend ve belge birbirinden kopar. Parser canlı doğrulaması ve F30 alan ihtiyacı netleşmeden yapılacak revizyon ikinci kez revize edilir |
+
 Yeni kararlar bu tabloya eklenir; bir karar değişirse silinmez, üzeri çizilip yeni satır açılır (tarihçe korunur).
 
 ## 3. Fikir Havuzu (Faz 4+)
@@ -88,7 +90,7 @@ Kapsamı şişirmemek için yeni fikirler buraya park edilir; aktif iş emri kap
 | F27 | Tedarikçi teklif portalı + teklif versiyonları | Faz 4+ |
 | F28 | Product master (`source_products`): aynı ürünün listeler arası tek kaydı | Faz 4+ |
 | F29 | Mal kabul genişletme: QR ile sayım, koli/CBM bilgisi (F8'in devamı) | Faz 4+ |
-| F30 | GTİP / gümrük ve ithalat sınıflandırma motoru — detaylı taslak: [f30](fikirler/f30-gtip-motoru.md) | **v2 öncelikli** (Ürün Sahibi) |
+| F30 | GTİP / gümrük ve ithalat sınıflandırma motoru (M23) — taslak: [f30](fikirler/f30-gtip-motoru.md) · PM değerlendirmesi: [m23](fikirler/m23-gtip-pm-degerlendirmesi.md) | **v1 DIŞI** — v1 canlıya çıktıktan sonra kendi mini tanım fazıyla açılır (PM). Ürün Sahibi'nin §8 sorusunu yanıtlaması ön şart |
 | F31 | Belgeler modülü (fatura, çeki listesi, konşimento saklama) | Faz 4+ |
 | F32 | Tedarikçi skorlama (termin, kalite, fiyat geçmişine göre) | Faz 4+ |
 | F33 | AI kullanım paketi: çeviri, kategori önerisi, anomali tespiti — hepsi insan onaylı | Faz 4+ |
