@@ -20,6 +20,7 @@
 - **Hata kodları (`error.code`):** `VALIDATION`, `UNAUTHENTICATED`, `TOTP_REQUIRED`, `FORBIDDEN`, `CSRF`, `NOT_FOUND`, `STATE_TRANSITION`, `DUPLICATE_WARNING`, `RATE_LIMITED`, `LOCKED`, `PAYLOAD_TOO_LARGE`, `SERVER_ERROR`. Mesajlar Türkçe ve kullanıcıya gösterilebilir; teknik detay yalnızca loga yazılır.
 - **Sayfalama:** `?page=1&per_page=25` (üst sınır 100). Yanıtta `meta: { "page": 1, "per_page": 25, "total": 132 }`.
 - **Sıralama/filtre:** `?sort=created_at&order=desc` + uca özel filtreler (aşağıda). Bilinmeyen parametre sessizce yok sayılmaz, 400 döner (yazım hatasını erken yakalamak için).
+- **405 (metot desteklenmiyor)** sözleşmede ayrı kod tanımlamaz; 422 `VALIDATION` zarfıyla döner (İE#3 uygulaması, PM onaylı).
 
 ## 2. Kimlik Doğrulama
 

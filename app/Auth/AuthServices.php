@@ -1,0 +1,71 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Auth;
+
+use App\Core\Clock;
+use App\Core\Config;
+use App\Core\Connection;
+use App\Core\Encrypter;
+use App\Services\ActivityLog;
+use DateTimeZone;
+use Psr\Log\LoggerInterface;
+
+/**
+ * Auth bileşenlerinin kompozisyon kökü.
+ *
+ * Controller ve middleware'ler tek bir bağımlılık alır; nesnelerin nasıl kurulduğu
+ * (ve hepsinin AYNI oturum/saat/bağlantıyı paylaştığı) burada tek yerde görünür.
+ * Bağlantı tembeldir (Connection) — bu nesneyi kurmak veritabanına dokunmaz.
+ */
+final class AuthServices
+{
+    public readonly AuthSession $session;
+    public readonly UserRepository $users;
+    public readonly PasswordHasher $passwords;
+    public readonly TotpService $totp;
+    public readonly RecoveryCodeService $recoveryCodes;
+    public readonly RememberTokenService $rememberTokens;
+    public readonly LoginThrottle $throttle;
+    public readonly ActivityLog $activity;
+    public readonly DateTimeZone $timezone;
+
+    public function __construct(
+        public readonly Config $config,
+        public readonly Connection $connection,
+        SessionInterface $session,
+        public readonly Clock $clock,
+        public readonly LoggerInterface $logger,
+    ) {
+        $this->timezone = new DateTimeZone($config->get('TZ', 'Europe/Istanbul'));
+        $this->session = new AuthSession($session, $clock);
+        $this->users = new UserRepository($connection);
+        $this->passwords = new PasswordHasher();
+        $this->totp = new TotpService($config, new Encrypter($config), $clock);
+        $this->recoveryCodes = new RecoveryCodeService($connection, $this->passwords);
+        $this->rememberTokens = new RememberTokenService($connection);
+        $this->activity = new ActivityLog($connection);
+        $this->throttle = new LoginThrottle(
+            $connection,
+            $this->timezone,
+            $config->getInt('LOGIN_MAX_ATTEMPTS', 5),
+            $config->getInt('LOGIN_LOCKOUT_MINUTES', 15),
+        );
+    }
+
+    public function sessionLifetimeMinutes(): int
+    {
+        return $this->config->getInt('SESSION_LIFETIME', 120);
+    }
+
+    public function rememberLifetimeMinutes(): int
+    {
+        return $this->config->getInt('REMEMBER_ME_LIFETIME', 43200);
+    }
+
+    public function cookiesAreSecure(): bool
+    {
+        return str_starts_with($this->config->get('APP_URL', ''), 'https://');
+    }
+}
