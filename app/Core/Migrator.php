@@ -52,6 +52,27 @@ final class Migrator
         return $justApplied;
     }
 
+    /**
+     * Henüz uygulanmamış migration adları — koşmadan.
+     * `GET /api/system/status` bunu "güncelleme gerekiyor mu" sorusunu yanıtlamak için kullanır.
+     *
+     * @return list<string>
+     */
+    public function pending(): array
+    {
+        $this->ensureMigrationsTable();
+
+        $applied = $this->appliedChecksums();
+        $pending = [];
+        foreach ($this->migrationFiles() as $name => $file) {
+            if (!array_key_exists($name, $applied)) {
+                $pending[] = $name;
+            }
+        }
+
+        return $pending;
+    }
+
     private function apply(string $name, string $file): void
     {
         $migration = require $file;

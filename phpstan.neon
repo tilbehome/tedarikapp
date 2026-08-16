@@ -6,9 +6,14 @@ parameters:
     ignoreErrors:
         # Slim AppFactory::create() koşullu dönüş tipi + PHPStan invariance kuralı çakışması:
         # hata metni "App<C|null> bekleniyor, App<C|null> döndü" — birebir aynı tip, bilinen yanlış-pozitif.
-        # Kapsam bilinçli olarak tek dosya + tek mesaj + count 1 ile sınırlandı (İE#3 raporunda gerekçeli).
+        # Kapsam bilinçli olarak dosya + mesaj + count ile sınırlandı (İE#3 raporunda gerekçeli).
         -
             message: '#should return Slim\\App<Psr\\Container\\ContainerInterface\|null> but returns Slim\\App<Psr\\Container\\ContainerInterface\|null>#'
             identifier: return.type
             path: app/Core/AppBuilder.php
+            count: 1
+        -
+            message: '#should return Slim\\App<Psr\\Container\\ContainerInterface\|null> but returns Slim\\App<Psr\\Container\\ContainerInterface\|null>#'
+            identifier: return.type
+            path: app/Core/SetupAppBuilder.php
             count: 1

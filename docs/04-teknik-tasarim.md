@@ -238,18 +238,23 @@ tedarikapp/
 │   ├── Auth/                 AuthServices · AuthSession · SessionInterface · NativeSession
 │   │                         UserRepository · User · PasswordHasher · TotpService
 │   │                         RecoveryCodeService · RememberTokenService/Match/Status · LoginThrottle
-│   ├── Controllers/          AuthController  (+ SetupController — İE#5)
-│   ├── Core/                 AppBuilder · Config · Connection · Database · Clock/SystemClock
-│   │                         Response · Cookie · ClientIp · Dates · Encrypter · Ulid
-│   │                         RequestContext · Logger · LogRedactor · Migration · Migrator · AsciiQrCode
-│   ├── Middleware/           Auth · Csrf · LoginRateLimit · RequestId · SecurityHeaders · JsonRequest
+│   ├── Controllers/          AuthController · SetupController · SystemController
+│   ├── Core/                 AppBuilder · SetupAppBuilder · Config · Connection · Database
+│   │                         Clock/SystemClock · Response · Cookie · ClientIp · Dates · Encrypter
+│   │                         Ulid · AppVersion · RequestContext · Logger · LogRedactor
+│   │                         Migration · Migrator · AsciiQrCode
+│   ├── Middleware/           Auth · Csrf · LoginRateLimit · RequestId · SecurityHeaders
+│   │                         JsonRequest · SetupGuard · SetupCsrf
+│   ├── Setup/                SetupLock · SetupState · RequirementChecker · DatabaseProbe
+│   │                         EnvWriter · QrCodeSvg
 │   ├── Services/             ActivityLog
 │   ├── Models/            ⏳ (PDO erişim katmanı — liste/ürün emirlerinde)
 │   └── Parsers/            ⏳ (backend doğrulama adaptörleri — Faz 3)
 ├── bin/                      migrate.php · user-create.php   (yalnızca CLI)
 ├── migrations/               0001_create_users … 0007_create_activity_log (K23: 1 dosya = 1 DDL)
 ├── public/                   index.php · .htaccess · media/ (görseller)  ⏳ assets/ (React build)
-├── setup/                    kurulum sihirbazı (kurulum sonrası storage/setup.lock ile kilitlenir)
+├── setup/views/              wizard.html · wizard.js · wizard.css
+│                             (docroot DIŞINDA; rotalardan servis edilir, kurulum sonrası kilitlenir)
 ├── storage/               ⏳ (webden kapalı: logs/ · exports/ · setup.lock — çalışma anında oluşur)
 ├── frontend/              ⏳ React kaynak (screens/ · components/ · api/ · store/)
 ├── extension/             ⏳ manifest.json · background.js · popup/ · parsers/parser_1688.js

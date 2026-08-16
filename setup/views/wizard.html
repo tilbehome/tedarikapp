@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>tedarikapp — Kurulum</title>
+  <link rel="stylesheet" href="/setup/wizard.css">
+</head>
+<body>
+<div class="shell">
+  <header class="head">
+    <h1>tedarikapp kurulumu</h1>
+    <p class="sub">Bu sihirbaz bir kez çalışır. Bitince kalıcı olarak kilitlenir.</p>
+  </header>
+
+  <ol class="steps" id="steps">
+    <li data-step="requirements">Gereksinimler</li>
+    <li data-step="database">Veritabanı</li>
+    <li data-step="env">Ayarlar</li>
+    <li data-step="migrate">Tablolar</li>
+    <li data-step="admin">Yönetici + 2FA</li>
+    <li data-step="recovery">Kurtarma kodları</li>
+    <li data-step="done">Bitti</li>
+  </ol>
+
+  <div class="alert" id="alert" hidden></div>
+
+  <!-- 1) Gereksinimler -->
+  <section class="card" id="panel-requirements" hidden>
+    <h2>1. Sunucu gereksinimleri</h2>
+    <p class="muted">Uygulamanın çalışması için gerekenler denetleniyor.</p>
+    <div id="req-body" class="report">Denetleniyor…</div>
+    <div class="actions">
+      <button type="button" class="ghost" id="req-recheck">Yeniden denetle</button>
+      <button type="button" id="req-next" disabled>Devam et</button>
+    </div>
+  </section>
+
+  <!-- 2) Veritabanı -->
+  <section class="card" id="panel-database" hidden>
+    <h2>2. Veritabanı bağlantısı</h2>
+    <p class="muted">cPanel &gt; MySQL Veritabanları'ndan oluşturduğunuz veritabanının bilgileri.
+      Karakter seti <strong>utf8mb4</strong> olmalı (Çince ürün başlıkları için zorunlu).</p>
+    <form id="db-form" class="form" novalidate>
+      <label>Sunucu <input name="host" value="localhost" autocomplete="off" required></label>
+      <label>Port <input name="port" value="3306" inputmode="numeric" autocomplete="off"></label>
+      <label>Veritabanı adı <input name="name" autocomplete="off" required></label>
+      <label>Kullanıcı adı <input name="user" autocomplete="off" required></label>
+      <label>Şifre <input name="pass" type="password" autocomplete="new-password"></label>
+      <div class="actions">
+        <button type="submit">Bağlantıyı test et ve devam et</button>
+      </div>
+    </form>
+    <div id="db-result" class="report" hidden></div>
+  </section>
+
+  <!-- 3) .env -->
+  <section class="card" id="panel-env" hidden>
+    <h2>3. Uygulama ayarları</h2>
+    <p class="muted">Panelin adresi. Güvenlik anahtarları (APP_KEY, eklenti token tuzu)
+      kriptografik olarak üretilip <code>.env</code> dosyasına yazılacak — sizin girmeniz gerekmez.</p>
+    <form id="env-form" class="form" novalidate>
+      <label>Panel adresi <input name="app_url" placeholder="https://ornek.com" autocomplete="off"></label>
+      <div class="actions">
+        <button type="submit">Ayarları oluştur</button>
+      </div>
+    </form>
+    <div id="env-result" class="report" hidden></div>
+  </section>
+
+  <!-- 4) Migration -->
+  <section class="card" id="panel-migrate" hidden>
+    <h2>4. Veritabanı tabloları</h2>
+    <p class="muted">Tablolar sırayla oluşturulacak. Bu adım tekrar çalıştırılabilir; var olan tablolar atlanır.</p>
+    <div class="actions">
+      <button type="button" id="migrate-run">Tabloları oluştur</button>
+    </div>
+    <div id="migrate-result" class="report" hidden></div>
+  </section>
+
+  <!-- 5) Admin + 2FA -->
+  <section class="card" id="panel-admin" hidden>
+    <h2>5. Yönetici hesabı ve iki adımlı doğrulama</h2>
+    <form id="admin-form" class="form" novalidate>
+      <label>E-posta <input name="email" type="email" autocomplete="username" required></label>
+      <label>Şifre <input name="password" type="password" autocomplete="new-password" required>
+        <small>En az 10 karakter ve en az 6 farklı karakter.</small></label>
+      <div class="actions">
+        <button type="submit">Devam et</button>
+      </div>
+    </form>
+
+    <div id="totp-box" hidden>
+      <h3>Authenticator uygulamanıza ekleyin</h3>
+      <p class="muted">Google Authenticator, Authy veya benzeri bir uygulamayla QR kodu okutun,
+        sonra uygulamadaki 6 haneli kodu girin.</p>
+      <div class="qr-row">
+        <img id="qr" alt="TOTP QR kodu" width="260" height="260">
+        <div>
+          <p class="muted">QR okutulamıyorsa kurulum anahtarını elle girin:</p>
+          <code class="key" id="manual-key"></code>
+        </div>
+      </div>
+      <form id="totp-form" class="form" novalidate>
+        <label>Doğrulama kodu
+          <input name="code" inputmode="numeric" maxlength="6" autocomplete="one-time-code" required></label>
+        <div class="actions">
+          <button type="submit">Kodu doğrula ve hesabı oluştur</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- 6) Kurtarma kodları -->
+  <section class="card danger" id="panel-recovery" hidden>
+    <h2>6. Kurtarma kodları</h2>
+    <p><strong>Bu kodlar bir daha GÖSTERİLMEZ.</strong> Telefonunuzu kaybederseniz panele girmenin
+      tek yolu bunlardır (e-posta ile kurtarma kapalıdır). Yazdırın veya şifre yöneticinize kaydedin.</p>
+    <ul class="codes" id="codes"></ul>
+    <div class="actions">
+      <button type="button" class="ghost" id="copy-codes">Kodları kopyala</button>
+      <label class="check"><input type="checkbox" id="codes-saved"> Kodları güvenli bir yere kaydettim</label>
+      <button type="button" id="finish" disabled>Kurulumu tamamla ve kilitle</button>
+    </div>
+  </section>
+
+  <!-- 7) Bitti -->
+  <section class="card ok" id="panel-done" hidden>
+    <h2>Kurulum tamamlandı</h2>
+    <div id="done-summary" class="report"></div>
+    <div class="actions">
+      <a class="button" href="/">Panele git</a>
+    </div>
+  </section>
+</div>
+
+<script src="/setup/wizard.js"></script>
+</body>
+</html>

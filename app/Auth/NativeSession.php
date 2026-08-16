@@ -14,8 +14,27 @@ final class NativeSession implements SessionInterface
 {
     private bool $started = false;
 
-    public function __construct(private readonly Config $config)
+    public function __construct(
+        private readonly string $name,
+        private readonly bool $secure,
+    ) {
+    }
+
+    public static function fromConfig(Config $config): self
     {
+        return new self(
+            $config->get('SESSION_NAME', 'tedarikapp_sid'),
+            str_starts_with($config->get('APP_URL', ''), 'https://'),
+        );
+    }
+
+    /**
+     * Kurulum sihirbazı için: .env henüz yokken Config kurulamaz, bu yüzden
+     * oturum adı ve Secure bayrağı doğrudan verilir (İE#5).
+     */
+    public static function forSetup(bool $secure): self
+    {
+        return new self('tedarikapp_setup', $secure);
     }
 
     public function start(): void
@@ -26,11 +45,11 @@ final class NativeSession implements SessionInterface
             return;
         }
 
-        session_name($this->config->get('SESSION_NAME', 'tedarikapp_sid'));
+        session_name($this->name);
         session_set_cookie_params([
             'lifetime' => 0, // tarayıcı oturumu; boşta kalma aşımı sunucuda last_activity ile uygulanır
             'path' => '/',
-            'secure' => str_starts_with($this->config->get('APP_URL', ''), 'https://'),
+            'secure' => $this->secure,
             'httponly' => true,
             'samesite' => 'Lax',
         ]);
