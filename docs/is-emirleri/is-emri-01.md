@@ -25,7 +25,7 @@ Faz: Faz 0 · Modül: — · Dal: main (ilk kurulum, istisna olarak doğrudan ma
    ```
 3. `docs-taslak/` içindeki dosyaları yerleştir: `README.md`, `CLAUDE.md` ve `CHANGELOG.md` repo köküne, `00-…md` – `09-…md` dosyaları `docs/` altına. Bu iş emri dosyasını `docs/is-emirleri/is-emri-01.md` olarak kaydet. CLAUDE.md'yi OKU — bundan sonraki tüm oturumlarında bağlayıcıdır.
 4. `.gitignore` oluştur: `.env`, `vendor/`, `node_modules/`, `storage/`, `*.log`, `docs-taslak/`, işletim sistemi/IDE artıkları.
-5. `.env.example` oluştur (değerler boş/örnek): `APP_ENV`, `APP_KEY`, `APP_URL`, `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASS`, `EXTENSION_TOKEN_SALT`, `TZ=Europe/Istanbul`.
+5. `docs-taslak/env.example` dosyasını repo köküne **`.env.example`** adıyla kopyala — içeriği PM hazırladı, DEĞİŞTİRME. (Kod bu anahtarları config katmanında varsayılan değerleriyle okuyacak; anahtar ekleme/çıkarma PM kararıdır.)
 6. README'deki belge linklerinin repo yapısıyla çalıştığını doğrula.
 7. Commit standardına uygun tek commit: `chore(repo): proje iskeleti ve belge seti v0.1` → GitHub'a push.
 
