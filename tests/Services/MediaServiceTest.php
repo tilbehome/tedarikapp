@@ -106,6 +106,10 @@ final class MediaServiceTest extends AuthTestCase
         self::assertMatchesRegularExpression('#^public/media/[0-9a-f]{32}\.jpg$#', $result['path']);
         self::assertFileExists($this->tempPath($result['path']));
 
+        // Web adresi `public/` önekini TAŞIMAZ: Apache'nin docroot'u zaten `public/`.
+        // Önekli adres panelde 404 döner (İE#8 canlı koşumunda yakalandı).
+        self::assertMatchesRegularExpression('#^/media/[0-9a-f]{32}\.jpg$#', $result['url']);
+
         $stored = (string) file_get_contents($this->tempPath($result['path']));
         // Yeniden kodlama: çıktı kaynağın baytlarından BAĞIMSIZ olmalı.
         self::assertNotSame($original, $stored, 'Dosya olduğu gibi kopyalanmamalı, yeniden üretilmeli.');

@@ -23,6 +23,9 @@ Her release'te bu dosya güncellenir (docs/07 bölüm 4). Kategoriler: Eklendi /
 - CSP `img-src` artık sabit `'self' data:` değil, `MEDIA_ALLOWED_HOSTS` ayarından üretiliyor (yalnız `https://host` ve `https://*.host`). Eski sabit politika K33 hotlink modundaki görsellerin tamamını tarayıcıda blokluyordu; indirme beyaz listesiyle görüntüleme politikası artık tek kaynaktan besleniyor.
 - `main_image` alanı diğer URL alanlarıyla aynı doğrulamadan geçiyor (yalnız https, uzunluk, biçim) ve ardından MediaService'in beyaz liste/SSRF kapısına giriyor; arşiv modunda indirilip yeniden kodlanıyor, hotlink modunda doğrulanmış HTTPS adresi saklanıyor. Sistemin kendi ürettiği yerel yol (`/media/…`) yeniden indirilmiyor.
 
+### Düzeltildi
+- **MediaService web adresi (İE#8 canlı koşumunda yakalandı):** indirilen görsel `/public/media/…` adresiyle dönüyordu. Apache'nin docroot'u zaten `public/` olduğu için bu adres panelde 404 verirdi — görsel diske inip ekranda kırık görünürdü. Adres artık `public/` önekini taşımıyor (`/media/…`); disk yolu değişmedi. Regresyon testi eklendi.
+
 ### Kaldırıldı
 - Faz 1 (İE#5 · K28 public-uyum): `sunucu-rapor.php` depodan silindi (sunucuya özel yol, sürüm ve yapılandırma dökümü içeriyordu). `uruntedariklistesi.xlsx` gerçek ürün/fiyat/1688 linki ve kişisel meta veri taşıdığı için depodan çıkarıldı; yerine biçimi birebir aynı, tek uydurma satırlı `ornek-tedarik-listesi.xlsx` kondu (Excel çıktısının referans şablonu olma işlevi korundu).
 
