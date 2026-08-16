@@ -30,7 +30,9 @@ Sistemin ana birimi tek tek ürünler değil, **sipariş listesidir**. Bir liste
 - Liste oluştur: ad (örn. "Eylül 2026 DDP Sipariş"), tedarikçi firma adı, not.
 - Liste durumları: `Taslak → İletildi → Sipariş Verildi → Tamamlandı` (+ `İptal`).
 - Liste kopyalama (tekrar eden siparişler için önceki listeden başlat).
-- Arşiv: tamamlanan listeler ana görünümden kalkar ama aranabilir kalır.
+- **Görünümler:** panel listeleri üç sekmede sunar — **Aktif** (üzerinde çalışılan/süren siparişler), **Pasif** (dondurulan/bekletilen listeler) ve **Arşiv** (bitenler). Tek tıkla "Pasife al / Aktife döndür / Arşivle".
+- **Düzenleme:** liste adı, dönem, tedarikçi ve not her zaman değiştirilebilir; ürün ekleme/çıkarma her durumda serbesttir — **export alınmış olması listeyi kilitlemez**, export yalnızca alındığı anın anlık görüntüsüdür.
+- **Silme:** liste ve ürün silme çöp kutusuna gider, 30 gün içinde geri alınabilir; 30 gün sonra kalıcı silinir.
 
 ## M3 — Ürün Yönetimi
 
@@ -80,10 +82,12 @@ Bir ürün her zaman bir listeye aittir. Alanlar (örnek Excel ile birebir + ek)
 
 ## M6 — Export
 
-- **Excel (.xlsx)**: örnek dosya formatına birebir uygun, görseller hücreye gömülü. Video sütunu YOK.
+- **Excel (.xlsx)**: örnek dosya formatına birebir uygun, görseller hücreye gömülü. Video sütunu YOK. En alta **TOPLAM satırı** eklenir: toplam adet + toplam Yuan/TL ve toplam DDP Dolar/TL (K15).
 - **PDF**: aynı içeriğin baskıya uygun hali, görselli. Video YOK.
 - **CSV**: düz veri (muhasebe/başka sistemlere aktarım için).
 - Export listenin tamamı veya filtrelenmiş hali üzerinden alınabilir.
+- **Export geçmişi:** her çıktı (tarih, format) kaydedilir; liste ekranında "son çıktı: 16 Ağu, Excel" bilgisi görünür.
+- **"Çıktı güncel değil" rozeti:** son export'tan sonra listede değişiklik yapıldıysa panel uyarır — firmaya eski dosyayla gidilmez.
 
 ## M7 — Paylaşım Linki
 
@@ -96,6 +100,7 @@ Bir ürün her zaman bir listeye aittir. Alanlar (örnek Excel ile birebir + ek)
 ## M8 — Panel Ana Ekranı
 
 - Özet kartları: aktif liste sayısı, yoldaki ürün sayısı, bekleyen Gelen Kutusu öğeleri.
+- Liste ve panel görünümlerinde toplam satırı: toplam adet, toplam Yuan/TL, toplam DDP tutarı.
 - Son aktiviteler.
 - (İleri faz) Aylık sipariş istatistikleri, kategori dağılımı.
 

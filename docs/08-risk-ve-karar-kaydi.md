@@ -33,6 +33,7 @@
 | K12 | 16 Ağu 2026 | Dış mimari görüşten alınanlar: SKU/varyasyon matrisi yakalama, 1688 ürün ID + tekrar uyarısı, mağaza adı/linki, orijinal başlık saklama, takip kodu alanı, DB indeksleri | Ürün Sahibi'nin paylaştığı dış öneri incelendi; operasyona gerçek değer katanlar alındı |
 | K13 | 16 Ağu 2026 | Dış görüşten REDDEDİLENLER: FastAPI/PostgreSQL/Redis/Docker/S3/Next.js stack'i, gümrük-lojistik maliyet ayrıştırması, çoklu rol/onay, WebSocket, CI/CD | Paylaşımlı cPanel sunucuda çalışmaz / DDP modelinde gereksiz / solo operasyonda aşırı mühendislik. K5 stack kararı geçerli |
 | K14 | 16 Ağu 2026 | AI bağlam mühendisliği benimsendi: repo köküne CLAUDE.md anayasası; durum makinesi geçiş kuralları backend'de zorlanır; eklenti→API JSON şeması sabitlendi; para asla float değil (DECIMAL+bcmath); para/kur/durum fonksiyonları test-first | İkinci dış bilgi paylaşımından; PM→Claude Code modelinde sapma ve halüsinasyonu yapısal olarak engeller |
+| K15 | 16 Ağu 2026 | Liste yaşam döngüsü genişletildi: Aktif/Pasif/Arşiv görünümleri; listeler export sonrası dahil her zaman düzenlenebilir (export = anlık görüntü); export geçmişi + "çıktı güncel değil" rozeti; silme = 30 gün çöp kutusu; aktivite günlüğü; panel ve Excel'de TOPLAM satırı | Ürün Sahibi talebi + PM eklemeleri (kaza koruması ve firma iletişim güvenliği) |
 
 Yeni kararlar bu tabloya eklenir; bir karar değişirse silinmez, üzeri çizilip yeni satır açılır (tarihçe korunur).
 

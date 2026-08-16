@@ -25,9 +25,10 @@ settings         key, value                  -- yuan_tl, usd_tl, extension_token
 rate_history     id, currency, rate, set_at  -- kur tarihçesi
 categories       id, name, sort
 lists            id, name, supplier_name, status, note,
-                 yuan_rate, usd_rate,        -- listeye kilitlenen kur
+                 visibility,                  -- aktif | pasif | arsiv
+                 yuan_rate, usd_rate,         -- listeye kilitlenen kur
                  share_token,                 -- paylaşım linki
-                 created_at, archived_at
+                 created_at, archived_at, deleted_at  -- soft delete (çöp kutusu)
 products         id, list_id, sort_no, category_id,
                  platform,                    -- '1688' (ileride Taobao vb.)
                  external_id,                 -- 1688 ürün ID (tekrar kontrolü)
@@ -39,15 +40,16 @@ products         id, list_id, sort_no, category_id,
                  main_image, video_url,
                  qty, price_yuan, price_ddp_usd,
                  tracking_no,                 -- kargo/konteyner takip kodu
-                 status, note, created_at
+                 status, note, created_at, deleted_at  -- soft delete
 product_images   id, product_id, path, sort  -- ek görseller
 inbox_items      id, raw_json, created_at    -- eklentiden gelen ham veri
-status_log       id, product_id, status, changed_at
+exports          id, list_id, format, created_at     -- export geçmişi ("güncel değil" rozeti: lists.updated_at > son export)
+activity_log     id, entity_type, entity_id, action, detail, created_at  -- durum değişimi + ekleme/silme/düzenleme tarihçesi
 ```
 
 Para tipleri: tüm fiyat/kur alanları `DECIMAL` (fiyat 12,2 — kur 12,4); float KULLANILMAZ, hesaplar PHP bcmath ile yapılır (K14).
 
-İndeksler: products(list_id), products(status), products(external_id), status_log(product_id). external_id üzerinden tekrar-ekleme uyarısı yapılır (benzersizlik zorlanmaz — aynı ürün bilerek iki listede olabilir).
+İndeksler: products(list_id), products(status), products(external_id), activity_log(entity_type, entity_id), lists(visibility). external_id üzerinden tekrar-ekleme uyarısı yapılır (benzersizlik zorlanmaz — aynı ürün bilerek iki listede olabilir).
 
 TL fiyatları veritabanında saklanmaz; listenin kilitli kuru × orijinal fiyat olarak her yerde hesaplanır (tutarsızlık riski sıfır).
 

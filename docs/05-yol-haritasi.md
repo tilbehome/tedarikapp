@@ -24,6 +24,7 @@
 **Kabul kriterleri:**
 - Excel çıktısı örnek dosyayla aynı formatta, görseller gömülü açılıyor.
 - PDF baskıda düzgün görünüyor, Türkçe karakterler sorunsuz.
+- Export geçmişi kaydediliyor; son çıktıdan sonra değişen liste "çıktı güncel değil" rozeti gösteriyor; Excel'de TOPLAM satırı doğru.
 - Paylaşım linki telefonda açılıyor, videolar oynuyor.
 
 > Bu fazın sonunda araç gerçek işte kullanılmaya başlar (ürün girişi henüz elle).

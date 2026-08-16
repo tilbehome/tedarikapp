@@ -31,6 +31,7 @@ Omurga üç parçadan oluşur:
 - **Mobile-first.** Panel telefonda uygulama kalitesinde çalışmalı (Tilbe Home standartı).
 - **Excel çıktısı mevcut formatla birebir uyumlu.** Firma alıştığı formatı görmeye devam eder: NO, ÜRÜN GÖRSELİ, KATEGORİ, ÜRÜN ADI, ÜRÜN DETAY, ÜRÜN LİNKİ, MİKTAR, 1688 FİYATI (Yuan/TL), DDP FİYATI (Dolar/TL).
 - **Bağımsız sistem.** Başka hiçbir projeye (WooCommerce, TilbeOS vb.) bağımlı değildir; kendi veritabanı ve kendi API'si vardır.
+- **Modüler platform mimarisi.** Sistem WordPress mantığında genişleyebilir: her kaynak site (bugün 1688, yarın Taobao/Alibaba/Temu) ayrı bir parser modülüdür. Yeni site eklemek çekirdeğe dokunmadan yeni bir modül yazmaktır; veri modeli (`platform` alanı) ve eklenti mimarisi buna hazırdır.
 - **Kur manuel girilir.** Güncel Yuan→TL ve Dolar→TL kurunu admin girer, sistem yalnızca çarpar. (Otomatik kur ileriki faz için opsiyoneldir.)
 
 ## 5. Kapsam Dışı (v1 için)

@@ -21,6 +21,8 @@ Kural (K14): Para, kur ve durum-geçiş fonksiyonları TEST-FIRST yazılır — 
 - [ ] Giriş: doğru şifre girer, yanlış şifre 5 denemede kilitlenir, oturum telefonda korunur.
 - [ ] Örnek Excel'deki ürün (¥9,00, kur 7,04 → ₺63,36) panele girildiğinde TL kuruşu kuruşuna aynı hesaplanır.
 - [ ] Liste oluştur/kopyala/arşivle çalışır; kur listeye kilitlenir (ayar değişince eski liste oynamaz).
+- [ ] Aktif/Pasif/Arşiv sekmeleri ve geçiş aksiyonları çalışır.
+- [ ] Silinen liste/ürün çöp kutusuna düşer, geri alınabilir; kalıcı silme 30 gün kuralına uyar.
 - [ ] Ürün durumu tek tıkla ilerler, tarihçe kaydolur, toplu güncelleme çalışır.
 - [ ] Telefonda (gerçek cihaz) tüm akışlar tamamlanabilir.
 
@@ -30,6 +32,7 @@ Kural (K14): Para, kur ve durum-geçiş fonksiyonları TEST-FIRST yazılır — 
 - [ ] PDF'te Türkçe karakterler ve görseller doğru; A4 baskı düzgün.
 - [ ] Paylaşım linki: girişsiz açılır, video oynar (telefonda test), iptal edilen link 404 verir.
 - [ ] 50+ ürünlü listede export süresi makul (< 30 sn) ve bellek hatasız.
+- [ ] Export alınmış listeye ürün eklenip silinebiliyor; "çıktı güncel değil" rozeti doğru yanıp sönüyor; TOPLAM satırı (adet + Yuan/TL + DDP) kuruşu kuruşuna doğru.
 
 ### Faz 3 — Chrome Eklentisi
 - [ ] En az 10 farklı gerçek 1688 ürün sayfasında (farklı satıcı/şablon) başlık, fiyat kademeleri, ana görsel, video doğru yakalanır. Test sayfa listesi bu belgeye eklenecek.
