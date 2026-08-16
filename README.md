@@ -6,7 +6,7 @@
 
 Panel Web Uygulaması · Chrome Eklentisi · Excel/PDF/HTML Çıktı Motoru
 
-`PHP 8.1` · `Slim 4` · `MySQL` · `React 18 + Vite` · `Manifest V3`
+`PHP 8.4` · `Slim 4` · `MySQL` · `React 18 + Vite` · `Manifest V3`
 
 🌐 Üretim: `tedarikapp.tilbehometoptan.com` · 🔒 Private · 📋 Durum: **Faz 0 — İş Emri #1 sahada**
 
@@ -62,7 +62,7 @@ Elle Excel doldurma, fiyat/görsel kopyalama, kur hesaplama ve "hangi ürün ner
 └────────────────────┘  ▲   └───────────────┬─────────────────┘
                         │ Bearer token      │ REST API (CSRF, oturum)
                 ┌───────┴───────────────────▼────────┐
-                │  PHP 8.1 (Slim 4) — cPanel hosting │
+                │  PHP 8.4 (Slim 4) — cPanel hosting │
                 │  Durum makinesi · bcmath para      │
                 │  Export motoru (xlsx/pdf/csv)      │
                 │  Görsel indirme → public/media     │

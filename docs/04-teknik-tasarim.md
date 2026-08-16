@@ -7,7 +7,7 @@
 
 | Katman | Seçim | Gerekçe |
 |---|---|---|
-| Backend | PHP 8.1 (Slim 4 mikro-framework) + REST API | Sunucuda doğrulanan sürüm 8.1.34; ek kurulum gerektirmeden çalışır; ekosistemin (WP eklentileri, MCP gateway) zaten PHP |
+| Backend | PHP 8.4 (Slim 4 mikro-framework) + REST API | Hosting 8.4 destekliyor (K21); ek kurulum gerektirmeden çalışır; ekosistemin (WP eklentileri, MCP gateway) zaten PHP |
 | Veritabanı | MySQL / MariaDB | Hosting'de hazır |
 | Frontend (panel) | React 18 + Vite, mobile-first | Hızlı, uygulama hissi; build çıktısı hosting'e statik yüklenir |
 | Paylaşım sayfası | Sunucu tarafında render edilen hafif sayfa (PHP + şablon) | Firma tarafı için JS yükü olmadan hızlı açılır, link önizlemeleri (WhatsApp/WeChat) düzgün çıkar |
@@ -197,7 +197,7 @@ Adres: **tedarikapp.tilbehometoptan.com** — açık soru 1 kapandı.
 Docroot: `/home/tilbehometoptan/tedarikapp.tilbehometoptan.com`
 
 **Yeşil ışık (stack'i doğrulayan bulgular):**
-- PHP 8.1.34 + MySQL (pdo_mysql) + SQLite yedek seçenek → Slim 4 uyumlu.
+- PHP 8.1.34 + MySQL (pdo_mysql) + SQLite yedek seçenek → Slim 4 uyumlu. (Rapor tarihindeki sürüm; 16.08.2026'da PHP 8.4'e yükseltildi — K21.)
 - PhpSpreadsheet gereksinimleri tam: zip, xml, gd, mbstring, iconv ✓ (görsel gömme GD ile çalışır, imagick gerekmez).
 - mPDF gereksinimleri tam: mbstring, gd ✓.
 - Dış ağ açık: detail.1688.com ve alicdn CDN'e cURL erişimi VAR → görselleri sunucuya indirme planı çalışır. Not: 1688 yanıtı yavaş (7,5 sn) — indirme işlemleri arka planda/kuyrukta yapılmalı, kullanıcıyı bekletmemeli.
@@ -212,4 +212,4 @@ Docroot: `/home/tilbehometoptan/tedarikapp.tilbehometoptan.com`
 5. Docroot şu an PHP tarafından YAZILAMAZ durumda → deploy öncesi cPanel'den düzeltilecek: uygulama kökü salt okunur kalabilir ama `storage/` (görseller, geçici export dosyaları, loglar) klasörü yazılabilir yapılmak ZORUNDA. Faz 1 kurulum kontrol listesine eklendi.
 6. opcache/apcu yok → önbellek beklenmez; sorgular ve sayfa yükü buna göre hafif tutulur.
 7. Zaman dilimi sunucuda UTC → uygulama her yerde `Europe/Istanbul` ayarlar.
-8. Cron: yedekleme otomasyonu için cPanel cron kullanılacak (panelden tanımlanır; PHP CLI 8.1 mevcut ✓).
+8. Cron: yedekleme otomasyonu için cPanel cron kullanılacak (panelden tanımlanır; PHP CLI mevcut ✓ — 8.4'e yükseltildi, K21).

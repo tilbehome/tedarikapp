@@ -39,6 +39,7 @@
 | K18 | 16 Ağu 2026 | Tanım tamamlama paketi: docs/10 API sözleşmesi sabitlendi (zarf, hata kodları, sayfalama, uç bazlı gövdeler); şema K16/K15 ile hizalandı (users.totp_secret, recovery_codes, remember_tokens, lists.period/updated_at, inbox_items.status, activity_log.ip); veri doğrulama kuralları docs/04 §2d'ye yazıldı; açık soru 1–2 kapandı işaretlendi; akış numaralandırması düzeltildi (6a→6, firma tarafı→7) | Ürün Sahibi talimatı: "sonradan ilave işi bozar, eksik kalmasın" — Faz 1 migration ve API iş emirleri sabit zemin ister |
 | K19 | 16 Ağu 2026 | Onaylı kütüphane ve araç listesi anayasaya (CLAUDE.md §2) eklendi: composer/npm paketleri sabit; liste dışı her paket PM onayı ister; lock dosyaları repoya girer; her faz sonu composer/npm audit; PHPStan (seviye 6+) ve CS-Fixer her PR öncesi temiz | Bağımlılık disiplini — K5/K13 stack sınırlarının paket seviyesinde uygulanması; sürüm sürprizi ve bağımlılık şişmesini önler |
 | K20 | 16 Ağu 2026 | Hızlı paylaşım butonları (WhatsApp wa.me + mailto + kopyala + Web Share) Faz 2 kapsamına alındı; sunucudan otomatik gönderim (SMTP / WhatsApp Business API) fikir havuzunda | Sıfır maliyet/API ile iletme akışının doğal parçası; otomatik gönderim solo operasyonda maliyetine değmez |
+| K21 | 16 Ağu 2026 | PHP sürümü 8.4'e yükseltildi (hosting destekliyor) | 8.1'in güvenlik desteği Aralık 2025'te bitti; kod başlamadan geçiş sıfır maliyet |
 
 Yeni kararlar bu tabloya eklenir; bir karar değişirse silinmez, üzeri çizilip yeni satır açılır (tarihçe korunur).
 

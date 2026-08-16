@@ -21,6 +21,11 @@ docs-taslak/
 # Build çıktıları
 frontend/dist/
 
+# Araç önbellekleri
+.php-cs-fixer.cache
+.phpunit.result.cache
+.phpstan-cache/
+
 # İşletim sistemi artıkları
 Thumbs.db
 Desktop.ini

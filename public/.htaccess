@@ -1,0 +1,5 @@
+# Tüm istekleri front controller'a yönlendir (dosya/klasör olarak var olanlar hariç)
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.php [QSA,L]
