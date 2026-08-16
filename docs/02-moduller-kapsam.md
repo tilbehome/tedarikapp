@@ -55,6 +55,7 @@ Bir ürün her zaman bir listeye aittir. Alanlar (örnek Excel ile birebir + ek)
 | 1688 fiyatı (TL) | Sistem hesaplar (Yuan × kur) |
 | DDP fiyatı (Dolar) | Admin girer (firmadan gelen fiyat) |
 | DDP fiyatı (TL) | Sistem hesaplar (Dolar × kur) |
+| Koli içi adet | Admin girer (1688'de yapılandırılmış alan yok — parser raporu, `docs/arastirma/1688-veri-envanteri-on-rapor.md` §B.4) |
 | Ürün durumu | Bkz. M5 |
 | Takip kodu | Admin girer ("Yolda" aşamasında kargo/konteyner takip no) |
 | Not | Serbest |
