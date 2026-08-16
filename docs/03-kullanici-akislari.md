@@ -21,7 +21,7 @@
 1. Liste tamamlandığında son kontrol: sıra numaraları, adetler, fiyatlar.
 2. "Export" → Excel ve/veya PDF indir.
 3. "Paylaşım Linki" → link üret, kopyala.
-4. Dosyaları + linki firmaya WeChat/WhatsApp/e-posta ile ilet. Firma linkten videoları da izler.
+4. "Paylaş" menüsüyle linki firmaya ilet: WhatsApp hazır mesajı, e-posta taslağı veya kopyala; Excel/PDF'i aynı kanaldan eklersin. Firma linkten videoları da izler.
 5. Liste durumunu **İletildi** yap.
 
 ## Akış 4 — Sipariş takibi

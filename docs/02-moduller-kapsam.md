@@ -96,6 +96,7 @@ Bir ürün her zaman bir listeye aittir. Alanlar (örnek Excel ile birebir + ek)
 - Salt okunur; fiyatlar dahil tüm sütunlar her zaman görünür (karar K11 — fiyat gizleme kapsam dışı).
 - Link iptal edilebilir / yenilenebilir.
 - Mobil uyumlu (firma telefondan açacaktır).
+- **Hızlı paylaşım (K20):** liste detayında hazır butonlar — WhatsApp (wa.me, hazır mesaj: liste adı + paylaşım linki), e-posta (mailto, konu+gövde dolu taslak), linki kopyala, mobilde cihazın paylaşım menüsü (Web Share API). Gönderim kullanıcının kendi uygulamasından yapılır; sunucudan otomatik mail/WhatsApp gönderimi kapsam DIŞIdır (fikir havuzu).
 
 ## M8 — Panel Ana Ekranı
 

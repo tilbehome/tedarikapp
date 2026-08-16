@@ -27,6 +27,7 @@
 - PDF baskıda düzgün görünüyor, Türkçe karakterler sorunsuz.
 - Export geçmişi kaydediliyor; son çıktıdan sonra değişen liste "çıktı güncel değil" rozeti gösteriyor; Excel'de TOPLAM satırı doğru.
 - Paylaşım linki telefonda açılıyor, videolar oynuyor.
+- Paylaş menüsü: WhatsApp hazır mesajı ve e-posta taslağı doğru içerikle (liste adı + link) açılıyor.
 
 > Bu fazın sonunda araç gerçek işte kullanılmaya başlar (ürün girişi henüz elle).
 

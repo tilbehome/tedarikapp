@@ -13,6 +13,18 @@ Bu dosya Claude Code için bağlayıcıdır. Her oturumda geçerlidir, iş emirl
 - Yeni composer/npm paketi eklemeden önce ÇIKTI RAPORU'nda gerekçesiyle bildir; büyük bağımlılıklar PM onayı ister.
 - Sunucu kısıtları (docs/04 bölüm 7): dış istek SADECE cURL (`file_get_contents` ile URL açmak YASAK), `exec/system/proc_open` YASAK, `mail()` YASAK, yazma sadece `storage/` altına, vendor lokalde kurulur.
 
+### Onaylı Kütüphane ve Araç Listesi (K19 — liste dışı her paket PM onayı ister)
+- Backend (composer): slim/slim ^4 · slim/psr7 · vlucas/phpdotenv · monolog/monolog ·
+  phpoffice/phpspreadsheet · mpdf/mpdf · robthree/twofactorauth · bacon/bacon-qr-code
+- Backend geliştirme (require-dev): phpunit/phpunit · phpstan/phpstan (seviye 6+) ·
+  friendsofphp/php-cs-fixer (PSR-12)
+- Frontend (npm): react · react-dom · react-router-dom · zustand · axios ·
+  tailwindcss · lucide-react — geliştirme: vite · eslint · prettier
+- Chrome eklentisi: SIFIR harici bağımlılık (vanilla JS, Manifest V3)
+- Kurallar: sürümler composer.lock/package-lock ile sabitlenir ve repoya girer;
+  her faz sonunda güvenlik denetimi (composer audit / npm audit) raporlanır;
+  PHPStan ve CS-Fixer her PR öncesi temiz geçer.
+
 ## 3. Para ve Kur Kuralları (taviz yok)
 - Para değerleri ASLA float ile tutulmaz/hesaplanmaz. DB: `DECIMAL(12,2)` (kurlar `DECIMAL(12,4)`). PHP: bcmath ile hesap, string taşıma. JS: görüntüleme dışında aritmetik yapma; yapılacaksa tam sayı kuruş üzerinden.
 - Kur, listeye kilitlenir (docs/08 K4). TL değerleri DB'ye yazılmaz, her zaman `orijinal fiyat × listenin kilitli kuru` olarak hesaplanır.

@@ -37,9 +37,26 @@
 | K16 | 16 Ağu 2026 | Kurulum: WordPress tarzı tek seferlik kurulum sihirbazı (gereksinim denetimi, .env üretimi, migration, admin+2FA kurulumu, kalıcı kilit); güvenlik sertleştirme: Argon2id, zorunlu TOTP 2FA + kurtarma kodları, artan bekleme + IP kilidi, CSRF, güvenlik başlıkları, storage webden kapalı, görseller public/media, hash'li API token, noindex paylaşım sayfası | Ürün Sahibi talebi (kurulum kolaylığı + yüksek güvenlik) + PM detaylandırması |
 | K17 | 16 Ağu 2026 | Tanım aşaması KAPANDI: belge seti CHANGELOG.md, 09-arayuz-tasarim.md ve hedef kaynak dizin ağacıyla (04/6b) tamamlandı; bundan sonra yeni özellik fikirleri fikir havuzuna gider, belgeler yalnızca iş emirleriyle güncellenir | Belge doygunluğu — daha fazla hazırlık sahaya çıkışı geciktirir |
 | K18 | 16 Ağu 2026 | Tanım tamamlama paketi: docs/10 API sözleşmesi sabitlendi (zarf, hata kodları, sayfalama, uç bazlı gövdeler); şema K16/K15 ile hizalandı (users.totp_secret, recovery_codes, remember_tokens, lists.period/updated_at, inbox_items.status, activity_log.ip); veri doğrulama kuralları docs/04 §2d'ye yazıldı; açık soru 1–2 kapandı işaretlendi; akış numaralandırması düzeltildi (6a→6, firma tarafı→7) | Ürün Sahibi talimatı: "sonradan ilave işi bozar, eksik kalmasın" — Faz 1 migration ve API iş emirleri sabit zemin ister |
+| K19 | 16 Ağu 2026 | Onaylı kütüphane ve araç listesi anayasaya (CLAUDE.md §2) eklendi: composer/npm paketleri sabit; liste dışı her paket PM onayı ister; lock dosyaları repoya girer; her faz sonu composer/npm audit; PHPStan (seviye 6+) ve CS-Fixer her PR öncesi temiz | Bağımlılık disiplini — K5/K13 stack sınırlarının paket seviyesinde uygulanması; sürüm sürprizi ve bağımlılık şişmesini önler |
+| K20 | 16 Ağu 2026 | Hızlı paylaşım butonları (WhatsApp wa.me + mailto + kopyala + Web Share) Faz 2 kapsamına alındı; sunucudan otomatik gönderim (SMTP / WhatsApp Business API) fikir havuzunda | Sıfır maliyet/API ile iletme akışının doğal parçası; otomatik gönderim solo operasyonda maliyetine değmez |
 
 Yeni kararlar bu tabloya eklenir; bir karar değişirse silinmez, üzeri çizilip yeni satır açılır (tarihçe korunur).
 
 ## 3. Fikir Havuzu (Faz 4+)
 
-Kapsamı şişirmemek için buraya park edilir: otomatik kur çekme, çoklu tedarikçi karşılaştırma, Taobao/Alibaba.com desteği (platform alanı ve modüler parser altyapısı şimdiden hazır), maliyet-kâr analizi ve gümrük/lojistik kalem ayrıştırması (TilbeSync ile veri alışverişi), Çince başlık otomatik çeviri, WhatsApp'a hazır mesaj şablonu.
+Kapsamı şişirmemek için yeni fikirler buraya park edilir; aktif iş emri kapsamı değişmez (R8).
+
+| # | Fikir | Hedef |
+|---|---|---|
+| F1 | Otomatik kur çekme (open.er-api.com erişimi doğrulandı) | Faz 4 |
+| F2 | Çoklu tedarikçi karşılaştırma | Faz 4+ |
+| F3 | Taobao/Alibaba.com desteği (platform alanı ve modüler parser altyapısı şimdiden hazır) | Faz 4+ |
+| F4 | Maliyet-kâr analizi ve gümrük/lojistik kalem ayrıştırması (TilbeSync ile veri alışverişi) | Faz 4+ |
+| F5 | Çince başlık otomatik çeviri | Faz 4+ |
+| F6 | Sunucudan otomatik gönderim (SMTP mail / WhatsApp Business API) | Faz 4+ |
+| F7 | PWA: panel ana ekrana kurulabilir uygulama gibi davranır — düşük maliyet, yüksek değer | Faz 4 güçlü aday |
+| F8 | Mal kabul sayım modu: konteyner gelince telefondan ürünleri tek tek "Geldi" işaretleme + eksik/hasar notu | Faz 4 |
+| F9 | Fiyat değişim uyarısı: aynı ürün tekrar yakalandığında eski/yeni Yuan fiyat karşılaştırması (external_id + fiyat geçmişi) | Faz 4 |
+| F10 | Excel özet sayfası: çıktının 2. sekmesinde kategori bazlı adet/tutar özeti | Faz 4 |
+| F11 | Yedeklerin uzak kopyası: gece yedeğinin Google Drive'a da atılması | Faz 4 |
+| F12 | Tedarikçi kartları: firma bazlı liste geçmişi ve iletişim notları | v1.1 (çoklu firma ihtiyacı doğunca) |
