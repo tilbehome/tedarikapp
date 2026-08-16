@@ -1,0 +1,61 @@
+name: CI
+
+# K26: her push ve PR'da kalite hattı koşar. Deploy MANUEL kalır (CD yok — K13).
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  # Aynı dala arka arkaya push gelirse eski koşumu iptal et — sıra beklemesin.
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: PHPUnit + PHPStan + CS-Fixer + audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Depoyu al
+        uses: actions/checkout@v4
+
+      - name: PHP 8.4 kur
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          # Üretimdeki (docs/04 §7) ve testlerdeki eklentiler: sqlite testler için,
+          # sodium TOTP secret şifrelemesi için (K27), bcmath para hesapları için (K14).
+          extensions: bcmath, curl, fileinfo, gd, intl, mbstring, openssl, pdo_mysql, pdo_sqlite, sodium, zip
+          coverage: none
+          tools: none
+
+      - name: composer.json doğrula
+        run: composer validate --strict
+
+      - name: Composer önbelleği
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache
+          key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-
+
+      - name: Bağımlılıkları kur
+        # --no-progress: log gürültüsünü azaltır. Lock dosyası repoda olduğu için sürümler sabittir (K19).
+        run: composer install --no-interaction --no-progress
+
+      - name: PHPUnit
+        run: composer test
+
+      - name: PHPStan (seviye 6)
+        run: composer stan
+
+      - name: CS-Fixer (PSR-12, salt denetim)
+        run: composer cs
+
+      - name: Güvenlik denetimi
+        # K19: her faz sonunda bağımlılık güvenlik denetimi raporlanır — burada her PR'da koşar.
+        run: composer audit

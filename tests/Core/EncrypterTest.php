@@ -6,12 +6,20 @@ namespace Tests\Core;
 
 use App\Core\Config;
 use App\Core\Encrypter;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
+/**
+ * K27: TOTP secret'ı geri okunabilir olmalı ama DB'de düz durmamalı.
+ * Hem sodium (birincil) hem AES-256-GCM (yedek) yolu doğrulanır.
+ */
 final class EncrypterTest extends TestCase
 {
-    private function config(string $appKey): Config
+    private const string SECRET = 'JBSWY3DPEHPK3PXP';
+    private const string VALID_KEY = 'a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4';
+
+    private function config(string $appKey = self::VALID_KEY): Config
     {
         // Bilinçli olarak 'local': testlerden biri geçersiz APP_KEY'i Encrypter'ın kendi
         // hatasıyla doğrular; production modunda Config zaten kurucuda reddederdi (K27).
@@ -26,40 +34,103 @@ final class EncrypterTest extends TestCase
         ]);
     }
 
-    public function testSifrelenenVeriAyniSekildeGeriOkunur(): void
+    /** @return list<array{bool, string}> algoritma bayrağı → beklenen sürüm etiketi */
+    public static function algoritmalar(): array
     {
-        $encrypter = new Encrypter($this->config(str_repeat('a1b2c3d4', 8)));
+        return [
+            'sodium' => [true, 'v1s'],
+            'aes-gcm' => [false, 'v1a'],
+        ];
+    }
 
-        self::assertSame('JBSWY3DPEHPK3PXP', $encrypter->decrypt($encrypter->encrypt('JBSWY3DPEHPK3PXP')));
+    #[DataProvider('algoritmalar')]
+    public function testSifrelenenVeriAyniSekildeGeriOkunur(bool $useSodium, string $beklenenSurum): void
+    {
+        if ($useSodium && !Encrypter::sodiumAvailable()) {
+            self::markTestSkipped('Bu PHP kurulumunda libsodium yok.');
+        }
+
+        $encrypter = new Encrypter($this->config(), $useSodium);
+        $payload = $encrypter->encrypt(self::SECRET);
+
+        self::assertStringStartsWith($beklenenSurum . ':', $payload, 'Sürüm etiketi kayda gömülü olmalı.');
+        self::assertSame(self::SECRET, $encrypter->decrypt($payload));
+    }
+
+    #[DataProvider('algoritmalar')]
+    public function testSifreliMetinDuzSecretIcermez(bool $useSodium, string $beklenenSurum): void
+    {
+        if ($useSodium && !Encrypter::sodiumAvailable()) {
+            self::markTestSkipped('Bu PHP kurulumunda libsodium yok.');
+        }
+        unset($beklenenSurum);
+
+        $payload = (new Encrypter($this->config(), $useSodium))->encrypt(self::SECRET);
+
+        self::assertStringNotContainsString(self::SECRET, $payload);
+    }
+
+    public function testSodiumVarsaVarsayilanOlarakKullanilir(): void
+    {
+        if (!Encrypter::sodiumAvailable()) {
+            self::markTestSkipped('Bu PHP kurulumunda libsodium yok.');
+        }
+
+        self::assertStringStartsWith('v1s:', (new Encrypter($this->config()))->encrypt(self::SECRET));
     }
 
     public function testAyniGirdiHerSeferindeFarkliSifreliMetinUretir(): void
     {
-        $encrypter = new Encrypter($this->config(str_repeat('a1b2c3d4', 8)));
+        $encrypter = new Encrypter($this->config());
 
-        // Rastgele IV: aynı secret iki kez şifrelendiğinde çıktı eşleşmemeli.
-        self::assertNotSame($encrypter->encrypt('JBSWY3DPEHPK3PXP'), $encrypter->encrypt('JBSWY3DPEHPK3PXP'));
+        // Rastgele nonce: aynı secret iki kez şifrelendiğinde çıktı eşleşmemeli.
+        self::assertNotSame($encrypter->encrypt(self::SECRET), $encrypter->encrypt(self::SECRET));
     }
 
-    public function testKurcalanmisVeriReddedilir(): void
+    #[DataProvider('algoritmalar')]
+    public function testKurcalanmisVeriReddedilir(bool $useSodium, string $beklenenSurum): void
     {
-        $encrypter = new Encrypter($this->config(str_repeat('a1b2c3d4', 8)));
-        $payload = $encrypter->encrypt('JBSWY3DPEHPK3PXP');
+        if ($useSodium && !Encrypter::sodiumAvailable()) {
+            self::markTestSkipped('Bu PHP kurulumunda libsodium yok.');
+        }
+        unset($beklenenSurum);
 
-        $raw = base64_decode($payload, true);
+        $encrypter = new Encrypter($this->config(), $useSodium);
+        [$version, $nonce, $ciphertext] = explode(':', $encrypter->encrypt(self::SECRET), 3);
+
+        $raw = base64_decode($ciphertext, true);
         self::assertIsString($raw);
         $raw[strlen($raw) - 1] = $raw[strlen($raw) - 1] === 'A' ? 'B' : 'A';
 
         $this->expectException(RuntimeException::class);
-        $encrypter->decrypt(base64_encode($raw));
+        $encrypter->decrypt($version . ':' . $nonce . ':' . base64_encode($raw));
     }
 
     public function testBaskaAnahtarlaCozulemez(): void
     {
-        $payload = (new Encrypter($this->config(str_repeat('a1b2c3d4', 8))))->encrypt('JBSWY3DPEHPK3PXP');
+        $payload = (new Encrypter($this->config()))->encrypt(self::SECRET);
 
         $this->expectException(RuntimeException::class);
         (new Encrypter($this->config(str_repeat('f9e8d7c6', 8))))->decrypt($payload);
+    }
+
+    public function testBilinmeyenSurumAnlasilirHataVerir(): void
+    {
+        $encrypter = new Encrypter($this->config());
+        [, $nonce, $ciphertext] = explode(':', $encrypter->encrypt(self::SECRET), 3);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Bilinmeyen şifreleme sürümü');
+        $encrypter->decrypt('v9z:' . $nonce . ':' . $ciphertext);
+    }
+
+    public function testBicimsizKayitReddedilir(): void
+    {
+        $encrypter = new Encrypter($this->config());
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('beklenen biçim');
+        $encrypter->decrypt('bicimsiz-veri');
     }
 
     public function testGecersizAppKeyAnlasilirHataVerir(): void
@@ -68,6 +139,6 @@ final class EncrypterTest extends TestCase
 
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('APP_KEY 64 haneli');
-        $encrypter->encrypt('JBSWY3DPEHPK3PXP');
+        $encrypter->encrypt(self::SECRET);
     }
 }
