@@ -45,6 +45,8 @@
 **Kapsam:** M8 istatistikler, liste kopyalama iyileştirmeleri, arşiv/arama derinleştirme, opsiyonel otomatik kur çekme, günlük yedek otomasyonu, performans/tasarım cilası.
 **Kabul kriteri:** Bir aylık gerçek kullanımdan çıkan geri bildirim listesi kapanmış olur.
 
+> **Faz dışı ön şart (İE#4 REV2):** off-site (sunucu dışı) yedek, Faz 4 fikri olmaktan çıkarılıp **canlıya alma ön şartı** yapılmıştır — kurulumu docs/07 §7'de. Ayrıca her PR'da CI koşar (K26); deploy manuel kalır (K13).
+
 ## Çalışma Düzeni
 
 - Uygulama Claude Code ile lokalde geliştirilir, GitHub'a (`tilbehome/tedarikapp`) push edilir, hosting'e deploy edilir.

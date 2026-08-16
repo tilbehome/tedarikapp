@@ -9,7 +9,7 @@
 |---|---|---|
 | Backend | PHP 8.4 (Slim 4 mikro-framework) + REST API | Hosting 8.4 destekliyor (K21); ek kurulum gerektirmeden çalışır; ekosistemin (WP eklentileri, MCP gateway) zaten PHP |
 | Veritabanı | MySQL / MariaDB | Hosting'de hazır |
-| Frontend (panel) | React 18 + Vite, mobile-first | Hızlı, uygulama hissi; build çıktısı hosting'e statik yüklenir |
+| Frontend (panel) | React 19 + TypeScript + Vite, mobile-first | Hızlı, uygulama hissi; build çıktısı hosting'e statik yüklenir. TypeScript, docs/10 sözleşmesindeki tiplerin derleme anında zorlanmasını sağlar (İE#4 REV2; sürümler Faz 1D başında doğrulanıp `package-lock` ile pin'lenir — K19 npm listesine TypeScript eklendi) |
 | Paylaşım sayfası | Sunucu tarafında render edilen hafif sayfa (PHP + şablon) | Firma tarafı için JS yükü olmadan hızlı açılır, link önizlemeleri (WhatsApp/WeChat) düzgün çıkar |
 | Excel | PhpSpreadsheet | Hücreye gömülü görsel destekler — örnek formatla birebir çıktı |
 | PDF | mPDF | Görselli, Türkçe karakter sorunsuz |
@@ -30,11 +30,15 @@ settings         key, value                  -- yuan_tl, usd_tl, extension_token
 rate_history     id, currency, rate, set_at  -- kur tarihçesi
 categories       id, name, sort
 lists            id, name, period,            -- dönem: Excel başlığındaki "{DÖNEM}" (örn. "EYLÜL 2026")
-                 supplier_name, status, note,
-                 visibility,                  -- aktif | pasif | arsiv
+                 supplier_name, status, note, -- status: draft|sent|ordered|completed|cancelled (K22)
+                 visibility,                  -- active | passive | archived (K22)
                  yuan_rate, usd_rate,         -- listeye kilitlenen kur
-                 share_token,                 -- paylaşım linki
-                 created_at, updated_at,      -- updated_at: "çıktı güncel değil" rozetinin dayanağı
+                 rate_locked_at,              -- kur kilit anı: status=sent olduğunda yazılır (K4)
+                 revision,                    -- ürün/fiyat/adet/sıra değişiminde +1 (K25)
+                 share_token_hash,            -- paylaşım linki: SHA-256 hash'i saklanır (K25)
+                 share_token_prefix,          -- linki tanımak için ilk haneler (düz)
+                 share_expires_at,            -- opsiyonel süre sınırı (UI Faz 2)
+                 created_at, updated_at,
                  archived_at, deleted_at      -- soft delete (çöp kutusu)
 products         id, list_id, sort_no, category_id,
                  platform,                    -- '1688' (ileride Taobao vb.)
@@ -47,38 +51,57 @@ products         id, list_id, sort_no, category_id,
                  main_image, video_url,
                  qty, price_yuan, price_ddp_usd,
                  tracking_no,                 -- kargo/konteyner takip kodu
-                 status, note, created_at, updated_at, deleted_at  -- soft delete
+                 status,                      -- to_order|ordered|in_transit|received|cancelled (K22)
+                 note, created_at, updated_at, deleted_at  -- soft delete
 product_images   id, product_id, path, sort  -- ek görseller
-inbox_items      id, raw_json, status,        -- bekliyor | atandi | hatali (doğrulanamayan yakalama)
+product_status_history                        -- durum tarihçesi activity_log'a GÖMÜLMEZ (K25)
+                 id, product_id, from_status, to_status,
+                 actor_type, actor_id, changed_at, request_id
+inbox_items      id, capture_id,              -- UUIDv4, UNIQUE — idempotans anahtarı (K25)
+                 raw_json, status,            -- pending | assigned | error (K22)
+                 schema_version, extension_version, parser_version, platform,
                  created_at
-exports          id, list_id, format, created_at     -- export geçmişi ("güncel değil" rozeti: lists.updated_at > son export)
+exports          id, list_id, format,         -- export geçmişi + gerçek anlık görüntü (K25)
+                 snapshot_json,               -- üretim anındaki liste + ürün verisi
+                 sha256, file_size, status,
+                 list_revision,               -- "çıktı güncel değil" = lists.revision != list_revision
+                 created_at
 activity_log     id, entity_type, entity_id, action, detail,
                  ip,                          -- giriş denemeleri ve kritik işlemler için kaynak IP (K16)
-                 created_at                   -- durum değişimi + ekleme/silme/düzenleme tarihçesi
+                 actor_type, actor_id,        -- kim yaptı (admin | extension | system) — K25
+                 request_id, user_agent,      -- olay incelemesi: istek eşleştirme (K27)
+                 created_at                   -- ekleme/silme/düzenleme tarihçesi
 ```
 
-Para tipleri: tüm fiyat/kur alanları `DECIMAL` (fiyat 12,2 — kur 12,4); float KULLANILMAZ, hesaplar PHP bcmath ile yapılır (K14).
+Para tipleri: birim fiyat ve kur alanları `DECIMAL(12,4)`; float KULLANILMAZ, hesaplar PHP bcmath ile yapılır (K14/K24 — ayrıntı §2e).
 
-İndeksler: products(list_id), products(status), products(external_id), activity_log(entity_type, entity_id), lists(visibility), remember_tokens(selector). external_id üzerinden tekrar-ekleme uyarısı yapılır (benzersizlik zorlanmaz — aynı ürün bilerek iki listede olabilir).
+İndeksler: products(list_id), products(status), products(platform, external_id), activity_log(entity_type, entity_id), activity_log(request_id), lists(visibility), remember_tokens(selector), inbox_items(capture_id) UNIQUE, product_status_history(product_id). Tekrar-ekleme uyarısı **platform + external_id** çifti üzerinden yapılır (benzersizlik zorlanmaz — aynı ürün bilerek iki listede olabilir; K25).
 
 TL fiyatları veritabanında saklanmaz; listenin kilitli kuru × orijinal fiyat olarak her yerde hesaplanır (tutarsızlık riski sıfır).
 
 ## 2b. Durum Makinesi (backend'de zorlanır)
 
+Makine değerleri İngilizcedir (K22); Türkçe karşılıklar yalnızca arayüz etiketidir (çeviri tablosu docs/09 §6).
+
 ```
-Ürün : Verilecek → Verildi → Yolda → Geldi
-       her durumdan → İptal (Geldi hariç)
+Ürün : to_order → ordered → in_transit → received
+       her durumdan → cancelled (received hariç)
        düzeltme: yalnızca bir adım geri alınabilir; durum atlama YASAK
-Liste: Taslak → İletildi → Sipariş Verildi → Tamamlandı (+İptal)
-       Tamamlandı ⇐ ancak tüm ürünler Geldi veya İptal ise
+Liste: draft → sent → ordered → completed (+cancelled)
+       completed ⇐ ancak tüm ürünler received veya cancelled ise
+       sent'e geçişte kur kilitlenir ve rate_locked_at yazılır (K4)
 ```
 
-Geçersiz geçiş isteğini API reddeder (HTTP 422 + açıklama); kural yalnızca arayüzde değil sunucuda yaşar.
+Geçersiz geçiş isteğini API reddeder (HTTP 422 + açıklama); kural yalnızca arayüzde değil sunucuda yaşar. Her geçiş `product_status_history`'ye yazılır (K25).
 
 ## 2c. Veri Sözleşmesi — Eklenti → `POST /api/capture` (SABİT ŞEMA, K14)
 
 ```json
 {
+  "capture_id": "9f1c8d2e-4b7a-4c31-9f0e-2a6d5b3c8e11",
+  "schema_version": 1,
+  "extension_version": "1.0.0",
+  "parser_version": "1688-2026.08",
   "platform": "1688",
   "external_id": "678239127001",
   "title_original": "304不锈钢保温饭盒...",
@@ -93,7 +116,9 @@ Geçersiz geçiş isteğini API reddeder (HTTP 422 + açıklama); kural yalnızc
 }
 ```
 
-Kurallar: para alanları STRING taşınır (float hassasiyet kaybına karşı); `target_list_id: null` → Gelen Kutusu; alan adları değiştirilemez, şema değişikliği PM kararı + belge güncellemesi gerektirir. Backend her alanı doğrular (tip, uzunluk, URL deseni), doğrulanamayan istek ham haliyle `inbox_items.raw_json`'a düşer ve panelde "hatalı yakalama" olarak gösterilir.
+Kurallar: para alanları STRING taşınır (float hassasiyet kaybına karşı); `target_list_id: null` → Gelen Kutusu; alan adları değiştirilemez, şema değişikliği PM kararı + belge güncellemesi gerektirir. Backend her alanı doğrular (tip, uzunluk, URL deseni), doğrulanamayan istek ham haliyle `inbox_items.raw_json`'a düşer ve panelde "hatalı yakalama" (`status = error`) olarak gösterilir.
+
+**İdempotans (K25):** `capture_id` UUIDv4'tür ve `inbox_items` üzerinde UNIQUE'tir. Eklenti bir isteği tekrar denerse (kuyruk mantığı — §4) aynı `capture_id` gelir; sunucu yeni kayıt AÇMAZ, ilk isteğin sonucunu döner. Böylece ağ kopmasında çift ürün oluşmaz. `schema_version`, `extension_version` ve `parser_version` her kayda yazılır: 1688 sayfa yapısı değişip parser bozulduğunda hatalı kayıtların hangi sürümden geldiği kaynaktan okunur.
 
 ## 2d. Veri Doğrulama Kuralları (sistem sınırında zorlanır — K18)
 
@@ -108,12 +133,36 @@ Tüm kurallar backend'de uygulanır; arayüz yalnızca kullanıcı deneyimi içi
 | Fiyatlar (price_yuan, price_ddp_usd) | string decimal, `0` – `9999999.99`, en çok 2 ondalık; negatif ASLA |
 | Kurlar (yuan_rate, usd_rate) | string decimal, `0.0001` – `1000`, en çok 4 ondalık |
 | URL alanları (url, vendor_url, video_url, görsel URL'leri) | https zorunlu, ≤ 1000 karakter |
-| Görsel/video indirme | YALNIZCA `MEDIA_ALLOWED_HOSTS` alan adlarından (SSRF koruması); tek dosya ≤ `MEDIA_MAX_MB`; içerik-tipi doğrulanır (image/*, video/*) |
+| Görsel/video indirme | YALNIZCA `MEDIA_ALLOWED_HOSTS` alan adlarından (SSRF koruması); tek dosya ≤ `MEDIA_MAX_MB`; içerik-tipi doğrulanır — ayrıntılı kurallar aşağıda |
 | Ürün başına ek görsel | ≤ 20 |
 | Takip kodu | ≤ 100 karakter |
 | Kategori | tanımlı listeden `category_id` (serbest metin kabul edilmez) |
 | E-posta / şifre | e-posta RFC uyumlu ≤ 190; şifre ≥ 10 karakter |
-| Yakalama isteği | gövde ≤ `CAPTURE_MAX_PAYLOAD_KB`; hız ≤ `CAPTURE_RATE_PER_MIN` |
+| Yakalama isteği | gövde ≤ `CAPTURE_MAX_PAYLOAD_KB`; hız ≤ `CAPTURE_RATE_PER_MIN`; `capture_id` UUIDv4 ve tekil |
+
+### Medya İndirme Güvenliği (derinleştirilmiş — İE#4 REV2)
+
+Sunucu, dışarıdan gelen bir URL'yi kendisi çektiği için bu akış klasik SSRF yüzeyidir. Kurallar sırayla uygulanır; herhangi biri düşerse indirme yapılmaz:
+
+1. **Yalnız HTTPS.** `http://`, `ftp://`, `file://`, `data:` reddedilir.
+2. **Host eşleşmesi tam sonek kuralıyla:** izinli alan adı `alicdn.com` ise `cbu01.alicdn.com` GEÇER, `alicdn.com.evil.com` GEÇMEZ (düz `str_contains` denetimi kullanılmaz).
+3. **DNS çözümü denetlenir:** çözülen IP private (10/8, 172.16/12, 192.168/16), loopback (127/8, ::1), link-local (169.254/16, fe80::/10) veya benzeri ayrılmış aralıklardaysa REDDEDİLİR — iç ağa erişim engellenir.
+4. **Yönlendirme (redirect) hedefi yeniden doğrulanır:** en fazla 3 yönlendirme; her adımda 1–3 numaralı kurallar baştan uygulanır (cURL'ün kör redirect takibi kullanılmaz).
+5. **Boyut sınırı:** `MEDIA_MAX_MB`; hem `Content-Length` hem de akış sırasında gerçek bayt sayımı denetlenir (yalan başlık koruması).
+6. **MIME allowlist:** yalnızca `image/jpeg`, `image/png`, `image/webp`, `image/avif`, `image/gif`. **SVG YASAKTIR** (içine script gömülebilir ve tarayıcıda çalışır).
+7. **Magic-byte doğrulaması:** dosyanın gerçek türü içeriğinden okunur; sunucunun bildirdiği `Content-Type` tek başına yeterli sayılmaz.
+8. **Yeniden encode:** indirilen görsel GD ile yeniden üretilir — EXIF/metadata ve dosyaya iliştirilmiş gizli yükler temizlenir. Dosya adı sunucu tarafından üretilir, kaynak adı kullanılmaz.
+
+## 2e. Para ve Yuvarlama Politikası (K24)
+
+Para asla float değildir (K14). Bu bölüm, yuvarlamanın **nerede** yapılacağını sabitler; aksi hâlde panel, Excel ve paylaşım sayfası birbirini tutmayan toplamlar üretir.
+
+- **Saklama:** birim fiyatlar `DECIMAL(12,4)`, kurlar `DECIMAL(12,4)`.
+- **Ara hesap:** bcmath ile, **scale ≥ 6**. Ara sonuçlar yuvarlanmaz.
+- **Satır toplamı:** `qty × birim_fiyat × kur` → sonuç **2 haneye HALF_UP** yuvarlanır.
+- **Genel toplam:** yuvarlanmış **satır toplamlarının** toplamıdır (ham değerlerin toplamı yuvarlanmaz — "önce yuvarla, sonra topla").
+- **Taşıma:** API'de tüm para alanları string (K14), örn. `"30412.80"`.
+- Bu kuralların birim testleri para/kur fonksiyonlarıyla birlikte TEST-FIRST yazılır (CLAUDE.md §3).
 
 ## 3. API (özet)
 

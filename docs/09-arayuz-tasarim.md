@@ -46,3 +46,45 @@
 - Boş durumlar (hiç liste yok, Gelen Kutusu boş) yönlendirici mesaj + aksiyon butonu içerir, boş beyaz sayfa bırakılmaz.
 - Yükleme durumları iskelet (skeleton) ile gösterilir; hata durumları yeniden dene butonuyla gelir.
 - Tablolar telefonda karta dönüşür (yatay kaydırmalı dev tablo dayatılmaz).
+
+## 6. Makine Değeri ↔ Türkçe Etiket Çeviri Tablosu (K22)
+
+Veritabanı ve API **yalnızca** sol sütundaki İngilizce kodları taşır. Türkçe karşılıklar arayüz etiketidir; koda, DB'ye veya JSON'a girmez. Arayüz bu tabloyu tek kaynak olarak kullanır (`frontend/src/i18n/labels.ts`).
+
+**Ürün durumu** (`products.status`)
+
+| Kod | Türkçe etiket |
+|---|---|
+| `to_order` | Verilecek |
+| `ordered` | Verildi |
+| `in_transit` | Yolda |
+| `received` | Geldi |
+| `cancelled` | İptal |
+
+**Liste durumu** (`lists.status`)
+
+| Kod | Türkçe etiket |
+|---|---|
+| `draft` | Taslak |
+| `sent` | İletildi |
+| `ordered` | Sipariş Verildi |
+| `completed` | Tamamlandı |
+| `cancelled` | İptal |
+
+**Liste görünürlüğü** (`lists.visibility`)
+
+| Kod | Türkçe etiket |
+|---|---|
+| `active` | Aktif |
+| `passive` | Pasif |
+| `archived` | Arşiv |
+
+**Gelen kutusu durumu** (`inbox_items.status`)
+
+| Kod | Türkçe etiket |
+|---|---|
+| `pending` | Bekliyor |
+| `error` | Hatalı |
+| `assigned` | Atandı |
+
+> Not: `ordered` hem ürün hem liste durumunda geçer ama farklı tablolarda ve farklı anlamlarda (ürün: sipariş verildi · liste: sipariş verildi). Karışıklık olmaması için kod içinde durumlar daima kendi enum/sabit setleriyle kullanılır.
