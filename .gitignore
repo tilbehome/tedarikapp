@@ -11,6 +11,10 @@ node_modules/
 storage/
 *.log
 
+# İndirilen ürün görselleri repoya girmez (klasör iskeleti kalır)
+public/media/*
+!public/media/.gitkeep
+
 # PM taslak klasörü (repoya girmez)
 docs-taslak/
 

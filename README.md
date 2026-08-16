@@ -102,6 +102,7 @@ Ayrıntılar ve kabul kriterleri: [docs/05-yol-haritasi.md](docs/05-yol-haritasi
 | [docs/07-deploy-runbook.md](docs/07-deploy-runbook.md) | 🚀 Kurulum sihirbazı, sürüm çıkarma, geri alma, yedekleme |
 | [docs/08-risk-ve-karar-kaydi.md](docs/08-risk-ve-karar-kaydi.md) | ⚠️ Risk kaydı (R1–R8), karar günlüğü (K1–K17), fikir havuzu |
 | [docs/09-arayuz-tasarim.md](docs/09-arayuz-tasarim.md) | 🎨 Tasarım ilkeleri, ekran envanteri (E1–E9 / P1 / X1–X2) |
+| [docs/10-api-sozlesmesi.md](docs/10-api-sozlesmesi.md) | 🔌 API sözleşmesi — yanıt zarfı, hata kodları, sayfalama, uç bazlı gövdeler |
 
 ## 🤝 Çalışma Modeli
 

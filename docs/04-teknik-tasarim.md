@@ -20,15 +20,22 @@ Barındırma: `tedarik.` alt alan adı (hangi domain altında olacağı kararla�
 ## 2. Veritabanı Şeması (özet)
 
 ```
-users            id, email, password_hash, created_at
-settings         key, value                  -- yuan_tl, usd_tl, extension_token...
+users            id, email, password_hash,
+                 totp_secret,                 -- şifreli saklanır (K16, 2FA zorunlu)
+                 created_at, updated_at
+recovery_codes   id, user_id, code_hash, used_at      -- 2FA kurtarma kodları: hash'li, TEK kullanımlık
+remember_tokens  id, user_id, selector, token_hash,   -- "beni hatırla": selector açık, doğrulayıcı hash'li
+                 expires_at, created_at               -- panelden tek tıkla iptal edilebilir
+settings         key, value                  -- yuan_tl, usd_tl, extension_token_hash...
 rate_history     id, currency, rate, set_at  -- kur tarihçesi
 categories       id, name, sort
-lists            id, name, supplier_name, status, note,
+lists            id, name, period,            -- dönem: Excel başlığındaki "{DÖNEM}" (örn. "EYLÜL 2026")
+                 supplier_name, status, note,
                  visibility,                  -- aktif | pasif | arsiv
                  yuan_rate, usd_rate,         -- listeye kilitlenen kur
                  share_token,                 -- paylaşım linki
-                 created_at, archived_at, deleted_at  -- soft delete (çöp kutusu)
+                 created_at, updated_at,      -- updated_at: "çıktı güncel değil" rozetinin dayanağı
+                 archived_at, deleted_at      -- soft delete (çöp kutusu)
 products         id, list_id, sort_no, category_id,
                  platform,                    -- '1688' (ileride Taobao vb.)
                  external_id,                 -- 1688 ürün ID (tekrar kontrolü)
@@ -40,11 +47,14 @@ products         id, list_id, sort_no, category_id,
                  main_image, video_url,
                  qty, price_yuan, price_ddp_usd,
                  tracking_no,                 -- kargo/konteyner takip kodu
-                 status, note, created_at, deleted_at  -- soft delete
+                 status, note, created_at, updated_at, deleted_at  -- soft delete
 product_images   id, product_id, path, sort  -- ek görseller
-inbox_items      id, raw_json, created_at    -- eklentiden gelen ham veri
+inbox_items      id, raw_json, status,        -- bekliyor | atandi | hatali (doğrulanamayan yakalama)
+                 created_at
 exports          id, list_id, format, created_at     -- export geçmişi ("güncel değil" rozeti: lists.updated_at > son export)
-activity_log     id, entity_type, entity_id, action, detail, created_at  -- durum değişimi + ekleme/silme/düzenleme tarihçesi
+activity_log     id, entity_type, entity_id, action, detail,
+                 ip,                          -- giriş denemeleri ve kritik işlemler için kaynak IP (K16)
+                 created_at                   -- durum değişimi + ekleme/silme/düzenleme tarihçesi
 ```
 
 Para tipleri: tüm fiyat/kur alanları `DECIMAL` (fiyat 12,2 — kur 12,4); float KULLANILMAZ, hesaplar PHP bcmath ile yapılır (K14).
@@ -85,6 +95,26 @@ Geçersiz geçiş isteğini API reddeder (HTTP 422 + açıklama); kural yalnızc
 
 Kurallar: para alanları STRING taşınır (float hassasiyet kaybına karşı); `target_list_id: null` → Gelen Kutusu; alan adları değiştirilemez, şema değişikliği PM kararı + belge güncellemesi gerektirir. Backend her alanı doğrular (tip, uzunluk, URL deseni), doğrulanamayan istek ham haliyle `inbox_items.raw_json`'a düşer ve panelde "hatalı yakalama" olarak gösterilir.
 
+## 2d. Veri Doğrulama Kuralları (sistem sınırında zorlanır — K18)
+
+Tüm kurallar backend'de uygulanır; arayüz yalnızca kullanıcı deneyimi için aynı kuralları önden gösterir. İhlal → HTTP 422 + alan bazlı hata (format: docs/10 §1).
+
+| Alan | Kural |
+|---|---|
+| Liste adı / dönem / tedarikçi | zorunlu ad: 1–200; dönem ≤ 50; tedarikçi ≤ 200 karakter |
+| Ürün adı | zorunlu, 1–300 karakter (name_original ≤ 500, salt saklama) |
+| Detay / not | ≤ 2000 karakter |
+| Miktar (qty) | tam sayı, 1 – 1.000.000 |
+| Fiyatlar (price_yuan, price_ddp_usd) | string decimal, `0` – `9999999.99`, en çok 2 ondalık; negatif ASLA |
+| Kurlar (yuan_rate, usd_rate) | string decimal, `0.0001` – `1000`, en çok 4 ondalık |
+| URL alanları (url, vendor_url, video_url, görsel URL'leri) | https zorunlu, ≤ 1000 karakter |
+| Görsel/video indirme | YALNIZCA `MEDIA_ALLOWED_HOSTS` alan adlarından (SSRF koruması); tek dosya ≤ `MEDIA_MAX_MB`; içerik-tipi doğrulanır (image/*, video/*) |
+| Ürün başına ek görsel | ≤ 20 |
+| Takip kodu | ≤ 100 karakter |
+| Kategori | tanımlı listeden `category_id` (serbest metin kabul edilmez) |
+| E-posta / şifre | e-posta RFC uyumlu ≤ 190; şifre ≥ 10 karakter |
+| Yakalama isteği | gövde ≤ `CAPTURE_MAX_PAYLOAD_KB`; hız ≤ `CAPTURE_RATE_PER_MIN` |
+
 ## 3. API (özet)
 
 ```
@@ -99,6 +129,8 @@ POST   /api/capture               ← eklentinin tek endpoint'i (Bearer: extensi
 GET/PUT /api/settings, /api/categories
 GET    /p/{share_token}           ← herkese açık paylaşım sayfası (API değil, sayfa)
 ```
+
+Uç bazlı istek/yanıt gövdeleri, hata zarfı, sayfalama ve durum kodları **docs/10-api-sozlesmesi.md**'de sabitlenmiştir (K18) — frontend ve backend bu sözleşmeye göre ayrı ayrı geliştirilebilir.
 
 ## 4. Eklenti Mimarisi
 
@@ -133,16 +165,16 @@ GET    /p/{share_token}           ← herkese açık paylaşım sayfası (API de
 
 ## 6. Açık Teknik Sorular (istişare)
 
-1. Alt alan adı hangisi olsun? (`tedarik.tilbehome.com` gibi)
-2. Hosting'de PHP sürümü ve cron erişimi teyit edilecek.
-3. 1688 video URL'leri bazı durumlarda oturum istiyor — Faz 3'te parser yazılırken gerçek sayfalarla test edilip gerekirse video dosyası da sunucuya indirilecek. Karar testten sonra.
+1. ~~Alt alan adı hangisi olsun?~~ **KAPANDI:** `tedarikapp.tilbehometoptan.com` (K7, bkz. §7).
+2. ~~Hosting'de PHP sürümü ve cron erişimi teyit edilecek.~~ **KAPANDI:** PHP 8.1.34 + cPanel cron doğrulandı (16.08.2026 sunucu raporu, bkz. §7).
+3. 1688 video URL'leri bazı durumlarda oturum istiyor — Faz 3'te parser yazılırken gerçek sayfalarla test edilip gerekirse video dosyası da sunucuya indirilecek. Karar testten sonra. **(AÇIK — tek kalan soru)**
 
 ## 6b. Hedef Kaynak Dizin Ağacı (repo — Claude Code buna uyar)
 
 ```
 tedarikapp/
 ├── CLAUDE.md · README.md · CHANGELOG.md · .gitignore · .env.example
-├── docs/                     (00–09 belgeleri + is-emirleri/)
+├── docs/                     (00–10 belgeleri + is-emirleri/)
 ├── app/                      PHP kaynak (docroot dışı)
 │   ├── Controllers/          (Auth, Lists, Products, Inbox, Capture, Export, Share, Settings)
 │   ├── Models/               (PDO tabanlı erişim katmanı)

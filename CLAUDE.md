@@ -33,7 +33,7 @@ Bu dosya Claude Code için bağlayıcıdır. Her oturumda geçerlidir, iş emirl
 - Placeholder/geciştirme YASAK: "// devamı burada", "TODO: implement", boş catch bloğu yazılmaz. Her fonksiyon eksiksiz ve hata yönetimli teslim edilir.
 - Hatalar `storage/logs/` altına loglanır (tarih, bağlam); kullanıcıya teknik hata dökülmez.
 - Standart: PSR-12 (PHP), ESLint (JS). Arayüz dili Türkçe, kod/değişken adları İngilizce.
-- Veri sözleşmeleri sabittir: eklenti→API JSON şeması docs/04'te tanımlıdır; alan adı uydurma/değiştirme yapılmaz, şema değişikliği PM kararıdır.
+- Veri sözleşmeleri sabittir: eklenti→API JSON şeması docs/04'te, panel API sözleşmesi (zarf, hata kodları, uç gövdeleri) docs/10'da tanımlıdır; alan adı uydurma/değiştirme yapılmaz, şema değişikliği PM kararıdır.
 
 ## 7. Teslim
 - Her iş emri: kendi dalı (`is-emri-N-slug`), standart commit (`tip(kapsam): açıklama`), PR, ve docs/00'daki şablonla ÇIKTI RAPORU.

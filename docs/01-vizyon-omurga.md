@@ -43,10 +43,4 @@ Omurga üç parçadan oluşur:
 
 ## 6. Belge Haritası
 
-| Belge | İçerik |
-|---|---|
-| 01-vizyon-omurga.md | Bu belge |
-| 02-moduller-kapsam.md | Modül dökümü ve özellik kapsamı |
-| 03-kullanici-akislari.md | Adım adım kullanım senaryoları |
-| 04-teknik-tasarim.md | Stack, veritabanı, API, eklenti mimarisi |
-| 05-yol-haritasi.md | Fazlar, teslimatlar, kabul kriterleri |
+Tam ve güncel belge haritası repo kökündeki [README.md](../README.md)'dedir. Set: kökte CLAUDE.md (geliştirme anayasası) + CHANGELOG.md; `docs/` altında 00 (çalışma protokolü), 01 (bu belge), 02 (modüller), 03 (akışlar), 04 (teknik tasarım), 05 (yol haritası), 06 (test/kabul), 07 (deploy runbook), 08 (risk/karar kaydı), 09 (arayüz), 10 (API sözleşmesi) + `is-emirleri/` arşivi.

@@ -5,7 +5,7 @@
 
 ## Faz 0 — Proje Tanımı ve İstişare (şu an)
 
-**Teslimat:** 5 belgelik doc seti, repo'da `docs/` altında.
+**Teslimat:** Belge seti (docs/00–10 + kökte README, CLAUDE.md, CHANGELOG.md), repo'da yayında.
 **Kabul kriteri:** Bünyamin tüm belgeleri okuyup onaylar; açık sorular kapanır.
 
 ## Faz 1 — Panel Çekirdeği

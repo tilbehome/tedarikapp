@@ -38,14 +38,14 @@
 3. Kur ayarlardan güncellenir → TL fiyatları yeni kurla yeniden hesaplanır.
 4. Akış 3'ten devam.
 
-## Akış 6a — Çıktı alındıktan sonra listede değişiklik
+## Akış 6 — Çıktı alındıktan sonra listede değişiklik
 
 1. Export alınmış (hatta iletilmiş) listeyi aç — kilit yok, normal düzenle: ürün ekle/sil, adet değiştir.
 2. Panel "çıktı güncel değil" rozeti gösterir.
 3. Yeni Excel/PDF al, firmaya güncelini ilet (paylaşım linki zaten kendiliğinden günceldir).
 4. Yanlışlıkla silinen ürün/liste → Çöp Kutusu'ndan 30 gün içinde geri al.
 
-## Akış 6 — Firma tarafı (paylaşım linki)
+## Akış 7 — Firma tarafı (paylaşım linki)
 
 1. Firma linki telefonda/bilgisayarda açar — giriş yok.
 2. Ürünleri görsel + video + detay + adet ile görür; 1688 linkine tıklayıp orijinal ürünü doğrulayabilir.

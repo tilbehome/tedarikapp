@@ -26,6 +26,7 @@ Kural (K14): Para, kur ve durum-geçiş fonksiyonları TEST-FIRST yazılır — 
 - [ ] Aktif/Pasif/Arşiv sekmeleri ve geçiş aksiyonları çalışır.
 - [ ] Silinen liste/ürün çöp kutusuna düşer, geri alınabilir; kalıcı silme 30 gün kuralına uyar.
 - [ ] Ürün durumu tek tıkla ilerler, tarihçe kaydolur, toplu güncelleme çalışır.
+- [ ] API yanıtları docs/10 sözleşmesine uygun: zarf yapısı, hata kodları, sayfalama ve doğrulama (docs/04 §2d) sözleşme testleriyle kanıtlanır.
 - [ ] Telefonda (gerçek cihaz) tüm akışlar tamamlanabilir.
 
 ### Faz 2 — Export ve Paylaşım
