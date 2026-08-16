@@ -1,0 +1,28 @@
+# Sırlar ve yerel konfigürasyon
+.env
+.env.*
+!.env.example
+
+# Bağımlılıklar
+vendor/
+node_modules/
+
+# Çalışma zamanı verisi (görseller, loglar, önbellek)
+storage/
+*.log
+
+# PM taslak klasörü (repoya girmez)
+docs-taslak/
+
+# Build çıktıları
+frontend/dist/
+
+# İşletim sistemi artıkları
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# IDE / editör
+.idea/
+.vscode/
+*.swp
