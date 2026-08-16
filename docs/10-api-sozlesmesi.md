@@ -108,7 +108,7 @@
 | `GET /api/settings/rates/history` | Kur tarihçesi (sayfalı) |
 | `POST /api/settings/extension-token` | Yeni token üretir → **tam token yalnızca bu yanıtta bir kez** görünür; DB'de hash saklanır |
 | `GET/POST/PATCH/DELETE /api/categories` | CRUD; kullanımda olan kategori silinirken → 409 + ürün sayısı |
-| `GET /api/activity` | Filtre: `entity_type`, `entity_id`, sayfalı — E9 ekranının kaynağı |
+| `GET /api/activity` | Filtre: `entity_type`, `entity_id`, sayfalı (`page`, `per_page` — varsayılan 25, üst sınır 100) — E9 ekranının kaynağı. Yanıt `data: [{id, entity_type, entity_id, action, detail, ip, actor_type, created_at}]`, `meta: {page, per_page, total}`. Salt okunur |
 
 ## 8. Yakalama ve Dışa Açık Sayfa
 
@@ -138,7 +138,8 @@ Adım sırası zorlanır: sırası gelmemiş uç `422 STATE_TRANSITION` + `meta.
 
 | Uç | Açıklama |
 |---|---|
-| `GET /api/system/status` | `{app_version, php_version, db_version, installed_at, migrations:{applied, pending[], pending_count}}` |
+| `GET /api/system/status` | `{app_version, php_version, db_version, installed_at, migrations:{applied, pending[], pending_count}, media:{mode, writable}, setup_lock_in_database}` |
+| `GET /api/system/state-machine` | (İE#8) `{product:{durum: [izinli...]}, list:{...}}` — docs/04 §2b geçiş matrisinin okunur kopyası. Panel durum menüsünü buradan kurar; **kural yine backend'de zorlanır**, bu uç yalnızca geçersiz seçeneğin kullanıcıya sunulmamasını sağlar |
 | `POST /api/system/migrate` | Auth + CSRF. Bekleyen migration'ları koşar → `{applied[], applied_count}`; sonuç `activity_log`'a yazılır |
 
 ## 9. Sözleşme Testleri

@@ -28,6 +28,28 @@
 | E8 | Ayarlar | Kurlar (tarihçeli), kategoriler, eklenti API token'ı, güvenlik (şifre/2FA/kurtarma kodları), yedek durumu |
 | E9 | Aktivite | Liste bazlı işlem geçmişi (kim-ne-ne zaman — Faz 4'te genişler) |
 
+### 2b. Gerçeklenen Ekran ↔ Rota (Faz 1D · İE#8)
+
+Panel `public/panel/` altından sunulur ve `/panel` ön ekiyle çalışır (React Router `basename`). Slim'deki `/panel[/{path:.*}]` catch-all'ı istemci tarafı rotaları `index.html`'e verir; sayfa yenilendiğinde 404 alınmaz.
+
+| # | Ekran | Rota | Dosya | Durum |
+|---|---|---|---|---|
+| E1 | Giriş | `/panel/giris` | `screens/LoginScreen.tsx` | ✅ |
+| E2 | Ana Ekran | `/panel/` | `screens/HomeScreen.tsx` | ✅ |
+| E3 | Listeler | `/panel/listeler` | `screens/ListsScreen.tsx` | ✅ |
+| E4 | Liste Detayı | `/panel/listeler/:id` | `screens/ListDetailScreen.tsx` | ✅ (export/paylaşım butonları "Faz 2" rozetiyle pasif) |
+| E5 | Ürün Ekle/Düzenle | `/panel/listeler/:id/urun/yeni` · `/panel/listeler/:id/urun/:productId` | `screens/ProductFormScreen.tsx` | ✅ |
+| E6 | Gelen Kutusu | — | — | ⏳ Faz 3 (menüde "yakında" olarak durur) |
+| E7 | Çöp Kutusu | `/panel/cop-kutusu` | `screens/TrashScreen.tsx` | ✅ |
+| E8 | Ayarlar | `/panel/ayarlar` · `/panel/ayarlar/kategoriler` | `screens/SettingsScreen.tsx` · `screens/CategoriesScreen.tsx` | ✅ (token üretimi/2FA yenileme Faz 3) |
+| E9 | Aktivite | `/panel/aktivite` | `screens/ActivityScreen.tsx` | ✅ |
+
+**Kategoriler** docs/09'da E8'in içeriğidir; ekranda Ayarlar'ın alt sayfası olarak açılır (`/panel/ayarlar/kategoriler`).
+
+**Para kuralı (K14/K29):** panelde para aritmetiği YOKTUR. Tutarlar API'den `string` gelir, `lib/format.ts` yalnızca karakter düzeyinde biçimlendirir (binlik ayracı + virgül), TOPLAM satırı backend'in `totals` alanından okunur.
+
+**Durum geçişleri:** ürün ve liste durum menüleri `GET /api/system/state-machine` haritasından kurulur; arayüz kendi kopyasını tutmaz. Kural yine de backend'de zorlanır — arayüz katmanı yalnızca geçersiz seçeneği sunmama işini yapar.
+
 ## 3. Dışa Açık Sayfa (paylaşım — sunucu render)
 
 | # | Sayfa | İçerik |
@@ -49,7 +71,7 @@
 
 ## 6. Makine Değeri ↔ Türkçe Etiket Çeviri Tablosu (K22)
 
-Veritabanı ve API **yalnızca** sol sütundaki İngilizce kodları taşır. Türkçe karşılıklar arayüz etiketidir; koda, DB'ye veya JSON'a girmez. Arayüz bu tabloyu tek kaynak olarak kullanır (`frontend/src/i18n/labels.ts`).
+Veritabanı ve API **yalnızca** sol sütundaki İngilizce kodları taşır. Türkçe karşılıklar arayüz etiketidir; koda, DB'ye veya JSON'a girmez. Arayüz bu tabloyu tek kaynak olarak kullanır: **`frontend/src/locales/tr.ts`** (İE#8 §4 bu yolu şart koştu; bu belgedeki eski `i18n/labels.ts` yolu geçersizdir). Aktivite kaydı kodlarının Türkçe karşılıkları `frontend/src/lib/activityLabels.ts` dosyasındadır.
 
 **Ürün durumu** (`products.status`)
 

@@ -20,8 +20,9 @@ public/media/*
 # PM taslak klasörü (repoya girmez)
 docs-taslak/
 
-# Build çıktıları
+# Build çıktıları — panel derlemesi repoya GİRMEZ, sürüm zip'i içinde taşınır (İE#8 §5).
 frontend/dist/
+public/panel/
 
 # Araç önbellekleri
 .php-cs-fixer.cache

@@ -12,6 +12,8 @@ use App\Models\ProductRepository;
 use App\Services\ActivityLog;
 use App\Services\InputValidator;
 use App\Services\ListPresenter;
+use App\Services\MediaException;
+use App\Services\MediaService;
 use App\Services\StateMachine;
 use App\Services\StateTransitionException;
 use Psr\Http\Message\ResponseInterface;
@@ -33,7 +35,55 @@ final class ProductController extends ApiController
         private readonly StateMachine $stateMachine,
         private readonly ActivityLog $activity,
         private readonly Clock $clock,
+        private readonly ?MediaService $media = null,
     ) {
+    }
+
+    /**
+     * Verilen görsel URL'sini MediaService'e teslim eder (docs/10 §4, İE#8 §2).
+     *
+     * `download` modunda görsel indirilip yeniden kodlanır ve yerel yol saklanır;
+     * `hotlink` modunda (K33 — üretimde diske yazılamıyor) URL beyaz liste denetiminden
+     * geçirilip olduğu gibi bırakılır. Her iki modda da SSRF denetimi yapılır.
+     *
+     * @param array<string, mixed> $body istek gövdesi; `main_image` yerinde güncellenir
+     *
+     * @return string|null alan hatası (varsa)
+     */
+    private function ingestMainImage(array &$body): ?string
+    {
+        if ($this->media === null || !array_key_exists('main_image', $body)) {
+            return null;
+        }
+
+        $value = $body['main_image'];
+        if ($value === null || $value === '' || $this->isStoredMediaPath($value)) {
+            return null;
+        }
+        if (!is_string($value)) {
+            return 'Görsel adresi metin olmalı.';
+        }
+
+        try {
+            $stored = $this->media->store($value);
+        } catch (MediaException $e) {
+            return $e->getMessage();
+        }
+
+        $body['main_image'] = $stored['url'];
+
+        return null;
+    }
+
+    /**
+     * Sistemin kendi ürettiği yerel medya yolu mu? (`/media/…`)
+     *
+     * Ürün yeniden kaydedilirken bu değer forma geri gelir; onu tekrar indirmeye
+     * kalkmak da https doğrulamasından geçirmek de yanlış olur.
+     */
+    private function isStoredMediaPath(mixed $value): bool
+    {
+        return is_string($value) && str_starts_with($value, '/');
     }
 
     /**
@@ -95,6 +145,11 @@ final class ProductController extends ApiController
         $errors = $this->validateProduct($body, required: true);
         if ($errors !== []) {
             return Response::error($response, 'VALIDATION', 'Doğrulama hatası', 422, $errors);
+        }
+
+        $mediaError = $this->ingestMainImage($body);
+        if ($mediaError !== null) {
+            return Response::error($response, 'VALIDATION', 'Doğrulama hatası', 422, ['main_image' => $mediaError]);
         }
 
         // Tekrar UYARISI (K25): engel değil, onay ister.
@@ -164,6 +219,11 @@ final class ProductController extends ApiController
         $errors = $this->validateProduct($body, required: false);
         if ($errors !== []) {
             return Response::error($response, 'VALIDATION', 'Doğrulama hatası', 422, $errors);
+        }
+
+        $mediaError = $this->ingestMainImage($body);
+        if ($mediaError !== null) {
+            return Response::error($response, 'VALIDATION', 'Doğrulama hatası', 422, ['main_image' => $mediaError]);
         }
 
         $updates = [];
@@ -449,6 +509,12 @@ final class ProductController extends ApiController
             if (array_key_exists($key, $body)) {
                 $errors[$key] = $this->validator->url($body[$key], $label);
             }
+        }
+        // Görsel adresi diğer URL alanlarıyla AYNI kapıdan geçer (yalnız https, uzunluk,
+        // biçim); sonra ayrıca MediaService'in beyaz liste/SSRF denetimine girer.
+        // Sistemde zaten duran yerel yol (`/media/…`) yeniden doğrulanmaz.
+        if (array_key_exists('main_image', $body) && !$this->isStoredMediaPath($body['main_image'])) {
+            $errors['main_image'] = $this->validator->url($body['main_image'], 'Görsel adresi');
         }
         foreach (['sku_selection' => 'Varyasyon seçimi', 'sku_matrix' => 'Varyasyon matrisi'] as $key => $label) {
             if (array_key_exists($key, $body)) {

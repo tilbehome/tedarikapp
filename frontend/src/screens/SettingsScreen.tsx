@@ -1,0 +1,191 @@
+import { useEffect, useState, type FormEvent } from 'react';
+import { Link } from 'react-router-dom';
+import { ChevronRight, ShieldCheck } from 'lucide-react';
+import { settings as settingsApi, system as systemApi } from '../api/endpoints';
+import { useAsync, messageOf } from '../lib/useAsync';
+import { count, dateTime, rate } from '../lib/format';
+import { mediaModeLabels } from '../locales/tr';
+import { ErrorNote, Field, PageHeader, Skeleton, SoonBadge } from '../components/ui';
+import { useToast } from '../components/Toast';
+
+/**
+ * E8 — Ayarlar: kurlar (tarihçeli), kategoriler, güvenlik, sistem durumu.
+ *
+ * Kur METİN olarak gönderilir ve METİN olarak gösterilir; panel dönüştürme yapmaz.
+ * Kur değişimi yalnızca `draft` listelerin görünen TL'sini etkiler — kilitli
+ * listeler etkilenmez (K4); bu kural ekranda da yazılıdır.
+ */
+export default function SettingsScreen() {
+  const push = useToast((state) => state.push);
+  const settingsState = useAsync(() => settingsApi.read(), []);
+  const statusState = useAsync(() => systemApi.status(), []);
+  const historyState = useAsync(() => settingsApi.rateHistory(), []);
+
+  const [yuan, setYuan] = useState('');
+  const [usd, setUsd] = useState('');
+  const [fields, setFields] = useState<Record<string, string>>({});
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    const data = settingsState.data;
+    if (!data) return;
+    setYuan(data.yuan_tl);
+    setUsd(data.usd_tl);
+  }, [settingsState.data]);
+
+  const save = async (event: FormEvent) => {
+    event.preventDefault();
+    setBusy(true);
+    setFields({});
+    try {
+      await settingsApi.updateRates({ yuan_tl: yuan.trim().replace(',', '.'), usd_tl: usd.trim().replace(',', '.') });
+      settingsState.reload();
+      historyState.reload();
+      push('Kurlar güncellendi. Kilitli listeler etkilenmedi.');
+    } catch (caught) {
+      push(messageOf(caught), 'error');
+      const fieldErrors = (caught as { fields?: Record<string, string> }).fields;
+      if (fieldErrors) setFields(fieldErrors);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <>
+      <PageHeader title="Ayarlar" subtitle="Kurlar, kategoriler, güvenlik ve sistem" />
+
+      <section className="card mb-4 p-4">
+        <h2 className="mb-3 text-sm font-semibold text-slate-700">Kurlar</h2>
+        {settingsState.loading ? (
+          <Skeleton rows={1} />
+        ) : settingsState.error ? (
+          <ErrorNote message={settingsState.error} onRetry={settingsState.reload} />
+        ) : (
+          <form onSubmit={(event) => void save(event)} className="space-y-3">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Yuan → TL" hint="Örn. 4,1250" error={fields['yuan_tl']}>
+                <input className="field-input" inputMode="decimal" value={yuan} onChange={(event) => setYuan(event.target.value)} />
+              </Field>
+              <Field label="Dolar → TL" hint="Örn. 41,8000" error={fields['usd_tl']}>
+                <input className="field-input" inputMode="decimal" value={usd} onChange={(event) => setUsd(event.target.value)} />
+              </Field>
+            </div>
+            <p className="text-xs text-slate-500">
+              Yeni kur yalnızca <strong>Taslak</strong> listelere işler. "İletildi" durumuna geçmiş listelerin kuru kilitlidir ve
+              değişmez.
+            </p>
+            <button type="submit" className="btn-primary" disabled={busy}>
+              {busy ? 'Kaydediliyor…' : 'Kurları güncelle'}
+            </button>
+          </form>
+        )}
+      </section>
+
+      <section className="card mb-4 p-4">
+        <h2 className="mb-3 text-sm font-semibold text-slate-700">Kur tarihçesi</h2>
+        {historyState.loading ? (
+          <Skeleton rows={2} />
+        ) : historyState.error ? (
+          <ErrorNote message={historyState.error} onRetry={historyState.reload} />
+        ) : (historyState.data ?? []).length === 0 ? (
+          <p className="text-sm text-slate-500">Henüz kur değişikliği kaydedilmedi.</p>
+        ) : (
+          <div className="table-scroll">
+            <table className="w-full text-sm">
+              <thead className="text-left text-xs uppercase tracking-wide text-slate-500">
+                <tr>
+                  <th className="py-2">Para birimi</th>
+                  <th className="py-2 text-right">Kur</th>
+                  <th className="py-2 text-right">Tarih</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {(historyState.data ?? []).map((entry) => (
+                  <tr key={entry.id}>
+                    {/* Uç para birimini ISO koduyla verir (CNY/USD) — ekranda Türkçe karşılığı gösterilir. */}
+                    <td className="py-2">{entry.currency === 'CNY' ? 'Yuan → TL' : 'Dolar → TL'}</td>
+                    <td className="py-2 text-right font-medium">{rate(entry.rate)}</td>
+                    <td className="py-2 text-right text-slate-500">{dateTime(entry.set_at)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      <Link to="/ayarlar/kategoriler" className="card mb-4 flex items-center justify-between p-4 hover:bg-slate-50">
+        <span>
+          <span className="block font-semibold">Kategoriler</span>
+          <span className="block text-xs text-slate-500">Ürün kategorilerini düzenle</span>
+        </span>
+        <ChevronRight className="h-5 w-5 text-slate-400" aria-hidden />
+      </Link>
+
+      <section className="card mb-4 p-4">
+        <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-700">
+          <ShieldCheck className="h-4 w-4 text-brand-600" aria-hidden />
+          Güvenlik
+        </h2>
+        <dl className="space-y-2 text-sm">
+          <Line
+            label="İki adımlı doğrulama"
+            value={settingsState.data?.totp_enabled ? 'Etkin' : 'Kapalı'}
+          />
+          <Line
+            label="Eklenti API token'ı"
+            value={settingsState.data?.extension_token_preview ?? 'Henüz üretilmedi'}
+          />
+        </dl>
+        <p className="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+          Token üretimi ve kurtarma kodu yenileme <SoonBadge>Faz 3</SoonBadge>
+        </p>
+      </section>
+
+      <section className="card p-4">
+        <h2 className="mb-3 text-sm font-semibold text-slate-700">Sistem durumu</h2>
+        {statusState.loading ? (
+          <Skeleton rows={2} />
+        ) : statusState.error ? (
+          <ErrorNote message={statusState.error} onRetry={statusState.reload} />
+        ) : statusState.data ? (
+          <dl className="space-y-2 text-sm">
+            <Line label="Uygulama sürümü" value={statusState.data.app_version} />
+            <Line label="PHP" value={statusState.data.php_version} />
+            <Line label="Veritabanı" value={statusState.data.db_version ?? '—'} />
+            <Line label="Uygulanan migration" value={count(statusState.data.migrations.applied)} />
+            <Line
+              label="Bekleyen migration"
+              value={
+                statusState.data.migrations.pending_count === 0
+                  ? 'Yok'
+                  : `${count(statusState.data.migrations.pending_count)} adet`
+              }
+            />
+            <Line
+              label="Görsel arşivi"
+              value={
+                statusState.data.media.mode === 'download'
+                  ? mediaModeLabels.download
+                  : statusState.data.media.mode === 'hotlink'
+                    ? mediaModeLabels.hotlink
+                    : '—'
+              }
+            />
+            <Line label="Kurulum tarihi" value={dateTime(statusState.data.installed_at)} />
+          </dl>
+        ) : null}
+      </section>
+    </>
+  );
+}
+
+function Line({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-start justify-between gap-4">
+      <dt className="text-slate-500">{label}</dt>
+      <dd className="text-right font-medium">{value}</dd>
+    </div>
+  );
+}

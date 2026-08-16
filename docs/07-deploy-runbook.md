@@ -17,7 +17,7 @@ Ayrı staging yok (solo proje); riskli değişiklikler lokalde tam test edilmede
 tedarikapp.tilbehometoptan.com/
 ├── public/          ← Apache docroot buraya yönlendirilir (subdomain kökü)
 │   ├── index.php    (API + paylaşım sayfaları giriş noktası)
-│   └── assets/      (React build çıktısı)
+│   └── panel/       (React build çıktısı — `npm run build` üretir, repoda YOK)
 ├── app/             (PHP kaynak — docroot DIŞI)
 ├── vendor/          (lokalde composer ile kurulup yüklenir)
 ├── public/media/    ← YAZILABİLİR (ürün görselleri — webden servis edilen tek yazılabilir yer)
@@ -66,8 +66,14 @@ Sonraki sürümler: sihirbaz YOK — zip yüklenir, admin girişinde "veritaban�
 
 ## 4. Sürüm Çıkarma (her release)
 
-1. Lokal: testler yeşil → `composer install --no-dev` → React `npm run build`.
-2. Release zip'i oluştur: `app/ public/ vendor/ migrations/` (+ varsa yeni `.env.example` farkı NOT edilir).
+1. Lokal: testler yeşil → `composer install --no-dev` → **panel derlemesi**:
+   ```
+   cd frontend
+   npm ci
+   npm run build      # tsc --noEmit + vite build → ../public/panel/
+   ```
+   Çıktı `public/panel/` altına düşer ve **repoya commit EDİLMEZ** (`.gitignore`). Sürüm zip'i bu klasörü içermek ZORUNDADIR; yoksa `/panel` adresi "Panel henüz derlenmemiş" sayfasını (503) gösterir.
+2. Release zip'i oluştur: `app/ public/ (public/panel dahil) vendor/ migrations/` (+ varsa yeni `.env.example` farkı NOT edilir).
 3. cPanel Dosya Yöneticisi ile yükle → mevcut sürümün üzerine AÇMADAN önce: `app/`'i `app_onceki/` olarak yedekle.
 4. Zip'i aç, migration varsa çalıştır, smoke test (bölüm 6).
 5. GitHub'da release tag'i atılır (`v0.x.0`), CHANGELOG güncellenir.
@@ -79,6 +85,7 @@ Sonraki sürümler: sihirbaz YOK — zip yüklenir, admin girişinde "veritaban�
 
 ## 6. Smoke Test (her deploy sonrası, 5 dakika)
 
+- [ ] `/panel` açılıyor (derleme zip'e girmiş), giriş ekranı geliyor.
 - [ ] Giriş yapılıyor.
 - [ ] Bir listede ürünler görünüyor, TL fiyatlar doğru.
 - [ ] Bir Excel export alınıp açılıyor.
