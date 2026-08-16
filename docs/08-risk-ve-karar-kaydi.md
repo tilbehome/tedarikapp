@@ -90,7 +90,7 @@ Kapsamı şişirmemek için yeni fikirler buraya park edilir; aktif iş emri kap
 | F27 | Tedarikçi teklif portalı + teklif versiyonları | Faz 4+ |
 | F28 | Product master (`source_products`): aynı ürünün listeler arası tek kaydı | Faz 4+ |
 | F29 | Mal kabul genişletme: QR ile sayım, koli/CBM bilgisi (F8'in devamı) | Faz 4+ |
-| F30 | GTİP / gümrük ve ithalat sınıflandırma motoru — detaylı taslak: [f30](fikirler/f30-gtip-motoru.md) | **v2 öncelikli** (Ürün Sahibi) |
+| F30 | GTİP / gümrük ve ithalat sınıflandırma motoru (M23) — taslak: [f30](fikirler/f30-gtip-motoru.md) · PM değerlendirmesi: [m23](fikirler/m23-gtip-pm-degerlendirmesi.md) | **v1 DIŞI** — v1 canlıya çıktıktan sonra kendi mini tanım fazıyla açılır (PM). Ürün Sahibi'nin §8 sorusunu yanıtlaması ön şart |
 | F31 | Belgeler modülü (fatura, çeki listesi, konşimento saklama) | Faz 4+ |
 | F32 | Tedarikçi skorlama (termin, kalite, fiyat geçmişine göre) | Faz 4+ |
 | F33 | AI kullanım paketi: çeviri, kategori önerisi, anomali tespiti — hepsi insan onaylı | Faz 4+ |
