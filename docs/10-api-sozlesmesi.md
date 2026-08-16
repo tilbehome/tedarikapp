@@ -16,8 +16,11 @@
 { "success": false, "data": null, "error": { "code": "VALIDATION", "message": "Doğrulama hatası", "fields": { "qty": "1–1.000.000 arası tam sayı olmalı" } }, "meta": { } }
 ```
 
-- **HTTP durum kodları:** 200 (ok) · 201 (oluşturuldu) · 204 (silindi, gövde yok) · 400 (bozuk istek) · 401 (oturum yok/2FA bekliyor) · 403 (CSRF/yetki/kilit) · 404 · 409 (çakışma; örn. tekrar-ekleme onayı bekliyor) · 415 · 422 (doğrulama/geçersiz durum geçişi) · 429 (hız sınırı).
-- **Hata kodları (`error.code`):** `VALIDATION`, `UNAUTHENTICATED`, `TOTP_REQUIRED`, `FORBIDDEN`, `CSRF`, `NOT_FOUND`, `STATE_TRANSITION`, `DUPLICATE_WARNING`, `RATE_LIMITED`, `LOCKED`, `PAYLOAD_TOO_LARGE`, `SERVER_ERROR`. Mesajlar Türkçe ve kullanıcıya gösterilebilir; teknik detay yalnızca loga yazılır.
+- **HTTP durum kodları:** 200 (ok) · 201 (oluşturuldu) · 204 (silindi, gövde yok) · 400 (bozuk istek) · 401 (oturum yok/2FA bekliyor) · 403 (CSRF/yetki/kilit) · 404 · 405 (metot desteklenmiyor) · 409 (çakışma; örn. tekrar-ekleme onayı bekliyor) · 415 · 422 (doğrulama/geçersiz durum geçişi) · 429 (hız sınırı).
+- **Hata kodları (`error.code`):** `VALIDATION`, `UNAUTHENTICATED`, `TOTP_REQUIRED`, `FORBIDDEN`, `CSRF`, `NOT_FOUND`, `METHOD_NOT_ALLOWED`, `STATE_TRANSITION`, `DUPLICATE_WARNING`, `RATE_LIMITED`, `LOCKED`, `PAYLOAD_TOO_LARGE`, `SERVER_ERROR`. Mesajlar Türkçe ve kullanıcıya gösterilebilir; teknik detay yalnızca loga yazılır.
+- **405 (K25):** desteklenmeyen metot gerçek **HTTP 405** döner; `error.code = METHOD_NOT_ALLOWED` ve yanıtta izin verilen metodları listeleyen `Allow` başlığı bulunur. (İE#3'teki 422 `VALIDATION` eşlemesi kaldırılmıştır.)
+- **Makine değerleri İngilizcedir (K22):** durum/görünürlük alanları API'de ve DB'de sabit İngilizce kodlar taşır (`draft`, `sent`, `to_order`, `active` …). Türkçe karşılıklar yalnızca arayüz etiketidir — çeviri tablosu docs/09 §6.
+- **Her yanıtta `X-Request-Id`** başlığı döner (K27); hata bildirirken bu değer istenir, loglarla eşleştirilir.
 - **Sayfalama:** `?page=1&per_page=25` (üst sınır 100). Yanıtta `meta: { "page": 1, "per_page": 25, "total": 132 }`.
 - **Sıralama/filtre:** `?sort=created_at&order=desc` + uca özel filtreler (aşağıda). Bilinmeyen parametre sessizce yok sayılmaz, 400 döner (yazım hatasını erken yakalamak için).
 
@@ -39,26 +42,31 @@
 
 ```json
 { "id": 3, "name": "Eylül 2026 DDP Sipariş", "period": "EYLÜL 2026",
-  "supplier_name": "…", "note": "…", "status": "Taslak",
-  "visibility": "aktif", "yuan_rate": "7.0400", "usd_rate": "41.5000",
-  "share_token": null, "product_count": 24,
-  "progress": { "Verilecek": 6, "Verildi": 0, "Yolda": 10, "Geldi": 8, "İptal": 0 },
+  "supplier_name": "…", "note": "…", "status": "draft",
+  "visibility": "active", "yuan_rate": "7.0400", "usd_rate": "41.5000",
+  "rate_locked_at": null, "revision": 17,
+  "share_token_prefix": null, "share_expires_at": null, "product_count": 24,
+  "progress": { "to_order": 6, "ordered": 0, "in_transit": 10, "received": 8, "cancelled": 0 },
   "totals": { "qty": 480, "yuan": "4320.00", "yuan_tl": "30412.80", "ddp_usd": "0.00", "ddp_tl": "0.00" },
-  "last_export": { "format": "xlsx", "created_at": "…" }, "is_export_stale": true,
+  "last_export": { "format": "xlsx", "created_at": "…", "list_revision": 12 }, "is_export_stale": true,
   "created_at": "…", "updated_at": "…", "archived_at": null, "deleted_at": null }
 ```
 
+- **`revision` (K25):** ürün ekleme/silme, fiyat, adet ve sıra değişiminde +1 artar. **`is_export_stale` = `revision != last_export.list_revision`** — `updated_at` karşılaştırması kaldırıldı (yalnızca not düzenlemek çıktıyı eskitmez).
+- **Kur kilidi (K4, tek ifade):** Taslak (`draft`) liste güncel kuru izler; durum `sent` olduğunda kur o anki değerle **kilitlenir** ve `rate_locked_at` yazılır. Kilitlendikten sonra kur değişmez.
+- **Paylaşım token'ı (K25):** tam token yalnızca üretildiği yanıtta bir kez döner; DB'de `share_token_hash` (SHA-256) saklanır. Liste nesnesinde yalnızca `share_token_prefix` (linkin tanınması için ilk haneler) görünür.
+
 | Uç | Açıklama |
 |---|---|
-| `GET /api/lists` | Filtre: `visibility=aktif\|pasif\|arsiv`, `status`, `q` (ad/tedarikçi içinde arama) |
-| `POST /api/lists` | `{name, period, supplier_name?, note?}` → 201. Kurlar o anki ayarlardan atanır; Taslak'ta güncel kuru izler, **İletildi olduğunda kilitlenir** (K4) |
+| `GET /api/lists` | Filtre: `visibility=active\|passive\|archived`, `status`, `q` (ad/tedarikçi içinde arama) |
+| `POST /api/lists` | `{name, period, supplier_name?, note?}` → 201. Kurlar o anki ayarlardan atanır; `draft`'ta güncel kuru izler, **`sent` olduğunda kilitlenir** (K4) |
 | `GET /api/lists/{id}` | Tek liste (ürünler ayrı uçtan) |
 | `PATCH /api/lists/{id}` | Kısmi güncelleme: `{name?, period?, supplier_name?, note?, visibility?, status?}` — geçersiz durum geçişi → 422 `STATE_TRANSITION` |
 | `DELETE /api/lists/{id}` | Çöp kutusuna taşır (30 gün) → 204 |
-| `POST /api/lists/{id}/duplicate` | → 201 yeni liste (Taslak, günün kuru, ürünler `Verilecek`, export geçmişi taşınmaz) |
-| `POST /api/lists/{id}/share` | → 200 `{share_url}` (token yoksa üretir; `{renew:true}` ile yenilenir — eski link ölür) |
+| `POST /api/lists/{id}/duplicate` | → 201 yeni liste (`draft`, günün kuru, ürünler `to_order`, export geçmişi taşınmaz) |
+| `POST /api/lists/{id}/share` | → 200 `{share_url}` — tam token YALNIZCA bu yanıtta bir kez görünür (DB'de hash'li). `{renew:true}` ile yenilenir (eski link ölür); `{expires_at}` opsiyoneldir |
 | `DELETE /api/lists/{id}/share` | Linki iptal eder → 204 (paylaşım sayfası 404 döner) |
-| `GET /api/lists/{id}/export?format=xlsx\|pdf\|csv` | Dosya döner (`Content-Disposition: attachment`); export geçmişine kaydolur |
+| `GET /api/lists/{id}/export?format=xlsx\|pdf\|csv` | Dosya döner (`Content-Disposition: attachment`); export geçmişine kaydolur. Kayıt gerçek anlık görüntü tutar (K25): `snapshot_json` (üretim anındaki liste+ürün verisi), `sha256`, `file_size`, `status`, `list_revision` |
 
 ## 4. Ürünler
 
@@ -67,7 +75,7 @@
 | Uç | Açıklama |
 |---|---|
 | `GET /api/lists/{id}/products` | Filtre: `status`, `category_id`, `q`; sıralama varsayılanı `sort_no` |
-| `POST /api/lists/{id}/products` | Elle ekleme. Zorunlu: `{name, qty, price_yuan}`; opsiyonel diğer alanlar. Görsel/video URL verilirse sunucu arka planda indirir (beyaz liste — docs/04 §2d). Aynı `external_id` sistemde varsa → 409 `DUPLICATE_WARNING` + `meta.existing` (hangi listede); `{force:true}` ile tekrar gönderilirse eklenir |
+| `POST /api/lists/{id}/products` | Elle ekleme. Zorunlu: `{name, qty, price_yuan}`; opsiyonel diğer alanlar. Görsel/video URL verilirse sunucu arka planda indirir (beyaz liste — docs/04 §2d). Aynı **`platform` + `external_id`** çifti sistemde varsa → 409 `DUPLICATE_WARNING` + `meta.existing` (hangi listede); `{force:true}` ile tekrar gönderilirse eklenir (K25) |
 | `PATCH /api/products/{id}` | Kısmi güncelleme (alan kuralları docs/04 §2d) |
 | `PATCH /api/products/{id}/status` | `{status}` — durum makinesine aykırıysa 422 `STATE_TRANSITION` + izinli geçişler `meta.allowed` içinde |
 | `DELETE /api/products/{id}` | Çöp kutusuna → 204 |
@@ -78,8 +86,8 @@
 
 | Uç | Açıklama |
 |---|---|
-| `GET /api/inbox` | Filtre: `status=bekliyor\|hatali`; her öğe ham yakalama + önizleme alanları |
-| `POST /api/inbox/{id}/assign` | `{list_id, category_id, qty, name?, detail?, sku_selection?}` → 201 ürün oluşur, öğe `atandi` olur |
+| `GET /api/inbox` | Filtre: `status=pending\|error`; her öğe ham yakalama + önizleme alanları |
+| `POST /api/inbox/{id}/assign` | `{list_id, category_id, qty, name?, detail?, sku_selection?}` → 201 ürün oluşur, öğe `assigned` olur |
 | `DELETE /api/inbox/{id}` | Öğeyi atmadan siler → 204 |
 
 ## 6. Çöp Kutusu
@@ -95,7 +103,7 @@
 | Uç | Açıklama |
 |---|---|
 | `GET /api/settings` | `{yuan_tl, usd_tl, totp_enabled, extension_token_preview}` (token'ın yalnızca son 4 hanesi) |
-| `PUT /api/settings/rates` | `{yuan_tl?, usd_tl?}` → rate_history'ye yazar; yalnızca Taslak listelerin görünen TL'sini etkiler |
+| `PUT /api/settings/rates` | `{yuan_tl?, usd_tl?}` → rate_history'ye yazar; yalnızca `draft` durumundaki listelerin görünen TL'sini etkiler (kur `sent` ile kilitlenir — K4) |
 | `GET /api/settings/rates/history` | Kur tarihçesi (sayfalı) |
 | `POST /api/settings/extension-token` | Yeni token üretir → **tam token yalnızca bu yanıtta bir kez** görünür; DB'de hash saklanır |
 | `GET/POST/PATCH/DELETE /api/categories` | CRUD; kullanımda olan kategori silinirken → 409 + ürün sayısı |
@@ -103,8 +111,10 @@
 
 ## 8. Yakalama ve Dışa Açık Sayfa
 
-- `POST /api/capture` — istek şeması **docs/04 §2c'de sabit**. Yanıt: 201 `{inbox_id}` veya `{product_id}` (hedef liste seçiliyse); doğrulanamayan gövde → 201 `{inbox_id, status:"hatali"}` (veri kaybolmaz); hız aşımı → 429.
-- `GET /p/{share_token}` — API değil, sunucu render sayfa (docs/09 P1). Geçersiz/iptal token → 404. `noindex` başlığı zorunlu.
+- `POST /api/capture` — istek şeması **docs/04 §2c'de sabit**. Yanıt: 201 `{inbox_id}` veya `{product_id}` (hedef liste seçiliyse); doğrulanamayan gövde → 201 `{inbox_id, status:"error"}` (veri kaybolmaz); hız aşımı → 429.
+  - **Zorunlu `capture_id` (UUIDv4, K25):** sistemde UNIQUE'tir. Aynı `capture_id` tekrar gelirse yeni kayıt AÇILMAZ, ilk isteğin sonucu döner (idempotans) — eklentinin kuyruk tekrar denemeleri çift ürün oluşturamaz.
+  - Gövdede ayrıca `schema_version`, `extension_version`, `parser_version` ve `platform` zorunludur; parser bozulduğunda hangi sürümün ürettiği kayıttan anlaşılır.
+- `GET /p/{share_token}` — API değil, sunucu render sayfa (docs/09 P1). Gelen token SHA-256'lanıp `share_token_hash` üzerinden aranır (K25). Geçersiz/iptal/süresi dolmuş token → 404. `noindex` başlığı zorunlu.
 
 ## 9. Sözleşme Testleri
 

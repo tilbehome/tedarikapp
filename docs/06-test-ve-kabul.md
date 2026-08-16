@@ -37,6 +37,7 @@ Kural (K14): Para, kur ve durum-geçiş fonksiyonları TEST-FIRST yazılır — 
 - [ ] 50+ ürünlü listede export süresi makul (< 30 sn) ve bellek hatasız.
 - [ ] Export alınmış listeye ürün eklenip silinebiliyor; "çıktı güncel değil" rozeti doğru yanıp sönüyor; TOPLAM satırı (adet + Yuan/TL + DDP) kuruşu kuruşuna doğru.
 - [ ] Paylaş menüsü: WhatsApp/e-posta/kopyala doğru içerikle çalışır; mobilde cihaz paylaşım menüsü (Web Share API) açılır.
+- [ ] **Formül enjeksiyonu (İE#4 REV2):** `=`, `+`, `-`, `@` (ve `\t`, `\r`) ile başlayan `name_original`, `vendor_name`, `detail`, `note` değerleri Excel ve CSV çıktısında formül olarak yorumlanmaz — hücre metin olarak yazılır veya başına tek tırnak eklenir. Test verisi: `=1+1`, `@SUM(A1)`, `-2+3`, `+cmd|' /C calc'!A0`. Çıktı dosyası açıldığında hiçbir hücre hesaplanmış değer göstermemeli.
 
 ### Faz 3 — Chrome Eklentisi
 - [ ] En az 10 farklı gerçek 1688 ürün sayfasında (farklı satıcı/şablon) başlık, fiyat kademeleri, ana görsel, video doğru yakalanır. Test sayfa listesi bu belgeye eklenecek.
