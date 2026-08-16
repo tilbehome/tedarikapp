@@ -94,6 +94,11 @@ Liste: draft → sent → ordered → completed (+cancelled)
 
 Geçersiz geçiş isteğini API reddeder (HTTP 422 + açıklama); kural yalnızca arayüzde değil sunucuda yaşar. Her geçiş `product_status_history`'ye yazılır (K25).
 
+**Uygulama kuralları (İE#6'da sabitlendi):**
+- **`cancelled` TERMİNALDİR** — iptal edilen bir ürünün hangi duruma döneceği belirsizdir; tarihçeden çıkarmak sessiz veri üretir. `completed` liste ise bir adım geri (`ordered`) alınabilir.
+- **İptal edilen ürün liste toplamlarına GİRMEZ** — sipariş edilmeyecek mala para bağlanmaz. İlerleme sayacında (`progress`) görünmeye devam eder.
+- **Yanlış iptalin çözümü:** ürünü kopyalayıp yeni kayıtla devam etmek. Durum makinesini gevşetmek yerine bu yol seçilmiştir; tarihçe bozulmaz, iptal kaydı yerinde kalır.
+
 ## 2c. Veri Sözleşmesi — Eklenti → `POST /api/capture` (SABİT ŞEMA, K14)
 
 ```json

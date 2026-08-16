@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Core\AppBuilder;
 use App\Core\Config;
+use App\Core\Connection;
 use App\Core\Database;
 use App\Core\Logger;
 use App\Core\RequestContext;
@@ -45,14 +46,18 @@ if (!$envExists || $isSetupPath) {
 $config = Config::load($basePath);
 date_default_timezone_set($config->get('TZ', 'Europe/Istanbul'));
 
-$logger = Logger::create($config, $basePath, $requestContext);
+// Tek tembel bağlantı: logger (LOG_DRIVER=db), kurulum kilidi ve uygulama aynı
+// bağlantıyı paylaşır — istek başına tek PDO açılır (K33).
+$connection = Connection::fromCallable(static fn (): PDO => Database::connect($config));
+$logger = Logger::create($config, $basePath, $requestContext, $connection);
 
 $app = AppBuilder::build(
     $config,
-    static fn (): PDO => Database::connect($config),
+    static fn (): PDO => $connection->pdo(),
     $logger,
-    setupLock: new SetupLock($basePath . '/storage'),
+    setupLock: new SetupLock($connection, $basePath . '/storage'),
     requestContext: $requestContext,
+    basePath: $basePath,
 );
 
 $app->run();

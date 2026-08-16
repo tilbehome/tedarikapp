@@ -1,0 +1,45 @@
+# public/media — İNDİRİLEN ÜRÜN GÖRSELLERİ (K33, K34)
+#
+# Bu klasör uygulamanın YAZABİLDİĞİ tek yerdir (paylaşımlı sunucuda 777 verilmesi
+# gerekebilir). Yazılabilir + webden erişilebilir bir klasör, yüklenen bir dosya
+# çalıştırılabildiği anda uzaktan kod çalıştırmaya döner. Aşağıdaki kurallar bunu keser.
+#
+# Bu dosya REPO İLE BİRLİKTE gelir: klasöre yazma izni verilmeden ÖNCE yerinde olmalıdır.
+
+# ── 1) Hiçbir şey çalıştırılmaz ────────────────────────────────────────────────
+# Uzantı denetimi bilerek geniş: .php, .php5, .phtml, .phar hepsi kapsanır.
+<FilesMatch "\.(ph.*|cgi|pl|py|sh|lua|rb|asp.*|jsp)$">
+    Require all denied
+</FilesMatch>
+
+# Handler'ı düşür: sunucu yapılandırması bir şekilde PHP'ye yönlendirse bile çalışmaz.
+<IfModule mod_php.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php7.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php8.c>
+    php_flag engine off
+</IfModule>
+
+SetHandler none
+Options -ExecCGI -Indexes
+AddType text/plain .php .php5 .phtml .phar .cgi .pl .py .sh
+
+# ── 2) Arama motorlarına kapalı ───────────────────────────────────────────────
+<IfModule mod_headers.c>
+    Header set X-Robots-Tag "noindex, nofollow, noimageindex"
+    Header set X-Content-Type-Options "nosniff"
+</IfModule>
+
+# ── 3) Hotlink koruması ───────────────────────────────────────────────────────
+# Boş referer İZİNLİDİR: paylaşım linki farklı bağlamlarda açılır, WhatsApp/WeChat
+# önizlemesi referer göndermez. Amaç başka sitelerin bant genişliğimizi kullanmasını
+# engellemek; kendi kullanıcımızı engellemek değil.
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{HTTP_REFERER} !^$
+    RewriteCond %{HTTP_REFERER} !^https?://([^.]+\.)?tilbehometoptan\.com/ [NC]
+    RewriteRule \.(jpe?g|png|gif|webp|avif)$ - [F,NC]
+</IfModule>

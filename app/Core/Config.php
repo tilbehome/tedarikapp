@@ -32,10 +32,21 @@ final class Config
         }
     }
 
-    /** Proje kökündeki .env dosyasından konfigürasyon yükler. */
+    /**
+     * Proje kökündeki .env dosyasından konfigürasyon yükler.
+     *
+     * `createArrayBacked` kullanılır, `createImmutable` DEĞİL — iki sebeple:
+     *
+     * 1. **Tekrar çağrılabilirlik:** immutable adaptör değerleri `$_ENV`/`putenv` üzerine
+     *    yazar ve İKİNCİ `load()` çağrısında BOŞ dizi döner (zaten yüklü sayar). Aynı
+     *    istekte iki kez Config kuran her yol (kurulum kilidi + controller) sessizce
+     *    "zorunlu anahtar eksik" hatası alırdı — canlı testte bu şekilde yakalandı.
+     * 2. **Sır hijyeni:** değerler süreç ortamına sızmaz; `getenv()`, `phpinfo()` veya
+     *    bir hata dökümü DB_PASS ve APP_KEY'i göstermez (CLAUDE.md §5).
+     */
     public static function load(string $basePath): self
     {
-        $dotenv = Dotenv::createImmutable($basePath);
+        $dotenv = Dotenv::createArrayBacked($basePath);
         /** @var array<string, string> $values */
         $values = $dotenv->load();
 

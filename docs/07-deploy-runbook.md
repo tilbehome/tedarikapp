@@ -36,8 +36,31 @@ Not: cPanel'de subdomain kökü `public/` klasörüne çekilemiyorsa, kök `.hta
    - Gereksinim denetimi: PHP sürümü/eklentileri, `public/media/` ve `storage/` yazma izinleri (yazılamıyorsa hangi klasöre hangi iznin verileceğini ekranda söyler).
    - DB bilgilerini sorar, bağlantıyı test eder, `.env`'i kendisi yazar (APP_KEY ve token tuzunu kriptografik üretir).
    - Migration'ları çalıştırır, admin hesabını oluşturtur, **2FA'yı QR kodla tanımlatır** ve kurtarma kodlarını gösterir.
-   - Bitince kendini **kalıcı olarak kilitler** (kilit dosyası + tekrar erişim denemeleri loglanır).
+   - Bitince kendini **kalıcı olarak kilitler** (kilit `settings` tablosunda; tekrar erişim denemeleri loglanır).
 3. SSL aktif ve HTTP→HTTPS yönlendirmesi çalışıyor mu doğrula; smoke test (bölüm 6) koş.
+
+### 3b. Bu sunucuda kurulum — yazılamayan docroot (K33)
+
+Üretim sunucusunda PHP **`nobody`** kullanıcısıyla (DSO) çalışıyor ve uygulama diske
+yazamıyor. Bu kalıcı bir kısıt; kurulum akışı buna göre farklıdır:
+
+1. **`.env` elle kaydedilir.** Sihirbaz dosyayı yazamadığını fark eder ve üretilen içeriği
+   ekranda gösterir. İçeriği kopyalayın, cPanel > Dosya Yöneticisi ile uygulama kökünde
+   **`.env`** adıyla kaydedin (baştaki nokta dahil), sonra "Kaydettim" deyin. Sihirbaz
+   dosyayı okuyup APP_KEY eşleşmesini doğrular; uyuşmazsa devam etmez.
+2. **Loglar veritabanına gider.** `.env` içinde `LOG_DRIVER=db` gelir; loglar `app_logs`
+   tablosuna yazılır. Dosya hedefi bu sunucuda kullanılmaz — sessizce kaybolurdu.
+3. **Görseller için `public/media` izni.** Sihirbaz bu klasörü yazılabilir bulamazsa
+   **hotlink moduna** düşer: görseller indirilmez, 1688 URL'si saklanır. Panel bunu rozetle
+   gösterir. Görselleri sunucuya indirmek istiyorsanız (K6 — önerilen):
+   ```
+   chmod 777 public/media
+   ```
+   ⚠️ **YALNIZCA `public/media/.htaccess` yerindeyken.** O dosya PHP çalıştırmayı kapatır,
+   dizin listelemeyi engeller ve hotlink kuralını uygular. Yazma izni verilmiş + çalıştırma
+   açık bir klasör, yüklenen ilk dosyayla uzaktan kod çalıştırmaya döner. İzni verdikten
+   sonra sihirbazın gereksinim adımını **yeniden denetleyin**; mod `download`'a döner.
+4. Kurulum kilidi de veritabanındadır (`settings` tablosu) — dosya yazılamadığı için.
 
 Sonraki sürümler: sihirbaz YOK — zip yüklenir, admin girişinde "veritabanı güncellemesi var" uyarısı çıkar, tek tıkla migration koşulur.
 

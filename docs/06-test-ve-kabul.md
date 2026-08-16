@@ -15,6 +15,25 @@ Kural: PHPUnit testleri lokalde koşar (sunucuda composer yok); PR açılmadan t
 
 Kural (K14): Para, kur ve durum-geçiş fonksiyonları TEST-FIRST yazılır — önce test, sonra kod. Durum makinesinin tüm geçersiz geçişleri (ör. Verilecek→Yolda, Geldi→İptal) birim testlerinde reddedildiği kanıtlanır.
 
+## 1b. Test Kalibrasyonu (K35)
+
+Test yazmanın maliyeti gerçek; ama bazı hataların bedeli geri alınamaz. Bu yüzden her şey
+aynı derinlikte test edilmez:
+
+| Seviye | Kapsam | Ne beklenir |
+|---|---|---|
+| **KRİTİK — tam test** | Para ve yuvarlama (MoneyService) · durum makinesi (tam geçiş matrisi) · kimlik doğrulama ve oturum · kurulum kilidi · medya alma ve SSRF · log redaction · kur kilidi | Sınır değerler, hata yolları, regresyon testleri. Davranış değişirse test kırılmalı |
+| **SMOKE** | Diğer CRUD uçları (kategoriler, kur tarihçesi, liste/ürün listeleme) · yapılandırma dosyalarının varlığı | Mutlu yol + belirgin bir hata durumu |
+| **Test edilmez** | Sunum biçimleri, log metinleri, arayüz yerleşimi | — |
+
+**Hedef kapsam yüzdesi GÜDÜLMEZ.** Yüzde peşinde koşmak, önemsiz kodu test edip kritik
+sınırları atlamaya yol açar. Ölçü şudur: *"bu davranış bozulursa para, veri veya güvenlik
+kaybederiz miyiz?"* Cevap evetse kritik listeye girer.
+
+Canlı duman testi (gerçek sunucu/DB üzerinde uçtan uca akış) her iş emrinde koşulur —
+birim testlerin göremediği ortam farklarını yakalar (İE#4 ve İE#6'da birer gerçek hata
+bu yolla bulundu).
+
 ## 2. Faz Kabul Testleri
 
 ### Faz 1 — Panel Çekirdeği

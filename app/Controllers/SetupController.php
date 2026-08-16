@@ -15,7 +15,11 @@ use App\Core\Database;
 use App\Core\Encrypter;
 use App\Core\Migrator;
 use App\Core\Response;
+use App\Models\SettingsRepository;
 use App\Services\ActivityLog;
+use App\Services\CurlMediaFetcher;
+use App\Services\MediaService;
+use App\Services\UrlGuard;
 use App\Setup\DatabaseProbe;
 use App\Setup\EnvWriter;
 use App\Setup\QrCodeSvg;
@@ -41,6 +45,8 @@ final class SetupController
 {
     private const string DATA_DB = 'database';
     private const string DATA_ADMIN = 'pending_admin';
+    private const string DATA_ENV_KEY = 'env_app_key';
+    private const string DATA_APP_URL = 'env_app_url';
 
     private ?Config $config = null;
     private ?Connection $connection = null;
@@ -50,7 +56,13 @@ final class SetupController
         private readonly SetupState $state,
         private readonly SetupLock $lock,
         private readonly Clock $clock,
+        private readonly ?EnvWriter $envWriter = null,
     ) {
+    }
+
+    private function envWriter(): EnvWriter
+    {
+        return $this->envWriter ?? new EnvWriter($this->basePath);
     }
 
     /** GET /api/setup/state — sihirbaz açılışında adım + CSRF token. */
@@ -60,7 +72,7 @@ final class SetupController
             'step' => $this->state->currentStep(),
             'steps' => SetupState::ORDER,
             'csrf_token' => $this->state->csrfToken(),
-            'env_exists' => (new EnvWriter($this->basePath))->exists(),
+            'env_exists' => $this->envWriter()->exists(),
         ]);
     }
 
@@ -154,18 +166,82 @@ final class SetupController
             ]);
         }
 
+        $writer = $this->envWriter();
+        $appUrl = rtrim($appUrl, '/');
+
+        // K33: paylaşımlı sunucuda PHP `nobody` ile çalışır ve uygulama kökü YAZILAMAZ.
+        // Bu durumda içerik ekranda gösterilir; kullanıcı Dosya Yöneticisi'nden kaydeder.
+        if (!$writer->canWrite()) {
+            try {
+                $generated = $writer->generate($appUrl, $database);
+            } catch (RuntimeException $e) {
+                return Response::error($response, 'SERVER_ERROR', $e->getMessage(), 500);
+            }
+
+            // Beklenen APP_KEY oturumda tutulur: doğrulama adımı dosyanın BİZİM
+            // ürettiğimiz içerik olduğunu bununla anlar.
+            $this->state->put(self::DATA_ENV_KEY, $generated['app_key']);
+            $this->state->put(self::DATA_APP_URL, $appUrl);
+
+            return Response::success($response, [
+                'manual' => true,
+                'app_url' => $appUrl,
+                'filename' => '.env',
+                'target_path' => $this->basePath . '/.env',
+                'content' => $generated['content'],
+                'instructions' => 'Uygulama klasörü yazılabilir olmadığı için .env dosyasını sihirbaz '
+                    . 'oluşturamadı. Yukarıdaki içeriği kopyalayın, cPanel > Dosya Yöneticisi ile '
+                    . 'uygulama kökünde ".env" adıyla kaydedin, sonra "Kaydettim" deyin.',
+                'step' => $this->state->currentStep(),
+            ]);
+        }
+
         try {
-            (new EnvWriter($this->basePath))->write(rtrim($appUrl, '/'), $database);
+            $appKey = $writer->write($appUrl, $database);
         } catch (RuntimeException $e) {
             return Response::error($response, 'SERVER_ERROR', $e->getMessage(), 500);
         }
 
+        $this->state->put(self::DATA_ENV_KEY, $appKey);
+        $this->state->put(self::DATA_APP_URL, $appUrl);
         $this->state->complete(SetupState::STEP_ENV);
 
         return Response::success($response, [
-            'app_url' => rtrim($appUrl, '/'),
+            'manual' => false,
+            'app_url' => $appUrl,
             'step' => $this->state->currentStep(),
         ]);
+    }
+
+    /** POST /api/setup/env/verify — elle kaydedilen .env doğrulanır (K33). */
+    public function verifyEnv(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        if (!$this->state->canRun(SetupState::STEP_ENV)) {
+            return $this->outOfOrder($response, 'Önce veritabanı bağlantısını doğrulayın.');
+        }
+
+        $expected = $this->state->get(self::DATA_ENV_KEY);
+        if (!is_string($expected) || $expected === '') {
+            return $this->outOfOrder($response, 'Önce ayar dosyasını üretin.');
+        }
+
+        $writer = $this->envWriter();
+        if (!$writer->exists()) {
+            return Response::error($response, 'VALIDATION', 'Doğrulama hatası', 422, [
+                'env' => '.env dosyası bulunamadı. Dosyayı uygulama kökünde ".env" adıyla '
+                    . 'kaydettiğinizden emin olun (adın başındaki nokta dahil).',
+            ]);
+        }
+        if (!$writer->verify($expected)) {
+            return Response::error($response, 'VALIDATION', 'Doğrulama hatası', 422, [
+                'env' => '.env bulundu ama içeriği beklenenle uyuşmuyor. İçeriğin tamamını '
+                    . 'eksiksiz kopyaladığınızdan emin olup tekrar deneyin.',
+            ]);
+        }
+
+        $this->state->complete(SetupState::STEP_ENV);
+
+        return Response::success($response, ['verified' => true, 'step' => $this->state->currentStep()]);
     }
 
     /** POST /api/setup/migrate — bekleyen migration'ları koşar, süreleriyle döner. */
@@ -312,10 +388,14 @@ final class SetupController
         $database = $this->state->get(self::DATA_DB);
         $version = is_array($database) ? ($this->probeVersion()) : null;
 
+        // K33: medya modu kurulum anında ölçülür ve ayara yazılır — panel rozeti bunu okur.
+        $mediaMode = $this->rememberMediaMode();
+
         try {
             $this->lock->write($this->clock->now(), array_filter([
                 'db_version' => $version,
                 'php_version' => PHP_VERSION,
+                'media_mode' => $mediaMode,
                 'admin_email' => is_string($this->state->get('admin_email')) ? $this->state->get('admin_email') : null,
             ], static fn (mixed $value): bool => $value !== null));
         } catch (RuntimeException $e) {
@@ -327,6 +407,7 @@ final class SetupController
         $summary = [
             'php_version' => PHP_VERSION,
             'db_version' => $version,
+            'media_mode' => $mediaMode,
             'migrations' => $this->migrationReport(),
             'panel_url' => '/',
             'step' => SetupState::STEP_DONE,
@@ -377,6 +458,35 @@ final class SetupController
         }
 
         return $report;
+    }
+
+    /**
+     * `public/media/` yazılabilir mi ölçülür ve mod ayara yazılır (K33).
+     * Yazılamıyorsa hotlink moduna düşülür: görseller indirilmez, orijinal URL saklanır.
+     */
+    private function rememberMediaMode(): ?string
+    {
+        try {
+            $config = $this->config();
+            $hosts = array_map('trim', explode(',', $config->get('MEDIA_ALLOWED_HOSTS', 'alicdn.com,1688.com')));
+            $guard = new UrlGuard($hosts);
+            $media = new MediaService(
+                $this->basePath,
+                $guard,
+                new CurlMediaFetcher($guard, $config->getPositiveInt('MEDIA_DOWNLOAD_TIMEOUT', 25)),
+                new SettingsRepository($this->connection()),
+                $config->getPositiveInt('MEDIA_MAX_MB', 8) * 1024 * 1024,
+                $config->get('MEDIA_PATH', 'public/media'),
+            );
+
+            $mode = $media->detectMode();
+            $media->rememberMode($mode);
+
+            return $mode;
+        } catch (Throwable) {
+            // Mod belirlenemezse kurulum durmaz; panel /api/system/status ile yeniden ölçer.
+            return null;
+        }
     }
 
     private function probeVersion(): ?string
