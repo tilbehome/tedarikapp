@@ -11,8 +11,9 @@
 ## Faz 1 — Panel Çekirdeği
 
 **Kapsam:** M1 (giriş, ayarlar, kur, kategoriler) + M2 (sipariş listeleri) + M3 (elle ürün ekleme, arama/filtre, toplu işlem) + M5 (durum takibi).
-**Teslimat:** Hosting'e kurulmuş, giriş yapılan, örnek Excel'deki listenin sıfırdan oluşturulabildiği panel.
+**Teslimat:** Kurulum sihirbazıyla hosting'e kurulmuş, 2FA'lı girişi yapılan, örnek Excel'deki listenin sıfırdan oluşturulabildiği panel.
 **Kabul kriterleri:**
+- Kurulum sihirbazı temiz sunucuda uçtan uca çalışıyor ve bitince kendini kilitliyor; giriş şifre + 2FA ile yapılıyor.
 - Mevcut ÜRÜN TEDARİK LİSTESİ.xlsx içeriği panele girilebiliyor, TL fiyatları doğru hesaplanıyor.
 - Telefondan tüm işlemler rahat yapılabiliyor.
 - Durumlar tek tıkla ilerletilebiliyor, tarihçesi tutuluyor.

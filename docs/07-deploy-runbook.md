@@ -20,8 +20,8 @@ tedarikapp.tilbehometoptan.com/
 │   └── assets/      (React build çıktısı)
 ├── app/             (PHP kaynak — docroot DIŞI)
 ├── vendor/          (lokalde composer ile kurulup yüklenir)
-├── storage/         ← YAZILABİLİR olmalı (chmod cPanel'den)
-│   ├── images/      (indirilen ürün görselleri)
+├── public/media/    ← YAZILABİLİR (ürün görselleri — webden servis edilen tek yazılabilir yer)
+├── storage/         ← YAZILABİLİR ama webden ERİŞİME KAPALI (.htaccess deny)
 │   ├── exports/     (geçici xlsx/pdf)
 │   └── logs/
 └── .env             (sırlar — repoya girmez)
@@ -29,13 +29,17 @@ tedarikapp.tilbehometoptan.com/
 
 Not: cPanel'de subdomain kökü `public/` klasörüne çekilemiyorsa, kök `.htaccess` ile `public/`e rewrite yapılır.
 
-## 3. İlk Kurulum (Faz 1 başı, tek seferlik)
+## 3. İlk Kurulum — Kurulum Sihirbazı (K16, tek seferlik)
 
-1. cPanel → MySQL: veritabanı + kullanıcı oluştur, yetki ver.
-2. cPanel → Dosya Yöneticisi: `storage/` ve altını yazılabilir yap (docroot yazılamaz sorunu burada çözülür; PHP kullanıcısının sahipliği kontrol edilir).
-3. `.env` dosyasını sunucuda elle oluştur (DB bilgileri, APP_KEY, extension token tuzu).
-4. Release paketini yükle (bkz. bölüm 4), migration'ı çalıştır: `https://.../setup.php?key=...` (tek seferlik, sonra silinir) — sunucuda SSH garanti olmadığı için migration web tetiklemeli yazılır.
-5. SSL'in aktif olduğu, HTTP→HTTPS yönlendirmesinin çalıştığı doğrulanır.
+1. cPanel → MySQL: veritabanı + kullanıcı oluştur, yetki ver (sihirbaz DB oluşturamaz, cPanel yetkisi ister — tek elle yapılan adım budur).
+2. Release zip'ini yükle ve aç, tarayıcıdan siteye gir → **kurulum sihirbazı** otomatik açılır:
+   - Gereksinim denetimi: PHP sürümü/eklentileri, `public/media/` ve `storage/` yazma izinleri (yazılamıyorsa hangi klasöre hangi iznin verileceğini ekranda söyler).
+   - DB bilgilerini sorar, bağlantıyı test eder, `.env`'i kendisi yazar (APP_KEY ve token tuzunu kriptografik üretir).
+   - Migration'ları çalıştırır, admin hesabını oluşturtur, **2FA'yı QR kodla tanımlatır** ve kurtarma kodlarını gösterir.
+   - Bitince kendini **kalıcı olarak kilitler** (kilit dosyası + tekrar erişim denemeleri loglanır).
+3. SSL aktif ve HTTP→HTTPS yönlendirmesi çalışıyor mu doğrula; smoke test (bölüm 6) koş.
+
+Sonraki sürümler: sihirbaz YOK — zip yüklenir, admin girişinde "veritabanı güncellemesi var" uyarısı çıkar, tek tıkla migration koşulur.
 
 ## 4. Sürüm Çıkarma (her release)
 
@@ -60,5 +64,5 @@ Not: cPanel'de subdomain kökü `public/` klasörüne çekilemiyorsa, kök `.hta
 
 ## 7. Yedekleme
 
-- cPanel cron, her gece: DB dump + `storage/images/` → tarihli arşiv → `~/backups/` (son 14 gün tutulur).
+- cPanel cron, her gece: DB dump + `public/media/` → tarihli arşiv → `~/backups/` (son 14 gün tutulur).
 - Ayda bir yedekten geri yükleme denemesi (test DB'ye) yapılır — denenmemiş yedek, yedek değildir.

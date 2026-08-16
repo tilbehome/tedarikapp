@@ -18,7 +18,7 @@ tedarikapp
 
 ## M1 — Giriş & Ayarlar
 
-- Tek admin kullanıcı; e-posta + şifre ile giriş, oturum yönetimi.
+- Tek admin kullanıcı; e-posta + şifre + **TOTP iki adımlı doğrulama** (Google Authenticator, kurtarma kodlu) ile giriş, oturum yönetimi (K16).
 - Ayarlar: güncel Yuan→TL kuru, Dolar→TL kuru (elle girilir, tarihçesi tutulur — eski listeler girildiği günün kuruyla kalır).
 - Kategori yönetimi: kategoriler serbest metin değil, tanımlı liste (tutarlılık ve filtreleme için). Ekle/düzenle/sil.
 - Eklenti API anahtarı: eklentinin panele veri gönderirken kullanacağı token burada üretilir/yenilenir.

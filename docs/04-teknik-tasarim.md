@@ -107,12 +107,29 @@ GET    /p/{share_token}           ← herkese açık paylaşım sayfası (API de
 - **Background**: `POST /api/capture` çağrısı; başarısızsa `chrome.storage.local` kuyruğuna yazar, tekrar dener.
 - Görseller URL olarak gönderilir; sunucu tarafı görselleri indirip kendi diskine kaydeder (1688 hotlink koruması ve link ölmesi riskine karşı).
 
-## 5. Güvenlik
+## 5. Güvenlik (K16 — sertleştirilmiş)
 
-- Panel: tek admin, güçlü şifre, oturum çerezi (HttpOnly, Secure), başarısız giriş kilidi.
-- Eklenti API'si: uzun rastgele Bearer token, yalnızca `/api/capture` yetkisi, panelden yenilenebilir.
-- Paylaşım linki: 22+ karakter rastgele token, salt okunur, listede iptal/yenileme.
-- Yedekleme: veritabanı + görsel klasörünün günlük yedeği (hosting cron).
+**Kimlik doğrulama**
+- Tek admin; şifre **Argon2id** ile hash'lenir.
+- **2FA zorunlu:** TOTP (Google Authenticator/Authy) — kurulum sihirbazında QR ile tanımlanır; kurtarma kodları üretilir (mail kapalı olduğundan tek doğru yöntem).
+- Giriş denemelerinde artan bekleme (exponential backoff) + 5 hatalı denemede IP bazlı geçici kilit; tüm denemeler (IP, zaman, sonuç) activity_log'a yazılır.
+- Oturum: HttpOnly + Secure + SameSite=Lax çerez, boşta kalmada zaman aşımı, "beni hatırla" ayrı ve iptal edilebilir token.
+
+**İstek güvenliği**
+- Tüm formlarda CSRF token; API'de yalnızca JSON + origin denetimi.
+- SQL yalnızca prepared statements; tüm çıktılar escape (XSS) — dışa açık tek yüzey olan paylaşım sayfasında ekstra titizlik.
+- Güvenlik başlıkları: CSP, HSTS, X-Frame-Options: DENY, X-Content-Type-Options: nosniff, Referrer-Policy.
+
+**Dosya ve token güvenliği**
+- `storage/` webden tamamen erişime kapalı (.htaccess deny + docroot dışı mantık); yalnızca ürün görselleri `public/media/` altından servis edilir.
+- Eklenti Bearer token'ı DB'de hash'li saklanır, yalnızca `/api/capture` yetkisi vardır, panelden tek tıkla yenilenir.
+- Paylaşım linki: 22+ karakter kriptografik rastgele token, salt okunur, iptal/yenileme; paylaşım sayfaları `noindex` başlığıyla arama motorlarına kapalıdır.
+- Kurulum sihirbazı kurulumdan sonra kendini kalıcı kilitler; kilitliyken erişim denemesi loglanır.
+
+**İşletme**
+- Yedekleme: veritabanı + `public/media/` günlük cron yedeği; aylık geri yükleme denemesi.
+- Her faz sonunda bağımlılık güvenlik güncellemeleri (composer/npm audit) kontrol edilir.
+- `display_errors` kapalı kalır; hata detayı yalnızca `storage/logs/`a yazılır.
 
 ## 6. Açık Teknik Sorular (istişare)
 

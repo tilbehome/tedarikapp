@@ -18,7 +18,9 @@ Kural (K14): Para, kur ve durum-geçiş fonksiyonları TEST-FIRST yazılır — 
 ## 2. Faz Kabul Testleri
 
 ### Faz 1 — Panel Çekirdeği
-- [ ] Giriş: doğru şifre girer, yanlış şifre 5 denemede kilitlenir, oturum telefonda korunur.
+- [ ] Kurulum sihirbazı: gereksinim denetimi, .env üretimi, migration, admin + 2FA kurulumu, kurulum sonrası kalıcı kilit — temiz ortamda uçtan uca doğrulanır.
+- [ ] Giriş: şifre + TOTP doğru çalışır, yanlış kod reddedilir, kurtarma kodu tek seferlik işler; yanlış şifre 5 denemede kilitlenir; oturum telefonda korunur.
+- [ ] CSRF token'sız form isteği reddedilir; güvenlik başlıkları (CSP, HSTS, X-Frame-Options) yanıtta mevcut; `storage/` altına tarayıcıdan erişim 403 döner.
 - [ ] Örnek Excel'deki ürün (¥9,00, kur 7,04 → ₺63,36) panele girildiğinde TL kuruşu kuruşuna aynı hesaplanır.
 - [ ] Liste oluştur/kopyala/arşivle çalışır; kur listeye kilitlenir (ayar değişince eski liste oynamaz).
 - [ ] Aktif/Pasif/Arşiv sekmeleri ve geçiş aksiyonları çalışır.
