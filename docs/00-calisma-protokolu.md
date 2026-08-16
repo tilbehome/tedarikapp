@@ -33,6 +33,7 @@ Kurallar:
 - Aynı anda **tek aktif iş emri** olur. Bitmeden yenisi açılmaz.
 - Kapsam değişikliği istenirse iş emri ortasında değil, sonraki iş emrinde yapılır.
 - Her iş emri en fazla bir oturumda bitecek büyüklükte tutulur (büyük işler bölünür).
+- Karar (K#) numaralarını yalnızca PM atar. Ürün Sahibi'nin PM döngüsü dışındaki doğrudan talimatları geçerlidir; ancak yapılan iş PM'e raporlanır ve karar kaydına PM'in verdiği numarayla işlenir (çakışma önleme).
 
 ## 3. İş Emri Şablonu (PM → Claude Code)
 

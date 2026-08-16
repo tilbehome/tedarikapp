@@ -59,7 +59,7 @@ activity_log     id, entity_type, entity_id, action, detail,
 
 Para tipleri: tüm fiyat/kur alanları `DECIMAL` (fiyat 12,2 — kur 12,4); float KULLANILMAZ, hesaplar PHP bcmath ile yapılır (K14).
 
-İndeksler: products(list_id), products(status), products(external_id), activity_log(entity_type, entity_id), lists(visibility). external_id üzerinden tekrar-ekleme uyarısı yapılır (benzersizlik zorlanmaz — aynı ürün bilerek iki listede olabilir).
+İndeksler: products(list_id), products(status), products(external_id), activity_log(entity_type, entity_id), lists(visibility), remember_tokens(selector). external_id üzerinden tekrar-ekleme uyarısı yapılır (benzersizlik zorlanmaz — aynı ürün bilerek iki listede olabilir).
 
 TL fiyatları veritabanında saklanmaz; listenin kilitli kuru × orijinal fiyat olarak her yerde hesaplanır (tutarsızlık riski sıfır).
 

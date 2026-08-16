@@ -36,6 +36,7 @@ Kural (K14): Para, kur ve durum-geçiş fonksiyonları TEST-FIRST yazılır — 
 - [ ] Paylaşım linki: girişsiz açılır, video oynar (telefonda test), iptal edilen link 404 verir.
 - [ ] 50+ ürünlü listede export süresi makul (< 30 sn) ve bellek hatasız.
 - [ ] Export alınmış listeye ürün eklenip silinebiliyor; "çıktı güncel değil" rozeti doğru yanıp sönüyor; TOPLAM satırı (adet + Yuan/TL + DDP) kuruşu kuruşuna doğru.
+- [ ] Paylaş menüsü: WhatsApp/e-posta/kopyala doğru içerikle çalışır; mobilde cihaz paylaşım menüsü (Web Share API) açılır.
 
 ### Faz 3 — Chrome Eklentisi
 - [ ] En az 10 farklı gerçek 1688 ürün sayfasında (farklı satıcı/şablon) başlık, fiyat kademeleri, ana görsel, video doğru yakalanır. Test sayfa listesi bu belgeye eklenecek.
