@@ -1,0 +1,5 @@
+# cPanel'de subdomain kökü public/ klasörüne çekilemezse bu dosya devreye girer (docs/07 §2).
+# Tüm trafiği public/ altına yönlendirir; app/, storage/, vendor/ webden erişilemez kalır.
+RewriteEngine On
+RewriteCond %{REQUEST_URI} !^/public/
+RewriteRule ^(.*)$ public/$1 [L]
