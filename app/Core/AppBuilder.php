@@ -10,6 +10,7 @@ use App\Auth\SessionInterface;
 use App\Controllers\AuthController;
 use App\Middleware\Auth;
 use App\Middleware\Csrf;
+use App\Middleware\JsonRequest;
 use App\Middleware\LoginRateLimit;
 use App\Middleware\RequestId;
 use App\Middleware\SecurityHeaders;
@@ -97,8 +98,10 @@ final class AppBuilder
             logger: $logger,
         )->setDefaultErrorHandler(self::errorHandler($app->getResponseFactory(), $logger));
 
-        // Bu ikisi hata middleware'inden SONRA eklenir, yani EN DIŞTA koşar:
-        // 404/405/500 gibi hata yanıtları da güvenlik başlıklarını ve X-Request-Id'yi alır.
+        // Bunlar hata middleware'inden SONRA eklenir, yani EN DIŞTA koşar:
+        // 404/405/415/500 gibi hata yanıtları da güvenlik başlıklarını ve X-Request-Id'yi alır.
+        // JsonRequest gövde ayrıştırmadan ÖNCE devreye girer (docs/10 §1).
+        $app->add(new JsonRequest($app->getResponseFactory()));
         $app->add(new SecurityHeaders());
         $app->add(new RequestId($requestContext));
 

@@ -47,6 +47,10 @@
 | K26 | 16 Ağu 2026 | CI evet / CD hayır (K13'ün kısmi revizyonu): GitHub Actions ile her PR'da `composer validate` → `install` → PHPUnit → PHPStan → CS-Fixer (dry-run) → `composer audit`. Deploy manuel kalır | K13'te CI/CD birlikte reddedilmişti; CD paylaşımlı cPanel'de gerçekten gereksiz, ancak CI sıfır maliyetle regresyonu yakalıyor. Deploy'un manuel kalması K13 gerekçesini korur |
 | K27 | 16 Ağu 2026 | Güvenlik sertleştirme ekleri: TOTP secret şifreleme spesifikasyonu (sodium `crypto_secretbox`, yoksa AES-256-GCM; anahtar APP_KEY'den türetilir; kayıt `versiyon:nonce:ciphertext`) · log redaction · Request-ID · katı config doğrulama · production'da APP_KEY/EXTENSION_TOKEN_SALT zorunlu · JSON log | Sır rotasyonu ve olay incelemesi (hangi istek neyi yaptı) sonradan eklenemeyecek şeyler; formatın versiyonlanması anahtar rotasyonunu mümkün kılar |
 
+| K28 | 16 Ağu 2026 | Public-uyum kuralı: depo herkese açık olabilir — sunucuya özel mutlak yollar, hesap adları, gerçek ürün/fiyat verisi ve kişisel meta veri repoya girmez. `sunucu-rapor.php` silindi; gerçek tedarik listesi yerine biçimi birebir aynı, uydurma tek satırlı `ornek-tedarik-listesi.xlsx` konuldu | Sızıntı geri alınamaz: bir kez public olan commit geçmişten silinse bile kopyalanmış olabilir. Temizlik kod büyümeden yapılırsa maliyetsiz |
+| K29 | 16 Ağu 2026 | Para hesapları tek merkezi `MoneyService` sınıfında toplanır (K24 politikasının uygulanışı): birim×adet, kur çevirimi, satır/genel toplam, yuvarlama YALNIZCA bu servisten geçer; controller/component içinde bcmath çağrısı yasak. Faz 1C (listeler/ürünler) iş emrinin kabul kriteridir | Aynı hesabın farklı yerlerde tekrar yazılması = kuruş tutarsızlığı riski; tek nokta = tek test yüzeyi (R5) |
+| K30 | 16 Ağu 2026 | Eklenti CORS politikası: wildcard YASAK; production'da yalnız yayınlanan extension ID'si origin allowlist'inde; development/production extension ayrımı yapılır. Faz 3 (eklenti) iş emrinin kabul kriteridir | Capture API'sinin herhangi bir web sayfasından çağrılabilmesini engeller; token sızıntısında ikinci savunma hattı (K16) |
+
 Yeni kararlar bu tabloya eklenir; bir karar değişirse silinmez, üzeri çizilip yeni satır açılır (tarihçe korunur).
 
 ## 3. Fikir Havuzu (Faz 4+)
@@ -62,8 +66,8 @@ Kapsamı şişirmemek için yeni fikirler buraya park edilir; aktif iş emri kap
 | F5 | Çince başlık otomatik çeviri | Faz 4+ |
 | F6 | Sunucudan otomatik gönderim (SMTP mail / WhatsApp Business API) | Faz 4+ |
 | F7 | PWA: panel ana ekrana kurulabilir uygulama gibi davranır — düşük maliyet, yüksek değer | Faz 4 güçlü aday |
-| F8 | Mal kabul sayım modu: konteyner gelince telefondan ürünleri tek tek "Geldi" işaretleme + eksik/hasar notu | Faz 4 |
-| F9 | Fiyat değişim uyarısı: aynı ürün tekrar yakalandığında eski/yeni Yuan fiyat karşılaştırması (external_id + fiyat geçmişi) | Faz 4 |
+| F8 | Mal kabul sayım modu: konteyner gelince telefondan ürünleri tek tek "Geldi" işaretleme + eksik/hasar notu — taslak: [f08](fikirler/f08-mal-kabul-sayim.md) | Faz 4 |
+| F9 | Fiyat değişim uyarısı: aynı ürün tekrar yakalandığında eski/yeni Yuan fiyat karşılaştırması (platform + external_id + fiyat geçmişi) — taslak: [f09](fikirler/f09-fiyat-degisim-uyarisi.md) | Faz 4 |
 | F10 | Excel özet sayfası: çıktının 2. sekmesinde kategori bazlı adet/tutar özeti | Faz 4 |
 | F11 | Yedeklerin uzak kopyası (off-site yedek): gece yedeğinin Google Drive'a da atılması | ~~Faz 4~~ → **CANLIYA ALMA ÖN ŞARTI** (İE#4 REV2) |
 | F12 | Tedarikçi kartları: firma bazlı liste geçmişi ve iletişim notları | v1.1 (çoklu firma ihtiyacı doğunca) |
@@ -84,7 +88,8 @@ Kapsamı şişirmemek için yeni fikirler buraya park edilir; aktif iş emri kap
 | F27 | Tedarikçi teklif portalı + teklif versiyonları | Faz 4+ |
 | F28 | Product master (`source_products`): aynı ürünün listeler arası tek kaydı | Faz 4+ |
 | F29 | Mal kabul genişletme: QR ile sayım, koli/CBM bilgisi (F8'in devamı) | Faz 4+ |
-| F30 | HS/GTIP kodu öneri modülü | Faz 4+ |
+| F30 | GTİP / gümrük ve ithalat sınıflandırma motoru — detaylı taslak: [f30](fikirler/f30-gtip-motoru.md) | **v2 öncelikli** (Ürün Sahibi) |
 | F31 | Belgeler modülü (fatura, çeki listesi, konşimento saklama) | Faz 4+ |
 | F32 | Tedarikçi skorlama (termin, kalite, fiyat geçmişine göre) | Faz 4+ |
 | F33 | AI kullanım paketi: çeviri, kategori önerisi, anomali tespiti — hepsi insan onaylı | Faz 4+ |
+| F34 | Çok dilli yapı (i18n): paylaşım sayfası zh-CN/EN/TR — taslak: [f34](fikirler/f34-cok-dilli-yapi.md) | Faz 4 (paylaşım sayfası önce) |

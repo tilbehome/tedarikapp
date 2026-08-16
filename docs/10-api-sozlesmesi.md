@@ -17,7 +17,8 @@
 ```
 
 - **HTTP durum kodları:** 200 (ok) · 201 (oluşturuldu) · 204 (silindi, gövde yok) · 400 (bozuk istek) · 401 (oturum yok/2FA bekliyor) · 403 (CSRF/yetki/kilit) · 404 · 405 (metot desteklenmiyor) · 409 (çakışma; örn. tekrar-ekleme onayı bekliyor) · 415 · 422 (doğrulama/geçersiz durum geçişi) · 429 (hız sınırı).
-- **Hata kodları (`error.code`):** `VALIDATION`, `UNAUTHENTICATED`, `TOTP_REQUIRED`, `FORBIDDEN`, `CSRF`, `NOT_FOUND`, `METHOD_NOT_ALLOWED`, `STATE_TRANSITION`, `DUPLICATE_WARNING`, `RATE_LIMITED`, `LOCKED`, `PAYLOAD_TOO_LARGE`, `SERVER_ERROR`. Mesajlar Türkçe ve kullanıcıya gösterilebilir; teknik detay yalnızca loga yazılır.
+- **Hata kodları (`error.code`):** `VALIDATION`, `UNAUTHENTICATED`, `TOTP_REQUIRED`, `FORBIDDEN`, `CSRF`, `NOT_FOUND`, `METHOD_NOT_ALLOWED`, `UNSUPPORTED_MEDIA_TYPE`, `STATE_TRANSITION`, `DUPLICATE_WARNING`, `RATE_LIMITED`, `LOCKED`, `PAYLOAD_TOO_LARGE`, `SERVER_ERROR`. Mesajlar Türkçe ve kullanıcıya gösterilebilir; teknik detay yalnızca loga yazılır.
+- **415 uygulaması (İE#5):** kural GÖVDELİ yazma isteklerine uygulanır — gövdesiz bir `POST`/`DELETE` içerik tipi bildirmek zorunda değildir. İhlalde `415` + `UNSUPPORTED_MEDIA_TYPE`; istek gövdesi hiç ayrıştırılmaz.
 - **405 (K25):** desteklenmeyen metot gerçek **HTTP 405** döner; `error.code = METHOD_NOT_ALLOWED` ve yanıtta izin verilen metodları listeleyen `Allow` başlığı bulunur. (İE#3'teki 422 `VALIDATION` eşlemesi kaldırılmıştır.)
 - **Makine değerleri İngilizcedir (K22):** durum/görünürlük alanları API'de ve DB'de sabit İngilizce kodlar taşır (`draft`, `sent`, `to_order`, `active` …). Türkçe karşılıklar yalnızca arayüz etiketidir — çeviri tablosu docs/09 §6.
 - **Her yanıtta `X-Request-Id`** başlığı döner (K27); hata bildirirken bu değer istenir, loglarla eşleştirilir.

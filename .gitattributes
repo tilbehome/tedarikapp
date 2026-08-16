@@ -1,0 +1,18 @@
+# Satır sonu normalizasyonu.
+#
+# Windows'ta core.autocrlf=true olan bir kurulumda çalışma kopyası CRLF'e dönüyor ve
+# CS-Fixer (PSR-12, LF bekler) yerelde TÜM dosyaları "düzeltilecek" gösteriyordu — CI ise
+# Linux'ta LF gördüğü için yeşil kalıyordu. Bu satır, platform fark etmeksizin hem depoda
+# hem çalışma kopyasında LF'i garantiler; kalite kapısı her yerde aynı sonucu verir.
+* text=auto eol=lf
+
+# İkili dosyalar dönüştürülmemeli (dönüştürülürse bozulurlar).
+*.xlsx binary
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.webp binary
+*.pdf  binary
+*.ico  binary
+*.bin  binary
