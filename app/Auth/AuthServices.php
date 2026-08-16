@@ -8,6 +8,7 @@ use App\Core\Clock;
 use App\Core\Config;
 use App\Core\Connection;
 use App\Core\Encrypter;
+use App\Core\RequestContext;
 use App\Services\ActivityLog;
 use DateTimeZone;
 use Psr\Log\LoggerInterface;
@@ -37,6 +38,7 @@ final class AuthServices
         SessionInterface $session,
         public readonly Clock $clock,
         public readonly LoggerInterface $logger,
+        ?RequestContext $requestContext = null,
     ) {
         $this->timezone = new DateTimeZone($config->get('TZ', 'Europe/Istanbul'));
         $this->session = new AuthSession($session, $clock);
@@ -45,7 +47,7 @@ final class AuthServices
         $this->totp = new TotpService($config, new Encrypter($config), $clock);
         $this->recoveryCodes = new RecoveryCodeService($connection, $this->passwords);
         $this->rememberTokens = new RememberTokenService($connection);
-        $this->activity = new ActivityLog($connection);
+        $this->activity = new ActivityLog($connection, $requestContext);
         $this->throttle = new LoginThrottle(
             $connection,
             $this->timezone,

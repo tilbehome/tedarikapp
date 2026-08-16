@@ -60,6 +60,7 @@ abstract class AuthTestCase extends TestCase
             'DB_USER' => 'root',
             'TZ' => 'Europe/Istanbul',
             'APP_KEY' => str_repeat('a1b2c3d4', 8),
+            'EXTENSION_TOKEN_SALT' => str_repeat('s', 32),
             'SESSION_NAME' => 'tedarikapp_sid',
             'SESSION_LIFETIME' => '120',
             'REMEMBER_ME_LIFETIME' => '43200',
@@ -206,6 +207,10 @@ abstract class AuthTestCase extends TestCase
                 action TEXT NOT NULL,
                 detail TEXT NULL,
                 ip TEXT NULL,
+                actor_type TEXT NOT NULL DEFAULT \'admin\',
+                actor_id INTEGER NULL,
+                request_id TEXT NULL,
+                user_agent TEXT NULL,
                 created_at TEXT NOT NULL
             )',
         );

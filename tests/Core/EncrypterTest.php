@@ -13,8 +13,10 @@ final class EncrypterTest extends TestCase
 {
     private function config(string $appKey): Config
     {
+        // Bilinçli olarak 'local': testlerden biri geçersiz APP_KEY'i Encrypter'ın kendi
+        // hatasıyla doğrular; production modunda Config zaten kurucuda reddederdi (K27).
         return new Config([
-            'APP_ENV' => 'production',
+            'APP_ENV' => 'local',
             'APP_URL' => 'https://tedarikapp.test',
             'DB_HOST' => 'localhost',
             'DB_NAME' => 'test',

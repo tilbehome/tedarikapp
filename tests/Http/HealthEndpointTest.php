@@ -23,6 +23,8 @@ final class HealthEndpointTest extends TestCase
             'DB_NAME' => 'test',
             'DB_USER' => 'root',
             'TZ' => 'Europe/Istanbul',
+            'APP_KEY' => str_repeat('a1b2c3d4', 8),
+            'EXTENSION_TOKEN_SALT' => str_repeat('s', 32),
         ]);
     }
 
@@ -95,5 +97,72 @@ final class HealthEndpointTest extends TestCase
 
         $body = json_decode((string) $response->getBody(), true);
         self::assertSame('NOT_FOUND', $body['error']['code']);
+    }
+
+    // ─────────────── K25: gerçek 405 ───────────────
+
+    public function testDesteklenmeyenMetot405VeAllowBasligiDoner(): void
+    {
+        $app = AppBuilder::build(
+            $this->config(),
+            static fn (): PDO => new PDO('sqlite::memory:'),
+            new NullLogger(),
+        );
+
+        $response = $app->handle((new ServerRequestFactory())->createServerRequest('POST', '/api/health'));
+
+        self::assertSame(405, $response->getStatusCode());
+        self::assertStringContainsString('GET', $response->getHeaderLine('Allow'));
+
+        $body = json_decode((string) $response->getBody(), true);
+        self::assertFalse($body['success']);
+        self::assertSame('METHOD_NOT_ALLOWED', $body['error']['code']);
+    }
+
+    // ─────────────── K27: Request-ID ───────────────
+
+    public function testHerYanitRequestIdBasligiTasir(): void
+    {
+        $app = AppBuilder::build(
+            $this->config(),
+            static fn (): PDO => new PDO('sqlite::memory:'),
+            new NullLogger(),
+        );
+
+        $response = $app->handle((new ServerRequestFactory())->createServerRequest('GET', '/api/health'));
+
+        // ULID: 26 karakter, Crockford Base32 (I, L, O, U yok) — activity_log.request_id CHAR(26).
+        self::assertMatchesRegularExpression('/^[0-9A-HJKMNP-TV-Z]{26}$/', $response->getHeaderLine('X-Request-Id'));
+    }
+
+    public function testIstemcininGonderdigiRequestIdKullanilmaz(): void
+    {
+        $app = AppBuilder::build(
+            $this->config(),
+            static fn (): PDO => new PDO('sqlite::memory:'),
+            new NullLogger(),
+        );
+
+        $request = (new ServerRequestFactory())
+            ->createServerRequest('GET', '/api/health')
+            ->withHeader('X-Request-Id', 'SALDIRGANIN-UYDURDUGU-ID');
+        $response = $app->handle($request);
+
+        self::assertNotSame('SALDIRGANIN-UYDURDUGU-ID', $response->getHeaderLine('X-Request-Id'));
+    }
+
+    public function testHataYanitlariDaGuvenlikBasliklariniVeRequestIdAlir(): void
+    {
+        $app = AppBuilder::build(
+            $this->config(),
+            static fn (): PDO => new PDO('sqlite::memory:'),
+            new NullLogger(),
+        );
+
+        $response = $app->handle((new ServerRequestFactory())->createServerRequest('GET', '/api/olmayan-uc'));
+
+        self::assertSame(404, $response->getStatusCode());
+        self::assertSame('DENY', $response->getHeaderLine('X-Frame-Options'));
+        self::assertNotSame('', $response->getHeaderLine('X-Request-Id'));
     }
 }

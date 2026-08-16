@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Core\Connection;
 use App\Core\Dates;
+use App\Core\RequestContext;
 use DateTimeImmutable;
 
 /**
@@ -17,6 +18,11 @@ use DateTimeImmutable;
 final class ActivityLog
 {
     public const string ENTITY_AUTH = 'auth';
+
+    /** Eylemi kimin yaptığı (K25): panel kullanıcısı, Chrome eklentisi veya sistemin kendisi. */
+    public const string ACTOR_ADMIN = 'admin';
+    public const string ACTOR_EXTENSION = 'extension';
+    public const string ACTOR_SYSTEM = 'system';
 
     public const string LOGIN_SUCCESS = 'login_success';
     public const string LOGIN_FAILED = 'login_failed';
@@ -31,8 +37,10 @@ final class ActivityLog
     public const string REMEMBER_REVOKED = 'remember_revoked';
     public const string USER_CREATED = 'user_created';
 
-    public function __construct(private readonly Connection $connection)
-    {
+    public function __construct(
+        private readonly Connection $connection,
+        private readonly ?RequestContext $requestContext = null,
+    ) {
     }
 
     public function record(
@@ -42,10 +50,14 @@ final class ActivityLog
         ?string $detail,
         ?string $ip,
         DateTimeImmutable $now,
+        string $actorType = self::ACTOR_ADMIN,
+        ?int $actorId = null,
     ): void {
         $statement = $this->connection->pdo()->prepare(
-            'INSERT INTO activity_log (entity_type, entity_id, action, detail, ip, created_at)
-             VALUES (:entity_type, :entity_id, :action, :detail, :ip, :created_at)',
+            'INSERT INTO activity_log
+                (entity_type, entity_id, action, detail, ip, actor_type, actor_id, request_id, user_agent, created_at)
+             VALUES
+                (:entity_type, :entity_id, :action, :detail, :ip, :actor_type, :actor_id, :request_id, :user_agent, :created_at)',
         );
         $statement->execute([
             'entity_type' => $entityType,
@@ -53,6 +65,10 @@ final class ActivityLog
             'action' => $action,
             'detail' => $detail,
             'ip' => $ip,
+            'actor_type' => $actorType,
+            'actor_id' => $actorId,
+            'request_id' => $this->requestContext?->id(),
+            'user_agent' => $this->requestContext?->userAgent(),
             'created_at' => Dates::toStorage($now),
         ]);
     }
@@ -65,6 +81,6 @@ final class ActivityLog
         DateTimeImmutable $now,
         ?int $userId = null,
     ): void {
-        $this->record(self::ENTITY_AUTH, $userId, $action, $email, $ip, $now);
+        $this->record(self::ENTITY_AUTH, $userId, $action, $email, $ip, $now, self::ACTOR_ADMIN, $userId);
     }
 }

@@ -206,7 +206,7 @@ final class Migrator
         $columns = [];
         for ($i = 0; $i < $statement->columnCount(); $i++) {
             $meta = $statement->getColumnMeta($i);
-            if (is_array($meta) && isset($meta['name']) && is_string($meta['name'])) {
+            if (is_array($meta)) {
                 $columns[] = $meta['name'];
             }
         }

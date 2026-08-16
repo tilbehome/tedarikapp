@@ -11,6 +11,7 @@ use App\Controllers\AuthController;
 use App\Middleware\Auth;
 use App\Middleware\Csrf;
 use App\Middleware\LoginRateLimit;
+use App\Middleware\RequestId;
 use App\Middleware\SecurityHeaders;
 use Closure;
 use DateTimeImmutable;
@@ -36,6 +37,7 @@ final class AppBuilder
      * @param callable(): \PDO $pdoFactory Bağlantı tembel kurulur; sağlık ucu başarısızlığı zarfla raporlar.
      * @param SessionInterface|null $session Testlerde dizi tabanlı oturum enjekte edilir.
      * @param Clock|null $clock Testlerde zaman sabitlenir (giriş kilidi, token ömrü).
+     * @param RequestContext|null $requestContext Logger ile PAYLAŞILAN bağlam; verilmezse yenisi kurulur.
      *
      * @return App<\Psr\Container\ContainerInterface|null>
      */
@@ -45,11 +47,13 @@ final class AppBuilder
         LoggerInterface $logger,
         ?SessionInterface $session = null,
         ?Clock $clock = null,
+        ?RequestContext $requestContext = null,
     ): App {
+        $requestContext ??= new RequestContext();
+
         $app = AppFactory::create();
         $app->addBodyParsingMiddleware();
         $app->addRoutingMiddleware();
-        $app->add(new SecurityHeaders());
 
         $connection = Connection::fromCallable($pdoFactory);
         $services = new AuthServices(
@@ -58,6 +62,7 @@ final class AppBuilder
             $session ?? new NativeSession($config),
             $clock ?? SystemClock::fromConfig($config),
             $logger,
+            $requestContext,
         );
 
         $app->get('/api/health', self::healthAction($config, $connection, $logger));
@@ -92,6 +97,11 @@ final class AppBuilder
             logger: $logger,
         )->setDefaultErrorHandler(self::errorHandler($app->getResponseFactory(), $logger));
 
+        // Bu ikisi hata middleware'inden SONRA eklenir, yani EN DIŞTA koşar:
+        // 404/405/500 gibi hata yanıtları da güvenlik başlıklarını ve X-Request-Id'yi alır.
+        $app->add(new SecurityHeaders());
+        $app->add(new RequestId($requestContext));
+
         return $app;
     }
 
@@ -124,7 +134,15 @@ final class AppBuilder
                 return Response::error($response, 'NOT_FOUND', 'İstenen kaynak bulunamadı.', 404);
             }
             if ($exception instanceof HttpMethodNotAllowedException) {
-                return Response::error($response, 'VALIDATION', 'Bu uç bu HTTP metodunu desteklemiyor.', 422);
+                // K25: gerçek 405 + izin verilen metodları bildiren Allow başlığı.
+                $allowed = $exception->getAllowedMethods();
+
+                return Response::error(
+                    $response->withHeader('Allow', implode(', ', $allowed)),
+                    'METHOD_NOT_ALLOWED',
+                    sprintf('Bu uç bu HTTP metodunu desteklemiyor. İzin verilenler: %s.', implode(', ', $allowed)),
+                    405,
+                );
             }
             $logger->error('Beklenmeyen hata', ['hata' => $exception->getMessage(), 'iz' => $exception->getTraceAsString()]);
 
