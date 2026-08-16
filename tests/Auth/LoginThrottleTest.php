@@ -116,6 +116,28 @@ final class LoginThrottleTest extends AuthTestCase
         self::assertGreaterThan(0, $this->throttle()->retryAfterSeconds(self::EMAIL, self::IP, $this->clock->now()));
     }
 
+    /**
+     * Regresyon: giriş akışı bir saniyeden kısa sürebilir. Pencere `created_at` ile
+     * kesilirse başarıyla AYNI saniyeye düşen hatalı denemeler sayılmaz ve kilit hiç
+     * devreye girmez (canlı duman testinde yakalandı). Pencere `id` ile kesilir.
+     */
+    public function testBasariVeHatalarAyniSaniyedeyseDaKilitCalisir(): void
+    {
+        $activity = new ActivityLog($this->connection);
+
+        // Saat HİÇ ilerletilmiyor: tüm kayıtlar aynı created_at değerini alır.
+        $activity->recordAuth(ActivityLog::LOGIN_SUCCESS, self::EMAIL, self::IP, $this->clock->now());
+        for ($i = 0; $i < 5; $i++) {
+            $activity->recordAuth(ActivityLog::LOGIN_FAILED, self::EMAIL, self::IP, $this->clock->now());
+        }
+
+        self::assertSame(
+            15 * 60,
+            $this->throttle()->retryAfterSeconds(self::EMAIL, self::IP, $this->clock->now()),
+            'Aynı saniyedeki hatalı denemeler de sayılmalı.',
+        );
+    }
+
     public function testKilitIpVeEpostaCiftineOzeldir(): void
     {
         for ($i = 0; $i < 5; $i++) {

@@ -72,6 +72,11 @@ final class LoginThrottle
     /**
      * Son başarılı girişten sonraki hatalı denemelerin zaman damgaları (eskiden yeniye).
      *
+     * Pencere `created_at` ile DEĞİL, `id` ile kesilir: `created_at` saniye çözünürlüklü
+     * bir DATETIME'dır ve giriş akışı bir saniyeden kısa sürebilir — zaman karşılaştırması,
+     * başarıyla aynı saniyeye düşen hatalı denemeleri sayamaz ve kilit hiç devreye girmez.
+     * `id` monoton arttığı için sıra her durumda kesindir.
+     *
      * @return list<string>
      */
     private function failuresSinceLastSuccess(string $email, string $ip): array
@@ -79,7 +84,7 @@ final class LoginThrottle
         $pdo = $this->connection->pdo();
 
         $successStatement = $pdo->prepare(
-            'SELECT MAX(created_at) AS last_success FROM activity_log
+            'SELECT MAX(id) AS last_success_id FROM activity_log
              WHERE entity_type = :entity_type AND action = :action AND detail = :detail AND ip = :ip',
         );
         $successStatement->execute([
@@ -89,16 +94,16 @@ final class LoginThrottle
             'ip' => $ip,
         ]);
         $successRow = $successStatement->fetch();
-        $lastSuccess = is_array($successRow) && is_string($successRow['last_success'])
-            ? $successRow['last_success']
-            : '0000-00-00 00:00:00';
+        $lastSuccessId = is_array($successRow) && $successRow['last_success_id'] !== null
+            ? (int) $successRow['last_success_id']
+            : 0;
 
         $placeholders = [];
         $params = [
             'entity_type' => ActivityLog::ENTITY_AUTH,
             'detail' => $email,
             'ip' => $ip,
-            'since' => $lastSuccess,
+            'since_id' => $lastSuccessId,
         ];
         foreach (self::FAILURE_ACTIONS as $index => $action) {
             $placeholders[] = ':action' . $index;
@@ -108,8 +113,8 @@ final class LoginThrottle
         $failureStatement = $pdo->prepare(sprintf(
             'SELECT created_at FROM activity_log
              WHERE entity_type = :entity_type AND action IN (%s) AND detail = :detail AND ip = :ip
-               AND created_at > :since
-             ORDER BY created_at, id',
+               AND id > :since_id
+             ORDER BY id',
             implode(', ', $placeholders),
         ));
         $failureStatement->execute($params);
