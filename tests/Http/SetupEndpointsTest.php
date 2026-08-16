@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Http;
 
+use App\Core\Connection;
 use App\Core\SetupAppBuilder;
 use App\Middleware\SetupCsrf;
+use App\Setup\EnvWriter;
 use App\Setup\SetupLock;
 use App\Setup\SetupState;
 use DateTimeImmutable;
@@ -30,12 +32,22 @@ final class SetupEndpointsTest extends TestCase
 
     private ArraySession $session;
     private FrozenClock $clock;
+    private \PDO $pdo;
+    private Connection $connection;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->session = new ArraySession();
         $this->clock = new FrozenClock();
+
+        // K33: kilit veritabanında tutuluyor; sihirbaz testleri de DB'li koşar.
+        $this->pdo = new \PDO('sqlite::memory:', null, null, [
+            \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+            \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
+        ]);
+        $this->pdo->exec('CREATE TABLE settings (key TEXT NOT NULL PRIMARY KEY, value TEXT NULL)');
+        $this->connection = Connection::fromCallable(fn (): \PDO => $this->pdo);
 
         $root = dirname(__DIR__, 2);
         copy($root . '/.env.example', $this->tempPath('.env.example'));
@@ -47,7 +59,7 @@ final class SetupEndpointsTest extends TestCase
 
     private function lock(): SetupLock
     {
-        return new SetupLock($this->tempPath('storage'));
+        return new SetupLock($this->connection, $this->tempPath('storage'));
     }
 
     /**
@@ -65,7 +77,13 @@ final class SetupEndpointsTest extends TestCase
             $request = $request->withHeader($name, $value);
         }
 
-        $app = SetupAppBuilder::build($this->tempRoot(), new NullLogger(), $this->session, $this->clock);
+        $app = SetupAppBuilder::build(
+            $this->tempRoot(),
+            new NullLogger(),
+            $this->session,
+            $this->clock,
+            setupLock: $this->lock(),
+        );
 
         return $app->handle($request);
     }
@@ -286,6 +304,110 @@ final class SetupEndpointsTest extends TestCase
 
         self::assertSame(422, $response->getStatusCode());
         self::assertFalse(is_file($this->tempPath('.env')), 'Başarısız bağlantıda .env YAZILMAMALI.');
+    }
+
+    // ─────────────── K33: yazılamayan docroot ───────────────
+
+    /** Yazılamayan kök simülasyonu — üretimdeki DSO durumunun testteki karşılığı. */
+    private function unwritableApp(): \Slim\App
+    {
+        return SetupAppBuilder::build(
+            $this->tempRoot(),
+            new NullLogger(),
+            $this->session,
+            $this->clock,
+            setupLock: $this->lock(),
+            envWriter: new EnvWriter($this->tempRoot(), writableOverride: false),
+        );
+    }
+
+    /** @param array<string, mixed>|null $body @param array<string, string> $headers */
+    private function callUnwritable(string $method, string $path, ?array $body = null, array $headers = []): ResponseInterface
+    {
+        $request = (new ServerRequestFactory())
+            ->createServerRequest($method, $path, ['REMOTE_ADDR' => '203.0.113.7']);
+        if ($body !== null) {
+            $request = $request->withParsedBody($body)->withHeader('Content-Type', 'application/json');
+        }
+        foreach ($headers as $name => $value) {
+            $request = $request->withHeader($name, $value);
+        }
+
+        return $this->unwritableApp()->handle($request);
+    }
+
+    /** Adım sırasını .env'e kadar ilerletir. */
+    private function advanceToEnvStep(): void
+    {
+        $state = new SetupState($this->session);
+        $state->complete(SetupState::STEP_REQUIREMENTS);
+        $state->put('database', ['host' => 'localhost', 'port' => 3306, 'name' => 'db', 'user' => 'u', 'pass' => 'p']);
+        $state->complete(SetupState::STEP_DATABASE);
+    }
+
+    public function testYazilamazKokteEnvIcerigiEkrandaGosterilir(): void
+    {
+        $this->advanceToEnvStep();
+
+        $response = $this->callUnwritable('POST', '/api/setup/env', ['app_url' => 'https://ornek.test'], [
+            SetupCsrf::HEADER => $this->token(),
+        ]);
+        $data = $this->json($response)['data'];
+
+        self::assertSame(200, $response->getStatusCode());
+        self::assertTrue($data['manual'], 'Yazılamayan kökte manuel akış devreye girmeli.');
+        self::assertStringContainsString('APP_KEY=', $data['content']);
+        self::assertStringContainsString('DB_NAME=db', $data['content']);
+        self::assertStringContainsString('.env', $data['target_path']);
+        self::assertFileDoesNotExist($this->tempPath('.env'), 'Dosya YAZILMAMALI.');
+        self::assertSame(SetupState::STEP_ENV, $data['step'], 'Doğrulama yapılmadan adım ilerlememeli.');
+    }
+
+    public function testDosyaKaydedilmedenDogrulama422Doner(): void
+    {
+        $this->advanceToEnvStep();
+        $this->callUnwritable('POST', '/api/setup/env', ['app_url' => 'https://ornek.test'], [
+            SetupCsrf::HEADER => $this->token(),
+        ]);
+
+        $response = $this->callUnwritable('POST', '/api/setup/env/verify', [], [SetupCsrf::HEADER => $this->token()]);
+
+        self::assertSame(422, $response->getStatusCode());
+        self::assertArrayHasKey('env', $this->json($response)['error']['fields']);
+    }
+
+    public function testYanlisIcerikKaydedilirseDogrulamaReddedilir(): void
+    {
+        $this->advanceToEnvStep();
+        $this->callUnwritable('POST', '/api/setup/env', ['app_url' => 'https://ornek.test'], [
+            SetupCsrf::HEADER => $this->token(),
+        ]);
+
+        // Kullanıcı başka bir dosya kaydetti (veya içeriği eksik yapıştırdı).
+        file_put_contents($this->tempPath('.env'), "APP_KEY=" . str_repeat('0', 64) . "\n");
+
+        $response = $this->callUnwritable('POST', '/api/setup/env/verify', [], [SetupCsrf::HEADER => $this->token()]);
+
+        self::assertSame(422, $response->getStatusCode());
+        self::assertStringContainsString('uyuşmuyor', $this->json($response)['error']['fields']['env']);
+    }
+
+    public function testDogruIcerikKaydedilirseAdimIlerler(): void
+    {
+        $this->advanceToEnvStep();
+        $generated = $this->json($this->callUnwritable('POST', '/api/setup/env', ['app_url' => 'https://ornek.test'], [
+            SetupCsrf::HEADER => $this->token(),
+        ]))['data'];
+
+        // Kullanıcı içeriği Dosya Yöneticisi'nden kaydediyor.
+        file_put_contents($this->tempPath('.env'), $generated['content']);
+
+        $response = $this->callUnwritable('POST', '/api/setup/env/verify', [], [SetupCsrf::HEADER => $this->token()]);
+        $data = $this->json($response)['data'];
+
+        self::assertSame(200, $response->getStatusCode());
+        self::assertTrue($data['verified']);
+        self::assertSame(SetupState::STEP_MIGRATE, $data['step']);
     }
 
     // ─────────────── Yönlendirme ───────────────

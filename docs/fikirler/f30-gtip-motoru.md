@@ -1,8 +1,7 @@
 # F30 — GTİP, Gümrük ve İthalat Sınıflandırma Motoru
 
-> ⚠️ **PM DEĞERLENDİRMESİ YAPILDI (16.08.2026):** [m23-gtip-pm-degerlendirmesi.md](m23-gtip-pm-degerlendirmesi.md).
-> Sonuç: fikir kabul, **v1 kapsamına GİRMEZ**; bu belgedeki bazı tasarım kararları (yıl bazlı sürümleme,
-> otomatik BTB eşleştirme) değerlendirmede düzeltilmiştir — ikisini birlikte okuyun.
+> ⚠️ Doğrulanmış kaynaklar ve v1-dışı hükmü için bkz. [gtip-m23-degerlendirme.md](../arastirma/gtip-m23-degerlendirme.md).
+> Bu belgedeki bazı tasarım kararları (yıl bazlı sürümleme, otomatik BTB eşleştirme) orada düzeltilmiştir — ikisini birlikte okuyun.
 >
 > Durum: FİKİR TASLAĞI — DETAYLI PLAN (havuz kaydı F30) · Hedef: **v2 öncelikli modül** (Ürün Sahibi "önemli" bayrağı)
 > Şu an kapsam DIŞI (K17) — bu belge, günü geldiğinde iş emirlerine bölünecek hazır yol haritasıdır.

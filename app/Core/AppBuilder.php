@@ -8,8 +8,10 @@ use App\Auth\AuthServices;
 use App\Auth\NativeSession;
 use App\Auth\SessionInterface;
 use App\Controllers\AuthController;
+use App\Controllers\CategoryController;
 use App\Controllers\ListController;
 use App\Controllers\ProductController;
+use App\Controllers\SettingsController;
 use App\Controllers\SystemController;
 use App\Controllers\TrashController;
 use App\Middleware\Auth;
@@ -18,14 +20,18 @@ use App\Middleware\JsonRequest;
 use App\Middleware\LoginRateLimit;
 use App\Middleware\RequestId;
 use App\Middleware\SecurityHeaders;
+use App\Models\CategoryRepository;
 use App\Models\ListRepository;
 use App\Models\ProductRepository;
 use App\Models\SettingsRepository;
+use App\Services\CurlMediaFetcher;
 use App\Services\InputValidator;
 use App\Services\ListPresenter;
+use App\Services\MediaService;
 use App\Services\MoneyService;
 use App\Services\StateMachine;
 use App\Services\TrashPolicy;
+use App\Services\UrlGuard;
 use App\Setup\SetupLock;
 use Closure;
 use DateTimeImmutable;
@@ -68,13 +74,14 @@ final class AppBuilder
     ): App {
         $requestContext ??= new RequestContext();
         $basePath ??= dirname(__DIR__, 2);
-        $setupLock ??= new SetupLock($basePath . '/storage');
 
         $app = AppFactory::create();
         $app->addBodyParsingMiddleware();
         $app->addRoutingMiddleware();
 
         $connection = Connection::fromCallable($pdoFactory);
+        // K33: kilit dosyada değil veritabanında; üretimde uygulama diske yazamıyor.
+        $setupLock ??= new SetupLock($connection, $basePath . '/storage');
         $services = new AuthServices(
             $config,
             $connection,
@@ -109,17 +116,7 @@ final class AppBuilder
             ->add(new Csrf($services->session, $responseFactory))
             ->add(new Auth($services, $responseFactory));
 
-        // Güncelleme yolu (İE#5 §12): kurulum kilitlendikten sonra migration koşmanın
-        // kimlik doğrulamalı yolu. Yazma ucu ayrıca CSRF ister.
-        $system = new SystemController($basePath, $connection, $setupLock, $services->clock);
-        $app->group('/api/system', static function (RouteCollectorProxy $group) use ($system): void {
-            $group->get('/status', [$system, 'status']);
-            $group->post('/migrate', [$system, 'migrate']);
-        })
-            ->add(new Csrf($services->session, $responseFactory))
-            ->add(new Auth($services, $responseFactory));
-
-        // Veri katmanı (İE#6): listeler, ürünler, çöp kutusu — hepsi Auth + CSRF korumalı.
+        // Paylaşılan servisler (İE#6 + İE#7) — rotalar bunların üzerine kurulur.
         $lists = new ListRepository($connection);
         $products = new ProductRepository($connection);
         $money = new MoneyService();
@@ -127,10 +124,32 @@ final class AppBuilder
         $validator = new InputValidator($money);
         $stateMachine = new StateMachine();
 
+        $allowedHosts = array_map('trim', explode(',', $config->get('MEDIA_ALLOWED_HOSTS', 'alicdn.com,1688.com')));
+        $urlGuard = new UrlGuard($allowedHosts);
+        $settingsRepository = new SettingsRepository($connection);
+        $mediaService = new MediaService(
+            $basePath,
+            $urlGuard,
+            new CurlMediaFetcher($urlGuard, $config->getPositiveInt('MEDIA_DOWNLOAD_TIMEOUT', 25)),
+            $settingsRepository,
+            $config->getPositiveInt('MEDIA_MAX_MB', 8) * 1024 * 1024,
+            $config->get('MEDIA_PATH', 'public/media'),
+        );
+
+        // Güncelleme yolu (İE#5 §12): kurulum kilitlendikten sonra migration koşmanın
+        // kimlik doğrulamalı yolu. Yazma ucu ayrıca CSRF ister.
+        $system = new SystemController($basePath, $connection, $setupLock, $services->clock, $mediaService);
+        $app->group('/api/system', static function (RouteCollectorProxy $group) use ($system): void {
+            $group->get('/status', [$system, 'status']);
+            $group->post('/migrate', [$system, 'migrate']);
+        })
+            ->add(new Csrf($services->session, $responseFactory))
+            ->add(new Auth($services, $responseFactory));
+
         $listController = new ListController(
             $lists,
             $products,
-            new SettingsRepository($connection),
+            $settingsRepository,
             $presenter,
             $validator,
             $stateMachine,
@@ -154,6 +173,35 @@ final class AppBuilder
             $services->clock,
             $services->timezone,
         );
+
+        $settingsController = new SettingsController(
+            $connection,
+            $settingsRepository,
+            $mediaService,
+            $money,
+            $validator,
+            $services->activity,
+            $services->clock,
+            $services->timezone,
+        );
+        $categoryController = new CategoryController(
+            new CategoryRepository($connection),
+            $services->activity,
+            $services->clock,
+        );
+
+        $app->group('/api', static function (RouteCollectorProxy $group) use ($settingsController, $categoryController): void {
+            $group->get('/settings', [$settingsController, 'show']);
+            $group->put('/settings/rates', [$settingsController, 'updateRates']);
+            $group->get('/settings/rates/history', [$settingsController, 'rateHistory']);
+
+            $group->get('/categories', [$categoryController, 'index']);
+            $group->post('/categories', [$categoryController, 'store']);
+            $group->patch('/categories/{id}', [$categoryController, 'update']);
+            $group->delete('/categories/{id}', [$categoryController, 'destroy']);
+        })
+            ->add(new Csrf($services->session, $responseFactory))
+            ->add(new Auth($services, $responseFactory));
 
         $app->group('/api', static function (RouteCollectorProxy $group) use ($listController, $productController, $trashController): void {
             $group->get('/lists', [$listController, 'index']);

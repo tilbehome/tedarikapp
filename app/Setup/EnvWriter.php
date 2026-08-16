@@ -21,8 +21,15 @@ use SensitiveParameter;
  */
 final class EnvWriter
 {
-    public function __construct(private readonly string $basePath)
-    {
+    /**
+     * @param bool|null $writableOverride Yalnızca test için: null → gerçek izin okunur.
+     *                                    Windows'ta "yazılamayan klasör" üretmek güvenilir
+     *                                    değil; K33 manuel akışı bu bayrakla sınanır.
+     */
+    public function __construct(
+        private readonly string $basePath,
+        private readonly ?bool $writableOverride = null,
+    ) {
     }
 
     public function exists(): bool
@@ -46,26 +53,44 @@ final class EnvWriter
     }
 
     /**
-     * @param array{host: string, port: int, name: string, user: string, pass: string} $database
+     * Uygulama kökü yazılabilir mi? (K33 — üretimde PHP `nobody` ile çalışıyor ve yazamıyor.)
      */
-    public function write(string $appUrl, #[SensitiveParameter] array $database): void
+    public function canWrite(): bool
+    {
+        return $this->writableOverride ?? is_writable($this->basePath);
+    }
+
+    /**
+     * `.env` içeriğini ÜRETİR — diske yazmaz.
+     *
+     * Yazılamayan sunucularda (K33) bu içerik kullanıcıya gösterilir; kullanıcı cPanel
+     * Dosya Yöneticisi'nden kaydeder, sihirbaz sonra dosyayı okuyup doğrular.
+     *
+     * @param array{host: string, port: int, name: string, user: string, pass: string} $database
+     *
+     * @return array{content: string, app_key: string}
+     */
+    public function generate(string $appUrl, #[SensitiveParameter] array $database): array
     {
         $template = @file_get_contents($this->basePath . '/.env.example');
         if ($template === false) {
             throw new RuntimeException('.env.example okunamadı — kurulum paketi eksik olabilir.');
         }
 
+        $appKey = self::generateAppKey();
         $values = [
             'APP_ENV' => 'production',
             'APP_DEBUG' => 'false',
             'APP_URL' => $appUrl,
-            'APP_KEY' => self::generateAppKey(),
+            'APP_KEY' => $appKey,
             'DB_HOST' => $database['host'],
             'DB_PORT' => (string) $database['port'],
             'DB_NAME' => $database['name'],
             'DB_USER' => $database['user'],
             'DB_PASS' => $database['pass'],
             'EXTENSION_TOKEN_SALT' => self::generateExtensionTokenSalt(),
+            // K33: üretimde diske yazılamadığı için loglar veritabanına gider.
+            'LOG_DRIVER' => 'db',
         ];
 
         $content = $template;
@@ -73,7 +98,44 @@ final class EnvWriter
             $content = $this->setValue($content, $key, $value);
         }
 
-        $this->putAtomically($content);
+        return ['content' => $content, 'app_key' => $appKey];
+    }
+
+    /**
+     * @param array{host: string, port: int, name: string, user: string, pass: string} $database
+     *
+     * @return string Üretilen APP_KEY (doğrulama için çağırana döner)
+     */
+    public function write(string $appUrl, #[SensitiveParameter] array $database): string
+    {
+        $generated = $this->generate($appUrl, $database);
+        $this->putAtomically($generated['content']);
+
+        return $generated['app_key'];
+    }
+
+    /**
+     * Elle kaydedilen `.env` gerçekten yerinde mi ve BİZİM ürettiğimiz dosya mı?
+     *
+     * APP_KEY karşılaştırması, kullanıcının içeriği eksik yapıştırmasını veya başka bir
+     * dosyayı kaydetmesini yakalar — dosyanın varlığına bakmak yeterli değildir.
+     */
+    public function verify(#[SensitiveParameter] string $expectedAppKey): bool
+    {
+        if (!$this->exists()) {
+            return false;
+        }
+
+        $content = @file_get_contents($this->path());
+        if ($content === false) {
+            return false;
+        }
+
+        if (preg_match('/^APP_KEY=("?)([0-9a-f]{64})\1\s*$/m', $content, $matches) !== 1) {
+            return false;
+        }
+
+        return hash_equals($expectedAppKey, $matches[2]);
     }
 
     /** Anahtar şablonda varsa değeri değiştirir, yoksa sonuna ekler. */

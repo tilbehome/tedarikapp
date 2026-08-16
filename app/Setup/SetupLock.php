@@ -4,74 +4,147 @@ declare(strict_types=1);
 
 namespace App\Setup;
 
+use App\Core\Connection;
+use App\Core\Dates;
 use DateTimeImmutable;
 use RuntimeException;
+use Throwable;
 
 /**
- * Kurulum kilidi (K16, İE#5 §10).
+ * Kurulum kilidi (K16, K33).
  *
- * `storage/setup.lock` YOKSA sihirbaz açıktır; VARSA tüm setup uçları 403 döner.
- * Kilit dosyası kurulumun en sonunda **atomik** yazılır: önce geçici dosyaya yazılır,
- * sonra `rename()` ile yerine taşınır. Yarım yazılmış bir kilit dosyası, kurulumu hem
- * bitmiş hem bitmemiş gösteren bir ara duruma yol açardı.
+ * Kilit VERİTABANINDA tutulur (`settings` tablosu, `system.setup_lock` anahtarı):
+ * üretim sunucusunda uygulama diske yazamıyor (PHP `nobody`, DSO), dolayısıyla
+ * dosya tabanlı kilit yazılamaz ve sihirbaz asla kapanamazdı.
+ *
+ * `storage/setup.lock` DOSYASI hâlâ OKUNUR ama artık yazılmaz: K33 öncesi kurulmuş
+ * sistemler kilitli kalmaya devam etsin diye (geriye dönük uyum).
+ *
+ * Veritabanına erişilemiyorsa kilit YOK sayılır — bu doğru davranıştır: DB yoksa
+ * kurulum zaten yapılmamıştır ve sihirbazın açılması gerekir.
  */
 final class SetupLock
 {
-    public function __construct(private readonly string $storagePath)
-    {
+    public const string SETTING_KEY = 'system.setup_lock';
+
+    public function __construct(
+        private readonly ?Connection $connection = null,
+        private readonly ?string $storagePath = null,
+    ) {
     }
 
-    public function path(): string
+    /** K33 öncesi kurulumlardan kalan dosya (yalnızca okunur). */
+    public function legacyFilePath(): ?string
     {
-        return $this->storagePath . '/setup.lock';
+        return $this->storagePath === null ? null : $this->storagePath . '/setup.lock';
     }
 
     public function isLocked(): bool
     {
-        return is_file($this->path());
+        return $this->read() !== null;
     }
 
-    /** @return array<string, mixed>|null Kilit içeriği (kurulum tarihi, sürüm) — okunamazsa null. */
+    /** @return array<string, mixed>|null */
     public function read(): ?array
     {
-        if (!$this->isLocked()) {
+        $stored = $this->readFromDatabase();
+        if ($stored !== null) {
+            return $stored;
+        }
+
+        return $this->readFromLegacyFile();
+    }
+
+    /** @param array<string, mixed> $details */
+    public function write(DateTimeImmutable $now, array $details = []): void
+    {
+        if ($this->connection === null) {
+            throw new RuntimeException('Kurulum kilidi yazılamadı: veritabanı bağlantısı yok.');
+        }
+
+        $payload = json_encode(
+            ['installed_at' => $now->format(DATE_ATOM)] + $details,
+            JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR,
+        );
+
+        try {
+            $pdo = $this->connection->pdo();
+
+            // MySQL ve SQLite'ta ortak yol: önce güncelle, etkilenen satır yoksa ekle.
+            $update = $pdo->prepare('UPDATE settings SET value = :value WHERE `key` = :key');
+            $update->execute(['key' => self::SETTING_KEY, 'value' => $payload]);
+
+            if ($update->rowCount() === 0) {
+                $exists = $pdo->prepare('SELECT 1 FROM settings WHERE `key` = :key');
+                $exists->execute(['key' => self::SETTING_KEY]);
+                if ($exists->fetch() === false) {
+                    $insert = $pdo->prepare('INSERT INTO settings (`key`, value) VALUES (:key, :value)');
+                    $insert->execute(['key' => self::SETTING_KEY, 'value' => $payload]);
+                }
+            }
+        } catch (Throwable $e) {
+            throw new RuntimeException('Kurulum kilidi veritabanına yazılamadı: ' . $e->getMessage(), 0, $e);
+        }
+
+        // Yazma denetimi: kilit gerçekten okunabiliyor mu? Yazılamamış bir kilit,
+        // sihirbazı sonsuza dek açık bırakırdı.
+        if ($this->readFromDatabase() === null) {
+            throw new RuntimeException('Kurulum kilidi yazıldı ama geri okunamadı.');
+        }
+    }
+
+    /** @return array<string, mixed>|null */
+    private function readFromDatabase(): ?array
+    {
+        if ($this->connection === null) {
             return null;
         }
 
-        $raw = @file_get_contents($this->path());
+        try {
+            $statement = $this->connection->pdo()->prepare('SELECT value FROM settings WHERE `key` = :key');
+            $statement->execute(['key' => self::SETTING_KEY]);
+            $row = $statement->fetch();
+        } catch (Throwable) {
+            // Tablo yok veya DB erişilemiyor → kurulum yapılmamış demektir.
+            return null;
+        }
+
+        if (!is_array($row) || !is_string($row['value'])) {
+            return null;
+        }
+
+        $decoded = json_decode($row['value'], true);
+
+        return is_array($decoded) ? $decoded : null;
+    }
+
+    /** @return array<string, mixed>|null */
+    private function readFromLegacyFile(): ?array
+    {
+        $path = $this->legacyFilePath();
+        if ($path === null || !is_file($path)) {
+            return null;
+        }
+
+        $raw = @file_get_contents($path);
         if ($raw === false) {
             return null;
         }
 
         $decoded = json_decode($raw, true);
 
-        return is_array($decoded) ? $decoded : null;
+        return is_array($decoded) ? $decoded + ['source' => 'legacy_file'] : null;
     }
 
-    /** @param array<string, mixed> $details */
-    public function write(DateTimeImmutable $now, array $details = []): void
+    /** Kilit anahtarının `settings` tablosunda saklandığı gerçeği; testler ve raporlama için. */
+    public function storesInDatabase(): bool
     {
-        if (!is_dir($this->storagePath) && !@mkdir($this->storagePath, 0775, true) && !is_dir($this->storagePath)) {
-            throw new RuntimeException(sprintf('storage klasörü oluşturulamadı: %s', $this->storagePath));
-        }
+        return $this->connection !== null;
+    }
 
-        $payload = json_encode(
-            ['installed_at' => $now->format(DATE_ATOM)] + $details,
-            JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR,
-        );
-
-        $temporary = $this->path() . '.' . bin2hex(random_bytes(6)) . '.tmp';
-        if (@file_put_contents($temporary, $payload, LOCK_EX) === false) {
-            throw new RuntimeException('Kurulum kilidi yazılamadı: storage klasörü yazılabilir değil.');
-        }
-
-        // rename() aynı dosya sisteminde atomiktir: kilit ya tam vardır ya hiç yoktur.
-        if (!@rename($temporary, $this->path())) {
-            @unlink($temporary);
-
-            throw new RuntimeException('Kurulum kilidi yerine taşınamadı.');
-        }
-
-        @chmod($this->path(), 0640);
+    /** Dates sınıfına bağımlılığı korumak için (depolama biçimi tek yerde tanımlı). */
+    public static function storageFormat(): string
+    {
+        return Dates::STORAGE_FORMAT;
     }
 }

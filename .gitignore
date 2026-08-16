@@ -11,9 +11,11 @@ node_modules/
 storage/
 *.log
 
-# İndirilen ürün görselleri repoya girmez (klasör iskeleti kalır)
+# İndirilen ürün görselleri repoya girmez (klasör iskeleti ve koruma dosyası kalır).
+# .htaccess REPO İLE GELMEK ZORUNDA: klasöre yazma izni verilmeden önce yerinde olmalı (K33/K34).
 public/media/*
 !public/media/.gitkeep
+!public/media/.htaccess
 
 # PM taslak klasörü (repoya girmez)
 docs-taslak/

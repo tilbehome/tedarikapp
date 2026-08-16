@@ -13,6 +13,7 @@ use App\Core\Migrator;
 use App\Core\Response;
 use App\Middleware\Auth;
 use App\Services\ActivityLog;
+use App\Services\MediaService;
 use App\Setup\SetupLock;
 use LogicException;
 use Psr\Http\Message\ResponseInterface;
@@ -35,6 +36,7 @@ final class SystemController
         private readonly Connection $connection,
         private readonly SetupLock $lock,
         private readonly Clock $clock,
+        private readonly ?MediaService $media = null,
     ) {
     }
 
@@ -76,6 +78,12 @@ final class SystemController
                 'pending' => $pending,
                 'pending_count' => count($pending),
             ],
+            // K33 çift modu — panel "görseller hotlink'te" rozetini buradan okur (Faz 1D).
+            'media' => [
+                'mode' => $this->media?->mode(),
+                'writable' => $this->media?->isWritable(),
+            ],
+            'setup_lock_in_database' => $this->lock->storesInDatabase(),
         ]);
     }
 

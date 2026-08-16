@@ -234,6 +234,14 @@ abstract class AuthTestCase extends TestCase
             )',
         );
         $this->pdo->exec(
+            'CREATE TABLE rate_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                currency TEXT NOT NULL,
+                rate TEXT NOT NULL,
+                set_at TEXT NOT NULL
+            )',
+        );
+        $this->pdo->exec(
             'CREATE TABLE categories (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL UNIQUE,

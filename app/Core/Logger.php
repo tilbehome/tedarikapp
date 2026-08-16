@@ -22,21 +22,33 @@ use Throwable;
  */
 final class Logger
 {
-    public static function create(Config $config, string $basePath, ?RequestContext $context = null): MonologLogger
-    {
-        $logDir = $basePath . '/' . trim($config->get('LOG_PATH', 'storage/logs'), '/');
-        if (!is_dir($logDir)) {
-            mkdir($logDir, 0775, true);
-        }
-
-        $handler = new StreamHandler(
-            sprintf('%s/app-%s.log', $logDir, date('Y-m-d')),
-            self::level($config->get('LOG_LEVEL', 'warning')),
-        );
-        $handler->setFormatter(new JsonFormatter());
-
+    /**
+     * @param Connection|null $connection `LOG_DRIVER=db` için gerekir (K33).
+     */
+    public static function create(
+        Config $config,
+        string $basePath,
+        ?RequestContext $context = null,
+        ?Connection $connection = null,
+    ): MonologLogger {
+        $level = self::level($config->get('LOG_LEVEL', 'warning'));
         $logger = new MonologLogger('tedarikapp');
-        $logger->pushHandler($handler);
+
+        // K33: üretimde uygulama diske yazamaz (PHP `nobody`, DSO) → loglar veritabanına.
+        // Geliştirme makinesinde dosya hedefi kullanışlıdır; sürücü .env'den seçilir.
+        $driver = strtolower($config->get('LOG_DRIVER', 'file'));
+
+        if ($driver === 'db' && $connection !== null) {
+            $logger->pushHandler(new DatabaseLogHandler($connection, $context, $level));
+        } else {
+            $logDir = $basePath . '/' . trim($config->get('LOG_PATH', 'storage/logs'), '/');
+            if (!is_dir($logDir)) {
+                @mkdir($logDir, 0775, true);
+            }
+            $handler = new StreamHandler(sprintf('%s/app-%s.log', $logDir, date('Y-m-d')), $level);
+            $handler->setFormatter(new JsonFormatter());
+            $logger->pushHandler($handler);
+        }
 
         // Monolog processor'ları LIFO koşar: en son eklenen ilk çalışır.
         // Gizleme en son eklenir ki çağıranın verdiği bağlamı EN ÖNCE süzsün;

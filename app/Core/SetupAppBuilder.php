@@ -12,6 +12,7 @@ use App\Middleware\RequestId;
 use App\Middleware\SecurityHeaders;
 use App\Middleware\SetupCsrf;
 use App\Middleware\SetupGuard;
+use App\Setup\EnvWriter;
 use App\Setup\SetupLock;
 use App\Setup\SetupState;
 use Closure;
@@ -48,10 +49,18 @@ final class SetupAppBuilder
         ?SessionInterface $session = null,
         ?Clock $clock = null,
         ?RequestContext $requestContext = null,
+        ?SetupLock $setupLock = null,
+        ?EnvWriter $envWriter = null,
     ): App {
         $requestContext ??= new RequestContext();
         $clock ??= new SystemClock(new \DateTimeZone('Europe/Istanbul'));
-        $lock = new SetupLock($basePath . '/storage');
+
+        // K33: kilit veritabanındadır. Bağlantı TEMBEL kurulur — `.env` henüz yokken
+        // Config::load() istisna fırlatır, SetupLock bunu "kurulum yapılmamış" sayar.
+        $lock = $setupLock ?? new SetupLock(
+            Connection::fromCallable(static fn (): \PDO => Database::connect(Config::load($basePath))),
+            $basePath . '/storage',
+        );
 
         $app = AppFactory::create();
         $app->addBodyParsingMiddleware();
@@ -59,7 +68,7 @@ final class SetupAppBuilder
 
         $responseFactory = $app->getResponseFactory();
         $state = new SetupState($session ?? NativeSession::forSetup(secure: false));
-        $controller = new SetupController($basePath, $state, $lock, $clock);
+        $controller = new SetupController($basePath, $state, $lock, $clock, $envWriter);
 
         // Sihirbaz sayfası ve varlıkları (kilit denetimi bunlara da uygulanır).
         $app->get('/setup', self::viewAction($basePath . '/setup/views/wizard.html', 'text/html; charset=utf-8'));
@@ -71,6 +80,7 @@ final class SetupAppBuilder
             $group->get('/requirements', [$controller, 'requirements']);
             $group->post('/database', [$controller, 'database']);
             $group->post('/env', [$controller, 'env']);
+            $group->post('/env/verify', [$controller, 'verifyEnv']);
             $group->post('/migrate', [$controller, 'migrate']);
             $group->post('/admin', [$controller, 'admin']);
             $group->post('/admin/verify', [$controller, 'verifyAdmin']);

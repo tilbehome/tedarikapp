@@ -120,6 +120,38 @@ final class EnvWriterTest extends TestCase
         self::assertSame(3306, $config->getPositiveInt('DB_PORT'));
     }
 
+    /**
+     * Regresyon: aynı istekte Config İKİ KEZ kurulabilmeli.
+     *
+     * K33 ile kurulum kilidi veritabanına taşınınca, tek bir istekte hem kilit denetimi
+     * hem controller Config kuruyor. `Dotenv::createImmutable` ikinci `load()` çağrısında
+     * BOŞ dizi döndürdüğü için sihirbaz "zorunlu anahtar eksik" hatasıyla düşüyordu —
+     * canlı koşumda yakalandı. Çözüm: array-backed adaptör.
+     */
+    public function testConfigAyniSurecteIkiKezYuklenebilir(): void
+    {
+        $this->writer()->write('https://ornek.test', self::DATABASE);
+
+        $first = Config::load($this->tempRoot());
+        $second = Config::load($this->tempRoot());
+
+        self::assertSame($first->get('DB_NAME'), $second->get('DB_NAME'));
+        self::assertSame('tedarikapp', $second->get('DB_NAME'));
+        self::assertSame($first->get('APP_KEY'), $second->get('APP_KEY'));
+    }
+
+    public function testSirlarSurecOrtaminaSIZMAZ(): void
+    {
+        $this->writer()->write('https://ornek.test', self::DATABASE);
+        $config = Config::load($this->tempRoot());
+
+        // Değer Config üzerinden okunabilir...
+        self::assertSame('gizli-sifre', $config->get('DB_PASS'));
+        // ...ama süreç ortamına yazılmaz: getenv/phpinfo dökümünde görünmez (CLAUDE.md §5).
+        self::assertFalse(getenv('DB_PASS'), 'DB_PASS süreç ortamına sızmamalı.');
+        self::assertArrayNotHasKey('DB_PASS', $_ENV);
+    }
+
     public function testSablonYoksaAnlasilirHataVerir(): void
     {
         unlink($this->tempPath('.env.example'));
