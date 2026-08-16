@@ -137,6 +137,28 @@ GET    /p/{share_token}           ← herkese açık paylaşım sayfası (API de
 2. Hosting'de PHP sürümü ve cron erişimi teyit edilecek.
 3. 1688 video URL'leri bazı durumlarda oturum istiyor — Faz 3'te parser yazılırken gerçek sayfalarla test edilip gerekirse video dosyası da sunucuya indirilecek. Karar testten sonra.
 
+## 6b. Hedef Kaynak Dizin Ağacı (repo — Claude Code buna uyar)
+
+```
+tedarikapp/
+├── CLAUDE.md · README.md · CHANGELOG.md · .gitignore · .env.example
+├── docs/                     (00–09 belgeleri + is-emirleri/)
+├── app/                      PHP kaynak (docroot dışı)
+│   ├── Controllers/          (Auth, Lists, Products, Inbox, Capture, Export, Share, Settings)
+│   ├── Models/               (PDO tabanlı erişim katmanı)
+│   ├── Services/             (CurrencyService, ExportExcel, ExportPdf, MediaService,
+│   │                          StateMachine, TotpService, ActivityLog)
+│   ├── Parsers/              (backend doğrulama adaptörleri: Parser1688, ParserInterface)
+│   └── Middleware/           (AuthGuard, CsrfGuard, RateLimit, SecurityHeaders)
+├── public/                   index.php + assets/ (React build) + media/ (görseller)
+├── frontend/                 React kaynak
+│   └── src/ screens/ · components/ · api/ · store/
+├── extension/                manifest.json · background.js · popup/ · parsers/parser_1688.js
+├── migrations/               (sıralı SQL/PHP migration dosyaları)
+├── setup/                    (kurulum sihirbazı — kurulum sonrası kilitlenir)
+└── tests/                    (PHPUnit: para, kur, durum makinesi, API)
+```
+
 ## 7. Sunucu Ortamı (16.08.2026 raporuyla DOĞRULANDI)
 
 Adres: **tedarikapp.tilbehometoptan.com** — açık soru 1 kapandı.
