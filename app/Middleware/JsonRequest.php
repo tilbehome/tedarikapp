@@ -70,9 +70,15 @@ final class JsonRequest implements MiddlewareInterface
             return $size > 0;
         }
 
-        // Akış boyutu bilinmiyorsa (chunked) Content-Length'e bak; o da yoksa gövde var say.
+        // Akış boyutu bilinmiyor (gerçek sunucuda `php://input` böyledir). HTTP'de gövdenin
+        // varlığını Content-Length veya Transfer-Encoding belirler; ikisi de yoksa gövde YOKTUR.
+        // Burada "var say" demek, gövdesiz bir POST'u (ör. /duplicate) 415'e düşürüyordu.
+        if ($request->hasHeader('Transfer-Encoding')) {
+            return true;
+        }
+
         $length = $request->getHeaderLine('Content-Length');
 
-        return $length === '' || (int) $length > 0;
+        return $length !== '' && (int) $length > 0;
     }
 }

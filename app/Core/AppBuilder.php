@@ -8,13 +8,24 @@ use App\Auth\AuthServices;
 use App\Auth\NativeSession;
 use App\Auth\SessionInterface;
 use App\Controllers\AuthController;
+use App\Controllers\ListController;
+use App\Controllers\ProductController;
 use App\Controllers\SystemController;
+use App\Controllers\TrashController;
 use App\Middleware\Auth;
 use App\Middleware\Csrf;
 use App\Middleware\JsonRequest;
 use App\Middleware\LoginRateLimit;
 use App\Middleware\RequestId;
 use App\Middleware\SecurityHeaders;
+use App\Models\ListRepository;
+use App\Models\ProductRepository;
+use App\Models\SettingsRepository;
+use App\Services\InputValidator;
+use App\Services\ListPresenter;
+use App\Services\MoneyService;
+use App\Services\StateMachine;
+use App\Services\TrashPolicy;
 use App\Setup\SetupLock;
 use Closure;
 use DateTimeImmutable;
@@ -104,6 +115,67 @@ final class AppBuilder
         $app->group('/api/system', static function (RouteCollectorProxy $group) use ($system): void {
             $group->get('/status', [$system, 'status']);
             $group->post('/migrate', [$system, 'migrate']);
+        })
+            ->add(new Csrf($services->session, $responseFactory))
+            ->add(new Auth($services, $responseFactory));
+
+        // Veri katmanı (İE#6): listeler, ürünler, çöp kutusu — hepsi Auth + CSRF korumalı.
+        $lists = new ListRepository($connection);
+        $products = new ProductRepository($connection);
+        $money = new MoneyService();
+        $presenter = new ListPresenter($lists, $products, $money, $services->timezone);
+        $validator = new InputValidator($money);
+        $stateMachine = new StateMachine();
+
+        $listController = new ListController(
+            $lists,
+            $products,
+            new SettingsRepository($connection),
+            $presenter,
+            $validator,
+            $stateMachine,
+            $services->activity,
+            $services->clock,
+        );
+        $productController = new ProductController(
+            $lists,
+            $products,
+            $presenter,
+            $validator,
+            $stateMachine,
+            $services->activity,
+            $services->clock,
+        );
+        $trashController = new TrashController(
+            $lists,
+            $products,
+            new TrashPolicy($config->getPositiveInt('TRASH_RETENTION_DAYS', 30)),
+            $services->activity,
+            $services->clock,
+            $services->timezone,
+        );
+
+        $app->group('/api', static function (RouteCollectorProxy $group) use ($listController, $productController, $trashController): void {
+            $group->get('/lists', [$listController, 'index']);
+            $group->post('/lists', [$listController, 'store']);
+            $group->get('/lists/{id}', [$listController, 'show']);
+            $group->patch('/lists/{id}', [$listController, 'update']);
+            $group->delete('/lists/{id}', [$listController, 'destroy']);
+            $group->post('/lists/{id}/duplicate', [$listController, 'duplicate']);
+
+            $group->get('/lists/{id}/products', [$productController, 'index']);
+            $group->post('/lists/{id}/products', [$productController, 'store']);
+            $group->patch('/lists/{id}/products/reorder', [$productController, 'reorder']);
+
+            // bulk, {id} deseninden ÖNCE tanımlanır; aksi hâlde "bulk" bir kimlik sanılır.
+            $group->patch('/products/bulk', [$productController, 'bulk']);
+            $group->patch('/products/{id}', [$productController, 'update']);
+            $group->patch('/products/{id}/status', [$productController, 'updateStatus']);
+            $group->delete('/products/{id}', [$productController, 'destroy']);
+
+            $group->get('/trash', [$trashController, 'index']);
+            $group->post('/trash/{type}/{id}/restore', [$trashController, 'restore']);
+            $group->delete('/trash/{type}/{id}', [$trashController, 'destroy']);
         })
             ->add(new Csrf($services->session, $responseFactory))
             ->add(new Auth($services, $responseFactory));

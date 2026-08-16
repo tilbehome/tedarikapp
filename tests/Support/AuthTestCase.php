@@ -221,5 +221,109 @@ abstract class AuthTestCase extends TestCase
                 created_at TEXT NOT NULL
             )',
         );
+        $this->createDataSchema();
+    }
+
+    /** İE#6 tabloları — MySQL DDL'inin SQLite karşılığı (aynı sütun adları ve NULL kuralları). */
+    private function createDataSchema(): void
+    {
+        $this->pdo->exec(
+            'CREATE TABLE settings (
+                key TEXT NOT NULL PRIMARY KEY,
+                value TEXT NULL
+            )',
+        );
+        $this->pdo->exec(
+            'CREATE TABLE categories (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL UNIQUE,
+                sort INTEGER NOT NULL DEFAULT 0
+            )',
+        );
+        $this->pdo->exec(
+            'CREATE TABLE lists (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                period TEXT NULL,
+                supplier_name TEXT NULL,
+                status TEXT NOT NULL DEFAULT \'draft\',
+                note TEXT NULL,
+                visibility TEXT NOT NULL DEFAULT \'active\',
+                yuan_rate TEXT NOT NULL,
+                usd_rate TEXT NOT NULL,
+                rate_locked_at TEXT NULL,
+                revision INTEGER NOT NULL DEFAULT 0,
+                share_token_hash TEXT NULL,
+                share_token_prefix TEXT NULL,
+                share_expires_at TEXT NULL,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                archived_at TEXT NULL,
+                deleted_at TEXT NULL
+            )',
+        );
+        $this->pdo->exec(
+            'CREATE TABLE products (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                list_id INTEGER NOT NULL,
+                sort_no INTEGER NOT NULL DEFAULT 0,
+                category_id INTEGER NULL,
+                platform TEXT NULL,
+                external_id TEXT NULL,
+                name TEXT NOT NULL,
+                name_original TEXT NULL,
+                detail TEXT NULL,
+                url TEXT NULL,
+                vendor_name TEXT NULL,
+                vendor_url TEXT NULL,
+                sku_selection TEXT NULL,
+                sku_matrix TEXT NULL,
+                main_image TEXT NULL,
+                video_url TEXT NULL,
+                qty INTEGER NOT NULL DEFAULT 1,
+                price_yuan TEXT NOT NULL DEFAULT \'0\',
+                price_ddp_usd TEXT NOT NULL DEFAULT \'0\',
+                units_per_carton INTEGER NULL,
+                tracking_no TEXT NULL,
+                status TEXT NOT NULL DEFAULT \'to_order\',
+                note TEXT NULL,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                deleted_at TEXT NULL
+            )',
+        );
+        $this->pdo->exec(
+            'CREATE TABLE product_images (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                product_id INTEGER NOT NULL,
+                path TEXT NOT NULL,
+                sort INTEGER NOT NULL DEFAULT 0
+            )',
+        );
+        $this->pdo->exec(
+            'CREATE TABLE product_status_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                product_id INTEGER NOT NULL,
+                from_status TEXT NULL,
+                to_status TEXT NOT NULL,
+                actor_type TEXT NOT NULL DEFAULT \'admin\',
+                actor_id INTEGER NULL,
+                changed_at TEXT NOT NULL,
+                request_id TEXT NULL
+            )',
+        );
+        $this->pdo->exec(
+            'CREATE TABLE exports (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                list_id INTEGER NOT NULL,
+                format TEXT NOT NULL,
+                snapshot_json TEXT NULL,
+                sha256 TEXT NULL,
+                file_size INTEGER NULL,
+                status TEXT NOT NULL DEFAULT \'ready\',
+                list_revision INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL
+            )',
+        );
     }
 }

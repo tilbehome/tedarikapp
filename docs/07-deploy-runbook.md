@@ -65,5 +65,10 @@ Sonraki sürümler: sihirbaz YOK — zip yüklenir, admin girişinde "veritaban�
 ## 7. Yedekleme
 
 - cPanel cron, her gece: DB dump + `public/media/` → tarihli arşiv → `~/backups/` (son 14 gün tutulur).
+- **Çöp kutusu temizliği (K15, İE#6):** `bin/purge-trash.php` saklama süresi (`TRASH_RETENTION_DAYS`, varsayılan 30 gün) dolan soft-delete kayıtlarını kalıcı siler. Cron önerisi — yedekten SONRA koşsun ki silinen kayıt en az bir gece yedeğe girmiş olsun:
+  ```
+  0 4 * * *  /usr/local/bin/php /home/<kullanıcı>/<alan-adı>/bin/purge-trash.php
+  ```
+  `--dry-run` ile ne silineceği yazdırılır, dokunulmaz.
 - Ayda bir yedekten geri yükleme denemesi (test DB'ye) yapılır — denenmemiş yedek, yedek değildir.
 - **Off-site yedek CANLIYA ALMA ÖN ŞARTIDIR (İE#4 REV2, havuzdaki F11 yeniden sınıflandırıldı):** gece yedeğinin sunucu dışına da kopyalanması (ör. Google Drive) canlıya çıkmadan ÖNCE kurulur. Yalnızca aynı sunucuda duran yedek, sunucu kaybında yedek değildir.

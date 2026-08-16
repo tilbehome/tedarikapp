@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Tests\Services;
 
 use App\Services\MoneyService;
+use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use InvalidArgumentException;
 
 /**
  * K14/K24/K29 — para TEST-FIRST yazılır.
