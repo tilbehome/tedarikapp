@@ -31,6 +31,12 @@ Thumbs.db
 Desktop.ini
 .DS_Store
 
+# Office kilit dosyaları (~$dosya.xlsx — dosya açıkken oluşur)
+~$*
+
+# Claude Code kişisel ayarları (paylaşılan ayar .claude/settings.json'dır)
+.claude/settings.local.json
+
 # IDE / editör
 .idea/
 .vscode/

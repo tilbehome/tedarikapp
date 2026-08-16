@@ -8,11 +8,14 @@ use App\Auth\AuthServices;
 use App\Auth\NativeSession;
 use App\Auth\SessionInterface;
 use App\Controllers\AuthController;
+use App\Controllers\SystemController;
 use App\Middleware\Auth;
 use App\Middleware\Csrf;
+use App\Middleware\JsonRequest;
 use App\Middleware\LoginRateLimit;
 use App\Middleware\RequestId;
 use App\Middleware\SecurityHeaders;
+use App\Setup\SetupLock;
 use Closure;
 use DateTimeImmutable;
 use DateTimeZone;
@@ -37,6 +40,7 @@ final class AppBuilder
      * @param callable(): \PDO $pdoFactory Bağlantı tembel kurulur; sağlık ucu başarısızlığı zarfla raporlar.
      * @param SessionInterface|null $session Testlerde dizi tabanlı oturum enjekte edilir.
      * @param Clock|null $clock Testlerde zaman sabitlenir (giriş kilidi, token ömrü).
+     * @param SetupLock|null $setupLock Kurulum kilidi — `GET /api/system/status` kurulum tarihini buradan okur.
      * @param RequestContext|null $requestContext Logger ile PAYLAŞILAN bağlam; verilmezse yenisi kurulur.
      *
      * @return App<\Psr\Container\ContainerInterface|null>
@@ -47,9 +51,13 @@ final class AppBuilder
         LoggerInterface $logger,
         ?SessionInterface $session = null,
         ?Clock $clock = null,
+        ?SetupLock $setupLock = null,
         ?RequestContext $requestContext = null,
+        ?string $basePath = null,
     ): App {
         $requestContext ??= new RequestContext();
+        $basePath ??= dirname(__DIR__, 2);
+        $setupLock ??= new SetupLock($basePath . '/storage');
 
         $app = AppFactory::create();
         $app->addBodyParsingMiddleware();
@@ -59,7 +67,7 @@ final class AppBuilder
         $services = new AuthServices(
             $config,
             $connection,
-            $session ?? new NativeSession($config),
+            $session ?? NativeSession::fromConfig($config),
             $clock ?? SystemClock::fromConfig($config),
             $logger,
             $requestContext,
@@ -90,6 +98,16 @@ final class AppBuilder
             ->add(new Csrf($services->session, $responseFactory))
             ->add(new Auth($services, $responseFactory));
 
+        // Güncelleme yolu (İE#5 §12): kurulum kilitlendikten sonra migration koşmanın
+        // kimlik doğrulamalı yolu. Yazma ucu ayrıca CSRF ister.
+        $system = new SystemController($basePath, $connection, $setupLock, $services->clock);
+        $app->group('/api/system', static function (RouteCollectorProxy $group) use ($system): void {
+            $group->get('/status', [$system, 'status']);
+            $group->post('/migrate', [$system, 'migrate']);
+        })
+            ->add(new Csrf($services->session, $responseFactory))
+            ->add(new Auth($services, $responseFactory));
+
         $app->addErrorMiddleware(
             displayErrorDetails: !$config->isProduction(),
             logErrors: true,
@@ -97,8 +115,10 @@ final class AppBuilder
             logger: $logger,
         )->setDefaultErrorHandler(self::errorHandler($app->getResponseFactory(), $logger));
 
-        // Bu ikisi hata middleware'inden SONRA eklenir, yani EN DIŞTA koşar:
-        // 404/405/500 gibi hata yanıtları da güvenlik başlıklarını ve X-Request-Id'yi alır.
+        // Bunlar hata middleware'inden SONRA eklenir, yani EN DIŞTA koşar:
+        // 404/405/415/500 gibi hata yanıtları da güvenlik başlıklarını ve X-Request-Id'yi alır.
+        // JsonRequest gövde ayrıştırmadan ÖNCE devreye girer (docs/10 §1).
+        $app->add(new JsonRequest($app->getResponseFactory()));
         $app->add(new SecurityHeaders());
         $app->add(new RequestId($requestContext));
 

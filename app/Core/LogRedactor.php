@@ -35,6 +35,18 @@ final class LogRedactor implements ProcessorInterface
         'hash',
     ];
 
+    /**
+     * Beyaz liste: hassas terim İÇERSE bile gizlenmeyen alanlar (İE#5).
+     *
+     * `error_code` "code" içerdiği için gizleniyordu; `request_id` de logun asıl işe yarayan
+     * bağıdır. İkisi de sır değildir — gizlenmeleri hata ayıklamayı imkânsız hâle getiriyordu.
+     * Karşılaştırma TAM ad üzerinden yapılır: `error_code_secret` gibi bir alan yine gizlenir.
+     */
+    private const array ALLOWED_KEYS = [
+        'error_code',
+        'request_id',
+    ];
+
     /** İç içe yapılarda sonsuz döngüye/aşırı derinliğe karşı sınır. */
     private const int MAX_DEPTH = 8;
 
@@ -72,6 +84,9 @@ final class LogRedactor implements ProcessorInterface
     private function isSensitive(string $key): bool
     {
         $normalized = strtolower($key);
+        if (in_array($normalized, self::ALLOWED_KEYS, true)) {
+            return false;
+        }
         foreach (self::SENSITIVE_TERMS as $term) {
             if (str_contains($normalized, $term)) {
                 return true;

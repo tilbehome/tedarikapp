@@ -218,32 +218,56 @@ Uç bazlı istek/yanıt gövdeleri, hata zarfı, sayfalama ve durum kodları **d
 2. ~~Hosting'de PHP sürümü ve cron erişimi teyit edilecek.~~ **KAPANDI:** PHP 8.1.34 + cPanel cron doğrulandı (16.08.2026 sunucu raporu, bkz. §7).
 3. 1688 video URL'leri bazı durumlarda oturum istiyor — Faz 3'te parser yazılırken gerçek sayfalarla test edilip gerekirse video dosyası da sunucuya indirilecek. Karar testten sonra. **(AÇIK — tek kalan soru)**
 
-## 6b. Hedef Kaynak Dizin Ağacı (repo — Claude Code buna uyar)
+## 6b. Kaynak Dizin Ağacı
+
+Bu bölüm **gerçeği yansıtır** (İE#5'te repo ile eşitlendi). Henüz yazılmamış klasörler ⏳ ile işaretlidir;
+yazıldıklarında bu ağaç aynı PR'da güncellenir — belge ile repo arasında sapma bırakılmaz.
 
 ```
 tedarikapp/
 ├── CLAUDE.md · README.md · CHANGELOG.md · .gitignore · .env.example
-├── docs/                     (00–10 belgeleri + is-emirleri/)
+├── composer.json · composer.lock · phpunit.xml · phpstan.neon · .php-cs-fixer.php
+├── .htaccess                 (docroot public'e çekilemezse public/'e yönlendirir)
+├── ornek-tedarik-listesi.xlsx  (Excel çıktısının referans şablonu — gerçek veri içermez, K28)
+├── .github/workflows/ci.yml  (K26: PHPUnit + PHPStan + CS-Fixer + audit)
+├── docs/                     00–10 belgeleri
+│   ├── is-emirleri/          (is-emri-01 … 05)
+│   ├── arastirma/            (1688 veri envanteri + parser raporu)
+│   └── fikirler/             (havuzdaki fikirlerin taslak metinleri)
 ├── app/                      PHP kaynak (docroot dışı)
-│   ├── Controllers/          (Auth, Lists, Products, Inbox, Capture, Export, Share, Settings)
-│   ├── Models/               (PDO tabanlı erişim katmanı)
-│   ├── Services/             (CurrencyService, ExportExcel, ExportPdf, MediaService,
-│   │                          StateMachine, TotpService, ActivityLog)
-│   ├── Parsers/              (backend doğrulama adaptörleri: Parser1688, ParserInterface)
-│   └── Middleware/           (AuthGuard, CsrfGuard, RateLimit, SecurityHeaders)
-├── public/                   index.php + assets/ (React build) + media/ (görseller)
-├── frontend/                 React kaynak
-│   └── src/ screens/ · components/ · api/ · store/
-├── extension/                manifest.json · background.js · popup/ · parsers/parser_1688.js
-├── migrations/               (sıralı SQL/PHP migration dosyaları)
-├── setup/                    (kurulum sihirbazı — kurulum sonrası kilitlenir)
-└── tests/                    (PHPUnit: para, kur, durum makinesi, API)
+│   ├── Auth/                 AuthServices · AuthSession · SessionInterface · NativeSession
+│   │                         UserRepository · User · PasswordHasher · TotpService
+│   │                         RecoveryCodeService · RememberTokenService/Match/Status · LoginThrottle
+│   ├── Controllers/          AuthController · SetupController · SystemController
+│   ├── Core/                 AppBuilder · SetupAppBuilder · Config · Connection · Database
+│   │                         Clock/SystemClock · Response · Cookie · ClientIp · Dates · Encrypter
+│   │                         Ulid · AppVersion · RequestContext · Logger · LogRedactor
+│   │                         Migration · Migrator · AsciiQrCode
+│   ├── Middleware/           Auth · Csrf · LoginRateLimit · RequestId · SecurityHeaders
+│   │                         JsonRequest · SetupGuard · SetupCsrf
+│   ├── Setup/                SetupLock · SetupState · RequirementChecker · DatabaseProbe
+│   │                         EnvWriter · QrCodeSvg
+│   ├── Services/             ActivityLog
+│   ├── Models/            ⏳ (PDO erişim katmanı — liste/ürün emirlerinde)
+│   └── Parsers/            ⏳ (backend doğrulama adaptörleri — Faz 3)
+├── bin/                      migrate.php · user-create.php   (yalnızca CLI)
+├── migrations/               0001_create_users … 0007_create_activity_log (K23: 1 dosya = 1 DDL)
+├── public/                   index.php · .htaccess · media/ (görseller)  ⏳ assets/ (React build)
+├── setup/views/              wizard.html · wizard.js · wizard.css
+│                             (docroot DIŞINDA; rotalardan servis edilir, kurulum sonrası kilitlenir)
+├── storage/               ⏳ (webden kapalı: logs/ · exports/ · setup.lock — çalışma anında oluşur)
+├── frontend/              ⏳ React kaynak (screens/ · components/ · api/ · store/)
+├── extension/             ⏳ manifest.json · background.js · popup/ · parsers/parser_1688.js
+└── tests/                    Auth/ · Core/ · Http/ · Support/ · fixtures/
 ```
 
 ## 7. Sunucu Ortamı (16.08.2026 raporuyla DOĞRULANDI)
 
 Adres: **tedarikapp.tilbehometoptan.com** — açık soru 1 kapandı.
-Docroot: `/home/tilbehometoptan/tedarikapp.tilbehometoptan.com`
+Docroot: `/home/<cpanel-kullanıcısı>/<alan-adı>` (cPanel'in alt alan adı için açtığı klasör).
+
+> Bu bölümdeki yollar bilinçli olarak genelleştirilmiştir (K28): depo herkese açık olabileceği için
+> sunucuya özel mutlak yollar ve hesap adı yazılmaz. Gerçek değerler yalnızca `.env` ve deploy notlarındadır.
 
 **Yeşil ışık (stack'i doğrulayan bulgular):**
 - PHP 8.1.34 + MySQL (pdo_mysql) + SQLite yedek seçenek → Slim 4 uyumlu. (Rapor tarihindeki sürüm; 16.08.2026'da PHP 8.4'e yükseltildi — K21.)
@@ -258,7 +282,7 @@ Docroot: `/home/tilbehometoptan/tedarikapp.tilbehometoptan.com`
 2. Sunucuda composer YOK → bağımlılıklar lokalde kurulur, `vendor/` klasörü deploy paketiyle birlikte yüklenir (git deploy: vendor repo'ya dahil edilir veya release zip'i ile taşınır).
 3. `mail()` KAPALI → e-posta yok; şifre sıfırlama e-postayla YAPILMAZ. Kurtarma: sunucuya konulan tek seferlik CLI/secret script ile şifre resetleme.
 4. `exec/system/proc_open` kapalı (`shell_exec` açık ama güvenilmez) → uygulama hiçbir shell komutuna dayanmaz; görsel işleme GD ile PHP içinde.
-5. Docroot şu an PHP tarafından YAZILAMAZ durumda → deploy öncesi cPanel'den düzeltilecek: uygulama kökü salt okunur kalabilir ama `storage/` (görseller, geçici export dosyaları, loglar) klasörü yazılabilir yapılmak ZORUNDA. Faz 1 kurulum kontrol listesine eklendi.
+5. Docroot şu an PHP tarafından YAZILAMAZ durumda → deploy öncesi cPanel'den düzeltilecek: uygulama kökü salt okunur kalabilir ama `storage/` (görseller, geçici export dosyaları, loglar) ve `public/media/` klasörleri yazılabilir yapılmak ZORUNDA. Kurulum sihirbazının gereksinim adımı bu iki klasörü ayrı ayrı denetler ve eksiği isim isim gösterir (İE#5).
 6. opcache/apcu yok → önbellek beklenmez; sorgular ve sayfa yükü buna göre hafif tutulur.
 7. Zaman dilimi sunucuda UTC → uygulama her yerde `Europe/Istanbul` ayarlar.
 8. Cron: yedekleme otomasyonu için cPanel cron kullanılacak (panelden tanımlanır; PHP CLI mevcut ✓ — 8.4'e yükseltildi, K21).

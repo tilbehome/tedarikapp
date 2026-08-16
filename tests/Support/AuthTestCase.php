@@ -16,6 +16,7 @@ use App\Core\Encrypter;
 use PDO;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use Psr\Log\NullLogger;
 use RobThree\Auth\Providers\Qr\BaconQrCodeProvider;
 use RobThree\Auth\TwoFactorAuth;
@@ -116,6 +117,13 @@ abstract class AuthTestCase extends TestCase
             ->getCode($secret, $this->clock->now()->getTimestamp());
     }
 
+    /** Gövdesiz, başlıksız ham istek — middleware testleri kendi gövdesini ekler. */
+    protected function rawRequest(string $method, string $path): ServerRequestInterface
+    {
+        return (new ServerRequestFactory())
+            ->createServerRequest($method, $path, ['REMOTE_ADDR' => '203.0.113.7']);
+    }
+
     /**
      * @param array<string, mixed>|null $body
      * @param array<string, string> $headers
@@ -128,8 +136,7 @@ abstract class AuthTestCase extends TestCase
         array $headers = [],
         array $cookies = [],
     ): ResponseInterface {
-        $request = (new ServerRequestFactory())
-            ->createServerRequest($method, $path, ['REMOTE_ADDR' => '203.0.113.7']);
+        $request = $this->rawRequest($method, $path);
 
         if ($body !== null) {
             $request = $request->withParsedBody($body)->withHeader('Content-Type', 'application/json');

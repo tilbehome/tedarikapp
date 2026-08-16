@@ -59,6 +59,33 @@ final class LogRedactorTest extends TestCase
         self::assertSame(LogRedactor::PLACEHOLDER, $record->context[$alan]);
     }
 
+    public function testBeyazListedekiAlanlarGizlenmez(): void
+    {
+        // İE#5 §9: error_code "code" içerdiği için gizleniyordu, request_id ise logun
+        // asıl bağı. İkisi de sır değil; gizlenmeleri hata ayıklamayı imkânsız kılıyordu.
+        $record = $this->redact([
+            'error_code' => 'VALIDATION',
+            'request_id' => '01J000000000000000000000AB',
+        ]);
+
+        self::assertSame('VALIDATION', $record->context['error_code']);
+        self::assertSame('01J000000000000000000000AB', $record->context['request_id']);
+    }
+
+    public function testBeyazListeTamAdEslesmesidir(): void
+    {
+        // Beyaz liste geniş bir kapı olmamalı: benzer adlı alanlar yine gizlenir.
+        $record = $this->redact([
+            'error_code_secret' => 'gizli',
+            'my_error_code' => 'gizli',
+            'ERROR_CODE' => 'VALIDATION',
+        ]);
+
+        self::assertSame(LogRedactor::PLACEHOLDER, $record->context['error_code_secret']);
+        self::assertSame(LogRedactor::PLACEHOLDER, $record->context['my_error_code']);
+        self::assertSame('VALIDATION', $record->context['ERROR_CODE'], 'Büyük/küçük harf farkı muafiyeti bozmaz.');
+    }
+
     public function testZararsizAlanlarOlduguGibiKalir(): void
     {
         $record = $this->redact(['user_id' => 7, 'ip' => '203.0.113.7', 'duration_ms' => 42]);

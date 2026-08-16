@@ -17,7 +17,8 @@
 ```
 
 - **HTTP durum kodları:** 200 (ok) · 201 (oluşturuldu) · 204 (silindi, gövde yok) · 400 (bozuk istek) · 401 (oturum yok/2FA bekliyor) · 403 (CSRF/yetki/kilit) · 404 · 405 (metot desteklenmiyor) · 409 (çakışma; örn. tekrar-ekleme onayı bekliyor) · 415 · 422 (doğrulama/geçersiz durum geçişi) · 429 (hız sınırı).
-- **Hata kodları (`error.code`):** `VALIDATION`, `UNAUTHENTICATED`, `TOTP_REQUIRED`, `FORBIDDEN`, `CSRF`, `NOT_FOUND`, `METHOD_NOT_ALLOWED`, `STATE_TRANSITION`, `DUPLICATE_WARNING`, `RATE_LIMITED`, `LOCKED`, `PAYLOAD_TOO_LARGE`, `SERVER_ERROR`. Mesajlar Türkçe ve kullanıcıya gösterilebilir; teknik detay yalnızca loga yazılır.
+- **Hata kodları (`error.code`):** `VALIDATION`, `UNAUTHENTICATED`, `TOTP_REQUIRED`, `FORBIDDEN`, `CSRF`, `NOT_FOUND`, `METHOD_NOT_ALLOWED`, `UNSUPPORTED_MEDIA_TYPE`, `STATE_TRANSITION`, `DUPLICATE_WARNING`, `RATE_LIMITED`, `LOCKED`, `PAYLOAD_TOO_LARGE`, `SERVER_ERROR`. Mesajlar Türkçe ve kullanıcıya gösterilebilir; teknik detay yalnızca loga yazılır.
+- **415 uygulaması (İE#5):** kural GÖVDELİ yazma isteklerine uygulanır — gövdesiz bir `POST`/`DELETE` içerik tipi bildirmek zorunda değildir. İhlalde `415` + `UNSUPPORTED_MEDIA_TYPE`; istek gövdesi hiç ayrıştırılmaz.
 - **405 (K25):** desteklenmeyen metot gerçek **HTTP 405** döner; `error.code = METHOD_NOT_ALLOWED` ve yanıtta izin verilen metodları listeleyen `Allow` başlığı bulunur. (İE#3'teki 422 `VALIDATION` eşlemesi kaldırılmıştır.)
 - **Makine değerleri İngilizcedir (K22):** durum/görünürlük alanları API'de ve DB'de sabit İngilizce kodlar taşır (`draft`, `sent`, `to_order`, `active` …). Türkçe karşılıklar yalnızca arayüz etiketidir — çeviri tablosu docs/09 §6.
 - **Her yanıtta `X-Request-Id`** başlığı döner (K27); hata bildirirken bu değer istenir, loglarla eşleştirilir.
@@ -115,6 +116,30 @@
   - **Zorunlu `capture_id` (UUIDv4, K25):** sistemde UNIQUE'tir. Aynı `capture_id` tekrar gelirse yeni kayıt AÇILMAZ, ilk isteğin sonucu döner (idempotans) — eklentinin kuyruk tekrar denemeleri çift ürün oluşturamaz.
   - Gövdede ayrıca `schema_version`, `extension_version`, `parser_version` ve `platform` zorunludur; parser bozulduğunda hangi sürümün ürettiği kayıttan anlaşılır.
 - `GET /p/{share_token}` — API değil, sunucu render sayfa (docs/09 P1). Gelen token SHA-256'lanıp `share_token_hash` üzerinden aranır (K25). Geçersiz/iptal/süresi dolmuş token → 404. `noindex` başlığı zorunlu.
+
+## 8b. Kurulum ve Sistem (İE#5 — PM onaylı ek)
+
+**Kurulum sihirbazı** (`/api/setup/*`) kimlik doğrulaması İSTEMEZ ama kendi oturumu ve kendi CSRF token'ı vardır (`X-Setup-Token`). Kurulum bittiğinde `storage/setup.lock` yazılır; ondan sonra **tüm** setup uçları `403 FORBIDDEN` döner ve deneme loglanır.
+
+| Uç | Açıklama |
+|---|---|
+| `GET /api/setup/state` | `{step, steps[], csrf_token, env_exists}` — sihirbaz açılışı |
+| `GET /api/setup/requirements` | PHP sürümü, zorunlu/opsiyonel eklentiler, `storage/` + `public/media/` yazılabilirliği, HTTPS uyarısı. Eksikler isim isim ve çözüm önerisiyle |
+| `POST /api/setup/database` | `{host, port?, name, user, pass}` → 200 `{version, charset}`; `SELECT VERSION()` sonucu döner, utf8mb4 değilse 422 |
+| `POST /api/setup/env` | `{app_url?}` → `.env` üretir (APP_KEY ve EXTENSION_TOKEN_SALT kriptografik, dosya izni 0600) |
+| `POST /api/setup/migrate` | Bekleyenleri koşar → `{applied[], migrations[{name, execution_ms}]}` |
+| `POST /api/setup/admin` | `{email, password}` → `{otpauth_uri, qr_svg, manual_key}`. Kullanıcı HENÜZ oluşturulmaz |
+| `POST /api/setup/admin/verify` | `{code}` → kullanıcı oluşur; `{user, recovery_codes[]}` — **kodlar yalnızca bu yanıtta bir kez** |
+| `POST /api/setup/finish` | `{codes_saved: true}` zorunlu → kilidi yazar, özet döner |
+
+Adım sırası zorlanır: sırası gelmemiş uç `422 STATE_TRANSITION` + `meta.current_step` döner.
+
+**Sistem uçları** (panel oturumu gerektirir — güncelleme yolu):
+
+| Uç | Açıklama |
+|---|---|
+| `GET /api/system/status` | `{app_version, php_version, db_version, installed_at, migrations:{applied, pending[], pending_count}}` |
+| `POST /api/system/migrate` | Auth + CSRF. Bekleyen migration'ları koşar → `{applied[], applied_count}`; sonuç `activity_log`'a yazılır |
 
 ## 9. Sözleşme Testleri
 
