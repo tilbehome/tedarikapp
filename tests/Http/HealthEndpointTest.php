@@ -66,6 +66,34 @@ final class HealthEndpointTest extends TestCase
         self::assertSame('strict-origin-when-cross-origin', $response->getHeaderLine('Referrer-Policy'));
     }
 
+    /**
+     * PM eki (İE#8): sabit `img-src 'self' data:` politikası K33 hotlink modunda
+     * görsellerin TAMAMINI bloklardı. Politika artık indirme beyaz listesinden üretilir.
+     */
+    public function testCspGorselKaynaklariMediaBeyazListesindenUretilir(): void
+    {
+        $config = new Config([
+            'APP_ENV' => 'production',
+            'APP_URL' => 'https://tedarikapp.test',
+            'DB_HOST' => 'localhost',
+            'DB_NAME' => 'test',
+            'DB_USER' => 'root',
+            'TZ' => 'Europe/Istanbul',
+            'APP_KEY' => str_repeat('a1b2c3d4', 8),
+            'EXTENSION_TOKEN_SALT' => str_repeat('s', 32),
+            'MEDIA_ALLOWED_HOSTS' => 'alicdn.com, 1688.com',
+        ]);
+
+        $app = AppBuilder::build($config, static fn (): PDO => new PDO('sqlite::memory:'), new NullLogger());
+        $csp = $app->handle((new ServerRequestFactory())->createServerRequest('GET', '/api/health'))
+            ->getHeaderLine('Content-Security-Policy');
+
+        self::assertStringContainsString("img-src 'self' data: https://alicdn.com https://*.alicdn.com", $csp);
+        self::assertStringContainsString('https://1688.com https://*.1688.com', $csp);
+        // Yalnız-HTTPS hükmü: http kaynağı politikaya girmez.
+        self::assertStringNotContainsString('http://', $csp);
+    }
+
     public function testVeritabaniKapaliysaHataZarfiDoner(): void
     {
         $app = AppBuilder::build(

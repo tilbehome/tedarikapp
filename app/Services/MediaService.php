@@ -116,7 +116,20 @@ final class MediaService
         }
         @chmod($this->basePath . '/' . $relative, 0644);
 
-        return ['mode' => self::MODE_DOWNLOAD, 'path' => $relative, 'url' => '/' . $relative];
+        return ['mode' => self::MODE_DOWNLOAD, 'path' => $relative, 'url' => $this->publicUrl($relative)];
+    }
+
+    /**
+     * Diskteki göreli yolu tarayıcının göreceği adrese çevirir.
+     *
+     * Dosya `<kök>/public/media/…` altında durur ama Apache'nin docroot'u `public/`tir;
+     * adrese `public/` önekiyle dönmek panelde 404 demektir. Önek burada düşürülür.
+     */
+    private function publicUrl(string $relative): string
+    {
+        $webPath = preg_replace('#^public/#', '', $relative) ?? $relative;
+
+        return '/' . ltrim($webPath, '/');
     }
 
     /**

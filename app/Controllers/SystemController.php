@@ -14,6 +14,7 @@ use App\Core\Response;
 use App\Middleware\Auth;
 use App\Services\ActivityLog;
 use App\Services\MediaService;
+use App\Services\StateMachine;
 use App\Setup\SetupLock;
 use LogicException;
 use Psr\Http\Message\ResponseInterface;
@@ -37,7 +38,37 @@ final class SystemController
         private readonly SetupLock $lock,
         private readonly Clock $clock,
         private readonly ?MediaService $media = null,
+        private readonly ?StateMachine $stateMachine = null,
     ) {
+    }
+
+    /**
+     * GET /api/system/state-machine — izinli durum geçişlerinin haritası.
+     *
+     * Panel (İE#8 §2) durum menüsünü buradan kurar: geçersiz geçiş kullanıcıya
+     * hiç SUNULMAZ. Kuralın tek kaynağı backend'deki StateMachine'dir; arayüz
+     * kendi kopyasını tutmaz — tuttuğu an docs/04 §2b ile ayrışma riski doğar.
+     */
+    public function stateMachine(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        $this->authenticatedUser($request);
+
+        $machine = $this->stateMachine ?? new StateMachine();
+
+        $product = [];
+        foreach (array_keys(StateMachine::PRODUCT_TRANSITIONS) as $status) {
+            $product[$status] = $machine->allowedProductTransitions((string) $status);
+        }
+
+        $list = [];
+        foreach (array_keys(StateMachine::LIST_TRANSITIONS) as $status) {
+            $list[$status] = $machine->allowedListTransitions((string) $status);
+        }
+
+        return Response::success($response, [
+            'product' => $product,
+            'list' => $list,
+        ]);
     }
 
     /** GET /api/system/status — sürüm bilgisi + bekleyen migration sayısı. */

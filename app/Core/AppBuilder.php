@@ -7,6 +7,7 @@ namespace App\Core;
 use App\Auth\AuthServices;
 use App\Auth\NativeSession;
 use App\Auth\SessionInterface;
+use App\Controllers\ActivityController;
 use App\Controllers\AuthController;
 use App\Controllers\CategoryController;
 use App\Controllers\ListController;
@@ -138,9 +139,10 @@ final class AppBuilder
 
         // Güncelleme yolu (İE#5 §12): kurulum kilitlendikten sonra migration koşmanın
         // kimlik doğrulamalı yolu. Yazma ucu ayrıca CSRF ister.
-        $system = new SystemController($basePath, $connection, $setupLock, $services->clock, $mediaService);
+        $system = new SystemController($basePath, $connection, $setupLock, $services->clock, $mediaService, $stateMachine);
         $app->group('/api/system', static function (RouteCollectorProxy $group) use ($system): void {
             $group->get('/status', [$system, 'status']);
+            $group->get('/state-machine', [$system, 'stateMachine']);
             $group->post('/migrate', [$system, 'migrate']);
         })
             ->add(new Csrf($services->session, $responseFactory))
@@ -164,6 +166,7 @@ final class AppBuilder
             $stateMachine,
             $services->activity,
             $services->clock,
+            $mediaService,
         );
         $trashController = new TrashController(
             $lists,
@@ -190,10 +193,14 @@ final class AppBuilder
             $services->clock,
         );
 
-        $app->group('/api', static function (RouteCollectorProxy $group) use ($settingsController, $categoryController): void {
+        $activityController = new ActivityController($connection, $services->timezone);
+
+        $app->group('/api', static function (RouteCollectorProxy $group) use ($settingsController, $categoryController, $activityController): void {
             $group->get('/settings', [$settingsController, 'show']);
             $group->put('/settings/rates', [$settingsController, 'updateRates']);
             $group->get('/settings/rates/history', [$settingsController, 'rateHistory']);
+
+            $group->get('/activity', [$activityController, 'index']);
 
             $group->get('/categories', [$categoryController, 'index']);
             $group->post('/categories', [$categoryController, 'store']);
@@ -228,6 +235,11 @@ final class AppBuilder
             ->add(new Csrf($services->session, $responseFactory))
             ->add(new Auth($services, $responseFactory));
 
+        // Panel (İE#8 §5): Vite çıktısı public/panel/ altındadır. Var olan dosyaları
+        // Apache doğrudan sunar; /panel/listeler/5 gibi istemci tarafı rotalar buraya
+        // düşer ve index.html'e verilir ki sayfa yenilendiğinde 404 alınmasın.
+        $app->get('/panel[/{path:.*}]', self::panelAction($basePath));
+
         $app->addErrorMiddleware(
             displayErrorDetails: !$config->isProduction(),
             logErrors: true,
@@ -239,10 +251,44 @@ final class AppBuilder
         // 404/405/415/500 gibi hata yanıtları da güvenlik başlıklarını ve X-Request-Id'yi alır.
         // JsonRequest gövde ayrıştırmadan ÖNCE devreye girer (docs/10 §1).
         $app->add(new JsonRequest($app->getResponseFactory()));
-        $app->add(new SecurityHeaders());
+        // img-src, indirme beyaz listesinden türetilir: hotlink modunda görsellerin
+        // tarayıcıda açılabilmesi için politikanın onları tanıması gerekir (K33).
+        $app->add(new SecurityHeaders($allowedHosts));
         $app->add(new RequestId($requestContext));
 
         return $app;
+    }
+
+    /**
+     * Panelin tek sayfa uygulaması. Build alınmamışsa teknik detay değil,
+     * ne yapılacağını söyleyen düz bir sayfa gösterilir (docs/07 build adımı).
+     */
+    private static function panelAction(string $basePath): Closure
+    {
+        return static function (ServerRequestInterface $request, ResponseInterface $response) use ($basePath): ResponseInterface {
+            $index = $basePath . '/public/panel/index.html';
+            $html = is_file($index) ? file_get_contents($index) : false;
+
+            if ($html === false) {
+                $response->getBody()->write(
+                    '<!doctype html><html lang="tr"><meta charset="utf-8">'
+                    . '<title>Panel derlenmemiş</title>'
+                    . '<body style="font-family:system-ui;max-width:40rem;margin:4rem auto;line-height:1.6">'
+                    . '<h1>Panel henüz derlenmemiş</h1>'
+                    . '<p>Sürüm paketi <code>public/panel/</code> çıktısını içermelidir. '
+                    . 'Geliştirmede: <code>cd frontend &amp;&amp; npm ci &amp;&amp; npm run build</code>.</p></body></html>',
+                );
+
+                return $response->withHeader('Content-Type', 'text/html; charset=utf-8')->withStatus(503);
+            }
+
+            $response->getBody()->write($html);
+
+            return $response
+                ->withHeader('Content-Type', 'text/html; charset=utf-8')
+                // index.html önbelleğe alınmaz; varlık dosyaları zaten hash'li adlarla gelir.
+                ->withHeader('Cache-Control', 'no-store');
+        };
     }
 
     private static function healthAction(Config $config, Connection $connection, LoggerInterface $logger): Closure

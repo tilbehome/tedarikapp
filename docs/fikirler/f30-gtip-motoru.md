@@ -1,5 +1,16 @@
 # F30 — GTİP, Gümrük ve İthalat Sınıflandırma Motoru
 
+## 0. Kapsam Notu — K36 (16 Ağu 2026, PM · KESİNLEŞTİ)
+
+**Açık soru yanıtlandı:** DDP'de ithalatçı **biz değiliz**. Tedarikçi/konsolidatör ithal ediyor, bize yurt içi teslim yapılıyor (**Senaryo B**). Dolayısıyla GTİP beyan sorumluluğu ve Gümrük Kanunu m.234 ceza riski üzerimizde doğmuyor — tam sınıflandırma motorunun ana gerekçesi düşüyor.
+
+**K36 hükmü:**
+
+- **Birincil hedef `F30-lite`'tır:** yakalanan üründe anahtar kelime + kategori eşleşmesiyle riskli grup tespiti → *"Bu ürün TAREKS / CE / gözetim / ürün güvenliği denetimi kapsamında olabilir. Sipariş öncesi müşavirine danış."* Çıktı bir **uyarıdır, GTİP kodu değildir**; yanlış olduğunda mali/hukuki zarar doğurmaz. Kaynak: Ürün Güvenliği ve Denetimi Tebliğleri'ndeki GTİP listeleri (Resmî Gazete → FSEK m.31, serbest kullanım). Tahmini maliyet: tam motorun ~%10'u.
+- **Aşağıdaki tam motor taslağı KORUNUR** — silinmez, küçültülmez. v2 planlaması açıldığında varsayılan kapsam F30-lite olur; **tam motor şu tetikleyicilerden birine bağlıdır:** ithalat modeli **FOB/EXW**'ye geçer · **kendi adımıza beyanname** vermeye başlarız · konsolidatörden bağımsızlaşma / **doğrudan ithalat** gündeme gelir.
+- F30, Ürün Sahibi'nin "önemli" bayrağıyla **v2 öncelikli aday olmayı sürdürür**; K36 fikri geri plana atmaz, kapsamını gerçek ihtiyaca kalibre eder.
+- Rezidüel risk sıfır değil: ithalatçı olmasak da TAREKS/CE kapsamındaki ürün gümrükte takılırsa **bekleyen mal ve bağlanan para bizim**. F30-lite tam olarak bu riski hedefler.
+
 > ⚠️ Doğrulanmış kaynaklar ve v1-dışı hükmü için bkz. [gtip-m23-degerlendirme.md](../arastirma/gtip-m23-degerlendirme.md).
 > Bu belgedeki bazı tasarım kararları (yıl bazlı sürümleme, otomatik BTB eşleştirme) orada düzeltilmiştir — ikisini birlikte okuyun.
 >
