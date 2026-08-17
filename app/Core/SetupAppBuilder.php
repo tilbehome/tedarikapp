@@ -206,6 +206,13 @@ final class SetupAppBuilder
         return static function (ServerRequestInterface $request, Throwable $exception) use ($responseFactory, $logger, $basePath): ResponseInterface {
             $response = $responseFactory->createResponse();
             if ($exception instanceof HttpNotFoundException) {
+                // K45: tarayıcıdan açılan yanlış adres (örn. /tedarikapp/) JSON hata değil,
+                // SİHİRBAZA yönlendirme alır — kullanıcı asla çıkmaz sokakta kalmaz.
+                if ($request->getMethod() === 'GET'
+                    && str_contains($request->getHeaderLine('Accept'), 'text/html')) {
+                    return $response->withHeader('Location', '/setup')->withStatus(302);
+                }
+
                 return Response::error($response, 'NOT_FOUND', 'İstenen kaynak bulunamadı.', 404);
             }
             if ($exception instanceof HttpMethodNotAllowedException) {

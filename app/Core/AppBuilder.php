@@ -351,6 +351,12 @@ final class AppBuilder
         return static function (ServerRequestInterface $request, Throwable $exception) use ($responseFactory, $logger, $setupLock, $requestContext, $basePath): ResponseInterface {
             $response = $responseFactory->createResponse();
             if ($exception instanceof HttpNotFoundException) {
+                // K45: tarayıcıdan açılan yanlış adres JSON hata değil PANELE yönlendirme alır.
+                if ($request->getMethod() === 'GET'
+                    && str_contains($request->getHeaderLine('Accept'), 'text/html')) {
+                    return $response->withHeader('Location', '/panel')->withStatus(302);
+                }
+
                 return Response::error($response, 'NOT_FOUND', 'İstenen kaynak bulunamadı.', 404);
             }
             if ($exception instanceof HttpMethodNotAllowedException) {
