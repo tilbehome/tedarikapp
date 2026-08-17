@@ -295,10 +295,11 @@
       }
 
       replaceContent(body, checklist(items));
-      $('req-next').disabled = !data.ok || !integrityOk;
+      // K45: hiçbir denetim İLERLEMEYİ KAPATMAZ — eksikler yalnız uyarı olarak gösterilir.
+      $('req-next').disabled = false;
 
-      if (!integrityOk) alertBox('bad', 'Yükleme eksik: release zip\'ini üzerine yazarak yeniden açın. Eksik dosyalar yukarıda listelendi.');
-      else if (!data.ok) alertBox('bad', 'Eksikler var. Yukarıdaki maddeleri giderip "Yeniden denetle" deyin.');
+      if (!integrityOk) alertBox('warn', 'Bazı dosyalar eksik/bozuk görünüyor (yukarıda listelendi) — yine de devam edebilirsiniz.');
+      else if (!data.ok) alertBox('warn', 'Bazı gereksinimler eksik görünüyor — yine de devam edebilirsiniz.');
       else if (data.warnings.length) alertBox('warn', data.warnings.join(' '));
       else clearAlert();
     })();
@@ -352,6 +353,12 @@
       busy(button, true, 'Yazılıyor…');
       api('POST', '/api/setup/env', { app_url: form.app_url.value.trim() }).then(function (data) {
         showFieldErrors(form, {});
+        if (data.existing) {
+          // K45: sunucuda config.php/.env zaten var — aynen kullanılır, adım geçilir.
+          alertBox('ok', 'Mevcut yapılandırma dosyası bulundu ve kullanılacak.');
+          showStep('migrate');
+          return;
+        }
         if (data.manual) {
           // K44: kök yazılamıyor — WordPress wp-config.php modeli: içerik ekranda,
           // kullanıcı File Manager ile config.php olarak kaydeder, sonra doğrular.
@@ -430,6 +437,33 @@
         $('totp-box').hidden = false;
         form.querySelector('button').disabled = true;
         $('totp-form').code.focus();
+      }).catch(function (error) {
+        showFieldErrors(form, error.fields);
+        failBox(error);
+      }).finally(function () { busy(button, false); });
+    });
+
+    // K45: 2FA opsiyonel — atla: kullanıcı TOTP'siz oluşturulur, kurulum hemen kilitlenir.
+    $('admin-skip-totp').addEventListener('click', function (event) {
+      clearAlert();
+      var form = $('admin-form');
+      var button = event.target;
+      busy(button, true, 'Kuruluyor…');
+      api('POST', '/api/setup/admin', {
+        email: form.email.value.trim(),
+        password: form.password.value,
+        skip_totp: true
+      }).then(function () {
+        return api('POST', '/api/setup/finish', {});
+      }).then(function (data) {
+        var rows = [['PHP', data.php_version]];
+        if (data.db_version) rows.push(['Veritabanı', data.db_version]);
+        rows.push(['Tablolar', data.migrations.length + ' migration uygulandı']);
+        rows.push(['Giriş', 'şifre ile (2FA atlandı — panelden sonra eklenebilir)']);
+        rows.push(['Sihirbaz', 'kalıcı olarak kilitlendi']);
+        rows.push(['İşlem günlüğü', progressSummary()]);
+        replaceContent($('done-summary'), definitions(rows));
+        showStep('done');
       }).catch(function (error) {
         showFieldErrors(form, error.fields);
         failBox(error);

@@ -21,7 +21,8 @@ import type {
 
 export const auth = {
   login: (email: string, password: string, remember: boolean) =>
-    api.post<{ stage: string }>('/api/auth/login', { email, password, remember }, { silentUnauthorized: true }),
+    // K45: 2FA tanımlıysa {stage:'totp'}, değilse doğrudan {user} döner (şifre yeterli).
+    api.post<{ stage?: string; user?: User }>('/api/auth/login', { email, password, remember }, { silentUnauthorized: true }),
   totp: (code: string) => api.post<{ user: User }>('/api/auth/totp', { code }, { silentUnauthorized: true }),
   recovery: (code: string) =>
     api.post<{ user: User; remaining_codes: number }>('/api/auth/recovery', { code }, { silentUnauthorized: true }),

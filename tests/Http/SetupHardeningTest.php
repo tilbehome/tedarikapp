@@ -6,9 +6,7 @@ namespace Tests\Http;
 
 use App\Core\Connection;
 use App\Core\SetupAppBuilder;
-use App\Middleware\SetupCsrf;
 use App\Setup\SetupLock;
-use App\Setup\SetupState;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Log\NullLogger;
@@ -19,11 +17,10 @@ use Tests\Support\FrozenClock;
 use Tests\Support\TempDirectory;
 
 /**
- * K37 sağlamlaştırma testleri (İE#9 §A) — KRİTİK.
- *
- *  A1: kilit DB'den okunamıyorsa sihirbaz KAPALIDIR (fail-closed).
- *  A2: `.env` diskte varken HTTP kurulum akışı asla üzerine yazamaz; varlığı setup'ı kilitler.
- *  A3: production'da sır girilen adımlar HTTPS olmadan İLERLEMEZ.
+ * K45 kapı davranışı (Ürün Sahibi talimatı — kurulum BASİT):
+ * TEK kural: DB'de kesin kilit varsa 403; diğer her durumda sihirbaz AÇIK.
+ * (K37'nin ek katmanları — config varlığı kilidi, fail-closed, HTTPS kapısı —
+ * üretimde kurulumu defalarca blokladığı için K45 ile kaldırıldı.)
  */
 final class SetupHardeningTest extends TestCase
 {
@@ -46,39 +43,10 @@ final class SetupHardeningTest extends TestCase
         }
     }
 
-    /** Bağlantısı HER sorguda patlayan kilit — "DB erişimi koparılmış" senaryosu. */
-    private function brokenLock(): SetupLock
+    private function call(string $method, string $path, ?SetupLock $lock = null): ResponseInterface
     {
-        return new SetupLock(
-            Connection::fromCallable(static function (): \PDO {
-                throw new RuntimeException('Veritabanına bağlanılamadı (test).');
-            }),
-            $this->tempPath('storage'),
-        );
-    }
-
-    /**
-     * @param array<string, mixed>|null $body
-     * @param array<string, string> $headers
-     * @param array<string, mixed> $serverParams
-     */
-    private function call(
-        string $method,
-        string $path,
-        ?array $body = null,
-        array $headers = [],
-        ?SetupLock $lock = null,
-        string $appEnv = 'local',
-        array $serverParams = [],
-    ): ResponseInterface {
         $request = (new ServerRequestFactory())
-            ->createServerRequest($method, $path, ['REMOTE_ADDR' => '203.0.113.7'] + $serverParams);
-        if ($body !== null) {
-            $request = $request->withParsedBody($body)->withHeader('Content-Type', 'application/json');
-        }
-        foreach ($headers as $name => $value) {
-            $request = $request->withHeader($name, $value);
-        }
+            ->createServerRequest($method, $path, ['REMOTE_ADDR' => '203.0.113.7']);
 
         $app = SetupAppBuilder::build(
             $this->tempRoot(),
@@ -86,177 +54,56 @@ final class SetupHardeningTest extends TestCase
             $this->session,
             $this->clock,
             setupLock: $lock,
-            appEnv: $appEnv,
+            appEnv: 'local',
         );
 
         return $app->handle($request);
     }
 
-    /** @return array<string, mixed> */
-    private function json(ResponseInterface $response): array
+    private function workingLock(): SetupLock
     {
-        /** @var array<string, mixed> $decoded */
-        $decoded = json_decode((string) $response->getBody(), true, 512, JSON_THROW_ON_ERROR);
-
-        return $decoded;
-    }
-
-    // ─────────────── A1: fail-closed kilit ───────────────
-
-    public function testKilitOkunamiyorsaSihirbaz403Doner(): void
-    {
-        foreach ([
-            ['GET', '/setup'],
-            ['GET', '/api/setup/state'],
-            ['POST', '/api/setup/database'],
-            ['POST', '/api/setup/finish'],
-        ] as [$method, $path]) {
-            $response = $this->call($method, $path, $method === 'POST' ? [] : null, lock: $this->brokenLock());
-
-            self::assertSame(403, $response->getStatusCode(), $method . ' ' . $path . ' fail-closed olmalı (K37).');
-            self::assertSame('FORBIDDEN', $this->json($response)['error']['code']);
-        }
-    }
-
-    public function testKilitStatusUcDurumluDoner(): void
-    {
-        self::assertSame(SetupLock::STATE_UNKNOWN, $this->brokenLock()->status());
-        self::assertTrue($this->brokenLock()->isLocked(), 'unknown durum kilitli SAYILMALI (fail-closed).');
-
-        // Bağlantısız kilit (kurulum yapılmamış sistem) dosya denetimiyle açık kalır.
-        $fileOnly = new SetupLock(null, $this->tempPath('storage'));
-        self::assertSame(SetupLock::STATE_UNLOCKED, $fileOnly->status());
-        self::assertFalse($fileOnly->isLocked());
-    }
-
-    // ─────────────── A2: .env varlığı kilitler, üzerine yazılmaz ───────────────
-
-    public function testMevcutEnvVarkenSetupUclari403DonerVeDosyaDegismez(): void
-    {
-        $original = "APP_ENV=production\nAPP_KEY=" . str_repeat('a', 64) . "\n";
-        file_put_contents($this->tempPath('.env'), $original);
-
-        // .env var → SetupAppBuilder DB'li kilit kurar; DSN geçersiz → fail-closed
-        // katmanı da devrede. Sqlite'lı çalışan kilit vererek YALNIZ .env katmanını sınıyoruz.
         $pdo = new \PDO('sqlite::memory:');
         $pdo->exec('CREATE TABLE settings (key TEXT NOT NULL PRIMARY KEY, value TEXT NULL)');
-        $workingLock = new SetupLock(Connection::fromCallable(static fn (): \PDO => $pdo), $this->tempPath('storage'));
 
-        foreach ([
-            ['GET', '/setup', null],
-            ['GET', '/api/setup/state', null],
-            ['POST', '/api/setup/database', ['host' => 'localhost']],
-            ['POST', '/api/setup/env', ['app_url' => 'https://ornek.test']],
-            ['POST', '/api/setup/finish', ['codes_saved' => true]],
-        ] as [$method, $path, $body]) {
-            $response = $this->call($method, $path, $body, lock: $workingLock);
-            self::assertSame(403, $response->getStatusCode(), $method . ' ' . $path . ' .env katmanıyla kapanmalı.');
-        }
-
-        self::assertSame($original, file_get_contents($this->tempPath('.env')), '.env İÇERİĞİ DEĞİŞMEMELİ.');
+        return new SetupLock(Connection::fromCallable(static fn (): \PDO => $pdo), $this->tempPath('storage'));
     }
 
-    public function testEnvUreticisiMevcutDosyaninUzerineYazmaz(): void
+    public function testKesinKilitVarsa403(): void
     {
-        // Devam eden meşru kurulum oturumu bile mevcut .env'i yeniden ÜRETEMEZ.
-        $state = new SetupState($this->session);
-        $state->complete(SetupState::STEP_REQUIREMENTS);
-        $state->put('database', ['host' => 'localhost', 'port' => 3306, 'name' => 'db', 'user' => 'u', 'pass' => 'p']);
-        $state->complete(SetupState::STEP_DATABASE);
-        $state->put('env_app_key', str_repeat('b', 64)); // oturum .env'in sahibi
+        $lock = $this->workingLock();
+        $lock->write(new \DateTimeImmutable('2026-08-17 12:00:00'));
 
-        $original = "APP_KEY=" . str_repeat('b', 64) . "\n";
-        file_put_contents($this->tempPath('.env'), $original);
-
-        $pdo = new \PDO('sqlite::memory:');
-        $pdo->exec('CREATE TABLE settings (key TEXT NOT NULL PRIMARY KEY, value TEXT NULL)');
-        $workingLock = new SetupLock(Connection::fromCallable(static fn (): \PDO => $pdo), $this->tempPath('storage'));
-
-        $token = $this->json($this->call('GET', '/api/setup/state', lock: $workingLock))['data']['csrf_token'];
-        $response = $this->call('POST', '/api/setup/env', ['app_url' => 'https://ornek.test'], [
-            SetupCsrf::HEADER => $token,
-        ], lock: $workingLock);
-
-        self::assertSame(422, $response->getStatusCode());
-        self::assertArrayHasKey('env', $this->json($response)['error']['fields']);
-        self::assertSame($original, file_get_contents($this->tempPath('.env')), '.env DEĞİŞMEMELİ (K37 §A2).');
+        self::assertSame(403, $this->call('GET', '/setup', $lock)->getStatusCode());
+        self::assertSame(403, $this->call('GET', '/api/setup/state', $lock)->getStatusCode());
     }
 
-    public function testEnvSahibiOturumKurulumaDevamEdebilir(): void
+    public function testKilitOkunamiyorsaSihirbazYineAcik(): void
     {
-        // K33 manuel akışının K37 sonrası hâli: .env yazıldıktan sonra sihirbaz
-        // yalnızca ÜRETEN oturum için açık kalır (migrate/admin adımları çalışabilmeli).
-        $state = new SetupState($this->session);
-        $state->put('env_app_key', str_repeat('c', 64));
+        // K45: fail-closed KALDIRILDI — kilit doğrulanamıyorsa kurulum bloklanmaz.
+        $broken = new SetupLock(
+            Connection::fromCallable(static function (): \PDO {
+                throw new RuntimeException('DB yok (test)');
+            }),
+            $this->tempPath('storage'),
+        );
 
-        file_put_contents($this->tempPath('.env'), "APP_KEY=" . str_repeat('c', 64) . "\n");
-
-        $pdo = new \PDO('sqlite::memory:');
-        $pdo->exec('CREATE TABLE settings (key TEXT NOT NULL PRIMARY KEY, value TEXT NULL)');
-        $workingLock = new SetupLock(Connection::fromCallable(static fn (): \PDO => $pdo), $this->tempPath('storage'));
-
-        $response = $this->call('GET', '/api/setup/state', lock: $workingLock);
-
-        self::assertSame(200, $response->getStatusCode(), '.env sahibi oturum 403 ALMAMALI.');
+        self::assertSame(200, $this->call('GET', '/api/setup/state', $broken)->getStatusCode());
     }
 
-    // ─────────────── A3: HTTPS kapısı ───────────────
-
-    public function testProductionHttpUzerindenSirAdimlari403Doner(): void
+    public function testConfigVarkenSihirbazAcikVeIlkAdimlarOtomatikGecilir(): void
     {
-        foreach (['/api/setup/database', '/api/setup/admin', '/api/setup/admin/verify'] as $path) {
-            $request = (new ServerRequestFactory())
-                ->createServerRequest('POST', 'http://ornek.test' . $path, ['REMOTE_ADDR' => '203.0.113.7'])
-                ->withParsedBody(['host' => 'localhost'])
-                ->withHeader('Content-Type', 'application/json');
+        // K45: config.php varlığı artık KİLİT DEĞİL — mevcut dosya aynen kullanılır,
+        // sihirbaz doğrudan "Tablolar" adımından devam eder.
+        file_put_contents(
+            $this->tempPath('config.php'),
+            "<?php\nreturn ['DB_HOST' => 'localhost', 'DB_NAME' => 'db', 'DB_USER' => 'u', 'DB_PASS' => 'p', 'APP_KEY' => '" . str_repeat('a', 64) . "'];\n",
+        );
 
-            $app = SetupAppBuilder::build(
-                $this->tempRoot(),
-                new NullLogger(),
-                $this->session,
-                $this->clock,
-                appEnv: 'production',
-            );
-            $response = $app->handle($request);
+        $response = $this->call('GET', '/api/setup/state', $this->workingLock());
 
-            self::assertSame(403, $response->getStatusCode(), $path . ' HTTPS olmadan ilerlememeli.');
-            self::assertSame('HTTPS_REQUIRED', $this->json($response)['error']['code']);
-        }
-    }
-
-    public function testProductionHttpsIleSirAdimiKapidanGecer(): void
-    {
-        $request = (new ServerRequestFactory())
-            ->createServerRequest('POST', 'https://ornek.test/api/setup/database', ['REMOTE_ADDR' => '203.0.113.7'])
-            ->withParsedBody([])
-            ->withHeader('Content-Type', 'application/json');
-
-        $app = SetupAppBuilder::build($this->tempRoot(), new NullLogger(), $this->session, $this->clock, appEnv: 'production');
-        $response = $app->handle($request);
-
-        // Kapıdan geçti; CSRF katmanına düştü (403 ama HTTPS_REQUIRED DEĞİL).
-        self::assertNotSame('HTTPS_REQUIRED', $this->json($response)['error']['code'] ?? null);
-    }
-
-    public function testLoopbackHostProductionDaHttpIleCalisabilir(): void
-    {
-        $request = (new ServerRequestFactory())
-            ->createServerRequest('POST', 'http://localhost/api/setup/database', ['REMOTE_ADDR' => '127.0.0.1'])
-            ->withParsedBody([])
-            ->withHeader('Content-Type', 'application/json');
-
-        $app = SetupAppBuilder::build($this->tempRoot(), new NullLogger(), $this->session, $this->clock, appEnv: 'production');
-        $response = $app->handle($request);
-
-        self::assertNotSame('HTTPS_REQUIRED', $this->json($response)['error']['code'] ?? null);
-    }
-
-    public function testGelistirmeOrtamiHttpIleIlerleyebilir(): void
-    {
-        $token = $this->json($this->call('GET', '/api/setup/state'))['data']['csrf_token'];
-        $response = $this->call('POST', '/api/setup/database', [], [SetupCsrf::HEADER => $token], appEnv: 'local');
-
-        // HTTPS kapısına takılmadı; adım sırası/doğrulama katmanına ulaştı.
-        self::assertSame(422, $response->getStatusCode());
+        self::assertSame(200, $response->getStatusCode());
+        $data = json_decode((string) $response->getBody(), true)['data'];
+        self::assertSame('migrate', $data['step'], 'Config varken sihirbaz Tablolar adımından başlamalı.');
+        self::assertTrue($data['env_exists']);
     }
 }

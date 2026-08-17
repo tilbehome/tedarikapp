@@ -44,7 +44,14 @@ export const useSession = create<SessionState>((set) => ({
   },
 
   login: async (email, password, remember) => {
-    await auth.login(email, password, remember);
+    // K45: 2FA tanımlı değilse sunucu kullanıcıyı doğrudan döndürür — şifre yeterli.
+    const data = await auth.login(email, password, remember);
+    if (data && data.user) {
+      const me = await auth.me();
+      setCsrfToken(me.csrf_token);
+      set({ stage: 'authenticated', user: data.user });
+      return;
+    }
     set({ stage: 'awaiting-totp' });
   },
 

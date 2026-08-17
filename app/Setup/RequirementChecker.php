@@ -93,7 +93,8 @@ final class RequirementChecker
         // K37 §D10: HTTPS production'da ZORUNLUDUR (sırlar bu kanaldan geçecek);
         // geliştirme ortamında yalnızca uyarıdır.
         $httpsOk = $this->isHttps($request);
-        $httpsRequired = $this->appEnv === 'production';
+        // K45 (Ürün Sahibi talimatı): HTTPS hiçbir modda BLOKLAMAZ — yalnız uyarı.
+        $httpsRequired = false;
         $https = [
             'ok' => $httpsOk,
             'required' => $httpsRequired,
