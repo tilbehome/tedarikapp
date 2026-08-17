@@ -4,6 +4,9 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/) · Sürümleme: SemVe
 Her release'te bu dosya güncellenir (docs/07 bölüm 4). Kategoriler: Eklendi / Değişti / Düzeltildi / Kaldırıldı / Güvenlik.
 
 ## [Yayınlanmadı]
+### Düzeltildi (İE#9.1 · K39 — üretim engeli: ext-sodium yok)
+- **ext-sodium zorunluluğu kaldırıldı:** üretim sunucusunda (ea-php84, PHP Selector kapalı) sodium yüklenemiyor ve site açılışta 500 veriyordu. composer'da `ext-sodium` → `suggest`, `ext-openssl` → `require` (kilit, bağımlılık sürümleri değişmeden yenilendi). Şifreleme çift arka uçlu kalır: sodium (`v1s`, tercih) VEYA OpenSSL AES-256-GCM (`v1a`, 12 bayt nonce + auth tag, APP_KEY'den HKDF); decrypt iki formatı da ön ekten tanır, sodium'lu kayıt sodium'suz sunucuda net hata verir. `Encrypter`'a test için `sodiumSupported` simülasyon bayrağı eklendi; sodium'suz ortamda uçtan uca TOTP kur/doğrula, çapraz format ve yanlış anahtar testleri yazıldı. RequirementChecker sodium satırı "önerilen — yok: OpenSSL AES-GCM kullanılacak" bilgilendirmesine çevrildi.
+
 ### Güvenlik (İE#9 · K37 — Faz 1 kapanış sprinti)
 - **SetupLock fail-closed:** DB yapılandırılmışken kurulum kilidi okunamıyorsa (bağlantı düştü/tablo yok) sihirbaz artık AÇILMAZ — kilit `unknown` durumu kilitli sayılır. Önceki davranışta DB'si geçici düşen kurulmuş sistemde sihirbaz kimliksiz açılabiliyordu.
 - **`.env` katmanı:** `.env` diskte varken tüm setup uçları 403 döner (DB kilidinden bağımsız birinci katman); HTTP kurulum akışı mevcut `.env`in üzerine ASLA yazamaz (`EnvWriter::write` reddeder, `/api/setup/env` 422). Devam eden meşru kurulum, `.env`i üreten oturum işaretiyle tanınır.

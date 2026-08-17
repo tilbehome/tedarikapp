@@ -43,9 +43,10 @@ final class RequirementChecker
         'openssl' => 'HTTPS istekleri ve TOTP secret şifrelemesi.',
     ];
 
-    /** Zorunlu değil ama varsa tercih edilenler. */
+    /** Zorunlu değil ama varsa tercih edilenler — kurulum BLOKLANMAZ (K39). */
     private const array OPTIONAL_EXTENSIONS = [
-        'sodium' => 'TOTP secret şifrelemesinde tercih edilen algoritma (yoksa AES-256-GCM kullanılır — K27).',
+        'sodium' => 'TOTP secret şifrelemesinde tercih edilen arka uç. Yok: OpenSSL AES-256-GCM kullanılacak '
+            . '(eşdeğer güvenlikte AEAD — K27/K39); kurulum bloklanmaz.',
     ];
 
     /**

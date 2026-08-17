@@ -141,4 +141,55 @@ final class EncrypterTest extends TestCase
         $this->expectExceptionMessage('APP_KEY 64 haneli');
         $encrypter->encrypt(self::SECRET);
     }
+
+    // ─────────────── K39: sodium'suz sunucu (İE#9.1) ───────────────
+
+    public function testSodiumsuzOrtamSimulasyonundaOpensslSecilir(): void
+    {
+        // Üretim senaryosu (K39): ea-php84'te ext-sodium yüklenemiyor. Tercih ne olursa
+        // olsun şifreleme AES-256-GCM'e düşmeli ve tur tamamlanmalı.
+        $encrypter = new Encrypter($this->config(), useSodium: null, sodiumSupported: false);
+        $payload = $encrypter->encrypt(self::SECRET);
+
+        self::assertStringStartsWith('v1a:', $payload);
+        self::assertSame(self::SECRET, $encrypter->decrypt($payload));
+
+        // Açıkça sodium İSTENSE bile desteklenmiyorsa AES'e düşülür (fatal yerine).
+        $zorlanan = new Encrypter($this->config(), useSodium: true, sodiumSupported: false);
+        self::assertStringStartsWith('v1a:', $zorlanan->encrypt(self::SECRET));
+    }
+
+    public function testSodiumKaydiSodiumsuzSistemdeDuzgunHataVerir(): void
+    {
+        if (!Encrypter::sodiumAvailable()) {
+            self::markTestSkipped('Bu PHP kurulumunda libsodium yok.');
+        }
+
+        // Sodium'lu sunucuda yazılmış kayıt, sodium'suz sunucuya taşınırsa:
+        // sessiz bozulma değil, NE YAPILACAĞINI söyleyen hata (K39).
+        $sodiumPayload = (new Encrypter($this->config(), useSodium: true))->encrypt(self::SECRET);
+        $sodiumsuz = new Encrypter($this->config(), useSodium: null, sodiumSupported: false);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('sodium eklentisi yok');
+        $sodiumsuz->decrypt($sodiumPayload);
+    }
+
+    public function testCaprazFormatlarDogruArkaUclaCozulur(): void
+    {
+        if (!Encrypter::sodiumAvailable()) {
+            self::markTestSkipped('Bu PHP kurulumunda libsodium yok.');
+        }
+
+        // decrypt arka ucu TERCİHE değil kayıttaki ön eke göre seçilir: iki eklentinin
+        // de bulunduğu sunucuda her iki format da çözülür (sunucu değişiminde taşınabilirlik).
+        $sodiumPayload = (new Encrypter($this->config(), useSodium: true))->encrypt(self::SECRET);
+        $aesPayload = (new Encrypter($this->config(), useSodium: false))->encrypt(self::SECRET);
+
+        $aesTercihli = new Encrypter($this->config(), useSodium: false);
+        $sodiumTercihli = new Encrypter($this->config(), useSodium: true);
+
+        self::assertSame(self::SECRET, $aesTercihli->decrypt($sodiumPayload), 'v1s kaydı tercih AES olsa da çözülmeli.');
+        self::assertSame(self::SECRET, $sodiumTercihli->decrypt($aesPayload), 'v1a kaydı tercih sodium olsa da çözülmeli.');
+    }
 }

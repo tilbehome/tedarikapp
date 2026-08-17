@@ -12,6 +12,7 @@
 | Web çatısı | **Slim 4** | slim/slim ^4.14 + slim/psr7 |
 | Veritabanı | **MySQL 8.4** | PDO + prepared statements; utf8mb4 zorunlu; CI entegrasyon job'ı 8.4 container'ı kullanır |
 | Sunucu | cPanel paylaşımlı hosting, Apache DSO | dış istek yalnız cURL; yazma yalnız `storage/` + `public/media/` (docs/04 §7) |
+| Şifreleme | **sodium VEYA OpenSSL AES-256-GCM (AEAD)** | K27/K39 — ext-sodium önerilir ama ZORUNLU DEĞİL (ea-php84'te yüklenemiyor); ext-openssl zorunlu. Kayıt ön eki (`v1s`/`v1a`) arka ucu seçer |
 
 ## Panel (Frontend)
 
