@@ -52,7 +52,11 @@ jobs:
 
       - name: Bağımlılıkları kur
         # --no-progress: log gürültüsünü azaltır. Lock dosyası repoda olduğu için sürümler sabittir (K19).
-        run: composer install --no-interaction --no-progress
+        # codeload 429/504 dalgalarına karşı 3 deneme + bekleme (canlı vaka: PR #13).
+        run: |
+          n=0; until composer install --no-interaction --no-progress; do
+            n=$((n+1)); [ $n -ge 3 ] && exit 1; echo "codeload hatası — 90 sn sonra deneme $((n+1))/3"; sleep 90
+          done
 
       - name: PHPUnit
         run: composer test
@@ -108,7 +112,10 @@ jobs:
           restore-keys: composer-${{ runner.os }}-
 
       - name: Bağımlılıkları kur
-        run: composer install --no-interaction --no-progress
+        run: |
+          n=0; until composer install --no-interaction --no-progress; do
+            n=$((n+1)); [ $n -ge 3 ] && exit 1; echo "codeload hatası — 90 sn sonra deneme $((n+1))/3"; sleep 90
+          done
 
       - name: MySQL entegrasyon testleri
         env:
@@ -136,7 +143,10 @@ jobs:
           tools: none
 
       - name: Üretim bağımlılıkları (paket php beyanları 8.2 der ama 8.1'de LINT ile kanıtlanır)
-        run: composer install --no-dev --optimize-autoloader --no-interaction --no-progress --ignore-platform-req=php
+        run: |
+          n=0; until composer install --no-dev --optimize-autoloader --no-interaction --no-progress --ignore-platform-req=php; do
+            n=$((n+1)); [ $n -ge 3 ] && exit 1; echo "codeload hatası — 90 sn sonra deneme $((n+1))/3"; sleep 90
+          done
 
       - name: 8.1 sözdizimi taraması (uygulama + vendor)
         run: |
@@ -198,7 +208,10 @@ jobs:
           restore-keys: composer-${{ runner.os }}-
 
       - name: Bağımlılıkları kur
-        run: composer install --no-interaction --no-progress
+        run: |
+          n=0; until composer install --no-interaction --no-progress; do
+            n=$((n+1)); [ $n -ge 3 ] && exit 1; echo "codeload hatası — 90 sn sonra deneme $((n+1))/3"; sleep 90
+          done
 
       - name: Üretim profili süiti
         run: vendor/bin/phpunit --group uretim-profili
@@ -220,7 +233,10 @@ jobs:
           npm run build
 
       - name: Üretim vendor'ı (dev bağımlılıkları düşür — testler yukarıda koştu)
-        run: composer install --no-dev --optimize-autoloader --no-interaction --no-progress
+        run: |
+          n=0; until composer install --no-dev --optimize-autoloader --no-interaction --no-progress; do
+            n=$((n+1)); [ $n -ge 3 ] && exit 1; echo "codeload hatası — 90 sn sonra deneme $((n+1))/3"; sleep 90
+          done
 
       - name: Release üret + zip doğrulaması (bin/release.php)
         run: php bin/release.php --out=dist --version=ci-denetim
