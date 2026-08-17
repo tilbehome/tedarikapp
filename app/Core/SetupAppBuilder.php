@@ -88,7 +88,7 @@ final class SetupAppBuilder
             $session = $cookieSession;
         }
         $state = new SetupState($session);
-        $controller = new SetupController($basePath, $state, $lock, $clock, $configWriter, $appEnv);
+        $controller = new SetupController($basePath, $state, $lock, $clock, $configWriter);
 
         // Sihirbaz sayfası ve varlıkları (kilit denetimi bunlara da uygulanır).
         $app->get('/setup', self::viewAction($basePath . '/setup/views/wizard.html', 'text/html; charset=utf-8'));

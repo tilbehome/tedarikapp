@@ -27,6 +27,7 @@ use App\Setup\RequirementChecker;
 use App\Setup\SetupDiagnostics;
 use App\Setup\SetupLock;
 use App\Setup\SetupState;
+use App\Setup\UnlockGate;
 use PDO;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -58,7 +59,6 @@ final class SetupController
         private readonly SetupLock $lock,
         private readonly Clock $clock,
         private readonly ?ConfigWriter $configWriter = null,
-        private readonly string $appEnv = 'production',
     ) {
     }
 
@@ -106,15 +106,79 @@ final class SetupController
     }
 
     /**
-     * POST /api/setup/unlock — K45: "kurulum tamamlanmış" kilidini kaldırır,
-     * sihirbaz baştan çalışabilir (Ürün Sahibi talimatı: bu olasılıkta da devam).
+     * POST /api/setup/unlock — K46: kilit kaldırma SAHİPLİK KANITI ister.
+     *
+     * K45'in amacı korunur (çıkmaz sokak yok — seçenek ekranda) ama işlem
+     * config.php'deki APP_KEY'in tam değerini ister; yanlış denemeler IP bazlı
+     * artan beklemeye tabidir ve her deneme activity_log'a yazılır.
+     * (Admin oturumu yolu: panel tarafındaki POST /api/system/setup-unlock.)
      */
     public function unlock(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
+        $gate = $this->unlockGate();
+        $now = $this->clock->now();
+        $ip = \App\Core\ClientIp::from($request);
+
+        $retryAfter = $gate->retryAfterSeconds($ip, $now);
+        if ($retryAfter > 0) {
+            return Response::error(
+                $response,
+                'RATE_LIMITED',
+                sprintf('Çok fazla hatalı deneme. %d saniye sonra tekrar deneyin.', $retryAfter),
+                429,
+                [],
+                ['retry_after_seconds' => $retryAfter],
+            );
+        }
+
+        $appKey = $this->body($request)['app_key'] ?? null;
+        if (!$gate->proofValid(is_string($appKey) ? $appKey : null)) {
+            $gate->recordFailure($ip, $now);
+
+            return Response::error(
+                $response,
+                'FORBIDDEN',
+                'Sahiplik kanıtı geçersiz: config.php dosyasındaki APP_KEY değerini eksiksiz girin '
+                . '(File Manager ile dosyayı açıp kopyalayabilirsiniz).',
+                403,
+                ['app_key' => 'APP_KEY eşleşmedi.'],
+            );
+        }
+
+        $gate->recordSuccess($ip, $now, 'app_key');
         $this->lock->clear();
-        $this->state->destroy();
+        $this->state->reset();
 
         return Response::success($response, ['unlocked' => true]);
+    }
+
+    private function unlockGate(): UnlockGate
+    {
+        // Throttle/denetim, KİLİDİN yaşadığı veritabanına yazılır (K46) — kilitli bir
+        // sistemde bu bağlantı zaten çalışır; config'ten ayrı ikinci bağlantı açılmaz.
+        return new UnlockGate(
+            $this->lock->connection() ?? $this->connection(),
+            $this->basePath,
+            new \DateTimeZone(date_default_timezone_get()),
+        );
+    }
+
+    /**
+     * K46: yıkıcı setup işlemleri için sahiplik kanıtı — bu oturum config'i kendisi
+     * ürettiyse (env_app_key) otomatik geçerli; değilse gövdedeki app_key aranır.
+     */
+    private function destructiveProofValid(ServerRequestInterface $request): bool
+    {
+        $gate = $this->unlockGate();
+
+        $sessionKey = $this->state->get(self::DATA_ENV_KEY);
+        if (is_string($sessionKey) && $gate->proofValid($sessionKey)) {
+            return true;
+        }
+
+        $bodyKey = $this->body($request)['app_key'] ?? null;
+
+        return $gate->proofValid(is_string($bodyKey) ? $bodyKey : null);
     }
 
     /** GET /api/setup/state — sihirbaz açılışında adım + CSRF token. */
@@ -139,7 +203,7 @@ final class SetupController
     /** GET /api/setup/requirements — PHP, eklentiler, yazılabilirlik, HTTPS. */
     public function requirements(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
-        $result = (new RequirementChecker($this->basePath, $this->appEnv))->check($request);
+        $result = (new RequirementChecker($this->basePath))->check($request);
         if ($result['ok']) {
             $this->state->complete(SetupState::STEP_REQUIREMENTS);
         }
@@ -321,11 +385,21 @@ final class SetupController
         }
 
         try {
-            // K45: TEMİZ KURULUM — önceki yarım denemelerden kalan tablolar
-            // "already exists" hatası veriyordu (canlı vaka). {fresh:true} ile
-            // veritabanındaki TÜM tablolar silinip sıfırdan kurulur. Yalnız
-            // sihirbaz açıkken (kilit yokken) çalışır; kullanıcı açıkça onaylar.
+            // K45 temiz kurulum + K46 kapısı: TÜM tabloları silmek YIKICIDIR —
+            // (1) ekranda birebir "SIFIRLA" yazılmadan ve (2) sahiplik kanıtı
+            // (bu oturumun ürettiği APP_KEY veya gövdede APP_KEY) olmadan ÇALIŞMAZ.
             if (($this->body($request)['fresh'] ?? false) === true) {
+                if (($this->body($request)['confirm'] ?? '') !== 'SIFIRLA') {
+                    return Response::error($response, 'VALIDATION', 'Doğrulama hatası', 422, [
+                        'confirm' => 'Onay için kutuya birebir SIFIRLA yazmalısınız.',
+                    ]);
+                }
+                if (!$this->destructiveProofValid($request)) {
+                    return Response::error($response, 'FORBIDDEN', 'Sahiplik kanıtı geçersiz: '
+                        . 'config.php dosyasındaki APP_KEY değerini girin.', 403, [
+                            'app_key' => 'APP_KEY eşleşmedi.',
+                        ]);
+                }
                 $this->dropAllTables();
             }
 

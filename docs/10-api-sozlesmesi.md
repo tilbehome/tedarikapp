@@ -130,7 +130,8 @@
 
 | Uç | Açıklama |
 |---|---|
-| `GET /api/setup/state` | `{step, steps[], csrf_token, env_exists}` — sihirbaz açılışı |
+| `GET /api/setup/state` | `{step, steps[], csrf_token, env_exists}` — sihirbaz açılışı. Yapılandırma (config.php/.env) varsa ilk üç adım otomatik geçilir (K45) |
+| `POST /api/setup/unlock` | K46 — kilit kaldırma, SAHİPLİK KANITLI: `{app_key}` (config.php'deki 64 haneli değer, hash_equals). Doğru → 200 `{unlocked:true}`; kanıtsız/yanlış → 403 `FORBIDDEN` (+`fields.app_key`); IP bazlı artan bekleme → 429 `RATE_LIMITED` + `meta.retry_after_seconds`. Her deneme activity_log'a yazılır (`setup_unlock`/`setup_unlock_failed`); APP_KEY asla loglanmaz. Kilitliyken erişilebilen TEK yazma ucudur (guard istisnası) |
 | `GET /api/setup/diagnostics` | K42 — ortam özeti: `{app_version, php_version, sapi, os, extensions{ad: VAR\|YOK}, mysql_version, timestamp}`. "Tanılama raporunu kopyala" düğmesinin kaynağı; SIR İÇERMEZ. Adım hatalarında aynı biçim + `failure{step, exception, message, location, trace[]}` yanıtın `meta.diagnostics` alanında döner |
 | `GET /api/setup/requirements` | `{ok, php, extensions[], writable[], https, warnings[]}`. ZORUNLU (ok'u düşürür): PHP ≥ 8.4, zorunlu eklentiler, production'da HTTPS. Yazılabilirlik (`storage/`, `public/media/`) ZORUNLU DEĞİLDİR (K37 §D10): yazılamıyorsa hotlink + DB-log moduyla devam edilir, uyarı kartı gösterilir. Eksikler isim isim ve çözüm önerisiyle |
 | `POST /api/setup/database` | `{host, port?, name, user, pass}` → 200 `{version, charset}`; `SELECT VERSION()` sonucu döner, utf8mb4 değilse 422 |
@@ -152,6 +153,7 @@ Adım sırası zorlanır: sırası gelmemiş uç `422 STATE_TRANSITION` + `meta.
 | `GET /api/system/status` | `{app_version, php_version, db_version, installed_at, migrations:{applied, pending[], pending_count}, media:{mode, writable}, setup_lock_in_database}` |
 | `GET /api/system/state-machine` | (İE#8) `{product:{durum: [izinli...]}, list:{...}}` — docs/04 §2b geçiş matrisinin okunur kopyası. Panel durum menüsünü buradan kurar; **kural yine backend'de zorlanır**, bu uç yalnızca geçersiz seçeneğin kullanıcıya sunulmamasını sağlar |
 | `POST /api/system/migrate` | Auth + CSRF. Bekleyen migration'ları koşar → `{applied[], applied_count}`; sonuç `activity_log`'a yazılır |
+| `POST /api/system/setup-unlock` | K46 — kilit kaldırmanın ADMİN OTURUMU yolu (Auth + CSRF). → 200 `{unlocked:true}`; activity_log'a `setup_unlock (admin:<e-posta>)` yazılır |
 
 ## 9. Sözleşme Testleri
 

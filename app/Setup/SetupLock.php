@@ -40,6 +40,12 @@ final class SetupLock
     ) {
     }
 
+    /** K46: UnlockGate aynı veritabanına yazar (throttle + denetim kaydı, kilitle tek gerçek). */
+    public function connection(): ?Connection
+    {
+        return $this->connection;
+    }
+
     /** K33 öncesi kurulumlardan kalan dosya (yalnızca okunur). */
     public function legacyFilePath(): ?string
     {

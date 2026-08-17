@@ -116,17 +116,19 @@ final class SetupEndpointsTest extends TestCase
         self::assertStringContainsString('tedarikapp kurulumu', (string) $response->getBody());
     }
 
-    public function testKilitliykenSihirbazSayfasi403Doner(): void
+    public function testKilitliykenSihirbazSayfasiSecenekEkraniGosterir(): void
     {
+        // K45/K46: sayfa AÇILIR (çıkmaz sokak yok) — "Panele git" + kanıtlı
+        // "kilidi kaldır" seçeneklerini gösterir; API uçları kilitli kalır.
         $this->lock()->write(new DateTimeImmutable('2026-08-16 18:00:00'));
 
         $response = $this->call('GET', '/setup');
 
-        self::assertSame(403, $response->getStatusCode());
-        self::assertSame('FORBIDDEN', $this->json($response)['error']['code']);
+        self::assertSame(200, $response->getStatusCode());
+        self::assertStringContainsString('locked-box', (string) $response->getBody());
     }
 
-    public function testKilitliykenTumSetupUclari403Doner(): void
+    public function testKilitliykenTumSetupApiUclari403Doner(): void
     {
         $this->lock()->write(new DateTimeImmutable('2026-08-16 18:00:00'));
 
@@ -139,7 +141,6 @@ final class SetupEndpointsTest extends TestCase
             ['POST', '/api/setup/admin', []],
             ['POST', '/api/setup/admin/verify', []],
             ['POST', '/api/setup/finish', []],
-            ['GET', '/setup/wizard.js', null],
         ] as [$method, $path, $body]) {
             $response = $this->call($method, $path, $body);
             self::assertSame(403, $response->getStatusCode(), $method . ' ' . $path . ' 403 dönmeli.');

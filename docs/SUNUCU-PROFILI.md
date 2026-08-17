@@ -11,8 +11,10 @@
 
 | Alan | Değer | Sonuç / kural |
 |---|---|---|
-| PHP | **8.4 (ea-php84)** | Taban çizgisi docs/TECH-BASELINE.md; RequirementChecker ≥ 8.4.0 zorlar |
-| Handler | **DSO / mod_php** | Süreç kullanıcısı **`nobody`** — hesap kullanıcısı DEĞİL |
+| PHP | **DEĞİŞKEN 8.1–8.4** (canlı kanıt: MultiPHP seçimine göre 8.1.34 / 8.3.33 / 8.4.24 görüldü; **varsayılan 8.1.34** — zip yüklemesi cPanel'in .htaccess handler satırlarını ezince buna düşer) | K45: taban 8.1 — kod + vendor gerçek 8.1 ile lint'li, CI `php81-uyum` job'ı bekçi; RequirementChecker ≥ 8.1 |
+| Handler | **cgi-fcgi** (canlı diagnostics kanıtı; DSO varsayımı YANLIŞTI) | Yazılamaz docroot gerçeği aynı kalır |
+| Veritabanı (canlı) | **MariaDB 11.4.12** (diagnostics kanıtı; "MySQL 8.4" varsayımı düzeltildi) | Şema/migration'lar MariaDB 11.4'te canlıda doğrulandı; CI MySQL 8.4 ile de koşar |
+| alicdn görselleri | **Referer ACL: hotlink 403** (İE#9.6 bağlamı) | Varsayılan medya modu ARŞİV olacak (K47 adayı) |
 | Docroot yazılabilirliği | **YAZILAMAZ** | Tek istisna: kurulum günü elle izin verilecek `public/media`. **DİSKSİZ MOD (K44):** session→`sessions` tablosu (DbSessionHandler), sihirbaz state→şifreli çerez, log→`app_logs`, kilit→`settings`, ayarlar→`settings`; yapılandırma `config.php` (yalnız DB+APP_KEY; yazamıyorsa wp-config.php modeli manuel kayıt). `session.save_path`e HİÇ güvenilmez |
 | Eklentiler VAR | pdo_mysql · curl · gd · mbstring · zip · intl · bcmath · fileinfo · **openssl** | RequirementChecker zorunlu listesi bunlarla sınırlı kalır |
 | Eklentiler YOK ve AÇILAMAZ | **sodium** · imagick | Bayi hesabı — EasyApache/PHP Selector erişimi yok. sodium'a bağlı zorunluluk YASAK (K39: OpenSSL AES-256-GCM yedeği); imagick yerine GD |

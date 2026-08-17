@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * TEK DOSYALIK TEŞHİS (K45) — framework YOK, vendor YOK, saf PHP.
  * Amaç: "NOT_FOUND ama neden?" sorusunu bitirmek. Bu sayfa sunucunun isteği

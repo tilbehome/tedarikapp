@@ -68,12 +68,13 @@ final class SetupHardeningTest extends TestCase
         return new SetupLock(Connection::fromCallable(static fn (): \PDO => $pdo), $this->tempPath('storage'));
     }
 
-    public function testKesinKilitVarsa403(): void
+    public function testKesinKilitVarsaApiKapaliSayfaSecenekli(): void
     {
         $lock = $this->workingLock();
         $lock->write(new \DateTimeImmutable('2026-08-17 12:00:00'));
 
-        self::assertSame(403, $this->call('GET', '/setup', $lock)->getStatusCode());
+        // K45/K46: sayfa seçenek ekranı için AÇIK; API uçları kilitli.
+        self::assertSame(200, $this->call('GET', '/setup', $lock)->getStatusCode());
         self::assertSame(403, $this->call('GET', '/api/setup/state', $lock)->getStatusCode());
     }
 
