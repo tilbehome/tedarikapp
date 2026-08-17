@@ -24,6 +24,7 @@ use App\Setup\DatabaseProbe;
 use App\Setup\EnvWriter;
 use App\Setup\QrCodeSvg;
 use App\Setup\RequirementChecker;
+use App\Setup\SetupDiagnostics;
 use App\Setup\SetupLock;
 use App\Setup\SetupState;
 use PDO;
@@ -64,6 +65,44 @@ final class SetupController
     private function envWriter(): EnvWriter
     {
         return $this->envWriter ?? new EnvWriter($this->basePath);
+    }
+
+    /**
+     * GET /api/setup/diagnostics — ortam özeti (K42).
+     * "TANILAMA RAPORUNU KOPYALA" düğmesinin veri kaynağı; sır içermez.
+     */
+    public function diagnostics(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        return Response::success($response, (new SetupDiagnostics($this->basePath))->environment($this->connectionIfConfigured()));
+    }
+
+    /**
+     * Başarısız adımın yanıtına eklenen teşhis bloğu (K42): ortam + hata detayı.
+     *
+     * @return array<string, mixed>
+     */
+    private function diagnosticsFor(string $step, Throwable $exception): array
+    {
+        $diagnostics = new SetupDiagnostics($this->basePath);
+
+        return [
+            'environment' => $diagnostics->environment($this->connectionIfConfigured()),
+            'failure' => $diagnostics->failure($step, $exception),
+        ];
+    }
+
+    /** `.env` henüz yokken bağlantı KURULMAYA ÇALIŞILMAZ — teşhis üretimi hata üretemez. */
+    private function connectionIfConfigured(): ?Connection
+    {
+        if (!$this->envWriter()->exists()) {
+            return null;
+        }
+
+        try {
+            return $this->connection();
+        } catch (Throwable) {
+            return null;
+        }
     }
 
     /** GET /api/setup/state — sihirbaz açılışında adım + CSRF token. */
@@ -265,7 +304,16 @@ final class SetupController
             $migrator = new Migrator($this->connection()->pdo(), $this->basePath . '/migrations');
             $applied = $migrator->run();
         } catch (Throwable $e) {
-            return Response::error($response, 'SERVER_ERROR', 'Migration çalıştırılamadı: ' . $e->getMessage(), 500);
+            // K42: dostane mesaj + kopyalanabilir teşhis — "500 verdi" ile kalınmaz.
+            return Response::error(
+                $response,
+                'SERVER_ERROR',
+                'Veritabanı tabloları oluşturulamadı. Teknik detay aşağıda; '
+                . '"Tanılama raporunu kopyala" ile destek için hazır rapor alabilirsiniz.',
+                500,
+                [],
+                ['diagnostics' => $this->diagnosticsFor('migrate', $e)],
+            );
         }
 
         $this->state->complete(SetupState::STEP_MIGRATE);
@@ -409,7 +457,9 @@ final class SetupController
                 'admin_email' => is_string($this->state->get('admin_email')) ? $this->state->get('admin_email') : null,
             ], static fn (mixed $value): bool => $value !== null));
         } catch (RuntimeException $e) {
-            return Response::error($response, 'SERVER_ERROR', $e->getMessage(), 500);
+            return Response::error($response, 'SERVER_ERROR', $e->getMessage(), 500, [], [
+                'diagnostics' => $this->diagnosticsFor('finish', $e),
+            ]);
         }
 
         $this->state->complete(SetupState::STEP_RECOVERY);

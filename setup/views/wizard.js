@@ -9,6 +9,11 @@
   var csrfToken = '';
   var STEPS = ['requirements', 'database', 'env', 'migrate', 'admin', 'recovery', 'done'];
 
+  // K42 tanılama durumu: adım günlüğü + son hata + son Request-ID.
+  var progressLog = [];
+  var lastFailure = null;
+  var lastRequestId = '';
+
   var $ = function (id) { return document.getElementById(id); };
 
   // ─────────── HTTP ───────────
@@ -23,13 +28,112 @@
       options.headers['Content-Type'] = 'application/json';
       options.body = JSON.stringify(body);
     }
+    var startedAt = Date.now();
     return fetch(path, options).then(function (response) {
+      lastRequestId = response.headers.get('X-Request-Id') || lastRequestId;
       return response.json().catch(function () { return null; }).then(function (payload) {
-        if (payload && payload.success) return payload.data;
+        var ok = !!(payload && payload.success);
+        appendLog({ step: method + ' ' + path, ok: ok, ms: Date.now() - startedAt });
+        if (ok) return payload.data;
         var error = new Error((payload && payload.error && payload.error.message) || 'Beklenmeyen bir hata oluştu.');
         error.fields = (payload && payload.error && payload.error.fields) || {};
+        error.diagnostics = (payload && payload.meta && payload.meta.diagnostics) || null;
         throw error;
       });
+    }, function (networkError) {
+      appendLog({ step: method + ' ' + path, ok: false, ms: Date.now() - startedAt });
+      throw networkError;
+    });
+  }
+
+  // ─────────── K42: işlem günlüğü + tanılama ───────────
+
+  function appendLog(entry) {
+    progressLog.push(entry);
+    var panel = $('islem-paneli');
+    var list = $('islem-gunlugu');
+    if (!panel || !list) return;
+    panel.hidden = false;
+    var row = document.createElement('li');
+    row.className = entry.ok ? 'pass' : 'fail';
+    row.textContent = (entry.ok ? '✓ ' : '✕ ') + entry.step + ' — ' + entry.ms + ' ms';
+    list.appendChild(row);
+  }
+
+  function progressSummary() {
+    var total = 0;
+    var failed = 0;
+    progressLog.forEach(function (entry) { total += entry.ms; if (!entry.ok) failed += 1; });
+    return progressLog.length + ' adım · ' + failed + ' hata · toplam ' + total + ' ms';
+  }
+
+  /** Dostane mesaj alert'te; teknik detay + kopyalanabilir rapor tanılama kutusunda. */
+  function failBox(error) {
+    alertBox('bad', error.message);
+    lastFailure = error.diagnostics || null;
+    var box = $('diag-box');
+    if (!box) return;
+    if (!error.diagnostics) { box.hidden = true; return; }
+    $('diag-detail').textContent = diagnosticsText(error.diagnostics, false);
+    box.hidden = false;
+    box.scrollIntoView({ block: 'nearest' });
+  }
+
+  function clearFailure() { lastFailure = null; var box = $('diag-box'); if (box) box.hidden = true; }
+
+  /** Teşhis nesnesini düz metne çevirir (SIR İÇERMEZ — sunucu tarafı redaksiyonlu). */
+  function diagnosticsText(diag, fullReport) {
+    var lines = [];
+    var env = diag.environment || {};
+    var failure = diag.failure || {};
+    if (fullReport) {
+      lines.push('=== tedarikapp KURULUM TANILAMA RAPORU ===');
+      lines.push('Zaman: ' + (env.timestamp || new Date().toISOString()));
+      lines.push('Request-ID: ' + (lastRequestId || 'yok'));
+      lines.push('');
+    }
+    lines.push('Uygulama: ' + (env.app_version || '?') + ' · PHP ' + (env.php_version || '?') + ' (' + (env.sapi || '?') + ')');
+    lines.push('Sunucu: ' + (env.os || '?') + ' · MySQL: ' + (env.mysql_version || 'alınamadı'));
+    var extensions = env.extensions || {};
+    lines.push('Eklentiler: ' + Object.keys(extensions).map(function (name) {
+      return name + '=' + extensions[name];
+    }).join(' '));
+    if (failure.step) {
+      lines.push('');
+      lines.push('Başarısız adım: ' + failure.step);
+      lines.push('Hata: ' + (failure.exception || '?') + ' — ' + (failure.message || ''));
+      lines.push('Konum: ' + (failure.location || '?'));
+      (failure.trace || []).forEach(function (frame) { lines.push('  ' + frame); });
+    }
+    if (fullReport) {
+      lines.push('');
+      lines.push('İşlem günlüğü (' + progressSummary() + '):');
+      progressLog.forEach(function (entry) {
+        lines.push('  ' + (entry.ok ? 'OK  ' : 'HATA') + ' ' + entry.step + ' — ' + entry.ms + ' ms');
+      });
+    }
+    return lines.join('\n');
+  }
+
+  function copyDiagnosticReport() {
+    var build = function (diag) {
+      var text = diagnosticsText(diag, true);
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(function () {
+          alertBox('ok', 'Tanılama raporu panoya kopyalandı; destek talebinize yapıştırabilirsiniz.');
+        }, function () {
+          alertBox('warn', 'Tarayıcı kopyalamaya izin vermedi; teknik detay bölümünü elle seçip kopyalayın.');
+        });
+      } else {
+        alertBox('warn', 'Tarayıcı kopyalamaya izin vermedi; teknik detay bölümünü elle seçip kopyalayın.');
+      }
+    };
+    if (lastFailure) return build(lastFailure);
+    // Hata yanıtında teşhis yoksa (örn. ağ hatası) ortam özeti sunucudan çekilir.
+    api('GET', '/api/setup/diagnostics').then(function (env) {
+      build({ environment: env, failure: null });
+    }).catch(function () {
+      build({ environment: {}, failure: null });
     });
   }
 
@@ -43,7 +147,7 @@
     box.scrollIntoView({ block: 'nearest' });
   }
 
-  function clearAlert() { $('alert').hidden = true; }
+  function clearAlert() { $('alert').hidden = true; clearFailure(); }
 
   function showStep(step) {
     STEPS.forEach(function (name) {
@@ -173,7 +277,7 @@
   function bind() {
     $('req-recheck').addEventListener('click', function () {
       clearAlert();
-      loadRequirements().catch(function (error) { alertBox('bad', error.message); });
+      loadRequirements().catch(function (error) { failBox(error); });
     });
 
     $('req-next').addEventListener('click', function () {
@@ -204,7 +308,7 @@
         showStep('env');
       }).catch(function (error) {
         showFieldErrors(form, error.fields);
-        alertBox('bad', error.message);
+        failBox(error);
       }).finally(function () { busy(button, false); });
     });
 
@@ -223,7 +327,7 @@
         showStep('migrate');
       }).catch(function (error) {
         showFieldErrors(form, error.fields);
-        alertBox('bad', error.message);
+        failBox(error);
       }).finally(function () { busy(button, false); });
     });
 
@@ -241,7 +345,7 @@
           : 'Tablolar zaten güncel.');
         showStep('admin');
       }).catch(function (error) {
-        alertBox('bad', error.message);
+        failBox(error);
       }).finally(function () { busy(button, false); });
     });
 
@@ -263,7 +367,7 @@
         $('totp-form').code.focus();
       }).catch(function (error) {
         showFieldErrors(form, error.fields);
-        alertBox('bad', error.message);
+        failBox(error);
       }).finally(function () { busy(button, false); });
     });
 
@@ -285,7 +389,7 @@
         showStep('recovery');
       }).catch(function (error) {
         showFieldErrors(form, error.fields);
-        alertBox('bad', error.message);
+        failBox(error);
       }).finally(function () { busy(button, false); });
     });
 
@@ -313,15 +417,19 @@
         if (data.db_version) rows.push(['Veritabanı', data.db_version]);
         rows.push(['Tablolar', data.migrations.length + ' migration uygulandı']);
         rows.push(['Sihirbaz', 'kalıcı olarak kilitlendi']);
+        rows.push(['İşlem günlüğü', progressSummary()]);
         replaceContent($('done-summary'), definitions(rows));
         showStep('done');
       }).catch(function (error) {
-        alertBox('bad', error.message);
+        failBox(error);
       }).finally(function () { busy(button, false); });
     });
   }
 
   // ─────────── Başlat ───────────
+
+  // Kopyalama düğmesi bind()'den bağımsız: açılış bile başarısız olsa rapor alınabilir (K42).
+  $('diag-copy').addEventListener('click', copyDiagnosticReport);
 
   api('GET', '/api/setup/state').then(function (data) {
     csrfToken = data.csrf_token;
@@ -332,6 +440,6 @@
     }
     return null;
   }).catch(function (error) {
-    alertBox('bad', error.message);
+    failBox(error);
   });
 })();

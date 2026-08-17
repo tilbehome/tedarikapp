@@ -26,6 +26,19 @@
 
   <div class="alert" id="alert" hidden></div>
 
+  <!-- K42: adım başarısız olduğunda teşhis — dostane mesaj alert'te, teknik detay burada -->
+  <section class="card diag" id="diag-box" hidden>
+    <h3>Sorun tanılaması</h3>
+    <details open>
+      <summary>Teknik detay (destek için)</summary>
+      <pre id="diag-detail"></pre>
+    </details>
+    <div class="actions">
+      <button type="button" class="ghost" id="diag-copy">Tanılama raporunu kopyala</button>
+    </div>
+    <p class="muted">Rapor gizli bilgi (şifre, anahtar, token) içermez; destek talebinize aynen yapıştırabilirsiniz.</p>
+  </section>
+
   <!-- 1) Gereksinimler -->
   <section class="card" id="panel-requirements" hidden>
     <h2>1. Sunucu gereksinimleri</h2>
@@ -133,6 +146,12 @@
       <a class="button" href="/">Panele git</a>
     </div>
   </section>
+
+  <!-- K42: her adımın adı/sonucu/süresi — canlı ilerleme günlüğü -->
+  <aside class="card log" id="islem-paneli" hidden>
+    <h3>İşlem günlüğü</h3>
+    <ul id="islem-gunlugu"></ul>
+  </aside>
 </div>
 
 <script src="/setup/wizard.js"></script>

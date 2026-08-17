@@ -11,6 +11,7 @@ Bu dosya Claude Code için bağlayıcıdır. Her oturumda geçerlidir, iş emirl
 - Backend: PHP + Slim + MySQL (PDO). Frontend: React + Vite. Eklenti: vanilla JS, Manifest V3. Sürümlerin TEK gerçek kaynağı: `docs/TECH-BASELINE.md` (İE#9 §F14) — belgelere sürüm numarası yazma, oraya referans ver.
 - YASAK: Python/FastAPI, PostgreSQL, Redis, Docker, Node backend, framework değişikliği.
 - Yeni composer/npm paketi eklemeden önce ÇIKTI RAPORU'nda gerekçesiyle bildir; büyük bağımlılıklar PM onayı ister.
+- Yeni bağımlılık/özellik eklerken `docs/SUNUCU-PROFILI.md` ile uyumu doğrula; uyumsuzlukta uygulamadan önce PM'e bildir (K41).
 - Sunucu kısıtları (docs/04 bölüm 7): dış istek SADECE cURL (`file_get_contents` ile URL açmak YASAK), `exec/system/proc_open` YASAK, `mail()` YASAK, yazma sadece `storage/` altına, vendor lokalde kurulur.
 
 ### Onaylı Kütüphane ve Araç Listesi (K19 — liste dışı her paket PM onayı ister)

@@ -93,6 +93,7 @@ Ayrıntılar ve kabul kriterleri: [docs/05-yol-haritasi.md](docs/05-yol-haritasi
 | [CLAUDE.md](CLAUDE.md) | 🤖 **Geliştirme anayasası** — Claude Code için bağlayıcı kurallar (stack sınırları, para/durum kuralları, veri sözleşmeleri) |
 | [CHANGELOG.md](CHANGELOG.md) | 🕘 Sürüm geçmişi (SemVer) |
 | [docs/TECH-BASELINE.md](docs/TECH-BASELINE.md) | 🧱 **Teknoloji taban çizgisi** — sürümlerin TEK gerçek kaynağı (PHP/Slim/MySQL/React/Vite/Node/MV3/PHPUnit/PHPStan) |
+| [docs/SUNUCU-PROFILI.md](docs/SUNUCU-PROFILI.md) | 🖥️ **Üretim sunucu manifesti (K41)** — ortam gerçekleri; her bağımlılık/varsayım buna karşı denetlenir (CI `uretim-profili` job'ı bekçisidir) |
 | [docs/00-calisma-protokolu.md](docs/00-calisma-protokolu.md) | 👥 Roller (PM/Ürün Sahibi/Geliştirici), iş emri döngüsü, GitHub süreci |
 | [docs/01-vizyon-omurga.md](docs/01-vizyon-omurga.md) | 🎯 Amaç, kullanıcılar, sistem omurgası, ilkeler |
 | [docs/02-moduller-kapsam.md](docs/02-moduller-kapsam.md) | 🧩 M1–M8 modül dökümü + Excel çıktı şablonu |

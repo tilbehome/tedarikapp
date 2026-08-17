@@ -1,0 +1,13 @@
+Uygulama: 0.1.0-dev · PHP 8.4.24 (cli-server)
+Sunucu: Windows NT 10.0 (AMD64) · MySQL: 8.4.9
+Eklentiler: pdo_mysql=VAR curl=VAR gd=VAR mbstring=VAR zip=VAR intl=VAR bcmath=VAR fileinfo=VAR openssl=VAR sodium=VAR
+
+Başarısız adım: migrate
+Hata: RuntimeException — Migration "0001_create_users" başarısız: SQLSTATE[42S01]: Base table or view already exists: 1050 Table 'users' already exists
+Konum: app\Core\Migrator.php:110
+  #0 app\Core\Migrator.php(48): App\Core\Migrator->apply()
+  #1 app\Controllers\SetupController.php(305): App\Core\Migrator->run()
+  #2 vendor\slim\slim\Slim\Handlers\Strategies\RequestResponse.php(39): App\Controllers\SetupController->migrate()
+  #3 vendor\slim\slim\Slim\Routing\Route.php(362): Slim\Handlers\Strategies\RequestResponse->__invoke()
+  #4 vendor\slim\slim\Slim\MiddlewareDispatcher.php(73): Slim\Routing\Route->handle()
+  #5 app\Middleware\SetupCsrf.php(54): Slim\MiddlewareDispatcher->handle()

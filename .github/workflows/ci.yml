@@ -110,6 +110,40 @@ jobs:
           TEDARIKAPP_TEST_DB_PASS: root
         run: vendor/bin/phpunit --group mysql
 
+  uretim-profili:
+    name: Üretim profili (K41)
+    runs-on: ubuntu-latest
+    # docs/SUNUCU-PROFILI.md manifestinin otomatik bekçisi: sodium'suz şifreleme,
+    # yazılamaz disk yolları (hotlink + DB-log), allow_url_fopen/mail yasağı statik
+    # taraması ve açılış smoke'u. Hedef < 1 dk — her PR'da "bu kod Bünyamin'in
+    # sunucusunda açılır mı?" sorusunun cevabı.
+
+    steps:
+      - name: Depoyu al
+        uses: actions/checkout@v4
+
+      - name: PHP 8.4 kur
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          # DİKKAT: sodium BİLEREK yok — üretim sunucusu profili (K39/K41).
+          extensions: bcmath, curl, fileinfo, gd, intl, mbstring, openssl, pdo_mysql, pdo_sqlite, zip
+          coverage: none
+          tools: none
+
+      - name: Composer önbelleği
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache
+          key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-
+
+      - name: Bağımlılıkları kur
+        run: composer install --no-interaction --no-progress
+
+      - name: Üretim profili süiti
+        run: vendor/bin/phpunit --group uretim-profili
+
   panel:
     name: Panel (tsc + eslint + build)
     runs-on: ubuntu-latest
