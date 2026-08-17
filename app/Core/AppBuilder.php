@@ -133,14 +133,15 @@ final class AppBuilder
         $lists = new ListRepository($connection);
         $products = new ProductRepository($connection);
         $money = new MoneyService();
-        $presenter = new ListPresenter($lists, $products, $money, $services->timezone);
+        $settingsRepository = new SettingsRepository($connection);
+        // K4 düzeltmesi: taslak listeler GÜNCEL ayar kurunu gösterir — presenter ayarları bilir.
+        $presenter = new ListPresenter($lists, $products, $money, $services->timezone, $settingsRepository);
         $validator = new InputValidator($money);
         $stateMachine = new StateMachine();
         $mutationPolicy = new ListMutationPolicy();
 
         $allowedHosts = array_map('trim', explode(',', $config->get('MEDIA_ALLOWED_HOSTS', 'alicdn.com,1688.com')));
         $urlGuard = new UrlGuard($allowedHosts);
-        $settingsRepository = new SettingsRepository($connection);
         $mediaService = new MediaService(
             $basePath,
             $urlGuard,

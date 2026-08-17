@@ -302,6 +302,7 @@ export default function ListDetailScreen() {
                     <th className="px-3 py-3">Kategori</th>
                     <SortHeader label="Adet" sortKey="qty" sort={sort} onSort={setSort} align="right" />
                     <SortHeader label="¥ Birim" sortKey="price_yuan" sort={sort} onSort={setSort} align="right" />
+                    <th className="px-3 py-3 text-right">¥ Satır</th>
                     <th className="px-3 py-3 text-right">₺ Birim</th>
                     <th className="px-3 py-3 text-right">$ DDP</th>
                     <SortHeader label="₺ Satır" sortKey="line_total_yuan_tl" sort={sort} onSort={setSort} align="right" />
@@ -339,6 +340,7 @@ export default function ListDetailScreen() {
                       <td className="px-3 py-2 text-slate-600">{categoryName(product.category_id)}</td>
                       <td className="px-3 py-2 text-right">{count(product.qty)}</td>
                       <td className="px-3 py-2 text-right">¥{money(product.price_yuan)}</td>
+                      <td className="px-3 py-2 text-right">¥{money(product.line_total_yuan)}</td>
                       <td className="px-3 py-2 text-right">₺{money(product.price_yuan_tl)}</td>
                       <td className="px-3 py-2 text-right">${money(product.price_ddp_usd)}</td>
                       <td className="px-3 py-2 text-right font-semibold">₺{money(product.line_total_yuan_tl)}</td>
@@ -368,7 +370,9 @@ export default function ListDetailScreen() {
                     <td className="px-3 py-3" colSpan={4}>
                       TOPLAM
                     </td>
+                    {/* Hiza: Adet → boş(¥Birim) → ¥Satır toplamı → boş(₺Birim) → $ → ₺Satır toplamı */}
                     <td className="px-3 py-3 text-right">{count(list.totals.qty)}</td>
+                    <td className="px-3 py-3" />
                     <td className="px-3 py-3 text-right">¥{money(list.totals.yuan)}</td>
                     <td className="px-3 py-3" />
                     <td className="px-3 py-3 text-right">${money(list.totals.ddp_usd)}</td>

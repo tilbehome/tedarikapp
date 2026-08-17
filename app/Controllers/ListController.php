@@ -223,9 +223,24 @@ final class ListController extends ApiController
             }
 
             $updates['status'] = $to;
-            // sent'e ilk geçişte kur kilitlenir.
+            // sent'e geçişte kur kilitlenir — ve KİLİTLENEN değer O ANKİ ayar kurudur
+            // (K4 düzeltmesi, canlı vaka): liste oluşturulduktan sonra kur güncellendiyse
+            // bayat kopya değil güncel kur kilitlenmeli. Elle kur verilmişse o üstündür.
             if ($to === StateMachine::LIST_SENT && $row['rate_locked_at'] === null) {
                 $updates['rate_locked_at'] = Dates::toStorage($now);
+                if (!array_key_exists('yuan_rate', $updates)) {
+                    $updates['yuan_rate'] = $this->settings->yuanRate();
+                }
+                if (!array_key_exists('usd_rate', $updates)) {
+                    $updates['usd_rate'] = $this->settings->usdRate();
+                }
+            }
+            // K45: Taslağa dönüş kilidi AÇAR — liste yeniden güncel kuru izler;
+            // yanlış kurla iletilmiş liste böylece kurtarılır (Taslak → tekrar İlet).
+            if ($to === StateMachine::LIST_DRAFT && $row['rate_locked_at'] !== null) {
+                $updates['rate_locked_at'] = null;
+                $updates['yuan_rate'] = $this->settings->yuanRate();
+                $updates['usd_rate'] = $this->settings->usdRate();
             }
         }
 

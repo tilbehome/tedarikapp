@@ -7,12 +7,17 @@ namespace App\Services;
 use App\Core\Dates;
 use App\Models\ListRepository;
 use App\Models\ProductRepository;
+use App\Models\SettingsRepository;
 use DateTimeZone;
 
 /**
  * docs/10 §3–§4 nesnelerini üretir — API'nin dışa gösterdiği TEK biçim burasıdır.
  *
- * Para: TL değerleri DB'de saklanmaz, listenin kilitli kuruyla burada hesaplanır (K24).
+ * Para: TL değerleri DB'de saklanmaz, kurla burada hesaplanır (K24).
+ * KUR SEÇİMİ (K4 — canlı vaka düzeltmesi): kur KİLİTLİYSE listenin kilitli kuru,
+ * TASLAKTAYSA ayarlardaki GÜNCEL kur kullanılır. Eskiden taslak da oluşturma
+ * anındaki kopyayı gösteriyordu; kullanıcı kuru güncelleyip listeyi iletince
+ * bayat kur kilitleniyor, hesaplar "tutarsız" görünüyordu.
  * Hesap MoneyService'ten geçer; bu sınıfta bcmath çağrısı YOKTUR (K29).
  */
 final class ListPresenter
@@ -22,7 +27,31 @@ final class ListPresenter
         private readonly ProductRepository $products,
         private readonly MoneyService $money,
         private readonly DateTimeZone $timezone,
+        private readonly ?SettingsRepository $settings = null,
     ) {
+    }
+
+    /**
+     * K4: kilitliyse listenin kuru, taslaktaysa ayarlardaki güncel kur.
+     *
+     * @param array<string, mixed> $listRow
+     *
+     * @return array{string, string} [yuanRate, usdRate]
+     */
+    private function effectiveRates(array $listRow): array
+    {
+        $locked = ($listRow['rate_locked_at'] ?? null) !== null;
+        if (!$locked && $this->settings !== null) {
+            return [
+                $this->money->formatRate($this->settings->yuanRate()),
+                $this->money->formatRate($this->settings->usdRate()),
+            ];
+        }
+
+        return [
+            $this->money->formatRate((string) $listRow['yuan_rate']),
+            $this->money->formatRate((string) $listRow['usd_rate']),
+        ];
     }
 
     /**
@@ -34,8 +63,7 @@ final class ListPresenter
     {
         $listId = (int) $row['id'];
         $productRows = $this->products->forList($listId);
-        $yuanRate = $this->money->formatRate((string) $row['yuan_rate']);
-        $usdRate = $this->money->formatRate((string) $row['usd_rate']);
+        [$yuanRate, $usdRate] = $this->effectiveRates($row);
 
         $lastExport = $this->lists->lastExport($listId);
         $revision = (int) $row['revision'];
@@ -89,8 +117,7 @@ final class ListPresenter
      */
     public function product(array $row, array $listRow): array
     {
-        $yuanRate = $this->money->formatRate((string) $listRow['yuan_rate']);
-        $usdRate = $this->money->formatRate((string) $listRow['usd_rate']);
+        [$yuanRate, $usdRate] = $this->effectiveRates($listRow);
         $priceYuan = $this->money->format((string) $row['price_yuan']);
         $priceDdp = $this->money->format((string) $row['price_ddp_usd']);
         $qty = (int) $row['qty'];
