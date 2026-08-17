@@ -72,9 +72,9 @@ function tedarikapp_on_kontrol($basePath)
 {
     $sorunlar = array();
 
-    if (version_compare(PHP_VERSION, '8.2.0', '<')) {
-        $sorunlar[] = 'PHP surumu cok eski: ' . PHP_VERSION . ' (en az 8.2 gerekir). '
-            . 'cPanel > MultiPHP Manager ile ea-php82 veya ustunu secin.';
+    if (version_compare(PHP_VERSION, '8.1.0', '<')) {
+        $sorunlar[] = 'PHP surumu cok eski: ' . PHP_VERSION . ' (en az 8.1 gerekir). '
+            . 'cPanel > MultiPHP Manager ile ea-php81 veya ustunu secin.';
     }
 
     $zorunlu = array('pdo_mysql', 'curl', 'gd', 'mbstring', 'zip', 'bcmath', 'openssl');

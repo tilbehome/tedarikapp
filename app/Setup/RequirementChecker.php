@@ -22,7 +22,7 @@ use Psr\Http\Message\ServerRequestInterface;
  */
 final class RequirementChecker
 {
-    public const MIN_PHP_VERSION = '8.2.0';
+    public const MIN_PHP_VERSION = '8.1.0';
 
     public function __construct(
         private readonly string $basePath,

@@ -283,12 +283,23 @@
           items.push({ state: 'pass', title: 'Dosya bütünlüğü', hint: integrity.message });
         } else {
           integrityOk = false;
-          var ornekler = (integrity.missing || []).concat(integrity.modified || []).slice(0, 10).join(', ');
+          var eksikler = (integrity.missing || []).slice(0, 10);
+          var degisenler = (integrity.modified || []).slice(0, 10);
+          var detay = [];
+          if (eksikler.length) detay.push('EKSİK: ' + eksikler.join(', '));
+          if (degisenler.length) detay.push('DEĞİŞMİŞ: ' + degisenler.join(', '));
+          // Yalnız .htaccess değişmişse bu cPanel'in PHP sürüm seçiminden gelir — normaldir.
+          var sadeceHtaccess = !eksikler.length && degisenler.length === 1 && degisenler[0] === '.htaccess';
           items.push({
-            state: 'fail',
-            title: 'Dosya bütünlüğü — zip eksik/bozuk açılmış',
-            hint: integrity.message + (ornekler ? ' Eksik/bozuk örnekler: ' + ornekler : '')
+            state: sadeceHtaccess ? 'skip' : 'fail',
+            title: sadeceHtaccess
+              ? 'Dosya bütünlüğü — yalnız .htaccess değişmiş (normal)'
+              : 'Dosya bütünlüğü — zip eksik/bozuk açılmış',
+            hint: (sadeceHtaccess
+              ? 'cPanel, PHP sürümü seçildiğinde .htaccess dosyasına kendi satırlarını ekler; bu beklenen bir durumdur ve sorun değildir.'
+              : integrity.message) + (detay.length ? ' — ' + detay.join(' · ') : '')
           });
+          if (sadeceHtaccess) integrityOk = true;
         }
       } else if (integrity) {
         items.push({ state: 'skip', title: 'Dosya bütünlüğü', hint: integrity.message });
