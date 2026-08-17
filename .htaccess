@@ -1,5 +1,13 @@
 # cPanel'de subdomain kökü public/ klasörüne çekilemezse bu dosya devreye girer (docs/07 §2).
 # Tüm trafiği public/ altına yönlendirir; app/, storage/, vendor/ webden erişilemez kalır.
 RewriteEngine On
+
+# K45: tarayıcıdan /public/... yazılırsa DOĞRU adrese yönlendir (örn. /public/panel → /panel).
+# Ham /public/panel/ statik açılınca SPA rotası tutmuyor ve sayfa BOŞ görünüyordu (canlı vaka).
+# %{THE_REQUEST} yalnız istemcinin gerçekten yazdığı adreste tetiklenir; içerideki
+# rewrite döngüye girmez.
+RewriteCond %{THE_REQUEST} \s/+public/([^\s?]*)
+RewriteRule ^public/(.*)$ /$1 [R=301,L]
+
 RewriteCond %{REQUEST_URI} !^/public/
 RewriteRule ^(.*)$ public/$1 [L]
