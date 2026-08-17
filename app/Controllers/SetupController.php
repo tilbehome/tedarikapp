@@ -105,6 +105,18 @@ final class SetupController
         }
     }
 
+    /**
+     * POST /api/setup/unlock — K45: "kurulum tamamlanmış" kilidini kaldırır,
+     * sihirbaz baştan çalışabilir (Ürün Sahibi talimatı: bu olasılıkta da devam).
+     */
+    public function unlock(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        $this->lock->clear();
+        $this->state->destroy();
+
+        return Response::success($response, ['unlocked' => true]);
+    }
+
     /** GET /api/setup/state — sihirbaz açılışında adım + CSRF token. */
     public function state(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {

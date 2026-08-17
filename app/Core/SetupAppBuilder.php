@@ -95,6 +95,10 @@ final class SetupAppBuilder
         $app->get('/setup/wizard.js', self::viewAction($basePath . '/setup/views/wizard.js', 'application/javascript; charset=utf-8'));
         $app->get('/setup/wizard.css', self::viewAction($basePath . '/setup/views/wizard.css', 'text/css; charset=utf-8'));
 
+        // K45: kilit kaldırma — kilitliyken de erişilir (guard istisnası); CSRF dışı,
+        // sihirbaz ekrandaki onaylı düğmeden çağırır.
+        $app->post('/api/setup/unlock', [$controller, 'unlock']);
+
         // K43: kurulum bütünlüğü — MANIFEST.txt'e göre eksik/bozuk dosya listesi.
         // Kurulumdan ÖNCE de çalışır; sihirbazın gereksinim adımı bunu gösterir. Sır içermez.
         $app->get('/api/system/integrity', static function (ServerRequestInterface $request, ResponseInterface $response) use ($basePath): ResponseInterface {

@@ -26,6 +26,18 @@
 
   <div class="alert" id="alert" hidden></div>
 
+  <!-- K45: kurulum tamamlanmışsa çıkmaz sokak YOK — panele git veya kilidi kaldırıp yeniden kur -->
+  <section class="card" id="locked-box" hidden>
+    <h2>Kurulum zaten tamamlanmış</h2>
+    <p class="muted">Panel kullanıma hazır olmalı. Yeniden kurmak isterseniz kilidi kaldırabilirsiniz
+      (mevcut ayar kilidi silinir; veritabanı tablolarına dokunulmaz — isterseniz sonraki adımda
+      "Temiz kurulum" ile onları da sıfırlayabilirsiniz).</p>
+    <div class="actions">
+      <a class="button" href="/panel">Panele git</a>
+      <button type="button" class="ghost" id="unlock-run">Kilidi kaldır ve yeniden kur</button>
+    </div>
+  </section>
+
   <!-- K42: adım başarısız olduğunda teşhis — dostane mesaj alert'te, teknik detay burada -->
   <section class="card diag" id="diag-box" hidden>
     <h3>Sorun tanılaması</h3>

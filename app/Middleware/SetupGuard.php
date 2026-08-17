@@ -36,6 +36,16 @@ final class SetupGuard implements MiddlewareInterface
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
+        // K45: kilit kaldırma ucu ve sihirbaz sayfası kilitliyken de erişilebilir —
+        // kullanıcı "yeniden kur" seçeneğini EKRANDA görür, çıkmaz sokakta kalmaz.
+        $path = $request->getUri()->getPath();
+        if (str_ends_with($path, '/api/setup/unlock')
+            || str_ends_with($path, '/setup')
+            || str_ends_with($path, '/setup/wizard.js')
+            || str_ends_with($path, '/setup/wizard.css')) {
+            return $handler->handle($request);
+        }
+
         if ($this->lock->status() !== SetupLock::STATE_LOCKED) {
             return $handler->handle($request);
         }

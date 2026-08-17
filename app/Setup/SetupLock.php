@@ -122,6 +122,27 @@ final class SetupLock
         }
     }
 
+    /**
+     * K45: kilidi kaldırır — "kurulum tamamlanmış" durumunda sihirbazı yeniden
+     * çalıştırabilmek için (Ürün Sahibi talimatı: bu olasılıkta da devam edilebilmeli).
+     */
+    public function clear(): void
+    {
+        if ($this->connection !== null) {
+            try {
+                $statement = $this->connection->pdo()->prepare('DELETE FROM settings WHERE `key` = :key');
+                $statement->execute(['key' => self::SETTING_KEY]);
+            } catch (Throwable) {
+                // Tablo yoksa kilit de yoktur.
+            }
+        }
+
+        $legacy = $this->legacyFilePath();
+        if ($legacy !== null && is_file($legacy)) {
+            @unlink($legacy);
+        }
+    }
+
     /** @return array<string, mixed>|null */
     private function readFromDatabase(): ?array
     {

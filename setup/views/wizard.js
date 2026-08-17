@@ -556,6 +556,18 @@
   // Kopyalama düğmesi bind()'den bağımsız: açılış bile başarısız olsa rapor alınabilir (K42).
   $('diag-copy').addEventListener('click', copyDiagnosticReport);
 
+  // K45: kilit kaldırma — kurulum tamamlanmışken bile yeniden kurulabilme.
+  $('unlock-run').addEventListener('click', function (event) {
+    if (!window.confirm('Kurulum kilidi kaldırılacak ve sihirbaz yeniden çalışacak. Emin misiniz?')) return;
+    var button = event.target;
+    busy(button, true, 'Kaldırılıyor…');
+    api('POST', '/api/setup/unlock', {}).then(function () {
+      location.reload();
+    }).catch(function (error) {
+      failBox(error);
+    }).finally(function () { busy(button, false); });
+  });
+
   api('GET', '/api/setup/state').then(function (data) {
     csrfToken = data.csrf_token;
     bind();
@@ -565,6 +577,12 @@
     }
     return null;
   }).catch(function (error) {
+    // K45: "kurulum tamamlanmış" 403'ü çıkmaz sokak değil — seçenek sun.
+    if (error && typeof error.message === 'string' && error.message.indexOf('kalıcı olarak kapalı') !== -1) {
+      $('locked-box').hidden = false;
+      alertBox('warn', 'Kurulum tamamlanmış görünüyor. Panele gidebilir veya kilidi kaldırıp yeniden kurabilirsiniz.');
+      return;
+    }
     failBox(error);
   });
 })();
