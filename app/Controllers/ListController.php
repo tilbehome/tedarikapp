@@ -6,6 +6,7 @@ namespace App\Controllers;
 
 use App\Core\ClientIp;
 use App\Core\Clock;
+use App\Core\Connection;
 use App\Core\Dates;
 use App\Core\Response;
 use App\Models\ListRepository;
@@ -13,6 +14,7 @@ use App\Models\ProductRepository;
 use App\Models\SettingsRepository;
 use App\Services\ActivityLog;
 use App\Services\InputValidator;
+use App\Services\ListMutationPolicy;
 use App\Services\ListPresenter;
 use App\Services\StateMachine;
 use App\Services\StateTransitionException;
@@ -25,16 +27,22 @@ use Psr\Http\Message\ServerRequestInterface;
  * Kur kuralı (K4, tek ifade): liste oluşturulurken o anki ayar kuru kopyalanır;
  * `draft` iken güncel kuru izleyebilir, `sent` olduğunda KİLİTLENİR ve
  * `rate_locked_at` yazılır. Kilitten sonra kur alanları değiştirilemez (422).
+ *
+ * K37 §B4: `completed`/`cancelled` liste DONMUŞTUR — içerik alanları ve durum
+ * değiştirilemez (`LIST_IMMUTABLE`), yeniden açma ucu yoktur; çözüm kopyalamaktır.
+ * Yalnızca `visibility` (arşivleme) yaşam döngüsü işlemi olarak serbesttir.
  */
 final class ListController extends ApiController
 {
     public function __construct(
+        private readonly Connection $connection,
         private readonly ListRepository $lists,
         private readonly ProductRepository $products,
         private readonly SettingsRepository $settings,
         private readonly ListPresenter $presenter,
         private readonly InputValidator $validator,
         private readonly StateMachine $stateMachine,
+        private readonly ListMutationPolicy $mutationPolicy,
         private readonly ActivityLog $activity,
         private readonly Clock $clock,
     ) {
@@ -134,6 +142,25 @@ final class ListController extends ApiController
         }
 
         $body = $this->body($request);
+
+        // K37 §B4: terminal listede içerik alanları ve durum dokunulmazdır;
+        // yalnız arşivleme (visibility) serbesttir.
+        if ($this->mutationPolicy->isTerminal($row)) {
+            $blocked = array_diff(array_keys($body), ['visibility']);
+            if ($blocked !== []) {
+                return Response::error(
+                    $response,
+                    'LIST_IMMUTABLE',
+                    sprintf(
+                        'Liste "%s" durumunda ve artık değiştirilemez (yalnızca arşivlenebilir). '
+                        . 'Devam etmek için listeyi kopyalayın.',
+                        (string) $row['status'],
+                    ),
+                    422,
+                );
+            }
+        }
+
         $errors = [];
         $updates = [];
         $now = $this->clock->now();
@@ -251,32 +278,37 @@ final class ListController extends ApiController
             return Response::error($response, 'VALIDATION', 'Doğrulama hatası', 422, ['name' => $nameError]);
         }
 
-        // Kopya taslak olarak açılır ve GÜNCEL ayar kurunu alır (K4) — eski kilitli kur taşınmaz.
-        $newId = $this->lists->create([
-            'name' => $name,
-            'period' => $row['period'],
-            'supplier_name' => $row['supplier_name'],
-            'note' => $row['note'],
-            'status' => StateMachine::LIST_DRAFT,
-            'visibility' => 'active',
-            'yuan_rate' => $this->settings->yuanRate(),
-            'usd_rate' => $this->settings->usdRate(),
-        ], $now);
+        // K37 §B5: liste + tüm ürün kopyaları tek transaction — yarım kopya kalmaz.
+        $newId = $this->connection->transaction(function () use ($request, $row, $name, $now): int {
+            // Kopya taslak olarak açılır ve GÜNCEL ayar kurunu alır (K4) — eski kilitli kur taşınmaz.
+            $newId = $this->lists->create([
+                'name' => $name,
+                'period' => $row['period'],
+                'supplier_name' => $row['supplier_name'],
+                'note' => $row['note'],
+                'status' => StateMachine::LIST_DRAFT,
+                'visibility' => 'active',
+                'yuan_rate' => $this->settings->yuanRate(),
+                'usd_rate' => $this->settings->usdRate(),
+            ], $now);
 
-        foreach ($this->products->forList((int) $row['id']) as $product) {
-            $copy = [];
-            foreach (ProductRepository::WRITABLE as $column) {
-                $copy[$column] = $product[$column];
+            foreach ($this->products->forList((int) $row['id']) as $product) {
+                $copy = [];
+                foreach (ProductRepository::WRITABLE as $column) {
+                    $copy[$column] = $product[$column];
+                }
+                $copy['sort_no'] = (int) $product['sort_no'];
+                // Ürünler başa döner; takip kodu taşınmaz (yeni sipariş, yeni sevkiyat).
+                $copy['status'] = StateMachine::PRODUCT_TO_ORDER;
+                $copy['tracking_no'] = null;
+
+                $this->products->create($newId, $copy, $now);
             }
-            $copy['sort_no'] = (int) $product['sort_no'];
-            // Ürünler başa döner; takip kodu taşınmaz (yeni sipariş, yeni sevkiyat).
-            $copy['status'] = StateMachine::PRODUCT_TO_ORDER;
-            $copy['tracking_no'] = null;
 
-            $this->products->create($newId, $copy, $now);
-        }
+            $this->log($request, 'list_duplicated', $newId, sprintf('kaynak:%d', (int) $row['id']));
 
-        $this->log($request, 'list_duplicated', $newId, sprintf('kaynak:%d', (int) $row['id']));
+            return $newId;
+        });
 
         $created = $this->lists->find($newId);
 

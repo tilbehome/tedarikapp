@@ -120,7 +120,8 @@ final class StateMachineTest extends TestCase
             'draft' => ['sent', 'cancelled'],
             'sent' => ['ordered', 'draft', 'cancelled'],
             'ordered' => ['completed', 'sent', 'cancelled'],
-            'completed' => ['ordered'],
+            // K37 §B4: completed TERMİNALDİR — reopen yok, çözüm kopyalama.
+            'completed' => [],
             'cancelled' => [],
         ];
 
@@ -162,10 +163,13 @@ final class StateMachineTest extends TestCase
         self::assertTrue($this->machine->allProductsClosed([]));
     }
 
-    public function testTamamlanmisListeBirAdimGeriAlinabilir(): void
+    public function testTamamlanmisListeTerminaldir(): void
     {
-        self::assertTrue($this->machine->canTransitionList('completed', 'ordered'));
-        self::assertFalse($this->machine->canTransitionList('completed', 'sent'), 'İki adım geri YASAK.');
+        // K37 §B4: completed'dan HİÇBİR duruma dönüş yok — yanlış kapatılan
+        // listenin çözümü kopyalamaktır (reopen ucu yok).
+        self::assertSame([], $this->machine->allowedListTransitions('completed'));
+        self::assertFalse($this->machine->canTransitionList('completed', 'ordered'));
+        self::assertFalse($this->machine->canTransitionList('completed', 'sent'));
         self::assertFalse($this->machine->canTransitionList('completed', 'cancelled'));
     }
 

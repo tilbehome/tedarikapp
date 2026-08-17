@@ -93,24 +93,27 @@ final class SettingsController extends ApiController
         }
 
         $now = $this->clock->now();
-        foreach ($changes as $change) {
-            $this->settings->set($change['key'], $change['value']);
-            $this->recordRate($change['currency'], $change['value'], $now);
-        }
+        // K37 §B5: ayar + rate_history + aktivite tek transaction — geçmişsiz kur kalmaz.
+        $this->connection->transaction(function () use ($request, $changes, $now): void {
+            foreach ($changes as $change) {
+                $this->settings->set($change['key'], $change['value']);
+                $this->recordRate($change['currency'], $change['value'], $now);
+            }
 
-        $this->activity->record(
-            'settings',
-            null,
-            'rates_updated',
-            implode(', ', array_map(
-                static fn (array $c): string => $c['currency'] . '=' . $c['value'],
-                $changes,
-            )),
-            ClientIp::from($request),
-            $now,
-            ActivityLog::ACTOR_ADMIN,
-            $this->user($request)->id,
-        );
+            $this->activity->record(
+                'settings',
+                null,
+                'rates_updated',
+                implode(', ', array_map(
+                    static fn (array $c): string => $c['currency'] . '=' . $c['value'],
+                    $changes,
+                )),
+                ClientIp::from($request),
+                $now,
+                ActivityLog::ACTOR_ADMIN,
+                $this->user($request)->id,
+            );
+        });
 
         return Response::success($response, [
             'yuan_tl' => $this->money->formatRate($this->settings->yuanRate()),

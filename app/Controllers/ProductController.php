@@ -6,11 +6,13 @@ namespace App\Controllers;
 
 use App\Core\ClientIp;
 use App\Core\Clock;
+use App\Core\Connection;
 use App\Core\Response;
 use App\Models\ListRepository;
 use App\Models\ProductRepository;
 use App\Services\ActivityLog;
 use App\Services\InputValidator;
+use App\Services\ListMutationPolicy;
 use App\Services\ListPresenter;
 use App\Services\MediaException;
 use App\Services\MediaService;
@@ -24,19 +26,42 @@ use Psr\Http\Message\ServerRequestInterface;
  *
  * Listenin `revision` sayacı ürün ekleme/silme ve fiyat/adet/sıra değişiminde artar (K25):
  * "çıktı güncel değil" rozeti buna bakar, not düzenlemek çıktıyı eskitmez.
+ *
+ * K37 §B4: terminal (completed/cancelled) listenin ürünlerine HİÇBİR mutasyon yapılamaz.
+ * K37 §B5: çok adımlı yazmalar tek transaction'da koşar — yarım kayıt kalmaz.
  */
 final class ProductController extends ApiController
 {
     public function __construct(
+        private readonly Connection $connection,
         private readonly ListRepository $lists,
         private readonly ProductRepository $products,
         private readonly ListPresenter $presenter,
         private readonly InputValidator $validator,
         private readonly StateMachine $stateMachine,
+        private readonly ListMutationPolicy $mutationPolicy,
         private readonly ActivityLog $activity,
         private readonly Clock $clock,
         private readonly ?MediaService $media = null,
     ) {
+    }
+
+    /**
+     * Terminal listeye mutasyon denemesinin standart yanıtı (K37 §B4).
+     *
+     * @param array<string, mixed> $list
+     */
+    private function listImmutable(ResponseInterface $response, array $list): ResponseInterface
+    {
+        return Response::error(
+            $response,
+            'LIST_IMMUTABLE',
+            sprintf(
+                'Liste "%s" durumunda ve artık değiştirilemez. Devam etmek için listeyi kopyalayın.',
+                (string) $list['status'],
+            ),
+            422,
+        );
     }
 
     /**
@@ -140,6 +165,9 @@ final class ProductController extends ApiController
         if ($list === null) {
             return Response::error($response, 'NOT_FOUND', 'Liste bulunamadı.', 404);
         }
+        if ($this->mutationPolicy->isTerminal($list)) {
+            return $this->listImmutable($response, $list);
+        }
 
         $body = $this->body($request);
         $errors = $this->validateProduct($body, required: true);
@@ -175,18 +203,23 @@ final class ProductController extends ApiController
         }
 
         $now = $this->clock->now();
-        $productId = $this->products->create((int) $list['id'], $this->productData($body), $now);
-        $this->products->recordStatusChange(
-            $productId,
-            null,
-            StateMachine::PRODUCT_TO_ORDER,
-            $now,
-            ActivityLog::ACTOR_ADMIN,
-            $this->user($request)->id,
-            $this->requestId($request),
-        );
-        $this->lists->bumpRevision((int) $list['id'], $now);
-        $this->log($request, 'product_created', $productId, $this->str($body, 'name'));
+        // K37 §B5: kayıt + tarihçe + revision tek transaction — tarihçesiz ürün kalamaz.
+        $productId = $this->connection->transaction(function () use ($request, $list, $body, $now): int {
+            $productId = $this->products->create((int) $list['id'], $this->productData($body), $now);
+            $this->products->recordStatusChange(
+                $productId,
+                null,
+                StateMachine::PRODUCT_TO_ORDER,
+                $now,
+                ActivityLog::ACTOR_ADMIN,
+                $this->user($request)->id,
+                $this->requestId($request),
+            );
+            $this->lists->bumpRevision((int) $list['id'], $now);
+            $this->log($request, 'product_created', $productId, $this->str($body, 'name'));
+
+            return $productId;
+        });
 
         $created = $this->products->find($productId);
         $freshList = $this->lists->find((int) $list['id']);
@@ -214,6 +247,9 @@ final class ProductController extends ApiController
         if ($list === null) {
             return Response::error($response, 'NOT_FOUND', 'Ürünün listesi bulunamadı.', 404);
         }
+        if ($this->mutationPolicy->isTerminal($list)) {
+            return $this->listImmutable($response, $list);
+        }
 
         $body = $this->body($request);
         $errors = $this->validateProduct($body, required: false);
@@ -239,13 +275,15 @@ final class ProductController extends ApiController
         }
 
         $now = $this->clock->now();
-        $this->products->update((int) $product['id'], $updates, $now);
+        $this->connection->transaction(function () use ($request, $product, $list, $updates, $now): void {
+            $this->products->update((int) $product['id'], $updates, $now);
 
-        // Yalnızca çıktıyı etkileyen alanlar revision'ı artırır (K25).
-        if (array_intersect(array_keys($updates), ProductRepository::REVISION_FIELDS) !== []) {
-            $this->lists->bumpRevision((int) $list['id'], $now);
-        }
-        $this->log($request, 'product_updated', (int) $product['id'], implode(',', array_keys($updates)));
+            // Yalnızca çıktıyı etkileyen alanlar revision'ı artırır (K25).
+            if (array_intersect(array_keys($updates), ProductRepository::REVISION_FIELDS) !== []) {
+                $this->lists->bumpRevision((int) $list['id'], $now);
+            }
+            $this->log($request, 'product_updated', (int) $product['id'], implode(',', array_keys($updates)));
+        });
 
         $fresh = $this->products->find((int) $product['id']);
         $freshList = $this->lists->find((int) $list['id']);
@@ -272,6 +310,10 @@ final class ProductController extends ApiController
             return Response::error($response, 'NOT_FOUND', 'Ürünün listesi bulunamadı.', 404);
         }
 
+        if ($this->mutationPolicy->isTerminal($list)) {
+            return $this->listImmutable($response, $list);
+        }
+
         $to = $this->str($this->body($request), 'status');
         $from = (string) $product['status'];
 
@@ -282,7 +324,9 @@ final class ProductController extends ApiController
         }
 
         $now = $this->clock->now();
-        $this->applyStatus((int) $product['id'], $from, $to, $request, $now);
+        $this->connection->transaction(function () use ($request, $product, $from, $to, $now): void {
+            $this->applyStatus((int) $product['id'], $from, $to, $request, $now);
+        });
 
         $fresh = $this->products->find((int) $product['id']);
         $freshList = $this->lists->find((int) $list['id']);
@@ -304,11 +348,17 @@ final class ProductController extends ApiController
         if ($product === null) {
             return Response::error($response, 'NOT_FOUND', 'Ürün bulunamadı.', 404);
         }
+        $list = $this->lists->find((int) $product['list_id']);
+        if ($list !== null && $this->mutationPolicy->isTerminal($list)) {
+            return $this->listImmutable($response, $list);
+        }
 
         $now = $this->clock->now();
-        $this->products->softDelete((int) $product['id'], $now);
-        $this->lists->bumpRevision((int) $product['list_id'], $now);
-        $this->log($request, 'product_deleted', (int) $product['id'], (string) $product['name']);
+        $this->connection->transaction(function () use ($request, $product, $now): void {
+            $this->products->softDelete((int) $product['id'], $now);
+            $this->lists->bumpRevision((int) $product['list_id'], $now);
+            $this->log($request, 'product_deleted', (int) $product['id'], (string) $product['name']);
+        });
 
         return $response->withStatus(204);
     }
@@ -349,66 +399,93 @@ final class ProductController extends ApiController
         if ($errors !== []) {
             return Response::error($response, 'VALIDATION', 'Doğrulama hatası', 422, $errors);
         }
+        // K37 §B4: terminal listeye taşıma da yasaktır (içine ürün eklemek demektir).
+        if ($targetList !== null && $this->mutationPolicy->isTerminal($targetList)) {
+            return $this->listImmutable($response, $targetList);
+        }
 
         $now = $this->clock->now();
-        $updated = 0;
-        $failed = [];
-        $touchedLists = [];
 
-        /** @var list<mixed> $ids */
-        foreach ($ids as $rawId) {
-            if (!is_int($rawId)) {
-                $failed[] = ['id' => $rawId, 'error' => 'Ürün kimliği tam sayı olmalı.'];
+        // K37 §B5: tüm toplu işlem tek transaction'da koşar — SQL hatasında yarım
+        // uygulanmış toplu değişiklik kalmaz. Kısmi başarı (failed listesi) İŞ kuralı
+        // reddidir ve transaction'ı bozmaz.
+        /** @var array{updated: int, failed: list<array<string, mixed>>} $result */
+        $result = $this->connection->transaction(function () use ($request, $ids, $action, $body, $targetList, $now): array {
+            $updated = 0;
+            $failed = [];
+            $touchedLists = [];
+            /** @var array<int, array<string, mixed>|null> $listCache */
+            $listCache = [];
 
-                continue;
-            }
-            $product = $this->products->find($rawId);
-            if ($product === null) {
-                $failed[] = ['id' => $rawId, 'error' => 'Ürün bulunamadı.'];
+            /** @var list<mixed> $ids */
+            foreach ($ids as $rawId) {
+                if (!is_int($rawId)) {
+                    $failed[] = ['id' => $rawId, 'error' => 'Ürün kimliği tam sayı olmalı.'];
 
-                continue;
-            }
+                    continue;
+                }
+                $product = $this->products->find($rawId);
+                if ($product === null) {
+                    $failed[] = ['id' => $rawId, 'error' => 'Ürün bulunamadı.'];
 
-            $touchedLists[(int) $product['list_id']] = true;
+                    continue;
+                }
 
-            if ($action === 'delete') {
-                $this->products->softDelete($rawId, $now);
+                // K37 §B4: kaynağı terminal listede olan ürün hiçbir toplu işleme giremez.
+                $sourceListId = (int) $product['list_id'];
+                $sourceList = $listCache[$sourceListId] ??= $this->lists->find($sourceListId);
+                if ($sourceList !== null && $this->mutationPolicy->isTerminal($sourceList)) {
+                    $failed[] = ['id' => $rawId, 'error' => sprintf(
+                        'Ürünün listesi "%s" durumunda ve değiştirilemez (LIST_IMMUTABLE).',
+                        (string) $sourceList['status'],
+                    )];
+
+                    continue;
+                }
+
+                $touchedLists[$sourceListId] = true;
+
+                if ($action === 'delete') {
+                    $this->products->softDelete($rawId, $now);
+                    $updated++;
+
+                    continue;
+                }
+
+                if ($action === 'move') {
+                    /** @var array<string, mixed> $targetList */
+                    $this->products->update($rawId, [
+                        'list_id' => (int) $targetList['id'],
+                        'sort_no' => $this->products->maxSortNo((int) $targetList['id']) + 1,
+                    ], $now);
+                    $touchedLists[(int) $targetList['id']] = true;
+                    $updated++;
+
+                    continue;
+                }
+
+                $from = (string) $product['status'];
+                $to = (string) $body['status'];
+                try {
+                    $this->stateMachine->assertProductTransition($from, $to);
+                } catch (StateTransitionException $e) {
+                    $failed[] = ['id' => $rawId, 'error' => $e->getMessage(), 'allowed' => $e->allowed];
+
+                    continue;
+                }
+                $this->applyStatus($rawId, $from, $to, $request, $now);
                 $updated++;
-
-                continue;
             }
 
-            if ($action === 'move') {
-                /** @var array<string, mixed> $targetList */
-                $this->products->update($rawId, [
-                    'list_id' => (int) $targetList['id'],
-                    'sort_no' => $this->products->maxSortNo((int) $targetList['id']) + 1,
-                ], $now);
-                $touchedLists[(int) $targetList['id']] = true;
-                $updated++;
-
-                continue;
+            foreach (array_keys($touchedLists) as $listId) {
+                $this->lists->bumpRevision($listId, $now);
             }
+            $this->log($request, 'product_bulk_' . $action, null, sprintf('%d güncellendi, %d başarısız', $updated, count($failed)));
 
-            $from = (string) $product['status'];
-            $to = (string) $body['status'];
-            try {
-                $this->stateMachine->assertProductTransition($from, $to);
-            } catch (StateTransitionException $e) {
-                $failed[] = ['id' => $rawId, 'error' => $e->getMessage(), 'allowed' => $e->allowed];
+            return ['updated' => $updated, 'failed' => $failed];
+        });
 
-                continue;
-            }
-            $this->applyStatus($rawId, $from, $to, $request, $now);
-            $updated++;
-        }
-
-        foreach (array_keys($touchedLists) as $listId) {
-            $this->lists->bumpRevision($listId, $now);
-        }
-        $this->log($request, 'product_bulk_' . $action, null, sprintf('%d güncellendi, %d başarısız', $updated, count($failed)));
-
-        return Response::success($response, ['updated' => $updated, 'failed' => $failed]);
+        return Response::success($response, $result);
     }
 
     /**
@@ -422,6 +499,9 @@ final class ProductController extends ApiController
         $list = $listId === null ? null : $this->lists->find($listId);
         if ($list === null) {
             return Response::error($response, 'NOT_FOUND', 'Liste bulunamadı.', 404);
+        }
+        if ($this->mutationPolicy->isTerminal($list)) {
+            return $this->listImmutable($response, $list);
         }
 
         $orderedIds = $this->body($request)['ordered_ids'] ?? null;
@@ -437,12 +517,44 @@ final class ProductController extends ApiController
                 ]);
             }
         }
+        /** @var list<int> $orderedIds */
+
+        // K37 §B6: gönderilen dizi listedeki ürünlerin TAM permütasyonu olmalı.
+        // Eksik kimlik sessizce sıra dışı kalır, fazla/yinelenen kimlik başka listeyi
+        // bozabilirdi — üçü de 422 ile reddedilir.
+        if (count($orderedIds) !== count(array_unique($orderedIds))) {
+            return Response::error($response, 'VALIDATION', 'Doğrulama hatası', 422, [
+                'ordered_ids' => 'Ürün kimlikleri yinelenemez.',
+            ]);
+        }
+        $currentIds = array_map(
+            static fn (array $product): int => (int) $product['id'],
+            $this->products->forList((int) $list['id']),
+        );
+        $missing = array_diff($currentIds, $orderedIds);
+        $unknown = array_diff($orderedIds, $currentIds);
+        if ($missing !== [] || $unknown !== []) {
+            $problems = [];
+            if ($missing !== []) {
+                $problems[] = sprintf('eksik: %s', implode(', ', $missing));
+            }
+            if ($unknown !== []) {
+                $problems[] = sprintf('listede olmayan: %s', implode(', ', $unknown));
+            }
+
+            return Response::error($response, 'VALIDATION', 'Doğrulama hatası', 422, [
+                'ordered_ids' => 'Dizi, listedeki ürünlerin tamamını birebir içermeli (' . implode(' · ', $problems) . ').',
+            ]);
+        }
 
         $now = $this->clock->now();
-        /** @var list<int> $orderedIds */
-        $updated = $this->products->reorder((int) $list['id'], $orderedIds, $now);
-        $this->lists->bumpRevision((int) $list['id'], $now);
-        $this->log($request, 'product_reordered', (int) $list['id'], sprintf('%d ürün', $updated));
+        $updated = $this->connection->transaction(function () use ($request, $list, $orderedIds, $now): int {
+            $updated = $this->products->reorder((int) $list['id'], $orderedIds, $now);
+            $this->lists->bumpRevision((int) $list['id'], $now);
+            $this->log($request, 'product_reordered', (int) $list['id'], sprintf('%d ürün', $updated));
+
+            return $updated;
+        });
 
         return Response::success($response, ['updated' => $updated]);
     }

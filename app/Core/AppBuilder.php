@@ -27,7 +27,9 @@ use App\Models\ProductRepository;
 use App\Models\SettingsRepository;
 use App\Services\CurlMediaFetcher;
 use App\Services\InputValidator;
+use App\Services\ListMutationPolicy;
 use App\Services\ListPresenter;
+use App\Services\MediaJanitor;
 use App\Services\MediaService;
 use App\Services\MoneyService;
 use App\Services\StateMachine;
@@ -124,6 +126,7 @@ final class AppBuilder
         $presenter = new ListPresenter($lists, $products, $money, $services->timezone);
         $validator = new InputValidator($money);
         $stateMachine = new StateMachine();
+        $mutationPolicy = new ListMutationPolicy();
 
         $allowedHosts = array_map('trim', explode(',', $config->get('MEDIA_ALLOWED_HOSTS', 'alicdn.com,1688.com')));
         $urlGuard = new UrlGuard($allowedHosts);
@@ -149,29 +152,36 @@ final class AppBuilder
             ->add(new Auth($services, $responseFactory));
 
         $listController = new ListController(
+            $connection,
             $lists,
             $products,
             $settingsRepository,
             $presenter,
             $validator,
             $stateMachine,
+            $mutationPolicy,
             $services->activity,
             $services->clock,
         );
         $productController = new ProductController(
+            $connection,
             $lists,
             $products,
             $presenter,
             $validator,
             $stateMachine,
+            $mutationPolicy,
             $services->activity,
             $services->clock,
             $mediaService,
         );
         $trashController = new TrashController(
+            $connection,
             $lists,
             $products,
             new TrashPolicy($config->getPositiveInt('TRASH_RETENTION_DAYS', 30)),
+            $mutationPolicy,
+            new MediaJanitor($mediaService, $products),
             $services->activity,
             $services->clock,
             $services->timezone,
