@@ -60,6 +60,33 @@ final class SettingsRepository
         }
     }
 
+    /**
+     * K44 disksiz mod: Config'in DB katmanı — settings tablosundaki BÜYÜK_HARF anahtarlar
+     * (APP_URL, LOG_DRIVER, TZ, MEDIA_* …) uygulama yapılandırması olarak okunur.
+     * `media_mode` gibi küçük-harf iç ayarlar bilinçli olarak DIŞARIDA kalır.
+     *
+     * @return array<string, string>
+     */
+    public static function configOverrides(Connection $connection): array
+    {
+        $statement = $connection->pdo()->query('SELECT `key`, value FROM settings');
+        if ($statement === false) {
+            return [];
+        }
+
+        $overrides = [];
+        /** @var list<array<string, mixed>> $rows */
+        $rows = $statement->fetchAll();
+        foreach ($rows as $row) {
+            $key = (string) $row['key'];
+            if (preg_match('/^[A-Z][A-Z0-9_]+$/', $key) === 1 && is_string($row['value'])) {
+                $overrides[$key] = $row['value'];
+            }
+        }
+
+        return $overrides;
+    }
+
     public function yuanRate(): string
     {
         return $this->get(self::KEY_YUAN_RATE, self::DEFAULT_YUAN_RATE) ?? self::DEFAULT_YUAN_RATE;

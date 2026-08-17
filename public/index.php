@@ -39,7 +39,8 @@ try {
     $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
     $path = is_string($path) ? $path : '/';
     $isSetupPath = str_starts_with($path, '/setup') || str_starts_with($path, '/api/setup');
-    $envExists = is_file($basePath . '/.env');
+    // K44: birincil yapılandırma config.php (WordPress modeli); .env geriye dönük.
+    $envExists = is_file($basePath . '/config.php') || is_file($basePath . '/.env');
 
     if (!$envExists || $isSetupPath) {
         $app = SetupAppBuilder::build(
@@ -58,6 +59,8 @@ try {
     // Tek tembel bağlantı: logger (LOG_DRIVER=db), kurulum kilidi ve uygulama aynı
     // bağlantıyı paylaşır — istek başına tek PDO açılır (K33).
     $connection = Connection::fromCallable(static fn (): PDO => Database::connect($config));
+    // K44 disksiz mod: dosyada yalnız DB+APP_KEY var; kalan ayarlar settings tablosundan.
+    $config->attachSettings(static fn (): array => \App\Models\SettingsRepository::configOverrides($connection));
     $logger = Logger::create($config, $basePath, $requestContext, $connection);
 
     $app = AppBuilder::build(
@@ -78,7 +81,7 @@ try {
     $mesaj = (string) preg_replace('/[0-9a-f]{64}/i', '[gizlendi]', $bootFailure->getMessage());
     $konum = $bootFailure->getFile() . ':' . $bootFailure->getLine();
 
-    if (is_file($basePath . '/.env')) {
+    if (is_file($basePath . '/config.php') || is_file($basePath . '/.env')) {
         // Kurulu/kurulmakta olan sistem: sır vardır → özet göster, tam iz gösterme.
         tedarikapp_erken_hata_sayfasi(
             500,

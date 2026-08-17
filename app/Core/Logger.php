@@ -35,8 +35,12 @@ final class Logger
         $logger = new MonologLogger('tedarikapp');
 
         // K33: üretimde uygulama diske yazamaz (PHP `nobody`, DSO) → loglar veritabanına.
-        // Geliştirme makinesinde dosya hedefi kullanışlıdır; sürücü .env'den seçilir.
+        // K44 ZORLAMASI: production'da sürücü DAİMA db — dosya log üretimde devre dışı;
+        // yanlış yapılandırma sessiz log kaybına dönüşemez. Geliştirmede .env seçer.
         $driver = strtolower($config->get('LOG_DRIVER', 'file'));
+        if ($config->isProduction() && $connection !== null) {
+            $driver = 'db';
+        }
 
         if ($driver === 'db' && $connection !== null) {
             $logger->pushHandler(new DatabaseLogHandler($connection, $context, $level));

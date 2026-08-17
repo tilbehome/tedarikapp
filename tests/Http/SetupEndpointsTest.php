@@ -7,7 +7,6 @@ namespace Tests\Http;
 use App\Core\Connection;
 use App\Core\SetupAppBuilder;
 use App\Middleware\SetupCsrf;
-use App\Setup\EnvWriter;
 use App\Setup\SetupLock;
 use App\Setup\SetupState;
 use DateTimeImmutable;
@@ -319,7 +318,7 @@ final class SetupEndpointsTest extends TestCase
         self::assertFalse(is_file($this->tempPath('.env')), 'Başarısız bağlantıda .env YAZILMAMALI.');
     }
 
-    // ─────────────── K33: yazılamayan docroot ───────────────
+    // ─────────────── K33/K44: yazılamayan docroot (config.php manuel akışı) ───────────────
 
     /** Yazılamayan kök simülasyonu — üretimdeki DSO durumunun testteki karşılığı. */
     private function unwritableApp(): \Slim\App
@@ -330,7 +329,7 @@ final class SetupEndpointsTest extends TestCase
             $this->session,
             $this->clock,
             setupLock: $this->lock(),
-            envWriter: new EnvWriter($this->tempRoot(), writableOverride: false),
+            configWriter: new \App\Setup\ConfigWriter($this->tempRoot(), writableOverride: false),
             appEnv: 'local',
         );
     }
@@ -370,10 +369,11 @@ final class SetupEndpointsTest extends TestCase
 
         self::assertSame(200, $response->getStatusCode());
         self::assertTrue($data['manual'], 'Yazılamayan kökte manuel akış devreye girmeli.');
-        self::assertStringContainsString('APP_KEY=', $data['content']);
-        self::assertStringContainsString('DB_NAME=db', $data['content']);
-        self::assertStringContainsString('.env', $data['target_path']);
-        self::assertFileDoesNotExist($this->tempPath('.env'), 'Dosya YAZILMAMALI.');
+        self::assertSame('config.php', $data['filename'], 'K44: dosya adı config.php (WordPress modeli).');
+        self::assertStringContainsString("'APP_KEY' =>", $data['content']);
+        self::assertStringContainsString("'DB_NAME' => 'db'", $data['content']);
+        self::assertStringContainsString('config.php', $data['target_path']);
+        self::assertFileDoesNotExist($this->tempPath('config.php'), 'Dosya YAZILMAMALI.');
         self::assertSame(SetupState::STEP_ENV, $data['step'], 'Doğrulama yapılmadan adım ilerlememeli.');
     }
 
@@ -398,7 +398,7 @@ final class SetupEndpointsTest extends TestCase
         ]);
 
         // Kullanıcı başka bir dosya kaydetti (veya içeriği eksik yapıştırdı).
-        file_put_contents($this->tempPath('.env'), "APP_KEY=" . str_repeat('0', 64) . "\n");
+        file_put_contents($this->tempPath('config.php'), "<?php\nreturn ['APP_KEY' => '" . str_repeat('0', 64) . "'];\n");
 
         $response = $this->callUnwritable('POST', '/api/setup/env/verify', [], [SetupCsrf::HEADER => $this->token()]);
 
@@ -413,8 +413,8 @@ final class SetupEndpointsTest extends TestCase
             SetupCsrf::HEADER => $this->token(),
         ]))['data'];
 
-        // Kullanıcı içeriği Dosya Yöneticisi'nden kaydediyor.
-        file_put_contents($this->tempPath('.env'), $generated['content']);
+        // Kullanıcı içeriği File Manager'dan config.php olarak kaydediyor (K44).
+        file_put_contents($this->tempPath('config.php'), $generated['content']);
 
         $response = $this->callUnwritable('POST', '/api/setup/env/verify', [], [SetupCsrf::HEADER => $this->token()]);
         $data = $this->json($response)['data'];

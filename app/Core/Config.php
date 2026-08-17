@@ -8,12 +8,21 @@ use Dotenv\Dotenv;
 use RuntimeException;
 
 /**
- * .env yükleyici ve tipli konfigürasyon erişimi.
- * Zorunlu anahtarlar eksikse uygulama anlaşılır bir hatayla durur (docs/04 §2d — sınırda doğrulama).
+ * Yapılandırma erişimi — İKİ kaynak, tek arayüz (K44, İE#9.4):
+ *
+ *  1. **Dosya (birincil: `config.php`, geriye dönük: `.env`):** yalnız DB erişimi +
+ *     APP_KEY dosyada yaşamak ZORUNDA (kilidin anahtarı kilidin içinde olamaz).
+ *     config.php WordPress `wp-config.php` modelidir: saf PHP, `return [...]`.
+ *  2. **Veritabanı (`settings` tablosu):** diğer TÜM ayarlar (APP_URL, LOG_*, MEDIA_*,
+ *     SESSION_*, TZ …) buradan okunur — disksiz mod. `attachSettings()` ile bağlanır;
+ *     okuma TEMBEL ve tek seferliktir, DB'ye ulaşılamazsa dosya/varsayılan devreye girer.
+ *
+ * Öncelik: settings (DB) → dosya değerleri → çağrı yerindeki varsayılan.
+ * GÜVENLİK: DB_*, APP_KEY ve APP_ENV asla DB'den OKUNMAZ (önyükleme + sır sınırı).
  */
 final class Config
 {
-    /** Uygulamanın ayağa kalkması için .env'de mutlaka bulunması gereken anahtarlar. */
+    /** Uygulamanın ayağa kalkması için dosyada mutlaka bulunması gereken anahtarlar. */
     private const array REQUIRED_KEYS = [
         'APP_ENV',
         'APP_URL',
@@ -23,6 +32,25 @@ final class Config
         'TZ',
     ];
 
+    /** DB'deki settings tablosundan ASLA okunmayacak anahtarlar (önyükleme + sır). */
+    private const array FILE_ONLY_KEYS = ['APP_ENV', 'APP_KEY', 'DB_HOST', 'DB_PORT', 'DB_NAME', 'DB_USER', 'DB_PASS', 'EXTENSION_TOKEN_SALT'];
+
+    /** config.php yalnız DB+APP_KEY taşır; kalan zorunlular bu varsayılanlarla dolar (K44). */
+    private const array CONFIG_PHP_DEFAULTS = [
+        'APP_ENV' => 'production',
+        'TZ' => 'Europe/Istanbul',
+        // Gerçek APP_URL settings tablosundan gelir (kurulumda yazılır); bu yer tutucu
+        // yalnız "zorunlu anahtar" denetimini geçirir ve https varsayımıyla GÜVENLİ taraftadır.
+        'APP_URL' => 'https://localhost',
+        'LOG_DRIVER' => 'db',
+    ];
+
+    /** @var callable(): array<string, string>|null */
+    private $settingsLoader = null;
+
+    /** @var array<string, string>|null tembel yüklenen DB ayarları */
+    private ?array $settings = null;
+
     /** @param array<string, string> $values */
     public function __construct(private readonly array $values)
     {
@@ -30,6 +58,36 @@ final class Config
         if ($this->isProduction()) {
             $this->assertProductionSecrets();
         }
+    }
+
+    /**
+     * DB ayar katmanını bağlar (İE#9.4). Yükleyici İLK okumada bir kez çağrılır;
+     * fırlatırsa (DB kapalı, tablo yok) sessizce dosya/varsayılana düşülür.
+     *
+     * @param callable(): array<string, string> $loader
+     */
+    public function attachSettings(callable $loader): void
+    {
+        $this->settingsLoader = $loader;
+        $this->settings = null;
+    }
+
+    private function lookup(string $key): ?string
+    {
+        if ($this->settingsLoader !== null && !in_array($key, self::FILE_ONLY_KEYS, true)) {
+            if ($this->settings === null) {
+                try {
+                    $this->settings = ($this->settingsLoader)();
+                } catch (\Throwable) {
+                    $this->settings = []; // DB'siz an: dosya/varsayılan yeterli
+                }
+            }
+            if (isset($this->settings[$key]) && trim($this->settings[$key]) !== '') {
+                return $this->settings[$key];
+            }
+        }
+
+        return $this->values[$key] ?? null;
     }
 
     /**
@@ -46,6 +104,24 @@ final class Config
      */
     public static function load(string $basePath): self
     {
+        // K44: birincil kaynak config.php (WordPress modeli); .env geriye dönük desteklenir.
+        $configFile = $basePath . '/config.php';
+        if (is_file($configFile)) {
+            /** @var mixed $raw */
+            $raw = require $configFile;
+            if (!is_array($raw)) {
+                throw new RuntimeException('config.php bir dizi döndürmeli (return [...]).');
+            }
+            $values = self::CONFIG_PHP_DEFAULTS;
+            foreach ($raw as $key => $value) {
+                if (is_string($key) && (is_string($value) || is_int($value))) {
+                    $values[$key] = (string) $value;
+                }
+            }
+
+            return new self($values);
+        }
+
         $dotenv = Dotenv::createArrayBacked($basePath);
         /** @var array<string, string> $values */
         $values = $dotenv->load();
@@ -55,7 +131,7 @@ final class Config
 
     public function get(string $key, ?string $default = null): string
     {
-        $value = $this->values[$key] ?? $default;
+        $value = $this->lookup($key) ?? $default;
         if ($value === null) {
             throw new RuntimeException(sprintf(
                 'Konfigürasyon anahtarı eksik: "%s". .env dosyanızı .env.example ile karşılaştırın.',
@@ -72,7 +148,7 @@ final class Config
      */
     public function getInt(string $key, ?int $default = null): int
     {
-        $raw = $this->values[$key] ?? null;
+        $raw = $this->lookup($key);
         if ($raw === null || trim($raw) === '') {
             if ($default === null) {
                 throw new RuntimeException(sprintf('Konfigürasyon anahtarı eksik: "%s" (tam sayı bekleniyor).', $key));
@@ -110,7 +186,7 @@ final class Config
 
     public function getBool(string $key, bool $default = false): bool
     {
-        $raw = strtolower($this->values[$key] ?? '');
+        $raw = strtolower($this->lookup($key) ?? '');
         if ($raw === '') {
             return $default;
         }
@@ -156,9 +232,13 @@ final class Config
             $problems[] = 'APP_KEY 64 haneli onaltılık bir dize olmalı (üretmek için: php -r "echo bin2hex(random_bytes(32));")';
         }
 
-        $salt = trim($this->values['EXTENSION_TOKEN_SALT'] ?? '');
-        if (strlen($salt) < 32) {
-            $problems[] = 'EXTENSION_TOKEN_SALT en az 32 karakter olmalı';
+        // K44: config.php modeli tuz taşımaz (Faz 3'te settings'e üretilecek);
+        // legacy .env'de anahtar VARSA biçimi yine denetlenir.
+        if (array_key_exists('EXTENSION_TOKEN_SALT', $this->values)) {
+            $salt = trim($this->values['EXTENSION_TOKEN_SALT']);
+            if (strlen($salt) < 32) {
+                $problems[] = 'EXTENSION_TOKEN_SALT en az 32 karakter olmalı';
+            }
         }
 
         if ($problems !== []) {

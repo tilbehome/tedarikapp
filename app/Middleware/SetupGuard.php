@@ -7,7 +7,7 @@ namespace App\Middleware;
 use App\Core\ClientIp;
 use App\Core\Clock;
 use App\Core\Response;
-use App\Setup\EnvWriter;
+use App\Setup\ConfigWriter;
 use App\Setup\SetupLock;
 use App\Setup\SetupState;
 use Psr\Http\Message\ResponseFactoryInterface;
@@ -38,7 +38,7 @@ final class SetupGuard implements MiddlewareInterface
         private readonly ResponseFactoryInterface $responseFactory,
         private readonly LoggerInterface $logger,
         private readonly Clock $clock,
-        private readonly EnvWriter $envWriter,
+        private readonly ConfigWriter $configWriter,
         private readonly SetupState $state,
     ) {
     }
@@ -62,12 +62,12 @@ final class SetupGuard implements MiddlewareInterface
             );
         }
 
-        if ($this->envWriter->exists() && !$ownsEnvFile) {
+        if ($this->configWriter->configured() && !$ownsEnvFile) {
             return $this->deny(
                 $request,
-                'env-mevcut',
-                'Sunucuda .env dosyası zaten var; kurulum sihirbazı mevcut kurulumun üzerine yazmaz. '
-                . 'Yeniden kurulum gerekiyorsa .env dosyasını sunucudan elle silin.',
+                'config-mevcut',
+                'Sunucuda yapılandırma dosyası (config.php veya .env) zaten var; kurulum sihirbazı '
+                . 'mevcut kurulumun üzerine yazmaz. Yeniden kurulum gerekiyorsa dosyayı sunucudan elle silin.',
             );
         }
 

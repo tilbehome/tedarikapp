@@ -111,8 +111,23 @@ jobs:
         run: vendor/bin/phpunit --group mysql
 
   uretim-profili:
-    name: Üretim profili (K41)
+    name: Üretim profili (K41/K44)
     runs-on: ubuntu-latest
+
+    # K44 disksiz simülasyonu gerçek MySQL ister (sihirbaz migrate + DB session).
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: tedarikapp_smoke
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=5s
+          --health-timeout=3s
+          --health-retries=12
     # docs/SUNUCU-PROFILI.md manifestinin otomatik bekçisi: sodium'suz şifreleme,
     # yazılamaz disk yolları (hotlink + DB-log), allow_url_fopen/mail yasağı statik
     # taraması ve açılış smoke'u. Hedef < 1 dk — her PR'da "bu kod Bünyamin'in
@@ -178,7 +193,24 @@ jobs:
           curl -sf http://127.0.0.1:8080/api/setup/state | grep -q '"success":true' || { echo "HATA: setup state"; exit 1; }
           curl -sf http://127.0.0.1:8080/api/system/integrity | tee /tmp/integrity.json
           grep -q '"ok":true' /tmp/integrity.json || { echo "HATA: integrity eksik dosya bildirdi"; exit 1; }
+          kill %1
           echo "Release açılış doğrulaması TAMAM"
+
+      # ── K44: DİSKSİZ uçtan uca simülasyon — bu yeşil olmadan release YOK ──
+      # session.save_path BİLEREK yok bir dizine çekilir + zip dizini salt-okunur yapılır
+      # (yalnız kök config.php için yazılabilir bırakılır — sihirbaz otomatik yazar; üretimdeki
+      # manuel akış aynı endpoint'lerden aynı state ile geçer). Sihirbaz requirements→done
+      # TAM akar (şifreli çerez state), login sonrası oturum DB'de KORUNUR (sessions tablosu).
+      - name: DİSKSİZ simülasyon — sihirbaz uçtan uca + login oturumu (K44)
+        run: |
+          cp -r /tmp/rel /tmp/disksiz
+          # storage ve public dahil her yer SALT-OKUNUR; kök yazılabilir kalır (config.php + smoke kanıtı).
+          chmod -R a-w /tmp/disksiz/storage /tmp/disksiz/public/media || true
+          # APP_ENV=local: HTTPS şartı kendi testlerinde sınanır; bu simülasyonun konusu DİSK/OTURUM.
+          APP_ENV=local php -d session.save_path=/yok-boyle-dizin -S 127.0.0.1:8090 -t /tmp/disksiz/public /tmp/disksiz/public/index.php &
+          sleep 2
+          php bin/smoke-kurulum.php http://127.0.0.1:8090 127.0.0.1 3306 tedarikapp_smoke root root
+          echo "DİSKSİZ SİMÜLASYON TAMAM"
 
   panel:
     name: Panel (tsc + eslint + build)

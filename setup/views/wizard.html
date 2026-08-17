@@ -68,11 +68,12 @@
     <div id="db-result" class="report" hidden></div>
   </section>
 
-  <!-- 3) .env -->
+  <!-- 3) config.php (K44 — WordPress modeli) -->
   <section class="card" id="panel-env" hidden>
-    <h2>3. Uygulama ayarları</h2>
-    <p class="muted">Panelin adresi. Güvenlik anahtarları (APP_KEY, eklenti token tuzu)
-      kriptografik olarak üretilip <code>.env</code> dosyasına yazılacak — sizin girmeniz gerekmez.</p>
+    <h2>3. Uygulama ayarları (config.php)</h2>
+    <p class="muted">Panelin adresi. Güvenlik anahtarı (APP_KEY) kriptografik üretilip
+      <code>config.php</code> dosyasına yazılacak — WordPress'teki <code>wp-config.php</code> gibi.
+      Diğer tüm ayarlar veritabanında tutulur.</p>
     <form id="env-form" class="form" novalidate>
       <label>Panel adresi <input name="app_url" placeholder="https://ornek.com" autocomplete="off"></label>
       <div class="actions">
@@ -80,6 +81,17 @@
       </div>
     </form>
     <div id="env-result" class="report" hidden></div>
+
+    <!-- Yazılamaz kök (üretim): içerik ekranda, kullanıcı File Manager ile kaydeder -->
+    <div id="manual-box" hidden>
+      <h3>config.php dosyasını siz kaydedin</h3>
+      <p class="muted" id="manual-instructions"></p>
+      <pre class="key" id="config-content" style="white-space:pre-wrap"></pre>
+      <div class="actions">
+        <button type="button" class="ghost" id="config-copy">İçeriği kopyala</button>
+        <button type="button" id="config-verify">Kaydettim, doğrula</button>
+      </div>
+    </div>
   </section>
 
   <!-- 4) Migration -->
