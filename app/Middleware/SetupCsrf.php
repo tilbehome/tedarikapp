@@ -25,9 +25,9 @@ use Psr\Http\Server\RequestHandlerInterface;
  */
 final class SetupCsrf implements MiddlewareInterface
 {
-    public const string HEADER = 'X-Setup-Token';
+    public const HEADER = 'X-Setup-Token';
 
-    private const array SAFE_METHODS = ['GET', 'HEAD', 'OPTIONS'];
+    private const SAFE_METHODS = ['GET', 'HEAD', 'OPTIONS'];
 
     public function __construct(
         private readonly SetupState $state,

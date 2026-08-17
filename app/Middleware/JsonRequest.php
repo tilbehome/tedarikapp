@@ -26,9 +26,9 @@ use Psr\Http\Server\RequestHandlerInterface;
  */
 final class JsonRequest implements MiddlewareInterface
 {
-    private const array WRITE_METHODS = ['POST', 'PUT', 'PATCH', 'DELETE'];
+    private const WRITE_METHODS = ['POST', 'PUT', 'PATCH', 'DELETE'];
 
-    private const string REQUIRED_TYPE = 'application/json';
+    private const REQUIRED_TYPE = 'application/json';
 
     public function __construct(private readonly ResponseFactoryInterface $responseFactory)
     {

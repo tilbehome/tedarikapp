@@ -14,16 +14,16 @@ use App\Core\Connection;
  */
 final class SettingsRepository
 {
-    public const string KEY_YUAN_RATE = 'yuan_tl';
-    public const string KEY_USD_RATE = 'usd_tl';
+    public const KEY_YUAN_RATE = 'yuan_tl';
+    public const KEY_USD_RATE = 'usd_tl';
 
     /**
      * Ayar henüz girilmemişken kullanılan başlangıç değerleri.
      * Gerçek değerler `PUT /api/settings/rates` ile girilir (ayarlar iş emri);
      * o güne kadar liste oluşturulabilsin diye makul bir başlangıç verilir.
      */
-    public const string DEFAULT_YUAN_RATE = '7.0400';
-    public const string DEFAULT_USD_RATE = '41.5000';
+    public const DEFAULT_YUAN_RATE = '7.0400';
+    public const DEFAULT_USD_RATE = '41.5000';
 
     public function __construct(private readonly Connection $connection)
     {

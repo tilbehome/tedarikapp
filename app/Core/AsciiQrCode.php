@@ -15,11 +15,11 @@ use BaconQrCode\Encoder\Encoder;
  */
 final class AsciiQrCode
 {
-    private const string DARK = "\033[40m  \033[0m";
-    private const string LIGHT = "\033[47m  \033[0m";
+    private const DARK = "\033[40m  \033[0m";
+    private const LIGHT = "\033[47m  \033[0m";
 
     /** QR standardının gerektirdiği sessiz kenar (modül cinsinden). */
-    private const int QUIET_ZONE = 2;
+    private const QUIET_ZONE = 2;
 
     public static function render(string $text): string
     {

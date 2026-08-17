@@ -25,7 +25,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 final class LoginRateLimit implements MiddlewareInterface
 {
     /** Çözümlenen e-posta, controller'ın aynı işi tekrar yapmaması için isteğe iliştirilir. */
-    public const string EMAIL_ATTRIBUTE = 'auth_throttle_email';
+    public const EMAIL_ATTRIBUTE = 'auth_throttle_email';
 
     public function __construct(
         private readonly AuthServices $services,

@@ -19,10 +19,10 @@ use Monolog\Processor\ProcessorInterface;
  */
 final class LogRedactor implements ProcessorInterface
 {
-    public const string PLACEHOLDER = '[GİZLENDİ]';
+    public const PLACEHOLDER = '[GİZLENDİ]';
 
     /** Alan adında geçtiğinde değeri gizlenen terimler (küçük harfe indirgenmiş karşılaştırma). */
-    private const array SENSITIVE_TERMS = [
+    private const SENSITIVE_TERMS = [
         'authorization',
         'cookie',
         'password',
@@ -42,13 +42,13 @@ final class LogRedactor implements ProcessorInterface
      * bağıdır. İkisi de sır değildir — gizlenmeleri hata ayıklamayı imkânsız hâle getiriyordu.
      * Karşılaştırma TAM ad üzerinden yapılır: `error_code_secret` gibi bir alan yine gizlenir.
      */
-    private const array ALLOWED_KEYS = [
+    private const ALLOWED_KEYS = [
         'error_code',
         'request_id',
     ];
 
     /** İç içe yapılarda sonsuz döngüye/aşırı derinliğe karşı sınır. */
-    private const int MAX_DEPTH = 8;
+    private const MAX_DEPTH = 8;
 
     public function __invoke(LogRecord $record): LogRecord
     {

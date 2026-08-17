@@ -15,16 +15,16 @@ use App\Auth\SessionInterface;
  */
 final class SetupState
 {
-    public const string STEP_REQUIREMENTS = 'requirements';
-    public const string STEP_DATABASE = 'database';
-    public const string STEP_ENV = 'env';
-    public const string STEP_MIGRATE = 'migrate';
-    public const string STEP_ADMIN = 'admin';
-    public const string STEP_RECOVERY = 'recovery';
-    public const string STEP_DONE = 'done';
+    public const STEP_REQUIREMENTS = 'requirements';
+    public const STEP_DATABASE = 'database';
+    public const STEP_ENV = 'env';
+    public const STEP_MIGRATE = 'migrate';
+    public const STEP_ADMIN = 'admin';
+    public const STEP_RECOVERY = 'recovery';
+    public const STEP_DONE = 'done';
 
     /** Adımların kesin sırası. */
-    public const array ORDER = [
+    public const ORDER = [
         self::STEP_REQUIREMENTS,
         self::STEP_DATABASE,
         self::STEP_ENV,
@@ -34,9 +34,9 @@ final class SetupState
         self::STEP_DONE,
     ];
 
-    private const string KEY_STEP = 'setup_step';
-    private const string KEY_CSRF = 'setup_csrf';
-    private const string KEY_DATA = 'setup_data';
+    private const KEY_STEP = 'setup_step';
+    private const KEY_CSRF = 'setup_csrf';
+    private const KEY_DATA = 'setup_data';
 
     public function __construct(private readonly SessionInterface $session)
     {

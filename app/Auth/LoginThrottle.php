@@ -22,10 +22,10 @@ use DateTimeZone;
  */
 final class LoginThrottle
 {
-    private const int MAX_LOCK_MINUTES = 60;
+    private const MAX_LOCK_MINUTES = 60;
 
     /** Kilide sayılan olaylar: şifre, TOTP ve kurtarma kodu hataları birlikte değerlendirilir. */
-    private const array FAILURE_ACTIONS = [
+    private const FAILURE_ACTIONS = [
         ActivityLog::LOGIN_FAILED,
         ActivityLog::TOTP_FAILED,
         ActivityLog::RECOVERY_FAILED,

@@ -20,7 +20,7 @@ use SensitiveParameter;
 final class TotpService
 {
     /** Saat kayması toleransı: ±1 periyot (varsayılan 30 sn) — telefon saati birkaç saniye kayabilir. */
-    private const int DISCREPANCY = 1;
+    private const DISCREPANCY = 1;
 
     private ?TwoFactorAuth $tfa = null;
 

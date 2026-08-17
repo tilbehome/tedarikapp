@@ -17,10 +17,10 @@ use SensitiveParameter;
  */
 final class RecoveryCodeService
 {
-    public const int CODE_COUNT = 10;
+    public const CODE_COUNT = 10;
 
     /** Karışabilen karakterler (0/O, 1/I/L) alfabede yok — kod elle yazılacak. */
-    private const string ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+    private const ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 
     public function __construct(
         private readonly Connection $connection,

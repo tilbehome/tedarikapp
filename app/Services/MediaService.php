@@ -23,12 +23,12 @@ use App\Models\SettingsRepository;
  */
 final class MediaService
 {
-    public const string MODE_DOWNLOAD = 'download';
-    public const string MODE_HOTLINK = 'hotlink';
-    public const string SETTING_KEY = 'media_mode';
+    public const MODE_DOWNLOAD = 'download';
+    public const MODE_HOTLINK = 'hotlink';
+    public const SETTING_KEY = 'media_mode';
 
     /** docs/04 §2d: SVG YASAK — içine script gömülebilir ve tarayıcıda çalışır. */
-    private const array ALLOWED_MIME = [
+    private const ALLOWED_MIME = [
         'image/jpeg' => 'jpg',
         'image/png' => 'png',
         'image/webp' => 'webp',
@@ -221,7 +221,7 @@ final class MediaService
     // ─────────────── Yaşam döngüsü — silme ve GC (K37 §C7) ───────────────
 
     /** Sunucu üretimi medya adları: 32 hex + bilinen görsel uzantısı. Başka HİÇBİR AD silinmez. */
-    private const string FILE_NAME_PATTERN = '/^[0-9a-f]{32}\.(jpg|png|gif|webp|avif)$/';
+    private const FILE_NAME_PATTERN = '/^[0-9a-f]{32}\.(jpg|png|gif|webp|avif)$/';
 
     /**
      * Referanstan (DB'deki `main_image` web yolu veya `product_images.path` disk yolu)

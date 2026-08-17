@@ -100,7 +100,10 @@
     <p class="muted">Tablolar sırayla oluşturulacak. Bu adım tekrar çalıştırılabilir; var olan tablolar atlanır.</p>
     <div class="actions">
       <button type="button" id="migrate-run">Tabloları oluştur</button>
+      <button type="button" class="ghost" id="migrate-fresh">Temiz kurulum — önce tabloları sıfırla</button>
     </div>
+    <p class="muted">"Tablo zaten var" hatası alırsanız: önceki yarım kurulumdan kalan tablolar vardır —
+      <strong>Temiz kurulum</strong> düğmesi veritabanındaki TÜM tabloları silip sıfırdan kurar.</p>
     <div id="migrate-result" class="report" hidden></div>
   </section>
 

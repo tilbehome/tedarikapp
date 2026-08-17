@@ -24,9 +24,9 @@ use Psr\Http\Server\RequestHandlerInterface;
  */
 final class Csrf implements MiddlewareInterface
 {
-    public const string HEADER = 'X-CSRF-Token';
+    public const HEADER = 'X-CSRF-Token';
 
-    private const array SAFE_METHODS = ['GET', 'HEAD', 'OPTIONS'];
+    private const SAFE_METHODS = ['GET', 'HEAD', 'OPTIONS'];
 
     public function __construct(
         private readonly AuthSession $session,

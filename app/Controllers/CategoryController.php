@@ -21,7 +21,7 @@ use Psr\Http\Message\ServerRequestInterface;
  */
 final class CategoryController extends ApiController
 {
-    private const int MAX_NAME_LENGTH = 100;
+    private const MAX_NAME_LENGTH = 100;
 
     public function __construct(
         private readonly CategoryRepository $categories,

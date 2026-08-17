@@ -23,7 +23,7 @@ use Throwable;
 final class SetupDiagnostics
 {
     /** docs/SUNUCU-PROFILI.md ile aynı liste + önerilen sodium (K39/K41). */
-    private const array PROFILE_EXTENSIONS = [
+    private const PROFILE_EXTENSIONS = [
         'pdo_mysql', 'curl', 'gd', 'mbstring', 'zip', 'intl', 'bcmath', 'fileinfo', 'openssl', 'sodium',
     ];
 

@@ -28,15 +28,15 @@ use SensitiveParameter;
  */
 final class Encrypter
 {
-    private const string VERSION_SODIUM = 'v1s';
-    private const string VERSION_AES_GCM = 'v1a';
+    private const VERSION_SODIUM = 'v1s';
+    private const VERSION_AES_GCM = 'v1a';
 
     /** HKDF bilgi etiketi — amaca özel alt anahtar üretir. */
-    private const string KEY_INFO = 'tedarikapp:totp-secret:v1';
+    private const KEY_INFO = 'tedarikapp:totp-secret:v1';
 
-    private const string AES_CIPHER = 'aes-256-gcm';
-    private const int AES_IV_LENGTH = 12;
-    private const int AES_TAG_LENGTH = 16;
+    private const AES_CIPHER = 'aes-256-gcm';
+    private const AES_IV_LENGTH = 12;
+    private const AES_TAG_LENGTH = 16;
 
     private ?string $key = null;
 

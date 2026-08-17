@@ -17,25 +17,25 @@ use DateTimeImmutable;
  */
 final class ActivityLog
 {
-    public const string ENTITY_AUTH = 'auth';
+    public const ENTITY_AUTH = 'auth';
 
     /** Eylemi kimin yaptığı (K25): panel kullanıcısı, Chrome eklentisi veya sistemin kendisi. */
-    public const string ACTOR_ADMIN = 'admin';
-    public const string ACTOR_EXTENSION = 'extension';
-    public const string ACTOR_SYSTEM = 'system';
+    public const ACTOR_ADMIN = 'admin';
+    public const ACTOR_EXTENSION = 'extension';
+    public const ACTOR_SYSTEM = 'system';
 
-    public const string LOGIN_SUCCESS = 'login_success';
-    public const string LOGIN_FAILED = 'login_failed';
-    public const string LOGIN_LOCKED = 'login_locked';
-    public const string TOTP_SUCCESS = 'totp_success';
-    public const string TOTP_FAILED = 'totp_failed';
-    public const string RECOVERY_USED = 'recovery_used';
-    public const string RECOVERY_FAILED = 'recovery_failed';
-    public const string LOGOUT = 'logout';
-    public const string REMEMBER_LOGIN = 'remember_login';
-    public const string REMEMBER_THEFT = 'remember_theft';
-    public const string REMEMBER_REVOKED = 'remember_revoked';
-    public const string USER_CREATED = 'user_created';
+    public const LOGIN_SUCCESS = 'login_success';
+    public const LOGIN_FAILED = 'login_failed';
+    public const LOGIN_LOCKED = 'login_locked';
+    public const TOTP_SUCCESS = 'totp_success';
+    public const TOTP_FAILED = 'totp_failed';
+    public const RECOVERY_USED = 'recovery_used';
+    public const RECOVERY_FAILED = 'recovery_failed';
+    public const LOGOUT = 'logout';
+    public const REMEMBER_LOGIN = 'remember_login';
+    public const REMEMBER_THEFT = 'remember_theft';
+    public const REMEMBER_REVOKED = 'remember_revoked';
+    public const USER_CREATED = 'user_created';
 
     public function __construct(
         private readonly Connection $connection,

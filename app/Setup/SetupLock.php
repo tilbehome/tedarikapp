@@ -27,12 +27,12 @@ use Throwable;
  */
 final class SetupLock
 {
-    public const string SETTING_KEY = 'system.setup_lock';
+    public const SETTING_KEY = 'system.setup_lock';
 
-    public const string STATE_LOCKED = 'locked';
-    public const string STATE_UNLOCKED = 'unlocked';
+    public const STATE_LOCKED = 'locked';
+    public const STATE_UNLOCKED = 'unlocked';
     /** DB yapılandırılmış ama kilit okunamıyor — K37 gereği kilitli MUAMELESİ görür. */
-    public const string STATE_UNKNOWN = 'unknown';
+    public const STATE_UNKNOWN = 'unknown';
 
     public function __construct(
         private readonly ?Connection $connection = null,

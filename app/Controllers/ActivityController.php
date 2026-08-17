@@ -19,8 +19,8 @@ use Psr\Http\Message\ServerRequestInterface;
  */
 final class ActivityController extends ApiController
 {
-    private const int DEFAULT_PER_PAGE = 25;
-    private const int MAX_PER_PAGE = 100;
+    private const DEFAULT_PER_PAGE = 25;
+    private const MAX_PER_PAGE = 100;
 
     public function __construct(
         private readonly Connection $connection,

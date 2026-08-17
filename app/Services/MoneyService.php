@@ -21,20 +21,20 @@ use InvalidArgumentException;
 final class MoneyService
 {
     /** Ara hesap hassasiyeti — yuvarlama yalnızca sonda yapılır. */
-    public const int SCALE = 6;
+    public const SCALE = 6;
 
     /** Para gösterim hassasiyeti. */
-    public const int MONEY_SCALE = 2;
+    public const MONEY_SCALE = 2;
 
     /** Kur hassasiyeti (docs/04 §2d). */
-    public const int RATE_SCALE = 4;
+    public const RATE_SCALE = 4;
 
     /** docs/04 §2d: fiyat 0 – 9.999.999,99 */
-    private const string MAX_AMOUNT = '9999999.99';
+    private const MAX_AMOUNT = '9999999.99';
 
     /** docs/04 §2d: kur 0,0001 – 1000 */
-    private const string MIN_RATE = '0.0001';
-    private const string MAX_RATE = '1000';
+    private const MIN_RATE = '0.0001';
+    private const MAX_RATE = '1000';
 
     /** Birim fiyatı hedef para birimine çevirir (ör. Yuan → TL). */
     public function convert(string $amount, string $rate): string

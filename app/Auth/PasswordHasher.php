@@ -13,7 +13,7 @@ use SensitiveParameter;
 final class PasswordHasher
 {
     /** docs/04 §2d: şifre en az 10 karakter. */
-    public const int MIN_LENGTH = 10;
+    public const MIN_LENGTH = 10;
 
     public function hash(#[SensitiveParameter] string $plainPassword): string
     {

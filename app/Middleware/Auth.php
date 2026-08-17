@@ -26,7 +26,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 final class Auth implements MiddlewareInterface
 {
     /** Doğrulanmış kullanıcının isteğe iliştirildiği anahtar. */
-    public const string USER_ATTRIBUTE = 'auth_user';
+    public const USER_ATTRIBUTE = 'auth_user';
 
     public function __construct(
         private readonly AuthServices $services,

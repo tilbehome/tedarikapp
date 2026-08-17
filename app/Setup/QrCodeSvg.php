@@ -21,8 +21,8 @@ use SensitiveParameter;
  */
 final class QrCodeSvg
 {
-    private const int SIZE = 260;
-    private const int MARGIN = 2;
+    private const SIZE = 260;
+    private const MARGIN = 2;
 
     public static function dataUri(#[SensitiveParameter] string $text): string
     {

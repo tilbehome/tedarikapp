@@ -20,8 +20,8 @@ use Psr\Http\Server\RequestHandlerInterface;
  */
 final class RequestId implements MiddlewareInterface
 {
-    public const string HEADER = 'X-Request-Id';
-    public const string ATTRIBUTE = 'request_id';
+    public const HEADER = 'X-Request-Id';
+    public const ATTRIBUTE = 'request_id';
 
     public function __construct(private readonly RequestContext $context)
     {

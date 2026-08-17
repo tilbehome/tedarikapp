@@ -14,15 +14,15 @@ use App\Core\Clock;
  */
 final class AuthSession
 {
-    public const string STAGE_TOTP = 'sifre_dogru';
-    public const string STAGE_LOGGED_IN = 'girisli';
+    public const STAGE_TOTP = 'sifre_dogru';
+    public const STAGE_LOGGED_IN = 'girisli';
 
-    private const string KEY_STAGE = 'auth_stage';
-    private const string KEY_USER_ID = 'auth_user_id';
-    private const string KEY_REMEMBER = 'auth_remember_requested';
-    private const string KEY_CSRF = 'auth_csrf_token';
-    private const string KEY_LAST_ACTIVITY = 'auth_last_activity';
-    private const string KEY_REMEMBER_TOKEN_ID = 'auth_remember_token_id';
+    private const KEY_STAGE = 'auth_stage';
+    private const KEY_USER_ID = 'auth_user_id';
+    private const KEY_REMEMBER = 'auth_remember_requested';
+    private const KEY_CSRF = 'auth_csrf_token';
+    private const KEY_LAST_ACTIVITY = 'auth_last_activity';
+    private const KEY_REMEMBER_TOKEN_ID = 'auth_remember_token_id';
 
     public function __construct(
         private readonly SessionInterface $session,

@@ -403,6 +403,21 @@
       }).finally(function () { busy(button, false); });
     });
 
+    // K45 temiz kurulum: önceki yarım denemeden kalan tablolar "already exists"
+    // veriyorsa tek tıkla sıfırla + kur (açık onay istenir — TÜM tablolar silinir).
+    $('migrate-fresh').addEventListener('click', function (event) {
+      if (!window.confirm('Veritabanındaki TÜM tablolar SİLİNECEK ve sıfırdan kurulacak. Emin misiniz?')) return;
+      clearAlert();
+      var button = event.target;
+      busy(button, true, 'Sıfırlanıyor…');
+      api('POST', '/api/setup/migrate', { fresh: true }).then(function (data) {
+        alertBox('ok', 'Temiz kurulum tamam: ' + data.applied.length + ' migration uygulandı.');
+        showStep('admin');
+      }).catch(function (error) {
+        failBox(error);
+      }).finally(function () { busy(button, false); });
+    });
+
     $('migrate-run').addEventListener('click', function (event) {
       clearAlert();
       var button = event.target;

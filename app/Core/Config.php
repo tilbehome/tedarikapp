@@ -23,7 +23,7 @@ use RuntimeException;
 final class Config
 {
     /** Uygulamanın ayağa kalkması için dosyada mutlaka bulunması gereken anahtarlar. */
-    private const array REQUIRED_KEYS = [
+    private const REQUIRED_KEYS = [
         'APP_ENV',
         'APP_URL',
         'DB_HOST',
@@ -33,10 +33,10 @@ final class Config
     ];
 
     /** DB'deki settings tablosundan ASLA okunmayacak anahtarlar (önyükleme + sır). */
-    private const array FILE_ONLY_KEYS = ['APP_ENV', 'APP_KEY', 'DB_HOST', 'DB_PORT', 'DB_NAME', 'DB_USER', 'DB_PASS', 'EXTENSION_TOKEN_SALT'];
+    private const FILE_ONLY_KEYS = ['APP_ENV', 'APP_KEY', 'DB_HOST', 'DB_PORT', 'DB_NAME', 'DB_USER', 'DB_PASS', 'EXTENSION_TOKEN_SALT'];
 
     /** config.php yalnız DB+APP_KEY taşır; kalan zorunlular bu varsayılanlarla dolar (K44). */
-    private const array CONFIG_PHP_DEFAULTS = [
+    private const CONFIG_PHP_DEFAULTS = [
         'APP_ENV' => 'production',
         'TZ' => 'Europe/Istanbul',
         // Gerçek APP_URL settings tablosundan gelir (kurulumda yazılır); bu yer tutucu

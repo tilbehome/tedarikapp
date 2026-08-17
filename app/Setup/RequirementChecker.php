@@ -22,7 +22,7 @@ use Psr\Http\Message\ServerRequestInterface;
  */
 final class RequirementChecker
 {
-    public const string MIN_PHP_VERSION = '8.4.0';
+    public const MIN_PHP_VERSION = '8.1.0';
 
     public function __construct(
         private readonly string $basePath,
@@ -31,7 +31,7 @@ final class RequirementChecker
     }
 
     /** Uygulamanın çalışması için zorunlu eklentiler (docs/04 §7 + K19 paketlerinin ihtiyaçları). */
-    private const array REQUIRED_EXTENSIONS = [
+    private const REQUIRED_EXTENSIONS = [
         'pdo_mysql' => 'Veritabanı bağlantısı (MySQL) bu eklenti olmadan kurulamaz.',
         'curl' => 'Dış istekler yalnızca cURL ile yapılır (K8): 1688 görsellerinin indirilmesi buna bağlı.',
         'gd' => 'Ürün görsellerinin yeniden boyutlandırılması ve Excel içine gömülmesi GD ile yapılır.',
@@ -44,7 +44,7 @@ final class RequirementChecker
     ];
 
     /** Zorunlu değil ama varsa tercih edilenler — kurulum BLOKLANMAZ (K39). */
-    private const array OPTIONAL_EXTENSIONS = [
+    private const OPTIONAL_EXTENSIONS = [
         'sodium' => 'TOTP secret şifrelemesinde tercih edilen arka uç. Yok: OpenSSL AES-256-GCM kullanılacak '
             . '(eşdeğer güvenlikte AEAD — K27/K39); kurulum bloklanmaz.',
     ];

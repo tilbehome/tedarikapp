@@ -28,13 +28,13 @@ use Psr\Http\Server\RequestHandlerInterface;
 final class SetupHttpsGate implements MiddlewareInterface
 {
     /** Sır girilen kurulum uçları (DB şifresi, yönetici şifresi, TOTP kodu). */
-    private const array SECRET_PATHS = [
+    private const SECRET_PATHS = [
         '/api/setup/database',
         '/api/setup/admin',
         '/api/setup/admin/verify',
     ];
 
-    private const array LOOPBACK_HOSTS = ['localhost', '127.0.0.1', '::1', '[::1]', ''];
+    private const LOOPBACK_HOSTS = ['localhost', '127.0.0.1', '::1', '[::1]', ''];
 
     public function __construct(
         private readonly ResponseFactoryInterface $responseFactory,

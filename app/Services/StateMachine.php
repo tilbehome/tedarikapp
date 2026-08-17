@@ -23,14 +23,14 @@ final class StateMachine
 {
     // ─────────────── Ürün ───────────────
 
-    public const string PRODUCT_TO_ORDER = 'to_order';
-    public const string PRODUCT_ORDERED = 'ordered';
-    public const string PRODUCT_IN_TRANSIT = 'in_transit';
-    public const string PRODUCT_RECEIVED = 'received';
-    public const string PRODUCT_CANCELLED = 'cancelled';
+    public const PRODUCT_TO_ORDER = 'to_order';
+    public const PRODUCT_ORDERED = 'ordered';
+    public const PRODUCT_IN_TRANSIT = 'in_transit';
+    public const PRODUCT_RECEIVED = 'received';
+    public const PRODUCT_CANCELLED = 'cancelled';
 
     /** @var array<string, list<string>> */
-    public const array PRODUCT_TRANSITIONS = [
+    public const PRODUCT_TRANSITIONS = [
         self::PRODUCT_TO_ORDER => [self::PRODUCT_ORDERED, self::PRODUCT_CANCELLED],
         self::PRODUCT_ORDERED => [self::PRODUCT_IN_TRANSIT, self::PRODUCT_TO_ORDER, self::PRODUCT_CANCELLED],
         self::PRODUCT_IN_TRANSIT => [self::PRODUCT_RECEIVED, self::PRODUCT_ORDERED, self::PRODUCT_CANCELLED],
@@ -40,14 +40,14 @@ final class StateMachine
 
     // ─────────────── Liste ───────────────
 
-    public const string LIST_DRAFT = 'draft';
-    public const string LIST_SENT = 'sent';
-    public const string LIST_ORDERED = 'ordered';
-    public const string LIST_COMPLETED = 'completed';
-    public const string LIST_CANCELLED = 'cancelled';
+    public const LIST_DRAFT = 'draft';
+    public const LIST_SENT = 'sent';
+    public const LIST_ORDERED = 'ordered';
+    public const LIST_COMPLETED = 'completed';
+    public const LIST_CANCELLED = 'cancelled';
 
     /** @var array<string, list<string>> */
-    public const array LIST_TRANSITIONS = [
+    public const LIST_TRANSITIONS = [
         self::LIST_DRAFT => [self::LIST_SENT, self::LIST_CANCELLED],
         self::LIST_SENT => [self::LIST_ORDERED, self::LIST_DRAFT, self::LIST_CANCELLED],
         self::LIST_ORDERED => [self::LIST_COMPLETED, self::LIST_SENT, self::LIST_CANCELLED],
@@ -57,7 +57,7 @@ final class StateMachine
     ];
 
     /** Ürünün "kapandığı" durumlar — liste ancak hepsi buradaysa completed olabilir. */
-    public const array PRODUCT_CLOSED_STATES = [self::PRODUCT_RECEIVED, self::PRODUCT_CANCELLED];
+    public const PRODUCT_CLOSED_STATES = [self::PRODUCT_RECEIVED, self::PRODUCT_CANCELLED];
 
     // ─────────────── Ürün API'si ───────────────
 

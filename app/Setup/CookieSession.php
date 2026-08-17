@@ -29,11 +29,11 @@ use Psr\Http\Message\ServerRequestInterface;
  */
 final class CookieSession implements SessionInterface
 {
-    public const string COOKIE_NAME = 'tedarikapp_setup_state';
+    public const COOKIE_NAME = 'tedarikapp_setup_state';
 
-    private const string CIPHER = 'aes-256-gcm';
-    private const int IV_LENGTH = 12;
-    private const int TAG_LENGTH = 16;
+    private const CIPHER = 'aes-256-gcm';
+    private const IV_LENGTH = 12;
+    private const TAG_LENGTH = 16;
 
     /** @var array<string, mixed> */
     private array $data = [];

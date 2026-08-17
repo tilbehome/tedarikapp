@@ -21,7 +21,7 @@ use DateTimeImmutable;
  */
 final class RememberTokenService
 {
-    public const string COOKIE_NAME = 'tedarikapp_remember';
+    public const COOKIE_NAME = 'tedarikapp_remember';
 
     public function __construct(private readonly Connection $connection)
     {

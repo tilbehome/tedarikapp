@@ -18,10 +18,10 @@ namespace App\Services;
  */
 final class IntegrityChecker
 {
-    public const string MANIFEST_FILE = 'MANIFEST.txt';
+    public const MANIFEST_FILE = 'MANIFEST.txt';
 
     /** Yanıtı şişirmemek için liste başına üst sınır; kalanı sayıyla raporlanır. */
-    private const int LIST_LIMIT = 50;
+    private const LIST_LIMIT = 50;
 
     public function __construct(private readonly string $basePath)
     {

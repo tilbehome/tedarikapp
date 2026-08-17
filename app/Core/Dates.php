@@ -14,7 +14,7 @@ use RuntimeException;
  */
 final class Dates
 {
-    public const string STORAGE_FORMAT = 'Y-m-d H:i:s';
+    public const STORAGE_FORMAT = 'Y-m-d H:i:s';
 
     public static function toStorage(DateTimeImmutable $moment): string
     {

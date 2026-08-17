@@ -16,7 +16,7 @@ namespace App\Services;
  */
 final class CurlMediaFetcher implements MediaFetcher
 {
-    private const int MAX_REDIRECTS = 3;
+    private const MAX_REDIRECTS = 3;
 
     public function __construct(
         private readonly UrlGuard $guard,

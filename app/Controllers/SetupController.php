@@ -44,10 +44,10 @@ use Throwable;
  */
 final class SetupController
 {
-    private const string DATA_DB = 'database';
-    private const string DATA_ADMIN = 'pending_admin';
-    private const string DATA_ENV_KEY = 'env_app_key';
-    private const string DATA_APP_URL = 'env_app_url';
+    private const DATA_DB = 'database';
+    private const DATA_ADMIN = 'pending_admin';
+    private const DATA_ENV_KEY = 'env_app_key';
+    private const DATA_APP_URL = 'env_app_url';
 
     private ?Config $config = null;
     private ?Connection $connection = null;
@@ -309,6 +309,14 @@ final class SetupController
         }
 
         try {
+            // K45: TEMİZ KURULUM — önceki yarım denemelerden kalan tablolar
+            // "already exists" hatası veriyordu (canlı vaka). {fresh:true} ile
+            // veritabanındaki TÜM tablolar silinip sıfırdan kurulur. Yalnız
+            // sihirbaz açıkken (kilit yokken) çalışır; kullanıcı açıkça onaylar.
+            if (($this->body($request)['fresh'] ?? false) === true) {
+                $this->dropAllTables();
+            }
+
             $migrator = new Migrator($this->connection()->pdo(), $this->basePath . '/migrations');
             $applied = $migrator->run();
         } catch (Throwable $e) {
@@ -529,6 +537,21 @@ final class SetupController
         }
 
         return $problems;
+    }
+
+    /** K45 temiz kurulum: veritabanındaki tüm tabloları düşürür (MySQL + MariaDB). */
+    private function dropAllTables(): void
+    {
+        $pdo = $this->connection()->pdo();
+        $pdo->exec('SET FOREIGN_KEY_CHECKS = 0');
+
+        $statement = $pdo->query('SHOW TABLES');
+        $tables = $statement === false ? [] : $statement->fetchAll(PDO::FETCH_COLUMN);
+        foreach ($tables as $table) {
+            $pdo->exec('DROP TABLE IF EXISTS `' . str_replace('`', '', (string) $table) . '`');
+        }
+
+        $pdo->exec('SET FOREIGN_KEY_CHECKS = 1');
     }
 
     /** @return list<array{name: string, execution_ms: int}> */

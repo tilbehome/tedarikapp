@@ -20,7 +20,7 @@ namespace App\Services;
  */
 final class ListMutationPolicy
 {
-    public const array TERMINAL_STATUSES = [
+    public const TERMINAL_STATUSES = [
         StateMachine::LIST_COMPLETED,
         StateMachine::LIST_CANCELLED,
     ];

@@ -16,7 +16,7 @@ use DateTimeImmutable;
  */
 final class Ulid
 {
-    private const string ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+    private const ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
 
     public static function generate(?DateTimeImmutable $moment = null): string
     {
