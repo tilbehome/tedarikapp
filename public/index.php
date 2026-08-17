@@ -42,12 +42,21 @@ try {
     // K44: birincil yapılandırma config.php (WordPress modeli); .env geriye dönük.
     $envExists = is_file($basePath . '/config.php') || is_file($basePath . '/.env');
 
-    if (!$envExists || $isSetupPath) {
+    // K45: uygulama bir ALT KLASÖRE açılmışsa (örn. docroot/tedarikapp/) rotalar
+    // '/tedarikapp/setup' önekiyle gelir. Önek SCRIPT_NAME'den otomatik bulunur
+    // ve Slim'e taban yol olarak verilir — yerleşim nereye olursa olsun rota tutar.
+    $scriptName = str_replace('\\', '/', (string) ($_SERVER['SCRIPT_NAME'] ?? ''));
+    $urlBase = rtrim((string) preg_replace('#/public/index\.php$|/index\.php$#', '', $scriptName), '/');
+
+    if (!$envExists || $isSetupPath || str_ends_with($path, '/setup') || str_contains($path, '/api/setup')) {
         $app = SetupAppBuilder::build(
             $basePath,
             Logger::createForSetup($basePath, $requestContext),
             requestContext: $requestContext,
         );
+        if ($urlBase !== '') {
+            $app->setBasePath($urlBase);
+        }
         $app->run();
 
         return;
@@ -71,6 +80,9 @@ try {
         requestContext: $requestContext,
         basePath: $basePath,
     );
+    if ($urlBase !== '') {
+        $app->setBasePath($urlBase);
+    }
 
     $app->run();
 } catch (Throwable $bootFailure) {
