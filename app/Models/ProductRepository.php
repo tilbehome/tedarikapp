@@ -315,6 +315,129 @@ final class ProductRepository
         ]);
     }
 
+    // ─────────────── Medya referansları (K37 §C7) ───────────────
+
+    /**
+     * Ürünün işaret ettiği medya referansları: ana görsel + ek görseller.
+     * Kalıcı silme ÖNCESİ toplanır; dosyalar DB kaydı gittikten sonra temizlenir.
+     *
+     * @return list<string>
+     */
+    public function mediaReferencesForProduct(int $productId): array
+    {
+        $references = [];
+
+        $statement = $this->connection->pdo()->prepare('SELECT main_image FROM products WHERE id = :id');
+        $statement->execute(['id' => $productId]);
+        $row = $statement->fetch();
+        if (is_array($row) && is_string($row['main_image']) && $row['main_image'] !== '') {
+            $references[] = $row['main_image'];
+        }
+
+        $statement = $this->connection->pdo()->prepare('SELECT path FROM product_images WHERE product_id = :id');
+        $statement->execute(['id' => $productId]);
+
+        /** @var list<array<string, mixed>> $rows */
+        $rows = $statement->fetchAll();
+        foreach ($rows as $imageRow) {
+            $references[] = (string) $imageRow['path'];
+        }
+
+        return $references;
+    }
+
+    /**
+     * Listedeki TÜM ürünlerin (soft-delete dahil — CASCADE ile birlikte gidecekler)
+     * medya referansları. Liste kalıcı silinmeden önce çağrılır.
+     *
+     * @return list<string>
+     */
+    public function mediaReferencesForList(int $listId): array
+    {
+        $references = [];
+
+        $statement = $this->connection->pdo()->prepare(
+            'SELECT main_image FROM products WHERE list_id = :list_id AND main_image IS NOT NULL',
+        );
+        $statement->execute(['list_id' => $listId]);
+
+        /** @var list<array<string, mixed>> $rows */
+        $rows = $statement->fetchAll();
+        foreach ($rows as $row) {
+            if (is_string($row['main_image']) && $row['main_image'] !== '') {
+                $references[] = $row['main_image'];
+            }
+        }
+
+        $statement = $this->connection->pdo()->prepare(
+            'SELECT pi.path FROM product_images pi
+             INNER JOIN products p ON p.id = pi.product_id
+             WHERE p.list_id = :list_id',
+        );
+        $statement->execute(['list_id' => $listId]);
+
+        /** @var list<array<string, mixed>> $rows */
+        $rows = $statement->fetchAll();
+        foreach ($rows as $row) {
+            $references[] = (string) $row['path'];
+        }
+
+        return $references;
+    }
+
+    /**
+     * Sistemdeki TÜM medya referansları (soft-delete dahil: çöp kutusundaki ürün
+     * geri alınabilir, görseli de yerinde kalmalı). Yetim dosya GC'si bunu kullanır.
+     *
+     * @return list<string>
+     */
+    public function allMediaReferences(): array
+    {
+        $references = [];
+
+        $statement = $this->connection->pdo()->query(
+            "SELECT main_image FROM products WHERE main_image IS NOT NULL AND main_image <> ''",
+        );
+        if ($statement !== false) {
+            /** @var list<array<string, mixed>> $rows */
+            $rows = $statement->fetchAll();
+            foreach ($rows as $row) {
+                $references[] = (string) $row['main_image'];
+            }
+        }
+
+        $statement = $this->connection->pdo()->query('SELECT path FROM product_images');
+        if ($statement !== false) {
+            /** @var list<array<string, mixed>> $rows */
+            $rows = $statement->fetchAll();
+            foreach ($rows as $row) {
+                $references[] = (string) $row['path'];
+            }
+        }
+
+        return $references;
+    }
+
+    /**
+     * Bu DOSYA ADINA işaret eden kayıt sayısı (kopyalanan listeler aynı görseli
+     * paylaşır — dosya ancak son referans da silinince temizlenebilir).
+     * Ad sunucu üretimi 32 hanelik hex olduğundan LIKE eşleşmesi güvenlidir.
+     */
+    public function mediaFileReferenceCount(string $fileName): int
+    {
+        $like = '%' . $fileName;
+
+        $statement = $this->connection->pdo()->prepare(
+            'SELECT
+                (SELECT COUNT(*) FROM products WHERE main_image LIKE :a)
+              + (SELECT COUNT(*) FROM product_images WHERE path LIKE :b) AS total',
+        );
+        $statement->execute(['a' => $like, 'b' => $like]);
+        $row = $statement->fetch();
+
+        return is_array($row) ? (int) $row['total'] : 0;
+    }
+
     /** @return list<array{id: int, url: string, sort: int}> */
     public function images(int $productId): array
     {

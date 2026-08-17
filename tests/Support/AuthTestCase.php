@@ -305,7 +305,9 @@ abstract class AuthTestCase extends TestCase
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 product_id INTEGER NOT NULL,
                 path TEXT NOT NULL,
-                sort INTEGER NOT NULL DEFAULT 0
+                sort INTEGER NOT NULL DEFAULT 0,
+                storage_mode TEXT NOT NULL DEFAULT \'local\',
+                source_url TEXT NULL
             )',
         );
         $this->pdo->exec(

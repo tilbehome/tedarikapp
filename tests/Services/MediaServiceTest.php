@@ -93,6 +93,39 @@ final class MediaServiceTest extends AuthTestCase
 
     // ─────────────── İndirme ve yeniden kodlama ───────────────
 
+    /**
+     * K37 §C8: kaydedilen dosyanın UZANTISI ile GERÇEK içerik türü her zaman uyuşur.
+     * Encoder eksikliğinde (webp/avif olmayan GD) jpeg'e düşülür ve ad da .jpg olur —
+     * "webp adında jpeg" yapısal olarak üretilemez.
+     */
+    public function testKaydedilenDosyaninUzantisiGercekIcerikleUyusur(): void
+    {
+        // PNG kaynak: png olarak yeniden kodlanır.
+        $png = (function (): string {
+            $image = imagecreatetruecolor(10, 10);
+            ob_start();
+            imagepng($image);
+
+            return (string) ob_get_clean();
+        })();
+
+        $url = 'https://cbu01.alicdn.com/img/ibank/ornek.png';
+        $this->fetcher->respondWith($url, $png, 'image/png');
+
+        $result = $this->media()->store($url);
+
+        self::assertIsString($result['path']);
+        $extension = pathinfo($result['path'], PATHINFO_EXTENSION);
+        $info = getimagesizefromstring((string) file_get_contents($this->tempPath($result['path'])));
+        self::assertNotFalse($info);
+
+        $mimeByExtension = [
+            'jpg' => 'image/jpeg', 'png' => 'image/png', 'gif' => 'image/gif',
+            'webp' => 'image/webp', 'avif' => 'image/avif',
+        ];
+        self::assertSame($mimeByExtension[$extension], $info['mime'], 'Uzantı ile gerçek tür UYUŞMALI (K37 §C8).');
+    }
+
     public function testGorselIndirilirYenidenKodlanirVeRastgeleAdlaKaydedilir(): void
     {
         $url = 'https://cbu01.alicdn.com/img/ibank/ornek.jpg';
