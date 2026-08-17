@@ -1,0 +1,12 @@
+# storage/ — WEBDEN TAMAMEN KAPALI (K16, docs/04 §5).
+#
+# Loglar, kilit ve geçici dosyalar burada yaşar; tek bir bayt bile tarayıcıya
+# servis edilmez. Kök .htaccess zaten her isteği public/ altına yönlendirir —
+# bu dosya savunma derinliğidir: yönlendirme bir gün bozulsa da erişim kapalı kalır.
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order deny,allow
+    Deny from all
+</IfModule>

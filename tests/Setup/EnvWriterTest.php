@@ -113,7 +113,7 @@ final class EnvWriterTest extends TestCase
         $content = $this->writeAndRead();
 
         // .env.example'daki açıklama satırları kurulan sistemde de kalmalı.
-        self::assertStringContainsString('utf8mb4 ZORUNLU', $content);
+        self::assertStringContainsString('utf8mb4 SABİTTİR', $content);
         self::assertStringContainsString('# ─────────────── Veritabanı (MySQL) ───────────────', $content);
     }
 

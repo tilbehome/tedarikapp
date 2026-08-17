@@ -8,7 +8,9 @@ vendor/
 node_modules/
 
 # Çalışma zamanı verisi (görseller, loglar, önbellek)
-storage/
+# .htaccess REPO İLE GELİR (İE#9.3 f): storage webden kapalı kalmalı — savunma derinliği.
+storage/*
+!storage/.htaccess
 *.log
 
 # İndirilen ürün görselleri repoya girmez (klasör iskeleti ve koruma dosyası kalır).
