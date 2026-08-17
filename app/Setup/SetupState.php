@@ -69,6 +69,20 @@ final class SetupState
         return $this->currentStep() === self::STEP_DONE;
     }
 
+    /**
+     * `.env` dosyasını BU oturum mu üretti? (K37)
+     *
+     * Sihirbaz `.env`i yazdığı/ürettiği anda beklenen APP_KEY oturuma konur.
+     * SetupGuard, diskte `.env` varken yalnızca bu işarete sahip oturumun devam
+     * etmesine izin verir — başka herkes için kurulum kilitlidir.
+     */
+    public function ownsEnvFile(): bool
+    {
+        $key = $this->get('env_app_key');
+
+        return is_string($key) && $key !== '';
+    }
+
     public function csrfToken(): string
     {
         $token = $this->session->get(self::KEY_CSRF);

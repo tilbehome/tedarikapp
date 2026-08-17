@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Setup;
 
+use App\Core\Connection;
 use App\Setup\SetupLock;
 use DateTimeImmutable;
 use RuntimeException;
@@ -99,6 +100,22 @@ final class SetupLockTest extends AuthTestCase
 
         self::assertFalse($lock->isLocked());
         self::assertFalse($lock->storesInDatabase());
+    }
+
+    public function testBaglantiVarkenOkunamayanKilitKilitliSayilir(): void
+    {
+        // K37 fail-closed: DB YAPILANDIRILMIŞKEN kilit okunamıyorsa (bağlantı düştü,
+        // tablo yok) sihirbaz açılmamalı — eski davranış (yok say) kimliksiz kapıydı.
+        $lock = new SetupLock(
+            Connection::fromCallable(static function (): \PDO {
+                throw new RuntimeException('Veritabanına bağlanılamadı (test).');
+            }),
+            $this->tempPath('storage'),
+        );
+
+        self::assertSame(SetupLock::STATE_UNKNOWN, $lock->status());
+        self::assertTrue($lock->isLocked(), 'Okunamayan kilit KİLİTLİ sayılmalı (K37).');
+        self::assertNull($lock->read(), 'Raporlama okuması hatada sessizce null döner.');
     }
 
     public function testVeritabanisizYazmaAnlasilirHataVerir(): void

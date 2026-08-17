@@ -105,9 +105,20 @@ final class EnvWriter
      * @param array{host: string, port: int, name: string, user: string, pass: string} $database
      *
      * @return string Üretilen APP_KEY (doğrulama için çağırana döner)
+     *
+     * @throws RuntimeException `.env` zaten varsa — HTTP kurulum akışı mevcut dosyanın
+     *                          üzerine ASLA yazmaz (K37 §A2). Yeniden kurulum için
+     *                          dosyanın sunucudan elle silinmesi gerekir.
      */
     public function write(string $appUrl, #[SensitiveParameter] array $database): string
     {
+        if ($this->exists()) {
+            throw new RuntimeException(
+                '.env dosyası zaten mevcut — kurulum sihirbazı mevcut yapılandırmanın üzerine yazmaz (K37). '
+                . 'Yeniden kurulum gerekiyorsa dosyayı sunucudan elle silin.',
+            );
+        }
+
         $generated = $this->generate($appUrl, $database);
         $this->putAtomically($generated['content']);
 
