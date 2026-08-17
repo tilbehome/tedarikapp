@@ -103,3 +103,4 @@ Kapsamı şişirmemek için yeni fikirler buraya park edilir; aktif iş emri kap
 | F32 | Tedarikçi skorlama (termin, kalite, fiyat geçmişine göre) | Faz 4+ |
 | F33 | AI kullanım paketi: çeviri, kategori önerisi, anomali tespiti — hepsi insan onaylı | Faz 4+ |
 | F34 | Çok dilli yapı (i18n): paylaşım sayfası zh-CN/EN/TR — taslak: [f34](fikirler/f34-cok-dilli-yapi.md) | Faz 4 (paylaşım sayfası önce) |
+| F35 | Panel ürün/liste sayfalarında sonsuz kaydırma (sayfa numarası yerine; cursor tabanlı API sayfalaması + IntersectionObserver, ek kütüphanesiz) | Faz 4 |
