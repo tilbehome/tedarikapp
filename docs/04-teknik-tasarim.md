@@ -200,6 +200,7 @@ Uç bazlı istek/yanıt gövdeleri, hata zarfı, sayfalama ve durum kodları **d
 **Kimlik doğrulama**
 - Tek admin; şifre **Argon2id** ile hash'lenir.
 - **2FA zorunlu:** TOTP (Google Authenticator/Authy) — kurulum sihirbazında QR ile tanımlanır; kurtarma kodları üretilir (mail kapalı olduğundan tek doğru yöntem).
+- **TOTP secret şifrelemesi çift arka uçlu (K27/K39):** libsodium `crypto_secretbox` VEYA OpenSSL **AES-256-GCM** — ikisi de kimlik doğrulamalı şifrelemedir (AEAD). ext-sodium ZORUNLU DEĞİLDİR (üretimdeki ea-php84'te yüklenemiyor); ext-openssl zorunludur. Kayıt ön eki (`v1s`/`v1a`) arka ucu seçer; iki format da okunur (sunucu değişiminde taşınabilirlik).
 - Giriş denemelerinde artan bekleme (exponential backoff) + 5 hatalı denemede IP bazlı geçici kilit; tüm denemeler (IP, zaman, sonuç) activity_log'a yazılır.
 - Oturum: HttpOnly + Secure + SameSite=Lax çerez, boşta kalmada zaman aşımı, "beni hatırla" ayrı ve iptal edilebilir token.
 

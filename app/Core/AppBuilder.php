@@ -35,6 +35,7 @@ use App\Services\MoneyService;
 use App\Services\StateMachine;
 use App\Services\TrashPolicy;
 use App\Services\UrlGuard;
+use App\Setup\SetupDiagnostics;
 use App\Setup\SetupLock;
 use Closure;
 use DateTimeImmutable;
@@ -255,7 +256,7 @@ final class AppBuilder
             logErrors: true,
             logErrorDetails: true,
             logger: $logger,
-        )->setDefaultErrorHandler(self::errorHandler($app->getResponseFactory(), $logger));
+        )->setDefaultErrorHandler(self::errorHandler($app->getResponseFactory(), $logger, $setupLock, $requestContext, $basePath));
 
         // Bunlar hata middleware'inden SONRA eklenir, yani EN DIŞTA koşar:
         // 404/405/415/500 gibi hata yanıtları da güvenlik başlıklarını ve X-Request-Id'yi alır.
@@ -321,10 +322,22 @@ final class AppBuilder
         };
     }
 
-    /** Beklenmeyen her hatayı docs/10 zarfına çevirir; teknik detay yalnızca loga gider. */
-    private static function errorHandler(ResponseFactoryInterface $responseFactory, LoggerInterface $logger): Closure
-    {
-        return static function (ServerRequestInterface $request, Throwable $exception) use ($responseFactory, $logger): ResponseInterface {
+    /**
+     * Beklenmeyen her hatayı docs/10 zarfına çevirir (K42).
+     *
+     * Kilit YOKKEN (kurulum bitmemiş — sistemde üretim sırrı yok): yanıt tam teşhis
+     * taşır (redaksiyonlu). Kilit VARKEN (üretim): kullanıcıya zarif genel mesaj +
+     * Request-ID döner; tam detay logger üzerinden `app_logs`a yazılır (LOG_DRIVER=db).
+     * PHP display_errors'a GÜVENİLMEZ — davranış bu handler'da yaşar.
+     */
+    private static function errorHandler(
+        ResponseFactoryInterface $responseFactory,
+        LoggerInterface $logger,
+        SetupLock $setupLock,
+        RequestContext $requestContext,
+        string $basePath,
+    ): Closure {
+        return static function (ServerRequestInterface $request, Throwable $exception) use ($responseFactory, $logger, $setupLock, $requestContext, $basePath): ResponseInterface {
             $response = $responseFactory->createResponse();
             if ($exception instanceof HttpNotFoundException) {
                 return Response::error($response, 'NOT_FOUND', 'İstenen kaynak bulunamadı.', 404);
@@ -342,7 +355,34 @@ final class AppBuilder
             }
             $logger->error('Beklenmeyen hata', ['hata' => $exception->getMessage(), 'iz' => $exception->getTraceAsString()]);
 
-            return Response::error($response, 'SERVER_ERROR', 'Beklenmeyen bir hata oluştu.', 500);
+            // K42: kilit durumu okunamıyorsa (DB düşmüş olabilir) GÜVENLİ taraf seçilir —
+            // kurulu olabilecek sistemde teşhis GÖSTERİLMEZ, generic + Request-ID döner.
+            try {
+                $unlocked = $setupLock->status() === SetupLock::STATE_UNLOCKED;
+            } catch (Throwable) {
+                $unlocked = false;
+            }
+
+            $requestId = $requestContext->id() ?? 'yok';
+            $meta = ['request_id' => $requestId];
+            if ($unlocked) {
+                $diagnostics = new SetupDiagnostics($basePath);
+                $meta['diagnostics'] = [
+                    'environment' => $diagnostics->environment(),
+                    'failure' => $diagnostics->failure($request->getUri()->getPath(), $exception),
+                ];
+            }
+
+            return Response::error(
+                $response,
+                'SERVER_ERROR',
+                $unlocked
+                    ? 'Beklenmeyen bir hata oluştu; teknik teşhis meta.diagnostics içinde.'
+                    : sprintf('Beklenmeyen bir hata oluştu. Destek için bu kodu iletin: %s', $requestId),
+                500,
+                [],
+                $meta,
+            );
         };
     }
 }

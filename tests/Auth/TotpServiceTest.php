@@ -18,6 +18,24 @@ final class TotpServiceTest extends AuthTestCase
         return new TotpService($config, new Encrypter($config), $this->clock);
     }
 
+    // ─────────────── K39: sodium'suz sunucuda 2FA (İE#9.1, KRİTİK) ───────────────
+
+    public function testSodiumsuzOrtamdaTotpKurulupDogrulanir(): void
+    {
+        // Üretim senaryosu (K39): ext-sodium yüklenemeyen ea-php84. 2FA'nın TAMAMI
+        // (secret üret → şifrele → sakla → kod doğrula) OpenSSL yedeğiyle dönmeli.
+        $config = $this->config();
+        $sodiumsuzEncrypter = new Encrypter($config, useSodium: null, sodiumSupported: false);
+        $totp = new TotpService($config, $sodiumsuzEncrypter, $this->clock);
+
+        $secret = $totp->createSecret();
+        $sifreli = $totp->encryptSecret($secret);
+
+        self::assertStringStartsWith('v1a:', $sifreli, 'Sodium\'suz sunucuda kayıt AES-GCM formatında olmalı.');
+        self::assertTrue($totp->verify($sifreli, $this->totpCodeFor($secret)), 'Doğru kod doğrulanmalı.');
+        self::assertFalse($totp->verify($sifreli, '000000'), 'Yanlış kod reddedilmeli.');
+    }
+
     public function testUretilenSecretBase32Bicimindedir(): void
     {
         self::assertMatchesRegularExpression('/^[A-Z2-7]{32}$/', $this->totp()->createSecret());

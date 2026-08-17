@@ -11,9 +11,10 @@ use SensitiveParameter;
  * TOTP secret'ı gibi GERİ OKUNMASI gereken sırlar için simetrik şifreleme (K16/K27, docs/04 §2).
  * Şifreler hash'lenir (PasswordHasher), secret'lar şifrelenir — ikisi karıştırılmaz.
  *
- * **Algoritma (K27):** öncelik libsodium `crypto_secretbox` (XSalsa20-Poly1305); eklenti yoksa
- * OpenSSL AES-256-GCM'e düşülür. İkisi de kimlik doğrulamalı şifrelemedir: kurcalanan veri
- * çözülmez, sessizce bozuk sonuç dönmez.
+ * **Algoritma (K27/K39):** öncelik libsodium `crypto_secretbox` (XSalsa20-Poly1305); eklenti yoksa
+ * OpenSSL AES-256-GCM'e düşülür. İkisi de kimlik doğrulamalı şifrelemedir (AEAD): kurcalanan veri
+ * çözülmez, sessizce bozuk sonuç dönmez. ext-sodium ZORUNLU DEĞİLDİR (K39 — üretim sunucusunda
+ * ea-php84'te yüklenemiyor); ext-openssl zorunludur ve composer platform denetimine dahildir.
  *
  * **Anahtar:** APP_KEY'den HKDF-SHA256 ile sabit bir bilgi etiketi (`info`) kullanılarak türetilir.
  * APP_KEY doğrudan kullanılmaz — aynı ana anahtardan başka amaçlar için (ör. paylaşım token'ı)
@@ -41,15 +42,22 @@ final class Encrypter
 
     private readonly bool $useSodium;
 
+    private readonly bool $sodiumSupported;
+
     /**
-     * @param bool|null $useSodium Yalnızca test için: null → sunucuda ne varsa o kullanılır.
-     *                             Testler yedek yolun (AES-GCM) da çalıştığını bu bayrakla doğrular.
+     * @param bool|null $useSodium       Şifrelemede TERCİH edilen arka uç: null → sodium varsa sodium.
+     *                                   Testler yedek yolun (AES-GCM) da çalıştığını bu bayrakla doğrular.
+     * @param bool|null $sodiumSupported Yalnızca test için (K39): sunucuda sodium'un HİÇ olmadığı
+     *                                   ortam simülasyonu — decrypt tarafı dahil. null → gerçek durum.
      */
     public function __construct(
         private readonly Config $config,
         ?bool $useSodium = null,
+        ?bool $sodiumSupported = null,
     ) {
-        $this->useSodium = $useSodium ?? self::sodiumAvailable();
+        $this->sodiumSupported = $sodiumSupported ?? self::sodiumAvailable();
+        // Tercih ne olursa olsun, desteklenmeyen arka uçla ŞİFRELEME yapılamaz (K39).
+        $this->useSodium = ($useSodium ?? $this->sodiumSupported) && $this->sodiumSupported;
     }
 
     /** Sunucuda libsodium var mı — kurulum denetimi ve raporlama için (K27). */
@@ -102,7 +110,7 @@ final class Encrypter
 
     private function decryptSodium(string $nonce, string $ciphertext): string
     {
-        if (!self::sodiumAvailable()) {
+        if (!$this->sodiumSupported) {
             throw new RuntimeException(
                 'Bu kayıt libsodium ile şifrelenmiş ama sunucuda sodium eklentisi yok. '
                 . 'Eklentiyi etkinleştirin veya 2FA\'yı yeniden kurun.',

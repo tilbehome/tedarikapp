@@ -79,6 +79,7 @@ Sonraki sürümler: sihirbaz YOK — zip yüklenir, admin girişinde "veritaban�
    | Zip'e GİRER | Neden |
    |---|---|
    | `app/` | uygulama kodu |
+   | `bootstrap/` | K40 ön kontrol kapısı (`preflight.php`) — vendor'dan önce koşar; eksik PHP/eklenti/vendor'da çıplak 500 yerine 503 açıklama sayfası |
    | `public/` (**`public/panel/` build çıktısı ve `public/media/.htaccess` dahil**) | docroot; panel derlemesi yoksa `/panel` 503 döner |
    | `vendor/` | sunucuda composer yok — lokalde `composer install --no-dev` ile kurulup taşınır (K8) |
    | `migrations/` | sihirbazın ve güncelleme yolunun migration kaynağı |
@@ -90,9 +91,16 @@ Sonraki sürümler: sihirbaz YOK — zip yüklenir, admin girişinde "veritaban�
 
    Zip'e GİRMEZ: `.env` (sunucuda üretilir/korunur), `.git*`, `frontend/` kaynakları,
    `tests/`, `docs/`, `node_modules/`, geliştirme konfigleri (`phpunit.xml`, `phpstan.neon`, `.php-cs-fixer.php`).
-3. cPanel Dosya Yöneticisi ile yükle → mevcut sürümün üzerine AÇMADAN önce: `app/`'i `app_onceki/` olarak yedekle.
-4. Zip'i aç, migration varsa çalıştır, smoke test (bölüm 6).
-5. GitHub'da release tag'i atılır (`v0.x.0`), CHANGELOG güncellenir.
+3. **Üretim profili doğrulaması (K41):** CI'daki `uretim-profili` job'ı yeşil olmadan release ÇIKARILMAZ — docs/SUNUCU-PROFILI.md manifestine uyum (sodium'suz şifreleme, yazılamaz disk yolları, allow_url_fopen/mail yasağı statik taraması) her PR'da otomatik denetlenir.
+4. cPanel Dosya Yöneticisi ile yükle → mevcut sürümün üzerine AÇMADAN önce: `app/`'i `app_onceki/` olarak yedekle.
+5. Zip'i aç, migration varsa çalıştır, smoke test (bölüm 6).
+6. GitHub'da release tag'i atılır (`v0.x.0`), CHANGELOG güncellenir.
+
+**Hata davranışı (K42):** kurulum ve açılış hataları hiçbir evrede çıplak 500 üretmez:
+- Ön kontrol kapısı (`bootstrap/preflight.php`): PHP sürümü/eklenti/vendor eksikse **503** + madde madde eksik + çözüm; geçince tamamen sessiz.
+- Açılış (bootstrap) hatası: `.env` yoksa tam teşhisli statik sayfa, varsa özet + teknik detay (sır maskeli).
+- Sihirbaz adım hatası: dostane Türkçe mesaj + teknik detay bölümü + **"Tanılama raporunu kopyala"** düğmesi (ortam + eklenti VAR/YOK + hata + işlem günlüğü; sır İÇERMEZ).
+- Kurulu (kilitli) sistemde çalışma zamanı hatası: kullanıcıya zarif genel mesaj + Request-ID; tam detay `app_logs`a yazılır ve aynı Request-ID ile bulunur.
 
 ## 5. Geri Alma
 

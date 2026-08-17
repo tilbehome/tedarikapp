@@ -10,10 +10,12 @@ use App\Controllers\SetupController;
 use App\Middleware\JsonRequest;
 use App\Middleware\RequestId;
 use App\Middleware\SecurityHeaders;
+use App\Middleware\SetupAudit;
 use App\Middleware\SetupCsrf;
 use App\Middleware\SetupGuard;
 use App\Middleware\SetupHttpsGate;
 use App\Setup\EnvWriter;
+use App\Setup\SetupDiagnostics;
 use App\Setup\SetupLock;
 use App\Setup\SetupState;
 use Closure;
@@ -87,6 +89,7 @@ final class SetupAppBuilder
         $app->group('/api/setup', static function (RouteCollectorProxy $group) use ($controller): void {
             $group->get('/state', [$controller, 'state']);
             $group->get('/requirements', [$controller, 'requirements']);
+            $group->get('/diagnostics', [$controller, 'diagnostics']);
             $group->post('/database', [$controller, 'database']);
             $group->post('/env', [$controller, 'env']);
             $group->post('/env/verify', [$controller, 'verifyEnv']);
@@ -105,9 +108,10 @@ final class SetupAppBuilder
         });
 
         $app->addErrorMiddleware(displayErrorDetails: false, logErrors: true, logErrorDetails: true, logger: $logger)
-            ->setDefaultErrorHandler(self::errorHandler($responseFactory, $logger));
+            ->setDefaultErrorHandler(self::errorHandler($responseFactory, $logger, $basePath));
 
-        // En dıştan içe: RequestId → SecurityHeaders → JsonRequest → SetupGuard → rotalar.
+        // En dıştan içe: RequestId → SecurityHeaders → JsonRequest → SetupGuard → Audit → rotalar.
+        $app->add(new SetupAudit($logger)); // K42: adım adı/sonuç/süre günlüğü (kapıyı geçen istekler)
         $app->add(new SetupGuard($lock, $responseFactory, $logger, $clock, $envWriter, $state));
         $app->add(new JsonRequest($responseFactory));
         $app->add(new SecurityHeaders());
@@ -154,9 +158,9 @@ final class SetupAppBuilder
         };
     }
 
-    private static function errorHandler(ResponseFactoryInterface $responseFactory, LoggerInterface $logger): Closure
+    private static function errorHandler(ResponseFactoryInterface $responseFactory, LoggerInterface $logger, string $basePath): Closure
     {
-        return static function (ServerRequestInterface $request, Throwable $exception) use ($responseFactory, $logger): ResponseInterface {
+        return static function (ServerRequestInterface $request, Throwable $exception) use ($responseFactory, $logger, $basePath): ResponseInterface {
             $response = $responseFactory->createResponse();
             if ($exception instanceof HttpNotFoundException) {
                 return Response::error($response, 'NOT_FOUND', 'İstenen kaynak bulunamadı.', 404);
@@ -176,7 +180,22 @@ final class SetupAppBuilder
                 'iz' => $exception->getTraceAsString(),
             ]);
 
-            return Response::error($response, 'SERVER_ERROR', 'Kurulum sırasında beklenmeyen bir hata oluştu.', 500);
+            // K42: kurulum evresinde sır yoktur → teşhis yanıtta taşınır; sihirbaz
+            // bunu teknik detay bölümü + kopyalanabilir rapor olarak gösterir.
+            $diagnostics = new SetupDiagnostics($basePath);
+
+            return Response::error(
+                $response,
+                'SERVER_ERROR',
+                'Kurulum sırasında beklenmeyen bir hata oluştu. Teknik detay aşağıda; '
+                . '"Tanılama raporunu kopyala" ile destek için hazır rapor alabilirsiniz.',
+                500,
+                [],
+                ['diagnostics' => [
+                    'environment' => $diagnostics->environment(),
+                    'failure' => $diagnostics->failure($request->getUri()->getPath(), $exception),
+                ]],
+            );
         };
     }
 }

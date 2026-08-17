@@ -22,6 +22,7 @@
 - **405 (K25):** desteklenmeyen metot gerçek **HTTP 405** döner; `error.code = METHOD_NOT_ALLOWED` ve yanıtta izin verilen metodları listeleyen `Allow` başlığı bulunur. (İE#3'teki 422 `VALIDATION` eşlemesi kaldırılmıştır.)
 - **Makine değerleri İngilizcedir (K22):** durum/görünürlük alanları API'de ve DB'de sabit İngilizce kodlar taşır (`draft`, `sent`, `to_order`, `active` …). Türkçe karşılıklar yalnızca arayüz etiketidir — çeviri tablosu docs/09 §6.
 - **Her yanıtta `X-Request-Id`** başlığı döner (K27); hata bildirirken bu değer istenir, loglarla eşleştirilir.
+- **500 davranışı (K42):** kurulum kilidi YOKKEN (sistemde üretim sırrı yok) beklenmeyen hata yanıtı `meta.diagnostics` (ortam + redaksiyonlu hata detayı) taşır; kilit VARKEN yanıt geneldir ve `meta.request_id` + mesajda destek kodu döner, tam detay `app_logs`a yazılır.
 - **Sayfalama (Faz 4 notu — İE#9 F13):** Faz 1'de liste/ürün uçları sayfalama YAPMAZ (tek kullanıcılı sistemde veri hacmi düşük); yalnızca `GET /api/activity` sayfalıdır (`page`, `per_page` — varsayılan 25, üst sınır 100, yanıtta `meta: {page, per_page, total}`). Genel sayfalama Faz 4'te değerlendirilecektir.
 - **Sıralama/filtre:** uca özel filtreler (aşağıda). Sıralama sabittir (listeler `created_at DESC`, ürünler `sort_no`); `?sort=` parametresi Faz 1'de yoktur. Bilinmeyen sorgu parametreleri yok sayılır; tanımlı bir filtrenin geçersiz DEĞERİ 422 döner.
 
@@ -130,6 +131,7 @@
 | Uç | Açıklama |
 |---|---|
 | `GET /api/setup/state` | `{step, steps[], csrf_token, env_exists}` — sihirbaz açılışı |
+| `GET /api/setup/diagnostics` | K42 — ortam özeti: `{app_version, php_version, sapi, os, extensions{ad: VAR\|YOK}, mysql_version, timestamp}`. "Tanılama raporunu kopyala" düğmesinin kaynağı; SIR İÇERMEZ. Adım hatalarında aynı biçim + `failure{step, exception, message, location, trace[]}` yanıtın `meta.diagnostics` alanında döner |
 | `GET /api/setup/requirements` | `{ok, php, extensions[], writable[], https, warnings[]}`. ZORUNLU (ok'u düşürür): PHP ≥ 8.4, zorunlu eklentiler, production'da HTTPS. Yazılabilirlik (`storage/`, `public/media/`) ZORUNLU DEĞİLDİR (K37 §D10): yazılamıyorsa hotlink + DB-log moduyla devam edilir, uyarı kartı gösterilir. Eksikler isim isim ve çözüm önerisiyle |
 | `POST /api/setup/database` | `{host, port?, name, user, pass}` → 200 `{version, charset}`; `SELECT VERSION()` sonucu döner, utf8mb4 değilse 422 |
 | `POST /api/setup/env` | `{app_url?}` → `.env` üretir (APP_KEY ve EXTENSION_TOKEN_SALT kriptografik, dosya izni 0600); `.env` zaten varsa 422 (K37 §A2 — üzerine yazılmaz) |
