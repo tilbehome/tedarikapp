@@ -30,23 +30,26 @@ final class RequirementChecker
     ) {
     }
 
-    /** Uygulamanın çalışması için zorunlu eklentiler (docs/04 §7 + K19 paketlerinin ihtiyaçları). */
+    /**
+     * Uygulamanın çalışması için ZORUNLU eklentiler — yalnız kodun BUGÜN gerçekten
+     * kullandıkları (K45; canlı vaka: kullanılmayan intl şartı kurulumu bloklamıştı).
+     */
     private const REQUIRED_EXTENSIONS = [
         'pdo_mysql' => 'Veritabanı bağlantısı (MySQL) bu eklenti olmadan kurulamaz.',
         'curl' => 'Dış istekler yalnızca cURL ile yapılır (K8): 1688 görsellerinin indirilmesi buna bağlı.',
-        'gd' => 'Ürün görsellerinin yeniden boyutlandırılması ve Excel içine gömülmesi GD ile yapılır.',
+        'gd' => 'Ürün görsellerinin yeniden boyutlandırılması GD ile yapılır.',
         'mbstring' => 'Çince başlıklar ve Türkçe karakterler için çok baytlı dize işlemleri.',
-        'zip' => 'Excel (xlsx) çıktısı üretimi zip gerektirir.',
-        'intl' => 'Tarih/sayı biçimleme.',
+        'zip' => 'Release bütünlüğü ve Excel (xlsx) çıktısı zip gerektirir.',
         'bcmath' => 'Para hesapları float ile YAPILMAZ (K14/K24); bcmath zorunludur.',
-        'fileinfo' => 'İndirilen dosyaların gerçek türünün doğrulanması (SSRF/MIME koruması).',
         'openssl' => 'HTTPS istekleri ve TOTP secret şifrelemesi.',
     ];
 
-    /** Zorunlu değil ama varsa tercih edilenler — kurulum BLOKLANMAZ (K39). */
+    /** Zorunlu değil ama varsa tercih edilenler — kurulum BLOKLANMAZ (K39/K45). */
     private const OPTIONAL_EXTENSIONS = [
         'sodium' => 'TOTP secret şifrelemesinde tercih edilen arka uç. Yok: OpenSSL AES-256-GCM kullanılacak '
             . '(eşdeğer güvenlikte AEAD — K27/K39); kurulum bloklanmaz.',
+        'intl' => 'İleri tarih/sayı biçimleme (Faz 2 rezervi) — bugünkü kod kullanmıyor.',
+        'fileinfo' => 'Ek MIME doğrulaması (Faz 2 rezervi) — bugünkü kod GD ile doğruluyor.',
     ];
 
     /**

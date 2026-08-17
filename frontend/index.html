@@ -8,6 +8,14 @@
     <!-- Panel oturum arkasındadır; arama motorlarına açılmaz. -->
     <meta name="robots" content="noindex, nofollow" />
     <title>tedarikapp</title>
+    <!-- K45 canlı vaka: /public/panel gibi yanlış adres statik açılınca SPA rotası
+         tutmuyor ve sayfa BOŞ kalıyordu. Sayfa kendini doğru adrese taşır.
+         (Normal /panel servis yolunda CSP bu satırı zaten çalıştırmaz; gerek de yok.) -->
+    <script>
+      if (location.pathname.indexOf('/public/') === 0) {
+        location.replace(location.pathname.slice('/public'.length) + location.search + location.hash);
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -77,7 +77,7 @@ function tedarikapp_on_kontrol($basePath)
             . 'cPanel > MultiPHP Manager ile ea-php82 veya ustunu secin.';
     }
 
-    $zorunlu = array('pdo_mysql', 'curl', 'gd', 'mbstring', 'zip', 'intl', 'bcmath', 'fileinfo', 'openssl');
+    $zorunlu = array('pdo_mysql', 'curl', 'gd', 'mbstring', 'zip', 'bcmath', 'openssl');
     foreach ($zorunlu as $eklenti) {
         if (!extension_loaded($eklenti)) {
             $sorunlar[] = 'PHP eklentisi eksik: ' . $eklenti . '. '

@@ -39,7 +39,8 @@
     },
     "config": {
         "sort-packages": true,
-        "optimize-autoloader": true
+        "optimize-autoloader": true,
+        "platform-check": false
     },
     "scripts": {
         "test": "phpunit",
