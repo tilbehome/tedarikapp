@@ -1,16 +1,19 @@
 # tedarikapp — Yol Haritası
 
-> Durum: v1.0 — ONAYLANDI (16.08.2026)
+> Durum: v1.1 — İE#9 güncellemesi (17.08.2026): Faz 0 TAMAMLANDI; Faz 1 geliştirmesi
+> İE#3–İE#8 ile bitti, **kapanış İE#9 sağlamlaştırma sprintinin kabulüne bağlı**
+> (İE#9 kabulü = üretim kurulumunun ÖN ŞARTI).
 > Her faz, bir önceki bitip ONAYLANMADAN başlamaz. Her fazın sonunda çalışan, test edilmiş bir teslimat vardır.
 
-## Faz 0 — Proje Tanımı ve İstişare (şu an)
+## Faz 0 — Proje Tanımı ve İstişare ✅ (tamamlandı — 16.08.2026)
 
 **Teslimat:** Belge seti (docs/00–10 + kökte README, CLAUDE.md, CHANGELOG.md), repo'da yayında.
 **Kabul kriteri:** Bünyamin tüm belgeleri okuyup onaylar; açık sorular kapanır.
 
-## Faz 1 — Panel Çekirdeği
+## Faz 1 — Panel Çekirdeği 🔄 (geliştirme bitti; kapanış = İE#9 kabulü)
 
 **Kapsam:** M1 (giriş, ayarlar, kur, kategoriler) + M2 (sipariş listeleri) + M3 (elle ürün ekleme, arama/filtre, toplu işlem) + M5 (durum takibi).
+**Gerçekleşme:** İE#3 çekirdek · İE#4 auth+2FA · İE#5 kurulum sihirbazı · İE#6 veri katmanı · İE#7 K33 sunucu uyumu · İE#8 React paneli · **İE#9 sağlamlaştırma (K37) — kapanış sprinti**.
 **Teslimat:** Kurulum sihirbazıyla hosting'e kurulmuş, 2FA'lı girişi yapılan, örnek Excel'deki listenin sıfırdan oluşturulabildiği panel.
 **Kabul kriterleri:**
 - Kurulum sihirbazı temiz sunucuda uçtan uca çalışıyor ve bitince kendini kilitliyor; giriş şifre + 2FA ile yapılıyor.

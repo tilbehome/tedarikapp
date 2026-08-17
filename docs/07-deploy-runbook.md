@@ -33,7 +33,7 @@ Not: cPanel'de subdomain kökü `public/` klasörüne çekilemiyorsa, kök `.hta
 
 1. cPanel → MySQL: veritabanı + kullanıcı oluştur, yetki ver (sihirbaz DB oluşturamaz, cPanel yetkisi ister — tek elle yapılan adım budur).
 2. Release zip'ini yükle ve aç, tarayıcıdan siteye gir → **kurulum sihirbazı** otomatik açılır:
-   - Gereksinim denetimi: PHP sürümü/eklentileri, `public/media/` ve `storage/` yazma izinleri (yazılamıyorsa hangi klasöre hangi iznin verileceğini ekranda söyler).
+   - Gereksinim denetimi: PHP sürümü/eklentileri, production'da HTTPS (zorunlu — K37 §A3), `public/media/` ve `storage/` yazma izinleri. Yazılamayan klasör kurulumu BLOKLAMAZ (K37 §D10): sihirbaz hotlink + DB-log moduyla devam eder ve hangi klasöre hangi iznin verileceğini ekranda söyler.
    - DB bilgilerini sorar, bağlantıyı test eder, `.env`'i kendisi yazar (APP_KEY ve token tuzunu kriptografik üretir).
    - Migration'ları çalıştırır, admin hesabını oluşturtur, **2FA'yı QR kodla tanımlatır** ve kurtarma kodlarını gösterir.
    - Bitince kendini **kalıcı olarak kilitler** (kilit `settings` tablosunda; tekrar erişim denemeleri loglanır).
@@ -73,7 +73,23 @@ Sonraki sürümler: sihirbaz YOK — zip yüklenir, admin girişinde "veritaban�
    npm run build      # tsc --noEmit + vite build → ../public/panel/
    ```
    Çıktı `public/panel/` altına düşer ve **repoya commit EDİLMEZ** (`.gitignore`). Sürüm zip'i bu klasörü içermek ZORUNDADIR; yoksa `/panel` adresi "Panel henüz derlenmemiş" sayfasını (503) gösterir.
-2. Release zip'i oluştur: `app/ public/ (public/panel dahil) vendor/ migrations/` (+ varsa yeni `.env.example` farkı NOT edilir).
+2. Release zip'i oluştur (İE#9 §F15 — "zip'ten kurulabilirlik" tanımı: temiz bir sunucuda
+   zip → aç → sihirbaz → panel açılır; eksik klasör = kurulamayan sürüm):
+
+   | Zip'e GİRER | Neden |
+   |---|---|
+   | `app/` | uygulama kodu |
+   | `public/` (**`public/panel/` build çıktısı ve `public/media/.htaccess` dahil**) | docroot; panel derlemesi yoksa `/panel` 503 döner |
+   | `vendor/` | sunucuda composer yok — lokalde `composer install --no-dev` ile kurulup taşınır (K8) |
+   | `migrations/` | sihirbazın ve güncelleme yolunun migration kaynağı |
+   | `setup/` | kurulum sihirbazının HTML/JS/CSS'i — olmadan sihirbaz açılamaz |
+   | `bin/` | `migrate.php`, `purge-trash.php` (housekeeping cron), `user-create.php` |
+   | `.env.example` | sihirbazın `.env` ŞABLONU — olmadan env adımı çalışmaz |
+   | `.htaccess` + `public/.htaccess` | yönlendirme ve koruma kuralları |
+   | `storage/` (boş iskelet) | loglar/kilit için; yazılamıyorsa K33 DB modu devreye girer |
+
+   Zip'e GİRMEZ: `.env` (sunucuda üretilir/korunur), `.git*`, `frontend/` kaynakları,
+   `tests/`, `docs/`, `node_modules/`, geliştirme konfigleri (`phpunit.xml`, `phpstan.neon`, `.php-cs-fixer.php`).
 3. cPanel Dosya Yöneticisi ile yükle → mevcut sürümün üzerine AÇMADAN önce: `app/`'i `app_onceki/` olarak yedekle.
 4. Zip'i aç, migration varsa çalıştır, smoke test (bölüm 6).
 5. GitHub'da release tag'i atılır (`v0.x.0`), CHANGELOG güncellenir.

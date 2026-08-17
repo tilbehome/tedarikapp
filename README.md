@@ -6,9 +6,9 @@
 
 Panel Web Uygulaması · Chrome Eklentisi · Excel/PDF/HTML Çıktı Motoru
 
-`PHP 8.4` · `Slim 4` · `MySQL` · `React 18 + Vite` · `Manifest V3`
+Teknoloji taban çizgisi: [docs/TECH-BASELINE.md](docs/TECH-BASELINE.md) (PHP · Slim · MySQL · React · Vite · MV3)
 
-🌐 Üretim: `tedarikapp.tilbehometoptan.com` · 🔒 Private · 📋 Durum: **Faz 0 — İş Emri #1 sahada**
+🌐 Üretim: `tedarikapp.tilbehometoptan.com` · 🔒 Private · 📋 Durum: **Faz 1 kapanışı — İE#9 sağlamlaştırma sprinti (üretim kurulumunun ön şartı)**
 
 </div>
 
@@ -79,7 +79,7 @@ Sunucu ortamı gerçek raporla doğrulanmıştır (bkz. docs/04 §7): tüm dış
 | Faz | Kapsam | Teslimat | Sürüm |
 |---|---|---|---|
 | ✅ **Faz 0** | Belgeler, kararlar (K1–K17), repo iskeleti | 14 dosyalık belge seti · İş Emri #1 | — |
-| 🔜 **Faz 1** | Panel çekirdeği: kurulum sihirbazı, 2FA giriş, listeler, elle ürün, durum takibi | Hosting'de çalışan panel | `v0.1.0` |
+| 🔄 **Faz 1** | Panel çekirdeği: kurulum sihirbazı, 2FA giriş, listeler, elle ürün, durum takibi (İE#3–İE#8 tamam) — **kapanış: İE#9 sağlamlaştırma** | Hosting'de çalışan panel | `v0.1.0` |
 | ⏳ **Faz 2** | Excel/PDF/CSV export + paylaşım linki | Firmaya gerçek sipariş iletimi | `v0.2.0` |
 | ⏳ **Faz 3** | Chrome eklentisi + Gelen Kutusu | Tek tıkla ürün yakalama | `v0.3.0` |
 | ⏳ **Faz 4** | İstatistik, arşiv derinleştirme, opsiyonel oto-kur, cila | Üretim sürümü | `v1.0.0` |
@@ -92,6 +92,7 @@ Ayrıntılar ve kabul kriterleri: [docs/05-yol-haritasi.md](docs/05-yol-haritasi
 |---|---|
 | [CLAUDE.md](CLAUDE.md) | 🤖 **Geliştirme anayasası** — Claude Code için bağlayıcı kurallar (stack sınırları, para/durum kuralları, veri sözleşmeleri) |
 | [CHANGELOG.md](CHANGELOG.md) | 🕘 Sürüm geçmişi (SemVer) |
+| [docs/TECH-BASELINE.md](docs/TECH-BASELINE.md) | 🧱 **Teknoloji taban çizgisi** — sürümlerin TEK gerçek kaynağı (PHP/Slim/MySQL/React/Vite/Node/MV3/PHPUnit/PHPStan) |
 | [docs/00-calisma-protokolu.md](docs/00-calisma-protokolu.md) | 👥 Roller (PM/Ürün Sahibi/Geliştirici), iş emri döngüsü, GitHub süreci |
 | [docs/01-vizyon-omurga.md](docs/01-vizyon-omurga.md) | 🎯 Amaç, kullanıcılar, sistem omurgası, ilkeler |
 | [docs/02-moduller-kapsam.md](docs/02-moduller-kapsam.md) | 🧩 M1–M8 modül dökümü + Excel çıktı şablonu |

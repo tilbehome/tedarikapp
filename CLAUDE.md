@@ -8,7 +8,7 @@ Bu dosya Claude Code için bağlayıcıdır. Her oturumda geçerlidir, iş emirl
 - Belgelerle çelişki görürsen: belge kazanır; çelişkiyi raporla, kafana göre çözme.
 
 ## 2. Teknoloji Sınırları (değiştirilemez — karar K5/K13)
-- Backend: PHP 8.4 + Slim 4 + MySQL (PDO). Frontend: React 18 + Vite. Eklenti: vanilla JS, Manifest V3.
+- Backend: PHP + Slim + MySQL (PDO). Frontend: React + Vite. Eklenti: vanilla JS, Manifest V3. Sürümlerin TEK gerçek kaynağı: `docs/TECH-BASELINE.md` (İE#9 §F14) — belgelere sürüm numarası yazma, oraya referans ver.
 - YASAK: Python/FastAPI, PostgreSQL, Redis, Docker, Node backend, framework değişikliği.
 - Yeni composer/npm paketi eklemeden önce ÇIKTI RAPORU'nda gerekçesiyle bildir; büyük bağımlılıklar PM onayı ister.
 - Sunucu kısıtları (docs/04 bölüm 7): dış istek SADECE cURL (`file_get_contents` ile URL açmak YASAK), `exec/system/proc_open` YASAK, `mail()` YASAK, yazma sadece `storage/` altına, vendor lokalde kurulur.
