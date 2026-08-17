@@ -89,7 +89,9 @@ final class AppBuilder
         $services = new AuthServices(
             $config,
             $connection,
-            $session ?? NativeSession::fromConfig($config),
+            // K44 disksiz mod: gerçek dağıtımda oturum DAİMA DB'de (sessions tablosu) —
+            // save_path'e güvenilmez. Testler kendi oturumunu enjekte eder.
+            $session ?? NativeSession::fromConfig($config, new \App\Auth\DbSessionHandler($connection)),
             $clock ?? SystemClock::fromConfig($config),
             $logger,
             $requestContext,

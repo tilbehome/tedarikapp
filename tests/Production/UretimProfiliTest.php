@@ -71,6 +71,64 @@ final class UretimProfiliTest extends AuthTestCase
         self::assertSame([], $violations, 'URL alan file_get_contents/fopen YASAK — cURL kullanın (K8/K41).');
     }
 
+    public function testSessionStartYalnizNativeSessionda(): void
+    {
+        // K44: native session TEK kapıdan geçer (NativeSession + DbSessionHandler).
+        // Başka yerde session_start = save_path'e (DİSKE) gizli bağımlılık riski.
+        $violations = [];
+        foreach ($this->runtimePhpFiles() as $file) {
+            if (str_ends_with(str_replace('\\', '/', $file), 'app/Auth/NativeSession.php')) {
+                continue;
+            }
+            if (preg_match('/\bsession_start\s*\(/', (string) file_get_contents($file)) === 1) {
+                $violations[] = $file;
+            }
+        }
+
+        self::assertSame([], $violations, 'session_start yalnız NativeSession içinde olabilir (K44).');
+    }
+
+    public function testDiskYazimiYalnizIzinliDosyalarda(): void
+    {
+        // K44 disksiz mod: public/media DIŞINA yazan kod yalnız izinli dosyalarda olabilir.
+        // İzin gerekçeleri — ConfigWriter/EnvWriter: kök YAZILABİLİRSE kolaylık (manuel akış
+        // asıl yol); MediaService: public/media; Logger: file sürücüsü (yalnız geliştirme;
+        // üretimde K44 zorlaması db); RequirementChecker: yazılabilirlik PROBU (@mkdir).
+        $allowed = [
+            'app/Setup/ConfigWriter.php',
+            'app/Setup/EnvWriter.php',
+            'app/Services/MediaService.php',
+            'app/Core/Logger.php',
+            'app/Setup/RequirementChecker.php',
+        ];
+        $pattern = '/(?<![>\w$:])(?<!function )(file_put_contents|fwrite|mkdir|tempnam|touch)\s*\(|(?<![>\w$:])fopen\s*\([^)]*,\s*[\'"][waxc]/';
+
+        $violations = [];
+        foreach ($this->runtimePhpFiles() as $file) {
+            $normalized = str_replace('\\', '/', $file);
+            // bin/ CLI araçları (release zip'i, purge, user-create) web çalışma zamanı değildir.
+            if (str_contains($normalized, '/bin/')) {
+                continue;
+            }
+            $isAllowed = false;
+            foreach ($allowed as $allowedFile) {
+                if (str_ends_with($normalized, $allowedFile)) {
+                    $isAllowed = true;
+
+                    break;
+                }
+            }
+            if ($isAllowed) {
+                continue;
+            }
+            if (preg_match($pattern, (string) file_get_contents($file)) === 1) {
+                $violations[] = $normalized;
+            }
+        }
+
+        self::assertSame([], $violations, 'İzinsiz disk yazımı (K44 disksiz mod) — public/media dışına yazılamaz.');
+    }
+
     public function testYasakliFonksiyonCagrisiYok(): void
     {
         // mail() KAPALI; exec/system/proc_open YASAK (docs/04 §7, SUNUCU-PROFILI).

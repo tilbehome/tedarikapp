@@ -20,8 +20,8 @@ use App\Services\ActivityLog;
 use App\Services\CurlMediaFetcher;
 use App\Services\MediaService;
 use App\Services\UrlGuard;
+use App\Setup\ConfigWriter;
 use App\Setup\DatabaseProbe;
-use App\Setup\EnvWriter;
 use App\Setup\QrCodeSvg;
 use App\Setup\RequirementChecker;
 use App\Setup\SetupDiagnostics;
@@ -57,14 +57,14 @@ final class SetupController
         private readonly SetupState $state,
         private readonly SetupLock $lock,
         private readonly Clock $clock,
-        private readonly ?EnvWriter $envWriter = null,
+        private readonly ?ConfigWriter $configWriter = null,
         private readonly string $appEnv = 'production',
     ) {
     }
 
-    private function envWriter(): EnvWriter
+    private function configWriter(): ConfigWriter
     {
-        return $this->envWriter ?? new EnvWriter($this->basePath);
+        return $this->configWriter ?? new ConfigWriter($this->basePath);
     }
 
     /**
@@ -91,10 +91,10 @@ final class SetupController
         ];
     }
 
-    /** `.env` henüz yokken bağlantı KURULMAYA ÇALIŞILMAZ — teşhis üretimi hata üretemez. */
+    /** Yapılandırma yokken bağlantı KURULMAYA ÇALIŞILMAZ — teşhis üretimi hata üretemez. */
     private function connectionIfConfigured(): ?Connection
     {
-        if (!$this->envWriter()->exists()) {
+        if (!$this->configWriter()->configured()) {
             return null;
         }
 
@@ -112,7 +112,7 @@ final class SetupController
             'step' => $this->state->currentStep(),
             'steps' => SetupState::ORDER,
             'csrf_token' => $this->state->csrfToken(),
-            'env_exists' => $this->envWriter()->exists(),
+            'env_exists' => $this->configWriter()->configured(), // K44: config.php VEYA legacy .env
         ]);
     }
 
@@ -183,7 +183,7 @@ final class SetupController
         ]);
     }
 
-    /** POST /api/setup/env — .env üretimi (APP_KEY ve token tuzu kriptografik). */
+    /** POST /api/setup/env — config.php üretimi (K44, WordPress modeli; APP_KEY kriptografik). */
     public function env(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
         if (!$this->state->canRun(SetupState::STEP_ENV)) {
@@ -196,11 +196,11 @@ final class SetupController
             return $this->outOfOrder($response, 'Veritabanı bilgileri oturumda bulunamadı; adımı tekrarlayın.');
         }
 
-        // K37 §A2: mevcut .env'in üzerine HTTP akışından ASLA yazılmaz/yeniden üretilmez.
-        if ($this->envWriter()->exists()) {
+        // K37 §A2: mevcut yapılandırmanın üzerine HTTP akışından ASLA yazılmaz.
+        if ($this->configWriter()->configured()) {
             return Response::error($response, 'VALIDATION', 'Doğrulama hatası', 422, [
-                'env' => '.env dosyası sunucuda zaten var; sihirbaz üzerine yazmaz (K37). '
-                    . 'Bu dosyayı siz kaydettiyseniz doğrulama adımıyla devam edin; '
+                'env' => 'Yapılandırma dosyası (config.php veya .env) sunucuda zaten var; sihirbaz '
+                    . 'üzerine yazmaz (K37). Dosyayı siz kaydettiyseniz doğrulama adımıyla devam edin; '
                     . 'yeniden üretmek için dosyayı sunucudan elle silin.',
             ]);
         }
@@ -215,44 +215,40 @@ final class SetupController
             ]);
         }
 
-        $writer = $this->envWriter();
+        $writer = $this->configWriter();
         $appUrl = rtrim($appUrl, '/');
+        // APP_URL config.php'ye GİRMEZ (K44: dosyada yalnız DB + APP_KEY) —
+        // finish adımında settings tablosuna yazılır.
+        $this->state->put(self::DATA_APP_URL, $appUrl);
 
-        // K33: paylaşımlı sunucuda PHP `nobody` ile çalışır ve uygulama kökü YAZILAMAZ.
-        // Bu durumda içerik ekranda gösterilir; kullanıcı Dosya Yöneticisi'nden kaydeder.
+        // K33/K44: üretim sunucusunda kök YAZILAMAZ — WordPress wp-config.php modeli:
+        // içerik ekranda gösterilir, kullanıcı File Manager ile config.php olarak kaydeder.
         if (!$writer->canWrite()) {
-            try {
-                $generated = $writer->generate($appUrl, $database);
-            } catch (RuntimeException $e) {
-                return Response::error($response, 'SERVER_ERROR', $e->getMessage(), 500);
-            }
+            $generated = $writer->generate($database);
 
-            // Beklenen APP_KEY oturumda tutulur: doğrulama adımı dosyanın BİZİM
-            // ürettiğimiz içerik olduğunu bununla anlar.
             $this->state->put(self::DATA_ENV_KEY, $generated['app_key']);
-            $this->state->put(self::DATA_APP_URL, $appUrl);
 
             return Response::success($response, [
                 'manual' => true,
                 'app_url' => $appUrl,
-                'filename' => '.env',
-                'target_path' => $this->basePath . '/.env',
+                'filename' => 'config.php',
+                'target_path' => $this->basePath . '/config.php',
                 'content' => $generated['content'],
-                'instructions' => 'Uygulama klasörü yazılabilir olmadığı için .env dosyasını sihirbaz '
-                    . 'oluşturamadı. Yukarıdaki içeriği kopyalayın, cPanel > Dosya Yöneticisi ile '
-                    . 'uygulama kökünde ".env" adıyla kaydedin, sonra "Kaydettim" deyin.',
+                'instructions' => 'Uygulama klasörü yazılabilir olmadığı için config.php dosyasını sihirbaz '
+                    . 'oluşturamadı (WordPress kurulumundaki wp-config.php adımının aynısı). Yukarıdaki '
+                    . 'içeriği kopyalayın, cPanel > File Manager ile uygulama kökünde "config.php" adıyla '
+                    . 'kaydedin, sonra "Kaydettim, doğrula" deyin.',
                 'step' => $this->state->currentStep(),
             ]);
         }
 
         try {
-            $appKey = $writer->write($appUrl, $database);
+            $appKey = $writer->write($database);
         } catch (RuntimeException $e) {
             return Response::error($response, 'SERVER_ERROR', $e->getMessage(), 500);
         }
 
         $this->state->put(self::DATA_ENV_KEY, $appKey);
-        $this->state->put(self::DATA_APP_URL, $appUrl);
         $this->state->complete(SetupState::STEP_ENV);
 
         return Response::success($response, [
@@ -262,7 +258,7 @@ final class SetupController
         ]);
     }
 
-    /** POST /api/setup/env/verify — elle kaydedilen .env doğrulanır (K33). */
+    /** POST /api/setup/env/verify — elle kaydedilen config.php doğrulanır (K33/K44). */
     public function verifyEnv(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
         if (!$this->state->canRun(SetupState::STEP_ENV)) {
@@ -274,16 +270,16 @@ final class SetupController
             return $this->outOfOrder($response, 'Önce ayar dosyasını üretin.');
         }
 
-        $writer = $this->envWriter();
+        $writer = $this->configWriter();
         if (!$writer->exists()) {
             return Response::error($response, 'VALIDATION', 'Doğrulama hatası', 422, [
-                'env' => '.env dosyası bulunamadı. Dosyayı uygulama kökünde ".env" adıyla '
-                    . 'kaydettiğinizden emin olun (adın başındaki nokta dahil).',
+                'env' => 'config.php dosyası bulunamadı. Dosyayı uygulama kökünde "config.php" adıyla '
+                    . 'kaydettiğinizden emin olun.',
             ]);
         }
         if (!$writer->verify($expected)) {
             return Response::error($response, 'VALIDATION', 'Doğrulama hatası', 422, [
-                'env' => '.env bulundu ama içeriği beklenenle uyuşmuyor. İçeriğin tamamını '
+                'env' => 'config.php bulundu ama içeriği beklenenle uyuşmuyor. İçeriğin tamamını '
                     . 'eksiksiz kopyaladığınızdan emin olup tekrar deneyin.',
             ]);
         }
@@ -446,6 +442,10 @@ final class SetupController
         $database = $this->state->get(self::DATA_DB);
         $version = is_array($database) ? ($this->probeVersion()) : null;
 
+        // K44 disksiz mod: config.php yalnız DB+APP_KEY taşır — kalan uygulama ayarları
+        // (APP_URL, LOG_DRIVER, TZ) settings tablosuna yazılır; Config bunları DB'den okur.
+        $this->rememberAppSettings();
+
         // K33: medya modu kurulum anında ölçülür ve ayara yazılır — panel rozeti bunu okur.
         $mediaMode = $this->rememberMediaMode();
 
@@ -518,6 +518,22 @@ final class SetupController
         }
 
         return $report;
+    }
+
+    /** K44: dosyada tutulmayan uygulama ayarlarını settings tablosuna yazar. */
+    private function rememberAppSettings(): void
+    {
+        try {
+            $settings = new SettingsRepository($this->connection());
+            $appUrl = $this->state->get(self::DATA_APP_URL);
+            if (is_string($appUrl) && $appUrl !== '') {
+                $settings->set('APP_URL', $appUrl);
+            }
+            $settings->set('LOG_DRIVER', 'db'); // K33/K44: üretimde log daima DB
+            $settings->set('TZ', 'Europe/Istanbul');
+        } catch (Throwable) {
+            // Ayar yazılamazsa kurulum durmaz; Config dosya/varsayılanla çalışır.
+        }
     }
 
     /**

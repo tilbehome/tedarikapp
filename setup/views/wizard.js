@@ -352,13 +352,46 @@
       busy(button, true, 'Yazılıyor…');
       api('POST', '/api/setup/env', { app_url: form.app_url.value.trim() }).then(function (data) {
         showFieldErrors(form, {});
+        if (data.manual) {
+          // K44: kök yazılamıyor — WordPress wp-config.php modeli: içerik ekranda,
+          // kullanıcı File Manager ile config.php olarak kaydeder, sonra doğrular.
+          $('manual-instructions').textContent = data.instructions;
+          $('config-content').textContent = data.content;
+          $('manual-box').hidden = false;
+          alertBox('warn', 'Klasör yazılabilir değil: içeriği kopyalayıp "' + data.filename + '" olarak kaydedin, sonra doğrulayın.');
+          return;
+        }
         replaceContent($('env-result'), definitions([
           ['Panel adresi', data.app_url],
-          ['Güvenlik anahtarları', 'üretildi ve .env dosyasına yazıldı']
+          ['Güvenlik anahtarı', 'üretildi ve config.php dosyasına yazıldı']
         ]));
         showStep('migrate');
       }).catch(function (error) {
         showFieldErrors(form, error.fields);
+        failBox(error);
+      }).finally(function () { busy(button, false); });
+    });
+
+    $('config-copy').addEventListener('click', function () {
+      var content = $('config-content').textContent;
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(content).then(function () {
+          alertBox('ok', 'config.php içeriği panoya kopyalandı. File Manager ile uygulama köküne kaydedin.');
+        });
+      } else {
+        alertBox('warn', 'Tarayıcı kopyalamaya izin vermedi; içeriği elle seçip kopyalayın.');
+      }
+    });
+
+    $('config-verify').addEventListener('click', function (event) {
+      clearAlert();
+      var button = event.target;
+      busy(button, true, 'Doğrulanıyor…');
+      api('POST', '/api/setup/env/verify', {}).then(function () {
+        alertBox('ok', 'config.php doğrulandı.');
+        $('manual-box').hidden = true;
+        showStep('migrate');
+      }).catch(function (error) {
         failBox(error);
       }).finally(function () { busy(button, false); });
     });

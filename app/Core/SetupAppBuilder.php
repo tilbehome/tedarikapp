@@ -4,17 +4,18 @@ declare(strict_types=1);
 
 namespace App\Core;
 
-use App\Auth\NativeSession;
 use App\Auth\SessionInterface;
 use App\Controllers\SetupController;
 use App\Middleware\JsonRequest;
 use App\Middleware\RequestId;
 use App\Middleware\SecurityHeaders;
 use App\Middleware\SetupAudit;
+use App\Middleware\SetupCookieSession;
 use App\Middleware\SetupCsrf;
 use App\Middleware\SetupGuard;
 use App\Middleware\SetupHttpsGate;
-use App\Setup\EnvWriter;
+use App\Setup\ConfigWriter;
+use App\Setup\CookieSession;
 use App\Setup\SetupDiagnostics;
 use App\Setup\SetupLock;
 use App\Setup\SetupState;
@@ -53,21 +54,21 @@ final class SetupAppBuilder
         ?Clock $clock = null,
         ?RequestContext $requestContext = null,
         ?SetupLock $setupLock = null,
-        ?EnvWriter $envWriter = null,
+        ?ConfigWriter $configWriter = null,
         ?string $appEnv = null,
     ): App {
         $requestContext ??= new RequestContext();
         $clock ??= new SystemClock(new \DateTimeZone('Europe/Istanbul'));
-        $envWriter ??= new EnvWriter($basePath);
-        // `.env` henüz yokken Config kurulamaz; sunucu ortam değişkeni varsa o okunur.
+        $configWriter ??= new ConfigWriter($basePath);
+        // config henüz yokken APP_ENV yalnız sunucu ortamından okunabilir.
         // Hiçbiri yoksa GÜVENLİ varsayılan production'dur (K37 §A3 — fail-safe).
         $appEnv ??= self::detectAppEnv();
 
-        // K33: kilit veritabanındadır. K37: bağlantı yalnızca `.env` VARSA verilir —
-        // varken okunamayan kilit "kilitli" sayılır (fail-closed), yokken kurulum
-        // yapılmamış demektir ve dosya denetimi yeterlidir.
+        // K33: kilit veritabanındadır. K37: bağlantı yalnızca sistem YAPILANDIRILMIŞSA
+        // (config.php veya legacy .env) verilir — varken okunamayan kilit "kilitli"
+        // sayılır (fail-closed), yokken kurulum yapılmamış demektir.
         $lock = $setupLock ?? new SetupLock(
-            $envWriter->exists()
+            $configWriter->configured()
                 ? Connection::fromCallable(static fn (): \PDO => Database::connect(Config::load($basePath)))
                 : null,
             $basePath . '/storage',
@@ -78,8 +79,17 @@ final class SetupAppBuilder
         $app->addRoutingMiddleware();
 
         $responseFactory = $app->getResponseFactory();
-        $state = new SetupState($session ?? NativeSession::forSetup(secure: self::serverIsHttps()));
-        $controller = new SetupController($basePath, $state, $lock, $clock, $envWriter, $appEnv);
+
+        // K44 DİSKSİZ OTURUM: sihirbaz state'i artık native session'da DEĞİL (üretimde
+        // save_path yazılamıyor → state her istekte sıfırlanıyordu — kanıtlı kök neden).
+        // State şifreli+doğrulamalı ÇEREZDE taşınır; diske ve DB'ye ihtiyaç yoktur.
+        $cookieSession = null;
+        if ($session === null) {
+            $cookieSession = new CookieSession($basePath, secure: self::serverIsHttps());
+            $session = $cookieSession;
+        }
+        $state = new SetupState($session);
+        $controller = new SetupController($basePath, $state, $lock, $clock, $configWriter, $appEnv);
 
         // Sihirbaz sayfası ve varlıkları (kilit denetimi bunlara da uygulanır).
         $app->get('/setup', self::viewAction($basePath . '/setup/views/wizard.html', 'text/html; charset=utf-8'));
@@ -116,10 +126,14 @@ final class SetupAppBuilder
         $app->addErrorMiddleware(displayErrorDetails: false, logErrors: true, logErrorDetails: true, logger: $logger)
             ->setDefaultErrorHandler(self::errorHandler($responseFactory, $logger, $basePath));
 
-        // En dıştan içe: RequestId → SecurityHeaders → JsonRequest → SetupGuard → Audit → rotalar.
+        // En dıştan içe: RequestId → SecurityHeaders → CookieSession → JsonRequest → Guard → Audit → rotalar.
         $app->add(new SetupAudit($logger)); // K42: adım adı/sonuç/süre günlüğü (kapıyı geçen istekler)
-        $app->add(new SetupGuard($lock, $responseFactory, $logger, $clock, $envWriter, $state));
+        $app->add(new SetupGuard($lock, $responseFactory, $logger, $clock, $configWriter, $state));
         $app->add(new JsonRequest($responseFactory));
+        if ($cookieSession !== null) {
+            // Oturuma bakan her katmandan (guard dahil) ÖNCE bağlanmalı, yanıtı en sonda yazmalı.
+            $app->add(new SetupCookieSession($cookieSession));
+        }
         $app->add(new SecurityHeaders());
         $app->add(new RequestId($requestContext));
 

@@ -13,7 +13,7 @@
 |---|---|---|
 | PHP | **8.4 (ea-php84)** | Taban çizgisi docs/TECH-BASELINE.md; RequirementChecker ≥ 8.4.0 zorlar |
 | Handler | **DSO / mod_php** | Süreç kullanıcısı **`nobody`** — hesap kullanıcısı DEĞİL |
-| Docroot yazılabilirliği | **YAZILAMAZ** | Tek istisna: kurulum günü elle izin verilecek `public/media`. Kod hiçbir yere yazmayı VARSAYAMAZ (K33: log→DB, kilit→DB, .env→manuel akış, medya→hotlink düşüşü) |
+| Docroot yazılabilirliği | **YAZILAMAZ** | Tek istisna: kurulum günü elle izin verilecek `public/media`. **DİSKSİZ MOD (K44):** session→`sessions` tablosu (DbSessionHandler), sihirbaz state→şifreli çerez, log→`app_logs`, kilit→`settings`, ayarlar→`settings`; yapılandırma `config.php` (yalnız DB+APP_KEY; yazamıyorsa wp-config.php modeli manuel kayıt). `session.save_path`e HİÇ güvenilmez |
 | Eklentiler VAR | pdo_mysql · curl · gd · mbstring · zip · intl · bcmath · fileinfo · **openssl** | RequirementChecker zorunlu listesi bunlarla sınırlı kalır |
 | Eklentiler YOK ve AÇILAMAZ | **sodium** · imagick | Bayi hesabı — EasyApache/PHP Selector erişimi yok. sodium'a bağlı zorunluluk YASAK (K39: OpenSSL AES-256-GCM yedeği); imagick yerine GD |
 | `allow_url_fopen` | **KAPALI** | Dış istek YALNIZ cURL (K8). URL'li `file_get_contents`/`fopen` YAZILAMAZ — `uretim-profili` statik taraması bunu PR'da yakalar |
