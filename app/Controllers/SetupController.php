@@ -108,11 +108,19 @@ final class SetupController
     /** GET /api/setup/state — sihirbaz açılışında adım + CSRF token. */
     public function state(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
+        // K45: yapılandırma zaten varsa (config.php/.env) ilk üç adım OTOMATİK geçilir —
+        // sihirbaz doğrudan "Tablolar" adımından devam eder; mevcut dosya AYNEN kullanılır.
+        if ($this->configWriter()->configured() && $this->state->currentStep() === SetupState::STEP_REQUIREMENTS) {
+            $this->state->complete(SetupState::STEP_REQUIREMENTS);
+            $this->state->complete(SetupState::STEP_DATABASE);
+            $this->state->complete(SetupState::STEP_ENV);
+        }
+
         return Response::success($response, [
             'step' => $this->state->currentStep(),
             'steps' => SetupState::ORDER,
             'csrf_token' => $this->state->csrfToken(),
-            'env_exists' => $this->configWriter()->configured(), // K44: config.php VEYA legacy .env
+            'env_exists' => $this->configWriter()->configured(),
         ]);
     }
 
@@ -196,12 +204,16 @@ final class SetupController
             return $this->outOfOrder($response, 'Veritabanı bilgileri oturumda bulunamadı; adımı tekrarlayın.');
         }
 
-        // K37 §A2: mevcut yapılandırmanın üzerine HTTP akışından ASLA yazılmaz.
+        // K45: yapılandırma zaten varsa BLOKLAMA YOK — mevcut dosya aynen kullanılır,
+        // üzerine yazılmaz, adım otomatik tamamlanır.
         if ($this->configWriter()->configured()) {
-            return Response::error($response, 'VALIDATION', 'Doğrulama hatası', 422, [
-                'env' => 'Yapılandırma dosyası (config.php veya .env) sunucuda zaten var; sihirbaz '
-                    . 'üzerine yazmaz (K37). Dosyayı siz kaydettiyseniz doğrulama adımıyla devam edin; '
-                    . 'yeniden üretmek için dosyayı sunucudan elle silin.',
+            $this->state->complete(SetupState::STEP_ENV);
+
+            return Response::success($response, [
+                'manual' => false,
+                'existing' => true,
+                'app_url' => $this->str($this->body($request), 'app_url'),
+                'step' => $this->state->currentStep(),
             ]);
         }
 
@@ -352,6 +364,26 @@ final class SetupController
             ]);
         }
 
+        // K45 (Ürün Sahibi talimatı): 2FA OPSİYONEL — atlanırsa kullanıcı HEMEN,
+        // TOTP'siz oluşturulur; girişte şifre yeterli olur. Panel ayarlarından
+        // sonradan 2FA eklenebilir (Faz 2 adayı).
+        if (($body['skip_totp'] ?? false) === true) {
+            $now = $this->clock->now();
+            $userId = $users->create($email, (new PasswordHasher())->hash($password), null, $now);
+            (new ActivityLog($this->connection()))->recordAuth(ActivityLog::USER_CREATED, $email, 'setup', $now, $userId);
+
+            $this->state->put('admin_email', $email);
+            $this->state->put('totp_skipped', true);
+            $this->state->complete(SetupState::STEP_ADMIN);
+            $this->state->complete(SetupState::STEP_RECOVERY);
+
+            return Response::success($response, [
+                'email' => $email,
+                'totp_skipped' => true,
+                'step' => $this->state->currentStep(),
+            ]);
+        }
+
         $totp = $this->totp();
         $secret = $totp->createSecret();
 
@@ -432,7 +464,8 @@ final class SetupController
             return $this->outOfOrder($response, 'Önce yönetici hesabını ve 2FA kurulumunu tamamlayın.');
         }
 
-        if (($this->body($request)['codes_saved'] ?? false) !== true) {
+        // K45: 2FA atlandıysa kurtarma kodu yok — onay da aranmaz.
+        if ($this->state->get('totp_skipped') !== true && ($this->body($request)['codes_saved'] ?? false) !== true) {
             return Response::error($response, 'VALIDATION', 'Doğrulama hatası', 422, [
                 'codes_saved' => 'Kurtarma kodlarını kaydettiğinizi onaylamadan kurulum tamamlanamaz. '
                     . 'Kodlar bir daha GÖSTERİLMEZ.',

@@ -13,7 +13,6 @@ use App\Middleware\SetupAudit;
 use App\Middleware\SetupCookieSession;
 use App\Middleware\SetupCsrf;
 use App\Middleware\SetupGuard;
-use App\Middleware\SetupHttpsGate;
 use App\Setup\ConfigWriter;
 use App\Setup\CookieSession;
 use App\Setup\SetupDiagnostics;
@@ -114,9 +113,8 @@ final class SetupAppBuilder
             $group->post('/admin/verify', [$controller, 'verifyAdmin']);
             $group->post('/finish', [$controller, 'finish']);
         })
-            ->add(new SetupCsrf($state, $responseFactory))
-            // En son eklenen en dışta koşar: HTTPS kapısı CSRF'ten ÖNCE karar verir (K37 §A3).
-            ->add(new SetupHttpsGate($responseFactory, $appEnv));
+            // K45: HTTPS kapısı KALDIRILDI (Ürün Sahibi talimatı — kurulum hiçbir koşulda bloklanmaz).
+            ->add(new SetupCsrf($state, $responseFactory));
 
         // Kurulmamış sistemde kök adres sihirbaza yönlendirir.
         $app->get('/', static function (ServerRequestInterface $request, ResponseInterface $response): ResponseInterface {
@@ -128,7 +126,7 @@ final class SetupAppBuilder
 
         // En dıştan içe: RequestId → SecurityHeaders → CookieSession → JsonRequest → Guard → Audit → rotalar.
         $app->add(new SetupAudit($logger)); // K42: adım adı/sonuç/süre günlüğü (kapıyı geçen istekler)
-        $app->add(new SetupGuard($lock, $responseFactory, $logger, $clock, $configWriter, $state));
+        $app->add(new SetupGuard($lock, $responseFactory, $logger, $clock));
         $app->add(new JsonRequest($responseFactory));
         if ($cookieSession !== null) {
             // Oturuma bakan her katmandan (guard dahil) ÖNCE bağlanmalı, yanıtı en sonda yazmalı.

@@ -69,6 +69,13 @@ final class AuthController
         $remember = ($body['remember'] ?? false) === true;
         $this->services->session->beginTotpStage($user->id, $remember);
 
+        // K45 (Ürün Sahibi talimatı — basit giriş): 2FA tanımlı değilse şifre yeterlidir.
+        if ($user->totpSecret === null) {
+            $this->services->activity->recordAuth(ActivityLog::TOTP_SUCCESS, $user->email, $ip, $now, $user->id);
+
+            return $this->completeLogin($response, $user, $ip, $now, ['user' => $this->userPayload($user)]);
+        }
+
         return Response::success($response, ['stage' => 'totp']);
     }
 

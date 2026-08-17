@@ -52,7 +52,7 @@ final class UserRepository
     public function create(
         string $email,
         #[SensitiveParameter] string $passwordHash,
-        #[SensitiveParameter] string $encryptedTotpSecret,
+        #[SensitiveParameter] ?string $encryptedTotpSecret, // K45: 2FA opsiyonel — null = TOTP'siz kullanıcı
         DateTimeImmutable $now,
     ): int {
         $pdo = $this->connection->pdo();
