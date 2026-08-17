@@ -9,6 +9,13 @@ on:
 permissions:
   contents: read
 
+# Composer, GitHub'dan paketleri KİMLİKSİZ indirince codeload 429/504 veriyor
+# (canlı vaka: PR #13'te 4 job iki koşumda da bu yüzden kırmızıydı). GITHUB_TOKEN
+# işe özel geçici token'dır; kimlikli istekte limit sorunu yoktur. Sır değildir,
+# log'a yazılmaz — composer yalnız Authorization başlığında kullanır.
+env:
+  COMPOSER_AUTH: '{"github-oauth": {"github.com": "${{ secrets.GITHUB_TOKEN }}"}}'
+
 concurrency:
   # Aynı dala arka arkaya push gelirse eski koşumu iptal et — sıra beklemesin.
   group: ci-${{ github.ref }}
