@@ -6,11 +6,14 @@ namespace App\Controllers;
 
 use App\Core\ClientIp;
 use App\Core\Clock;
+use App\Core\Connection;
 use App\Core\Dates;
 use App\Core\Response;
 use App\Models\ListRepository;
 use App\Models\ProductRepository;
 use App\Services\ActivityLog;
+use App\Services\ListMutationPolicy;
+use App\Services\MediaJanitor;
 use App\Services\TrashPolicy;
 use DateTimeZone;
 use Psr\Http\Message\ResponseInterface;
@@ -21,13 +24,19 @@ use Psr\Http\Message\ServerRequestInterface;
  *
  * Silme kaza korumasıdır: kayıt 30 gün geri alınabilir kalır, sonra `bin/purge-trash.php`
  * kalıcı siler. Listesi de silinmiş bir ürün tek başına geri alınamaz (409) — önce liste.
+ *
+ * K37 §C7: kalıcı silme fiziksel medya dosyalarını da temizler — DB silme
+ * transaction'ı BAŞARIYLA bittikten sonra (dosya silme geri alınamaz).
  */
 final class TrashController extends ApiController
 {
     public function __construct(
+        private readonly Connection $connection,
         private readonly ListRepository $lists,
         private readonly ProductRepository $products,
         private readonly TrashPolicy $policy,
+        private readonly ListMutationPolicy $mutationPolicy,
+        private readonly MediaJanitor $mediaJanitor,
         private readonly ActivityLog $activity,
         private readonly Clock $clock,
         private readonly DateTimeZone $timezone,
@@ -89,8 +98,10 @@ final class TrashController extends ApiController
             if ($row === null || $row['deleted_at'] === null) {
                 return Response::error($response, 'NOT_FOUND', 'Çöp kutusunda böyle bir liste yok.', 404);
             }
-            $this->lists->restore($id, $now);
-            $this->log($request, 'list', $id, 'list_restored', (string) $row['name']);
+            $this->connection->transaction(function () use ($request, $id, $row, $now): void {
+                $this->lists->restore($id, $now);
+                $this->log($request, 'list', $id, 'list_restored', (string) $row['name']);
+            });
 
             return Response::success($response, ['type' => 'lists', 'id' => $id]);
         }
@@ -113,9 +124,24 @@ final class TrashController extends ApiController
             );
         }
 
-        $this->products->restore($id, $now);
-        $this->lists->bumpRevision((int) $row['list_id'], $now);
-        $this->log($request, 'product', $id, 'product_restored', (string) $row['name']);
+        // K37 §B4: terminal listeye ürün geri almak da listeyi değiştirmek demektir.
+        if ($list !== null && $this->mutationPolicy->isTerminal($list)) {
+            return Response::error(
+                $response,
+                'LIST_IMMUTABLE',
+                sprintf(
+                    'Ürünün listesi "%s" durumunda ve artık değiştirilemez; ürün bu listeye geri alınamaz.',
+                    (string) $list['status'],
+                ),
+                422,
+            );
+        }
+
+        $this->connection->transaction(function () use ($request, $id, $row, $now): void {
+            $this->products->restore($id, $now);
+            $this->lists->bumpRevision((int) $row['list_id'], $now);
+            $this->log($request, 'product', $id, 'product_restored', (string) $row['name']);
+        });
 
         return Response::success($response, ['type' => 'products', 'id' => $id]);
     }
@@ -138,8 +164,15 @@ final class TrashController extends ApiController
             if ($row === null || $row['deleted_at'] === null) {
                 return Response::error($response, 'NOT_FOUND', 'Çöp kutusunda böyle bir liste yok.', 404);
             }
-            $this->lists->forceDelete($id);
-            $this->log($request, 'list', $id, 'list_purged', (string) $row['name']);
+
+            // K37 §C7: medya referansları DB kaydı silinmeden ÖNCE toplanır
+            // (CASCADE sonrası hangi dosyaların sahipsiz kaldığı bilinemezdi).
+            $mediaReferences = $this->products->mediaReferencesForList($id);
+            $this->connection->transaction(function () use ($request, $id, $row): void {
+                $this->lists->forceDelete($id);
+                $this->log($request, 'list', $id, 'list_purged', (string) $row['name']);
+            });
+            $this->mediaJanitor->deleteUnreferenced($mediaReferences);
 
             return $response->withStatus(204);
         }
@@ -148,8 +181,13 @@ final class TrashController extends ApiController
         if ($row === null || $row['deleted_at'] === null) {
             return Response::error($response, 'NOT_FOUND', 'Çöp kutusunda böyle bir ürün yok.', 404);
         }
-        $this->products->forceDelete($id);
-        $this->log($request, 'product', $id, 'product_purged', (string) $row['name']);
+
+        $mediaReferences = $this->products->mediaReferencesForProduct($id);
+        $this->connection->transaction(function () use ($request, $id, $row): void {
+            $this->products->forceDelete($id);
+            $this->log($request, 'product', $id, 'product_purged', (string) $row['name']);
+        });
+        $this->mediaJanitor->deleteUnreferenced($mediaReferences);
 
         return $response->withStatus(204);
     }

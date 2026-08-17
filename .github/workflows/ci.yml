@@ -60,6 +60,56 @@ jobs:
         # K19: her faz sonunda bağımlılık güvenlik denetimi raporlanır — burada her PR'da koşar.
         run: composer audit
 
+  mysql-integration:
+    name: MySQL 8.4 entegrasyon (K37 §E12)
+    runs-on: ubuntu-latest
+    # Üç canlı-koşum hatasının kanıtladığı boşluk: SQLite sözleşme testleri MySQL'e
+    # özgü DDL'i göremez. Bu iş temiz migration + kritik HTTP akışlarını gerçek
+    # MySQL 8.4 üzerinde koşar (kurulum kilidi, auth, liste+ürün+para, şema doğrulama).
+
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: tedarikapp_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=5s
+          --health-timeout=3s
+          --health-retries=12
+
+    steps:
+      - name: Depoyu al
+        uses: actions/checkout@v4
+
+      - name: PHP 8.4 kur
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: bcmath, curl, fileinfo, gd, intl, mbstring, openssl, pdo_mysql, pdo_sqlite, sodium, zip
+          coverage: none
+          tools: none
+
+      - name: Composer önbelleği
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache
+          key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-
+
+      - name: Bağımlılıkları kur
+        run: composer install --no-interaction --no-progress
+
+      - name: MySQL entegrasyon testleri
+        env:
+          TEDARIKAPP_TEST_DB_DSN: 'mysql:host=127.0.0.1;port=3306;dbname=tedarikapp_test;charset=utf8mb4'
+          TEDARIKAPP_TEST_DB_USER: root
+          TEDARIKAPP_TEST_DB_PASS: root
+        run: vendor/bin/phpunit --group mysql
+
   panel:
     name: Panel (tsc + eslint + build)
     runs-on: ubuntu-latest

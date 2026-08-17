@@ -83,12 +83,29 @@ final class EnvWriterTest extends TestCase
     public function testHerKurulumFarkliAnahtarUretir(): void
     {
         $first = $this->writeAndRead();
+        // K37: mevcut .env'in üzerine yazılamaz — yeniden kurulum dosyanın elle
+        // silinmesini gerektirir; test de aynı yolu izler.
+        unlink($this->tempPath('.env'));
         $second = $this->writeAndRead();
 
         preg_match('/^APP_KEY=(.*)$/m', $first, $a);
         preg_match('/^APP_KEY=(.*)$/m', $second, $b);
 
         self::assertNotSame($a[1], $b[1]);
+    }
+
+    public function testMevcutDosyaninUzerineYazmayiReddeder(): void
+    {
+        $original = $this->writeAndRead();
+
+        try {
+            $this->writer()->write('https://saldirgan.test', self::DATABASE);
+            self::fail('K37: mevcut .env üzerine yazma istisna fırlatmalıydı.');
+        } catch (\RuntimeException $e) {
+            self::assertStringContainsString('üzerine yazmaz', $e->getMessage());
+        }
+
+        self::assertSame($original, file_get_contents($this->tempPath('.env')), 'Dosya DEĞİŞMEMELİ.');
     }
 
     public function testSablonBelgeleriKorunur(): void

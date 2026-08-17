@@ -11,7 +11,7 @@ use RuntimeException;
 use Throwable;
 
 /**
- * Kurulum kilidi (K16, K33).
+ * Kurulum kilidi (K16, K33, K37).
  *
  * Kilit VERİTABANINDA tutulur (`settings` tablosu, `system.setup_lock` anahtarı):
  * üretim sunucusunda uygulama diske yazamıyor (PHP `nobody`, DSO), dolayısıyla
@@ -20,12 +20,19 @@ use Throwable;
  * `storage/setup.lock` DOSYASI hâlâ OKUNUR ama artık yazılmaz: K33 öncesi kurulmuş
  * sistemler kilitli kalmaya devam etsin diye (geriye dönük uyum).
  *
- * Veritabanına erişilemiyorsa kilit YOK sayılır — bu doğru davranıştır: DB yoksa
- * kurulum zaten yapılmamıştır ve sihirbazın açılması gerekir.
+ * K37 — FAIL-CLOSED: bağlantı VERİLMİŞKEN kilit okunamıyorsa (DB erişilemiyor,
+ * tablo yok) durum `unknown` döner ve SetupGuard bunu "kilitli" sayar. Kurulmuş bir
+ * sistemde DB'nin geçici düşmesi, sihirbazı kimliksiz bir kapı olarak AÇAMAZ.
+ * Bağlantı hiç verilmemişse (.env yok → kurulum yapılmamış) dosya denetimiyle yetinilir.
  */
 final class SetupLock
 {
     public const string SETTING_KEY = 'system.setup_lock';
+
+    public const string STATE_LOCKED = 'locked';
+    public const string STATE_UNLOCKED = 'unlocked';
+    /** DB yapılandırılmış ama kilit okunamıyor — K37 gereği kilitli MUAMELESİ görür. */
+    public const string STATE_UNKNOWN = 'unknown';
 
     public function __construct(
         private readonly ?Connection $connection = null,
@@ -39,9 +46,31 @@ final class SetupLock
         return $this->storagePath === null ? null : $this->storagePath . '/setup.lock';
     }
 
+    /** Fail-closed görünüm: yalnızca KESİN "kilitsiz" durumda false döner (K37). */
     public function isLocked(): bool
     {
-        return $this->read() !== null;
+        return $this->status() !== self::STATE_UNLOCKED;
+    }
+
+    /**
+     * Kilidin üç durumlu okuması (K37): locked / unlocked / unknown.
+     * `unknown` yalnızca bağlantı yapılandırılmışken okuma hatasında döner.
+     */
+    public function status(): string
+    {
+        if ($this->connection !== null) {
+            try {
+                $stored = $this->readFromDatabaseStrict();
+            } catch (Throwable) {
+                return self::STATE_UNKNOWN;
+            }
+
+            if ($stored !== null) {
+                return self::STATE_LOCKED;
+            }
+        }
+
+        return $this->readFromLegacyFile() !== null ? self::STATE_LOCKED : self::STATE_UNLOCKED;
     }
 
     /** @return array<string, mixed>|null */
@@ -101,13 +130,28 @@ final class SetupLock
         }
 
         try {
-            $statement = $this->connection->pdo()->prepare('SELECT value FROM settings WHERE `key` = :key');
-            $statement->execute(['key' => self::SETTING_KEY]);
-            $row = $statement->fetch();
+            return $this->readFromDatabaseStrict();
         } catch (Throwable) {
-            // Tablo yok veya DB erişilemiyor → kurulum yapılmamış demektir.
+            // Raporlama amaçlı okuma: hata durumunda içerik bilinmiyor.
+            // Kapı kararı status() üzerinden verilir (K37 fail-closed).
             return null;
         }
+    }
+
+    /**
+     * Hata YUTMAYAN okuma: status() bağlantı hatasını `unknown`a çevirebilsin diye.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function readFromDatabaseStrict(): ?array
+    {
+        if ($this->connection === null) {
+            return null;
+        }
+
+        $statement = $this->connection->pdo()->prepare('SELECT value FROM settings WHERE `key` = :key');
+        $statement->execute(['key' => self::SETTING_KEY]);
+        $row = $statement->fetch();
 
         if (!is_array($row) || !is_string($row['value'])) {
             return null;

@@ -4,7 +4,26 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/) · Sürümleme: SemVe
 Her release'te bu dosya güncellenir (docs/07 bölüm 4). Kategoriler: Eklendi / Değişti / Düzeltildi / Kaldırıldı / Güvenlik.
 
 ## [Yayınlanmadı]
+### Güvenlik (İE#9 · K37 — Faz 1 kapanış sprinti)
+- **SetupLock fail-closed:** DB yapılandırılmışken kurulum kilidi okunamıyorsa (bağlantı düştü/tablo yok) sihirbaz artık AÇILMAZ — kilit `unknown` durumu kilitli sayılır. Önceki davranışta DB'si geçici düşen kurulmuş sistemde sihirbaz kimliksiz açılabiliyordu.
+- **`.env` katmanı:** `.env` diskte varken tüm setup uçları 403 döner (DB kilidinden bağımsız birinci katman); HTTP kurulum akışı mevcut `.env`in üzerine ASLA yazamaz (`EnvWriter::write` reddeder, `/api/setup/env` 422). Devam eden meşru kurulum, `.env`i üreten oturum işaretiyle tanınır.
+- **Kurulumda HTTPS kapısı:** `APP_ENV=production` iken sır taşıyan adımlar (`database`, `admin`, `admin/verify`) HTTPS değilse 403 `HTTPS_REQUIRED` döner (loopback istisna); sihirbaz oturum çerezi HTTPS'te `Secure` işaretlenir.
+
 ### Eklendi
+- İE#9 (K37): `Connection::transaction()` sarmalayıcısı — ürün oluşturma/güncelleme/durum, toplu işlem, liste kopyalama, kur güncelleme (+`rate_history`), çöp kutusu geri alma/kalıcı silme akışları tek transaction; yapay hata testleriyle rollback doğrulandı (yarım kayıt kalmaz).
+- İE#9 (K37 §C7): kalıcı silme (çöp kutusu ucu + `bin/purge-trash.php`) fiziksel medya dosyalarını da siler — referans sayımıyla (kopyalanan listeler aynı dosyayı paylaşır, son referans gidince silinir); housekeeping'e yetim dosya GC'si ve `app_logs` retention (`LOG_RETENTION_DAYS`) eklendi (§E11). `MediaJanitor` servisi; yalnızca sunucu-üretimi adlandırma kalıbındaki (`32-hex.uzantı`) dosyalara dokunulur.
+- İE#9 (K37 §C9): migration 0016 — `product_images.storage_mode` (`local|remote`) + `source_url`; `products.main_image` VARCHAR(1000).
+- İE#9 (K37 §E12): CI'ya **gerçek MySQL 8.4 entegrasyon job'ı** — temiz migration, şema doğrulamaları (DECIMAL kesinlik, VARCHAR uzunluk, FK CASCADE, utf8mb4), kritik HTTP akışları (kurulum kilidi, auth+2FA, liste+ürün+para) service container üzerinde koşar (`--group mysql`; yerelde `TEDARIKAPP_TEST_DB_DSN` yoksa atlanır).
+- İE#9 (§F14): `docs/TECH-BASELINE.md` — sürümlerin tek gerçek kaynağı; README ve CLAUDE.md artık sürüm yazmak yerine buna referans veriyor.
+
+### Değişti (İE#9 · K37)
+- **Terminal liste dokunulmazlığı (§B4):** `completed`/`cancelled` liste artık DONMUŞTUR — ürün ekleme/taşıma/silme, durum ve alan düzenleme, yeniden sıralama, terminal listeye geri alma → 422 `LIST_IMMUTABLE`. İE#6'daki `completed → ordered` geri alma İPTAL edildi (reopen ucu yok; çözüm kopyalama). İstisna: arşivleme (`visibility`) ve listenin çöp kutusuna taşınması.
+- **Reorder sıkılaştırma (§B6):** `ordered_ids` listedeki ürünlerin TAM permütasyonu olmalı — eksik/fazla/yinelenen kimlik 422.
+- **RequirementChecker — K33 barışması (§D10):** `storage/` ve `public/media/` yazılabilirliği artık kurulumu BLOKLAMAZ (hotlink + DB-log modu önerisiyle uyarı kartı); PHP ≥ 8.4 + zorunlu eklentiler + (production'da) HTTPS zorunlu kalır. Sihirbaz gereksinim ekranı buna göre güncellendi.
+- **`MediaService::reencode()` (§C8):** dönüş artık tutarlı `{bytes, extension, mime}` üçlüsü — webp/avif encoder'ı olmayan GD'de jpeg'e düşülür ve dosya adı da `.jpg` olur (uzantı-içerik uyumsuzluğu yapısal olarak imkânsız).
+- docs/10 koda eşitlendi (§F13): 409 yalnızca iki gerçek kullanımına indirildi (tekrar-ekleme uyarısı, "önce listeyi geri al"), kategori-kullanımda hatası 422 olarak düzeltildi, sayfalama "Faz 4" notuna çekildi, K37 kapı katmanları ve `LIST_IMMUTABLE`/`HTTPS_REQUIRED` kodları eklendi. docs/04 §2b liste makinesi (completed terminal) ve docs/07 §3–§4 (release-zip içerik listesi: `setup/`, `bin/`, `.env.example`, `public/panel/` build çıktısı ve tüm çalışma-zamanı dosyaları) güncellendi (§F15). docs/08'e K37 satırı eklendi (§F16).
+- `.env.example`: bayat `EXPORT_PATH` kaldırıldı (K33: export stream ile üretilir — yorumla not düşüldü); `LOG_RETENTION_DAYS` açıklaması housekeeping'e bağlandı (§E11).
+
 - Faz 0: Proje belge seti v1.0 (docs/00–09), CLAUDE.md geliştirme anayasası, repo iskeleti.
 - Faz 0 (K18): API sözleşmesi (docs/10) — uç bazlı istek/yanıt, hata zarfı, sayfalama sabitlendi.
 - Faz 1 çekirdeği: Slim iskeleti, config/log katmanı, migration altyapısı, auth çekirdeği tabloları (İE#3). PHP 8.4'e geçildi (K21).

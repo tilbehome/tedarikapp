@@ -57,6 +57,7 @@ final class SetupController
         private readonly SetupLock $lock,
         private readonly Clock $clock,
         private readonly ?EnvWriter $envWriter = null,
+        private readonly string $appEnv = 'production',
     ) {
     }
 
@@ -79,7 +80,7 @@ final class SetupController
     /** GET /api/setup/requirements — PHP, eklentiler, yazılabilirlik, HTTPS. */
     public function requirements(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
-        $result = (new RequirementChecker($this->basePath))->check($request);
+        $result = (new RequirementChecker($this->basePath, $this->appEnv))->check($request);
         if ($result['ok']) {
             $this->state->complete(SetupState::STEP_REQUIREMENTS);
         }
@@ -154,6 +155,15 @@ final class SetupController
         $database = $this->state->get(self::DATA_DB);
         if ($database === null) {
             return $this->outOfOrder($response, 'Veritabanı bilgileri oturumda bulunamadı; adımı tekrarlayın.');
+        }
+
+        // K37 §A2: mevcut .env'in üzerine HTTP akışından ASLA yazılmaz/yeniden üretilmez.
+        if ($this->envWriter()->exists()) {
+            return Response::error($response, 'VALIDATION', 'Doğrulama hatası', 422, [
+                'env' => '.env dosyası sunucuda zaten var; sihirbaz üzerine yazmaz (K37). '
+                    . 'Bu dosyayı siz kaydettiyseniz doğrulama adımıyla devam edin; '
+                    . 'yeniden üretmek için dosyayı sunucudan elle silin.',
+            ]);
         }
 
         $appUrl = $this->str($this->body($request), 'app_url');

@@ -143,12 +143,21 @@
         });
       });
       data.writable.forEach(function (directory) {
+        // K37 §D10: yazılamayan klasör kurulumu BLOKLAMAZ — hotlink/DB moduyla
+        // devam edilir; madde uyarı olarak işaretlenir.
         items.push({
-          state: directory.ok ? 'pass' : 'fail',
-          title: directory.path + ' yazılabilir',
+          state: directory.ok ? 'pass' : 'skip',
+          title: directory.path + ' yazılabilir' + (directory.ok ? '' : ' değil (hotlink modu)'),
           hint: directory.hint
         });
       });
+      if (data.https) {
+        items.push({
+          state: data.https.ok ? 'pass' : (data.https.required ? 'fail' : 'skip'),
+          title: 'HTTPS bağlantısı' + (data.https.required ? '' : ' (geliştirme: opsiyonel)'),
+          hint: data.https.hint
+        });
+      }
 
       replaceContent(body, checklist(items));
       $('req-next').disabled = !data.ok;

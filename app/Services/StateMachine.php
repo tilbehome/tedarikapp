@@ -13,10 +13,11 @@ namespace App\Services;
  * Liste: draft → sent → ordered → completed (+cancelled)
  *        completed ⇐ ancak tüm ürünler received veya cancelled ise
  *
- * `cancelled` ve `completed`'dan çıkış: iptal edilen bir kaydın hangi duruma
- * döneceği belirsizdir (tarihçeden çıkarmak sessiz veri üretir), bu yüzden `cancelled`
- * TERMİNALDİR. `completed` yalnızca bir adım geri (`ordered`) alınabilir — yanlış
- * kapatılan liste düzeltilebilsin diye.
+ * `cancelled` ve `completed`'dan çıkış YOKTUR (K37 §B4): iptal edilen bir kaydın
+ * hangi duruma döneceği belirsizdir; tamamlanan liste ise donmuş bir kayıttır ve
+ * yeniden açma ucu bulunmaz — yanlış kapatılan listenin çözümü KOPYALAMAKTIR
+ * (kopya taslak açılır, güncel kuru alır). Ürün tarafındaki `received → in_transit`
+ * tek-adım-geri düzeltmesi aynen korunur (docs/04 §2b).
  */
 final class StateMachine
 {
@@ -50,7 +51,8 @@ final class StateMachine
         self::LIST_DRAFT => [self::LIST_SENT, self::LIST_CANCELLED],
         self::LIST_SENT => [self::LIST_ORDERED, self::LIST_DRAFT, self::LIST_CANCELLED],
         self::LIST_ORDERED => [self::LIST_COMPLETED, self::LIST_SENT, self::LIST_CANCELLED],
-        self::LIST_COMPLETED => [self::LIST_ORDERED],
+        // K37 §B4: completed TERMİNALDİR — reopen yok, çözüm kopyalama.
+        self::LIST_COMPLETED => [],
         self::LIST_CANCELLED => [],
     ];
 

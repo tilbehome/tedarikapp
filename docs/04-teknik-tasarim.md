@@ -89,13 +89,15 @@ Makine değerleri İngilizcedir (K22); Türkçe karşılıklar yalnızca arayüz
        düzeltme: yalnızca bir adım geri alınabilir; durum atlama YASAK
 Liste: draft → sent → ordered → completed (+cancelled)
        completed ⇐ ancak tüm ürünler received veya cancelled ise
+       completed ve cancelled TERMİNALDİR (K37 §B4): çıkış yok, reopen ucu yok
        sent'e geçişte kur kilitlenir ve rate_locked_at yazılır (K4)
 ```
 
 Geçersiz geçiş isteğini API reddeder (HTTP 422 + açıklama); kural yalnızca arayüzde değil sunucuda yaşar. Her geçiş `product_status_history`'ye yazılır (K25).
 
-**Uygulama kuralları (İE#6'da sabitlendi):**
-- **`cancelled` TERMİNALDİR** — iptal edilen bir ürünün hangi duruma döneceği belirsizdir; tarihçeden çıkarmak sessiz veri üretir. `completed` liste ise bir adım geri (`ordered`) alınabilir.
+**Uygulama kuralları (İE#6'da sabitlendi, K37/İE#9 ile güncellendi):**
+- **`cancelled` TERMİNALDİR** — iptal edilen bir ürünün hangi duruma döneceği belirsizdir; tarihçeden çıkarmak sessiz veri üretir.
+- **`completed` liste de TERMİNALDİR (K37 §B4)** — İE#6'daki "bir adım geri (`ordered`)" izni kaldırılmıştır: tamamlanmış liste donmuş kayıttır, ürünlerine ve alanlarına hiçbir mutasyon yapılamaz (`LIST_IMMUTABLE`). Yanlış kapatılan listenin çözümü kopyalamaktır (kopya `draft` açılır, güncel kuru alır — K4 ile tutarlı). Ürün tarafındaki `received → in_transit` tek-adım-geri düzeltmesi aynen korunur.
 - **İptal edilen ürün liste toplamlarına GİRMEZ** — sipariş edilmeyecek mala para bağlanmaz. İlerleme sayacında (`progress`) görünmeye devam eder.
 - **Yanlış iptalin çözümü:** ürünü kopyalayıp yeni kayıtla devam etmek. Durum makinesini gevşetmek yerine bu yol seçilmiştir; tarihçe bozulmaz, iptal kaydı yerinde kalır.
 

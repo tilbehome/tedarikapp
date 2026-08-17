@@ -16,14 +16,14 @@
 { "success": false, "data": null, "error": { "code": "VALIDATION", "message": "Doğrulama hatası", "fields": { "qty": "1–1.000.000 arası tam sayı olmalı" } }, "meta": { } }
 ```
 
-- **HTTP durum kodları:** 200 (ok) · 201 (oluşturuldu) · 204 (silindi, gövde yok) · 400 (bozuk istek) · 401 (oturum yok/2FA bekliyor) · 403 (CSRF/yetki/kilit) · 404 · 405 (metot desteklenmiyor) · 409 (çakışma; örn. tekrar-ekleme onayı bekliyor) · 415 · 422 (doğrulama/geçersiz durum geçişi) · 429 (hız sınırı).
-- **Hata kodları (`error.code`):** `VALIDATION`, `UNAUTHENTICATED`, `TOTP_REQUIRED`, `FORBIDDEN`, `CSRF`, `NOT_FOUND`, `METHOD_NOT_ALLOWED`, `UNSUPPORTED_MEDIA_TYPE`, `STATE_TRANSITION`, `DUPLICATE_WARNING`, `RATE_LIMITED`, `LOCKED`, `PAYLOAD_TOO_LARGE`, `SERVER_ERROR`. Mesajlar Türkçe ve kullanıcıya gösterilebilir; teknik detay yalnızca loga yazılır.
+- **HTTP durum kodları:** 200 (ok) · 201 (oluşturuldu) · 204 (silindi, gövde yok) · 400 (bozuk istek) · 401 (oturum yok/2FA bekliyor) · 403 (CSRF/yetki/kilit/HTTPS kapısı) · 404 · 405 (metot desteklenmiyor) · 409 (yalnızca iki yerde: tekrar-ekleme onayı `DUPLICATE_WARNING` ve "önce listeyi geri al" bağımlılığı — İE#9 düzeltmesi) · 415 · 422 (doğrulama/geçersiz durum geçişi/dokunulmaz liste — **standart budur**) · 429 (hız sınırı).
+- **Hata kodları (`error.code`):** `VALIDATION`, `UNAUTHENTICATED`, `TOTP_REQUIRED`, `FORBIDDEN`, `CSRF`, `NOT_FOUND`, `METHOD_NOT_ALLOWED`, `UNSUPPORTED_MEDIA_TYPE`, `STATE_TRANSITION`, `LIST_IMMUTABLE` (K37 §B4 — terminal listeye mutasyon), `HTTPS_REQUIRED` (K37 §A3 — kurulumda sır adımı HTTPS değil), `DUPLICATE_WARNING`, `RATE_LIMITED`, `LOCKED`, `PAYLOAD_TOO_LARGE`, `SERVER_ERROR`. Mesajlar Türkçe ve kullanıcıya gösterilebilir; teknik detay yalnızca loga yazılır.
 - **415 uygulaması (İE#5):** kural GÖVDELİ yazma isteklerine uygulanır — gövdesiz bir `POST`/`DELETE` içerik tipi bildirmek zorunda değildir. İhlalde `415` + `UNSUPPORTED_MEDIA_TYPE`; istek gövdesi hiç ayrıştırılmaz.
 - **405 (K25):** desteklenmeyen metot gerçek **HTTP 405** döner; `error.code = METHOD_NOT_ALLOWED` ve yanıtta izin verilen metodları listeleyen `Allow` başlığı bulunur. (İE#3'teki 422 `VALIDATION` eşlemesi kaldırılmıştır.)
 - **Makine değerleri İngilizcedir (K22):** durum/görünürlük alanları API'de ve DB'de sabit İngilizce kodlar taşır (`draft`, `sent`, `to_order`, `active` …). Türkçe karşılıklar yalnızca arayüz etiketidir — çeviri tablosu docs/09 §6.
 - **Her yanıtta `X-Request-Id`** başlığı döner (K27); hata bildirirken bu değer istenir, loglarla eşleştirilir.
-- **Sayfalama:** `?page=1&per_page=25` (üst sınır 100). Yanıtta `meta: { "page": 1, "per_page": 25, "total": 132 }`.
-- **Sıralama/filtre:** `?sort=created_at&order=desc` + uca özel filtreler (aşağıda). Bilinmeyen parametre sessizce yok sayılmaz, 400 döner (yazım hatasını erken yakalamak için).
+- **Sayfalama (Faz 4 notu — İE#9 F13):** Faz 1'de liste/ürün uçları sayfalama YAPMAZ (tek kullanıcılı sistemde veri hacmi düşük); yalnızca `GET /api/activity` sayfalıdır (`page`, `per_page` — varsayılan 25, üst sınır 100, yanıtta `meta: {page, per_page, total}`). Genel sayfalama Faz 4'te değerlendirilecektir.
+- **Sıralama/filtre:** uca özel filtreler (aşağıda). Sıralama sabittir (listeler `created_at DESC`, ürünler `sort_no`); `?sort=` parametresi Faz 1'de yoktur. Bilinmeyen sorgu parametreleri yok sayılır; tanımlı bir filtrenin geçersiz DEĞERİ 422 döner.
 
 ## 2. Kimlik Doğrulama
 
@@ -55,6 +55,7 @@
 
 - **`revision` (K25):** ürün ekleme/silme, fiyat, adet ve sıra değişiminde +1 artar. **`is_export_stale` = `revision != last_export.list_revision`** — `updated_at` karşılaştırması kaldırıldı (yalnızca not düzenlemek çıktıyı eskitmez).
 - **Kur kilidi (K4, tek ifade):** Taslak (`draft`) liste güncel kuru izler; durum `sent` olduğunda kur o anki değerle **kilitlenir** ve `rate_locked_at` yazılır. Kilitlendikten sonra kur değişmez.
+- **Terminal liste dokunulmazlığı (K37 §B4):** `completed`/`cancelled` liste DONMUŞTUR. Ürün ekleme/taşıma/silme, durum ve alan düzenleme, yeniden sıralama, çöp kutusundan bu listeye geri alma → **422 `LIST_IMMUTABLE`**. Yeniden açma ucu YOKTUR (`completed` durumundan çıkış yok); çözüm `duplicate` ile kopyalamaktır. İstisna: `visibility` (arşivleme) ve listenin kendisinin çöp kutusuna taşınması serbesttir (yaşam döngüsü, içerik değil).
 - **Paylaşım token'ı (K25):** tam token yalnızca üretildiği yanıtta bir kez döner; DB'de `share_token_hash` (SHA-256) saklanır. Liste nesnesinde yalnızca `share_token_prefix` (linkin tanınması için ilk haneler) görünür.
 
 | Uç | Açıklama |
@@ -62,7 +63,7 @@
 | `GET /api/lists` | Filtre: `visibility=active\|passive\|archived`, `status`, `q` (ad/tedarikçi içinde arama) |
 | `POST /api/lists` | `{name, period, supplier_name?, note?}` → 201. Kurlar o anki ayarlardan atanır; `draft`'ta güncel kuru izler, **`sent` olduğunda kilitlenir** (K4) |
 | `GET /api/lists/{id}` | Tek liste (ürünler ayrı uçtan) |
-| `PATCH /api/lists/{id}` | Kısmi güncelleme: `{name?, period?, supplier_name?, note?, visibility?, status?}` — geçersiz durum geçişi → 422 `STATE_TRANSITION` |
+| `PATCH /api/lists/{id}` | Kısmi güncelleme: `{name?, period?, supplier_name?, note?, visibility?, status?}` — geçersiz durum geçişi → 422 `STATE_TRANSITION`; terminal listede `visibility` dışındaki her alan → 422 `LIST_IMMUTABLE` (K37 §B4) |
 | `DELETE /api/lists/{id}` | Çöp kutusuna taşır (30 gün) → 204 |
 | `POST /api/lists/{id}/duplicate` | → 201 yeni liste (`draft`, günün kuru, ürünler `to_order`, export geçmişi taşınmaz) |
 | `POST /api/lists/{id}/share` | → 200 `{share_url}` — tam token YALNIZCA bu yanıtta bir kez görünür (DB'de hash'li). `{renew:true}` ile yenilenir (eski link ölür); `{expires_at}` opsiyoneldir |
@@ -80,8 +81,8 @@
 | `PATCH /api/products/{id}` | Kısmi güncelleme (alan kuralları docs/04 §2d) |
 | `PATCH /api/products/{id}/status` | `{status}` — durum makinesine aykırıysa 422 `STATE_TRANSITION` + izinli geçişler `meta.allowed` içinde |
 | `DELETE /api/products/{id}` | Çöp kutusuna → 204 |
-| `PATCH /api/products/bulk` | `{ids: [...], action: "status"\|"move"\|"delete", status?, target_list_id?}` → 200 `{updated, failed: [{id, error}]}` — kısmi başarı desteklenir |
-| `PATCH /api/lists/{id}/products/reorder` | `{ordered_ids: [...]}` → sıra numaraları yeniden yazılır |
+| `PATCH /api/products/bulk` | `{ids: [...], action: "status"\|"move"\|"delete", status?, target_list_id?}` → 200 `{updated, failed: [{id, error}]}` — kısmi başarı desteklenir; tüm işlem TEK transaction'dır (K37 §B5). Terminal listedeki ürün `failed`'a düşer; terminal HEDEFE taşıma → 422 `LIST_IMMUTABLE` |
+| `PATCH /api/lists/{id}/products/reorder` | `{ordered_ids: [...]}` → sıra numaraları yeniden yazılır. Dizi, listedeki ürünlerin **TAM permütasyonu** olmalı: eksik/fazla/yinelenen kimlik → 422 (K37 §B6) |
 
 ## 5. Gelen Kutusu
 
@@ -96,8 +97,8 @@
 | Uç | Açıklama |
 |---|---|
 | `GET /api/trash` | Silinen liste + ürünler, kalan gün bilgisiyle |
-| `POST /api/trash/{type}/{id}/restore` | `type: lists\|products` → 200 (listesi de silinmiş bir ürün geri alınırken önce listesi geri alınmalı → 409) |
-| `DELETE /api/trash/{type}/{id}` | Kalıcı siler → 204 (görselleri de diskten temizler) |
+| `POST /api/trash/{type}/{id}/restore` | `type: lists\|products` → 200 (listesi de silinmiş bir ürün geri alınırken önce listesi geri alınmalı → 409; listesi terminal (`completed`/`cancelled`) ise → 422 `LIST_IMMUTABLE` — K37 §B4) |
+| `DELETE /api/trash/{type}/{id}` | Kalıcı siler → 204. Fiziksel medya dosyaları da temizlenir (K37 §C7): DB silme tek transaction'da, dosya silme commit SONRASI; kopyalanmış listelerin paylaştığı dosya son referans gidince silinir |
 
 ## 7. Ayarlar, Kategoriler, Kur
 
@@ -107,7 +108,7 @@
 | `PUT /api/settings/rates` | `{yuan_tl?, usd_tl?}` → rate_history'ye yazar; yalnızca `draft` durumundaki listelerin görünen TL'sini etkiler (kur `sent` ile kilitlenir — K4) |
 | `GET /api/settings/rates/history` | Kur tarihçesi (sayfalı) |
 | `POST /api/settings/extension-token` | Yeni token üretir → **tam token yalnızca bu yanıtta bir kez** görünür; DB'de hash saklanır |
-| `GET/POST/PATCH/DELETE /api/categories` | CRUD; kullanımda olan kategori silinirken → 409 + ürün sayısı |
+| `GET/POST/PATCH/DELETE /api/categories` | CRUD; kullanımda olan kategori silinirken → 422 `VALIDATION` + `meta.product_count` (İE#9 düzeltmesi: 422 standardı — 409 yalnızca tekrar-ekleme ve geri alma bağımlılığında) |
 | `GET /api/activity` | Filtre: `entity_type`, `entity_id`, sayfalı (`page`, `per_page` — varsayılan 25, üst sınır 100) — E9 ekranının kaynağı. Yanıt `data: [{id, entity_type, entity_id, action, detail, ip, actor_type, created_at}]`, `meta: {page, per_page, total}`. Salt okunur |
 
 ## 8. Yakalama ve Dışa Açık Sayfa
@@ -119,14 +120,19 @@
 
 ## 8b. Kurulum ve Sistem (İE#5 — PM onaylı ek)
 
-**Kurulum sihirbazı** (`/api/setup/*`) kimlik doğrulaması İSTEMEZ ama kendi oturumu ve kendi CSRF token'ı vardır (`X-Setup-Token`). Kurulum bittiğinde `storage/setup.lock` yazılır; ondan sonra **tüm** setup uçları `403 FORBIDDEN` döner ve deneme loglanır.
+**Kurulum sihirbazı** (`/api/setup/*`) kimlik doğrulaması İSTEMEZ ama kendi oturumu ve kendi CSRF token'ı vardır (`X-Setup-Token`). Kurulum bittiğinde kilit **veritabanına** yazılır (`settings.system.setup_lock` — K33; K33 öncesi `storage/setup.lock` dosyası salt-okunur uyumluluk için tanınır); ondan sonra **tüm** setup uçları `403 FORBIDDEN` döner ve deneme loglanır.
+
+**K37 kapı katmanları (İE#9 §A):**
+1. **Fail-closed kilit:** DB yapılandırılmışken kilit OKUNAMIYORSA (bağlantı düştü/tablo yok) sihirbaz kilitli sayılır → 403. Tek istisna `.env`i bu oturumda üretmiş devam eden kurulumdur.
+2. **`.env` katmanı:** `.env` diskte varsa ve oturum onu üretmemişse tüm setup uçları → 403; HTTP akışı mevcut `.env`in üzerine ASLA yazamaz (yeniden üretim de 422). Yeniden kurulum dosyanın elle silinmesini gerektirir.
+3. **HTTPS kapısı:** `APP_ENV=production` iken sır taşıyan adımlar (`database`, `admin`, `admin/verify`) HTTPS değilse → 403 `HTTPS_REQUIRED` (loopback istisna). Sihirbaz oturum çerezi HTTPS'te `Secure` işaretlenir.
 
 | Uç | Açıklama |
 |---|---|
 | `GET /api/setup/state` | `{step, steps[], csrf_token, env_exists}` — sihirbaz açılışı |
-| `GET /api/setup/requirements` | PHP sürümü, zorunlu/opsiyonel eklentiler, `storage/` + `public/media/` yazılabilirliği, HTTPS uyarısı. Eksikler isim isim ve çözüm önerisiyle |
+| `GET /api/setup/requirements` | `{ok, php, extensions[], writable[], https, warnings[]}`. ZORUNLU (ok'u düşürür): PHP ≥ 8.4, zorunlu eklentiler, production'da HTTPS. Yazılabilirlik (`storage/`, `public/media/`) ZORUNLU DEĞİLDİR (K37 §D10): yazılamıyorsa hotlink + DB-log moduyla devam edilir, uyarı kartı gösterilir. Eksikler isim isim ve çözüm önerisiyle |
 | `POST /api/setup/database` | `{host, port?, name, user, pass}` → 200 `{version, charset}`; `SELECT VERSION()` sonucu döner, utf8mb4 değilse 422 |
-| `POST /api/setup/env` | `{app_url?}` → `.env` üretir (APP_KEY ve EXTENSION_TOKEN_SALT kriptografik, dosya izni 0600) |
+| `POST /api/setup/env` | `{app_url?}` → `.env` üretir (APP_KEY ve EXTENSION_TOKEN_SALT kriptografik, dosya izni 0600); `.env` zaten varsa 422 (K37 §A2 — üzerine yazılmaz) |
 | `POST /api/setup/migrate` | Bekleyenleri koşar → `{applied[], migrations[{name, execution_ms}]}` |
 | `POST /api/setup/admin` | `{email, password}` → `{otpauth_uri, qr_svg, manual_key}`. Kullanıcı HENÜZ oluşturulmaz |
 | `POST /api/setup/admin/verify` | `{code}` → kullanıcı oluşur; `{user, recovery_codes[]}` — **kodlar yalnızca bu yanıtta bir kez** |

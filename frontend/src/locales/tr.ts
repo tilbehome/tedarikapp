@@ -66,6 +66,8 @@ export const errorMessages: Record<string, string> = {
   METHOD_NOT_ALLOWED: 'Bu işlem desteklenmiyor.',
   UNSUPPORTED_MEDIA_TYPE: 'İstek biçimi kabul edilmedi.',
   STATE_TRANSITION: 'Bu durum değişikliği yapılamaz.',
+  LIST_IMMUTABLE: 'Bu liste kapanmış ve artık değiştirilemez. Devam etmek için listeyi kopyalayın.',
+  HTTPS_REQUIRED: 'Bu adım güvenli (https) bağlantı gerektiriyor.',
   DUPLICATE_WARNING: 'Bu ürün daha önce eklenmiş.',
   RATE_LIMITED: 'Çok fazla istek gönderildi. Biraz bekleyin.',
   LOCKED: 'Çok fazla hatalı deneme yapıldı.',

@@ -7,16 +7,28 @@ namespace App\Setup;
 use Psr\Http\Message\ServerRequestInterface;
 
 /**
- * Kurulum gereksinim denetimi (İE#5 §11a).
+ * Kurulum gereksinim denetimi (İE#5 §11a, K37 §D10).
  *
  * Kural: eksikleri İSİM İSİM ve **ne yapılacağını söyleyerek** listeler.
  * "Gereksinimler karşılanmıyor" gibi bir mesaj kullanıcıyı sunucu yöneticisine
  * gitmek zorunda bırakır; burada hangi eklentinin açılacağı, hangi klasörün
  * yazılabilir yapılacağı tek tek yazılır.
+ *
+ * ZORUNLU / UYARI ayrımı (K37 — K33 ile barışma):
+ *  • PHP sürümü + zorunlu eklentiler + (production'da) HTTPS → her modda ZORUNLU.
+ *  • `storage/` ve `public/media/` yazılabilirliği → yalnızca arşiv (download) modu
+ *    için gerekir; yazılamıyorsa kurulum BLOKLANMAZ — hotlink + DB-log moduyla
+ *    devam edilir ve uyarı kartı gösterilir (K33 zaten bu modu destekler).
  */
 final class RequirementChecker
 {
     public const string MIN_PHP_VERSION = '8.4.0';
+
+    public function __construct(
+        private readonly string $basePath,
+        private readonly string $appEnv = 'production',
+    ) {
+    }
 
     /** Uygulamanın çalışması için zorunlu eklentiler (docs/04 §7 + K19 paketlerinin ihtiyaçları). */
     private const array REQUIRED_EXTENSIONS = [
@@ -36,16 +48,13 @@ final class RequirementChecker
         'sodium' => 'TOTP secret şifrelemesinde tercih edilen algoritma (yoksa AES-256-GCM kullanılır — K27).',
     ];
 
-    public function __construct(private readonly string $basePath)
-    {
-    }
-
     /**
      * @return array{
      *     ok: bool,
      *     php: array{ok: bool, required: string, current: string},
      *     extensions: list<array{name: string, ok: bool, required: bool, reason: string}>,
-     *     writable: list<array{path: string, ok: bool, hint: string}>,
+     *     writable: list<array{path: string, ok: bool, required: bool, hint: string}>,
+     *     https: array{ok: bool, required: bool, hint: string},
      *     warnings: list<string>
      * }
      */
@@ -80,10 +89,33 @@ final class RequirementChecker
             $this->writableCheck('public/media', 'İndirilen ürün görselleri buraya kaydedilir (K6).'),
         ];
 
+        // K37 §D10: HTTPS production'da ZORUNLUDUR (sırlar bu kanaldan geçecek);
+        // geliştirme ortamında yalnızca uyarıdır.
+        $httpsOk = $this->isHttps($request);
+        $httpsRequired = $this->appEnv === 'production';
+        $https = [
+            'ok' => $httpsOk,
+            'required' => $httpsRequired,
+            'hint' => $httpsOk
+                ? 'Bağlantı HTTPS — kurulum sırları güvenli kanaldan geçecek.'
+                : 'Bağlantı HTTPS değil. Şifreler ve gizli anahtarlar ağda açık gider. '
+                    . 'Çözüm: cPanel > SSL/TLS ile sertifika kurun ve sihirbazı https:// adresinden açın.',
+        ];
+
         $warnings = [];
-        if (!$this->isHttps($request)) {
+        if (!$httpsOk && !$httpsRequired) {
             $warnings[] = 'Bağlantı HTTPS değil. Oturum çerezi "Secure" işaretlenemez ve şifreniz '
                 . 'ağda açık gider. Kuruluma devam edebilirsiniz ama canlıya almadan önce SSL kurun.';
+        }
+        foreach ($writable as $directory) {
+            if (!$directory['ok']) {
+                $warnings[] = sprintf(
+                    '"%s" yazılabilir değil. Kurulum ENGELLENMEZ: görseller indirilmek yerine '
+                    . 'orijinal adresinden gösterilir (hotlink modu) ve loglar veritabanına yazılır (K33). '
+                    . 'Arşiv modu isterseniz klasöre yazma izni verip yeniden denetleyin.',
+                    $directory['path'],
+                );
+            }
         }
         if (!extension_loaded('sodium')) {
             $warnings[] = 'libsodium eklentisi yok. TOTP secret\'ları AES-256-GCM ile şifrelenecek '
@@ -96,23 +128,19 @@ final class RequirementChecker
                 $extensionsOk = false;
             }
         }
-        $writableOk = true;
-        foreach ($writable as $directory) {
-            if (!$directory['ok']) {
-                $writableOk = false;
-            }
-        }
 
         return [
-            'ok' => $php['ok'] && $extensionsOk && $writableOk,
+            // Yazılabilirlik bilerek DAHİL DEĞİL (K37 §D10): hotlink/DB modu meşru bir kurulumdur.
+            'ok' => $php['ok'] && $extensionsOk && ($httpsOk || !$httpsRequired),
             'php' => $php,
             'extensions' => $extensions,
             'writable' => $writable,
+            'https' => $https,
             'warnings' => $warnings,
         ];
     }
 
-    /** @return array{path: string, ok: bool, hint: string} */
+    /** @return array{path: string, ok: bool, required: bool, hint: string} */
     private function writableCheck(string $relative, string $purpose): array
     {
         $absolute = $this->basePath . '/' . $relative;
@@ -127,6 +155,8 @@ final class RequirementChecker
         return [
             'path' => $relative . '/',
             'ok' => $ok,
+            // K37 §D10: yazılabilirlik kurulumu bloklamaz — hotlink/DB modu ile devam edilir.
+            'required' => false,
             'hint' => $ok
                 ? $purpose
                 : $purpose . ' Çözüm: cPanel > Dosya Yöneticisi\'nde "' . $relative

@@ -12,6 +12,7 @@ use App\Middleware\RequestId;
 use App\Middleware\SecurityHeaders;
 use App\Middleware\SetupCsrf;
 use App\Middleware\SetupGuard;
+use App\Middleware\SetupHttpsGate;
 use App\Setup\EnvWriter;
 use App\Setup\SetupLock;
 use App\Setup\SetupState;
@@ -51,14 +52,22 @@ final class SetupAppBuilder
         ?RequestContext $requestContext = null,
         ?SetupLock $setupLock = null,
         ?EnvWriter $envWriter = null,
+        ?string $appEnv = null,
     ): App {
         $requestContext ??= new RequestContext();
         $clock ??= new SystemClock(new \DateTimeZone('Europe/Istanbul'));
+        $envWriter ??= new EnvWriter($basePath);
+        // `.env` henüz yokken Config kurulamaz; sunucu ortam değişkeni varsa o okunur.
+        // Hiçbiri yoksa GÜVENLİ varsayılan production'dur (K37 §A3 — fail-safe).
+        $appEnv ??= self::detectAppEnv();
 
-        // K33: kilit veritabanındadır. Bağlantı TEMBEL kurulur — `.env` henüz yokken
-        // Config::load() istisna fırlatır, SetupLock bunu "kurulum yapılmamış" sayar.
+        // K33: kilit veritabanındadır. K37: bağlantı yalnızca `.env` VARSA verilir —
+        // varken okunamayan kilit "kilitli" sayılır (fail-closed), yokken kurulum
+        // yapılmamış demektir ve dosya denetimi yeterlidir.
         $lock = $setupLock ?? new SetupLock(
-            Connection::fromCallable(static fn (): \PDO => Database::connect(Config::load($basePath))),
+            $envWriter->exists()
+                ? Connection::fromCallable(static fn (): \PDO => Database::connect(Config::load($basePath)))
+                : null,
             $basePath . '/storage',
         );
 
@@ -67,8 +76,8 @@ final class SetupAppBuilder
         $app->addRoutingMiddleware();
 
         $responseFactory = $app->getResponseFactory();
-        $state = new SetupState($session ?? NativeSession::forSetup(secure: false));
-        $controller = new SetupController($basePath, $state, $lock, $clock, $envWriter);
+        $state = new SetupState($session ?? NativeSession::forSetup(secure: self::serverIsHttps()));
+        $controller = new SetupController($basePath, $state, $lock, $clock, $envWriter, $appEnv);
 
         // Sihirbaz sayfası ve varlıkları (kilit denetimi bunlara da uygulanır).
         $app->get('/setup', self::viewAction($basePath . '/setup/views/wizard.html', 'text/html; charset=utf-8'));
@@ -85,7 +94,10 @@ final class SetupAppBuilder
             $group->post('/admin', [$controller, 'admin']);
             $group->post('/admin/verify', [$controller, 'verifyAdmin']);
             $group->post('/finish', [$controller, 'finish']);
-        })->add(new SetupCsrf($state, $responseFactory));
+        })
+            ->add(new SetupCsrf($state, $responseFactory))
+            // En son eklenen en dışta koşar: HTTPS kapısı CSRF'ten ÖNCE karar verir (K37 §A3).
+            ->add(new SetupHttpsGate($responseFactory, $appEnv));
 
         // Kurulmamış sistemde kök adres sihirbaza yönlendirir.
         $app->get('/', static function (ServerRequestInterface $request, ResponseInterface $response): ResponseInterface {
@@ -96,12 +108,33 @@ final class SetupAppBuilder
             ->setDefaultErrorHandler(self::errorHandler($responseFactory, $logger));
 
         // En dıştan içe: RequestId → SecurityHeaders → JsonRequest → SetupGuard → rotalar.
-        $app->add(new SetupGuard($lock, $responseFactory, $logger, $clock));
+        $app->add(new SetupGuard($lock, $responseFactory, $logger, $clock, $envWriter, $state));
         $app->add(new JsonRequest($responseFactory));
         $app->add(new SecurityHeaders());
         $app->add(new RequestId($requestContext));
 
         return $app;
+    }
+
+    /** `.env` yokken APP_ENV yalnızca sunucu ortamından okunabilir; yoksa production varsayılır. */
+    private static function detectAppEnv(): string
+    {
+        $fromServer = $_SERVER['APP_ENV'] ?? null;
+        if (is_string($fromServer) && $fromServer !== '') {
+            return $fromServer;
+        }
+
+        $fromEnv = getenv('APP_ENV');
+
+        return is_string($fromEnv) && $fromEnv !== '' ? $fromEnv : 'production';
+    }
+
+    /** Sihirbaz oturum çerezinin Secure bayrağı — istek HTTPS ise işaretlenir (K37 §A3). */
+    private static function serverIsHttps(): bool
+    {
+        $https = $_SERVER['HTTPS'] ?? '';
+
+        return is_string($https) && $https !== '' && strtolower($https) !== 'off';
     }
 
     /** Sihirbaz dosyalarını (HTML/JS/CSS) docroot dışından servis eder. */

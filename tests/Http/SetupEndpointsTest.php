@@ -83,6 +83,7 @@ final class SetupEndpointsTest extends TestCase
             $this->session,
             $this->clock,
             setupLock: $this->lock(),
+            appEnv: 'local', // HTTPS kapısı (K37 §A3) ayrı testte production ile sınanır
         );
 
         return $app->handle($request);
@@ -232,14 +233,13 @@ final class SetupEndpointsTest extends TestCase
         self::assertContains('public/media/', $paths);
     }
 
-    public function testEksikYazilabilirlikCozumOnerisiIcerir(): void
+    public function testEksikYazilabilirlikKurulumuBloklamaz(): void
     {
         // storage/ yerine yazılamaz bir dosya koyarak klasör oluşumunu engelle.
         file_put_contents($this->tempPath('storage'), 'bu bir dosya, klasor degil');
 
         $data = $this->json($this->call('GET', '/api/setup/requirements'))['data'];
 
-        self::assertFalse($data['ok']);
         $storage = null;
         foreach ($data['writable'] as $entry) {
             if ($entry['path'] === 'storage/') {
@@ -248,7 +248,20 @@ final class SetupEndpointsTest extends TestCase
         }
         self::assertIsArray($storage);
         self::assertFalse($storage['ok']);
+        self::assertFalse($storage['required'], 'K37 §D10: yazılabilirlik zorunlu gereksinim DEĞİL.');
         self::assertStringContainsString('yazma izni', $storage['hint'], 'Eksik, çözüm önerisiyle anlatılmalı.');
+
+        // K37 §D10: yazılamazlık ok bayrağını DÜŞÜRMEZ; hotlink/DB modu önerilir.
+        $phpAndExtensionsOk = $data['php']['ok'];
+        foreach ($data['extensions'] as $extension) {
+            if ($extension['required'] && !$extension['ok']) {
+                $phpAndExtensionsOk = false;
+            }
+        }
+        if ($phpAndExtensionsOk) {
+            self::assertTrue($data['ok'], 'Yazılamayan klasör kurulumu bloklamamalı (K37 §D10).');
+        }
+        self::assertStringContainsString('hotlink', implode(' ', $data['warnings']));
     }
 
     public function testHttpsDegilseUyariVerilirAmaBloklamaz(): void
@@ -318,6 +331,7 @@ final class SetupEndpointsTest extends TestCase
             $this->clock,
             setupLock: $this->lock(),
             envWriter: new EnvWriter($this->tempRoot(), writableOverride: false),
+            appEnv: 'local',
         );
     }
 
