@@ -275,6 +275,8 @@ final class AppBuilder
         // tarayıcıda açılabilmesi için politikanın onları tanıması gerekir (K33).
         $app->add(new SecurityHeaders($allowedHosts));
         $app->add(new RequestId($requestContext));
+        // EN DIŞTA: /panel/ veya /api/lists/ gibi sondaki eğik çizgili adresler rotayı bulamıyordu.
+        $app->add(new \App\Middleware\TrailingSlash());
 
         return $app;
     }

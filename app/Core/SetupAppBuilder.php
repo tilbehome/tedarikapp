@@ -134,6 +134,8 @@ final class SetupAppBuilder
         }
         $app->add(new SecurityHeaders());
         $app->add(new RequestId($requestContext));
+        // EN DIŞTA: /setup/ gibi sondaki eğik çizgili adresler rotayı bulamıyordu (canlı vaka).
+        $app->add(new \App\Middleware\TrailingSlash());
 
         return $app;
     }
