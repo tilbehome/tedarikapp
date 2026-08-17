@@ -8,6 +8,7 @@ import type {
   Settings,
   StateMachineMap,
   SupplyList,
+  MediaMigrateResult,
   SystemStatus,
   Trash,
   User,
@@ -91,6 +92,8 @@ export const system = {
   /** İzinli durum geçişleri — arayüz kendi kopyasını TUTMAZ (İE#8 §2). */
   stateMachine: () => api.get<StateMachineMap>('/api/system/state-machine'),
   migrate: () => api.post<{ applied: string[]; applied_count: number }>('/api/system/migrate'),
+  /** K47: uzak görselleri arşive taşıma — tek çağrı bir parti işler, kalan sıfırlanana dek tekrarlanır. */
+  mediaMigrate: () => api.post<MediaMigrateResult>('/api/system/media-migrate'),
 };
 
 export const trash = {

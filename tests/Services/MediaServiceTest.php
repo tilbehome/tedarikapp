@@ -75,14 +75,16 @@ final class MediaServiceTest extends AuthTestCase
         self::assertSame(MediaService::MODE_HOTLINK, $media->detectMode());
     }
 
-    public function testModAyardaSaklanirVeOkunur(): void
+    public function testYazilabilirlikGelinceEskiHotlinkAyariModuKilitlemez(): void
     {
+        // K47: mod yazılabilirlikten OTOMATİK türetilir. Hotlink döneminden kalan ayar
+        // kaydı, izin açıldığında arşiv moduna geçişi ENGELLEMEZ (canlı vaka: 777 verildi
+        // ama rozet kalkmıyordu). Ayar yalnız iz/görünürlük içindir.
         $media = $this->media();
         $media->rememberMode(MediaService::MODE_HOTLINK);
 
-        // Klasör yazılabilir olsa BİLE ayarda hotlink yazıyorsa o geçerlidir.
-        self::assertSame(MediaService::MODE_HOTLINK, $media->mode());
-        self::assertSame(MediaService::MODE_HOTLINK, (new SettingsRepository($this->connection))->get('media_mode'));
+        self::assertSame(MediaService::MODE_DOWNLOAD, $media->mode(), 'Yazılabilir klasörde mod ARŞİV olmalı.');
+        self::assertSame(MediaService::MODE_HOTLINK, (new SettingsRepository($this->connection))->get('media_mode'), 'Ayar kaydı iz olarak durur.');
     }
 
     public function testBilinmeyenModReddedilir(): void
@@ -202,8 +204,8 @@ final class MediaServiceTest extends AuthTestCase
     public function testHotlinkModundaIndirmeDENENMEZ(): void
     {
         $url = 'https://cbu01.alicdn.com/img/ibank/ornek.jpg';
-        $media = $this->media();
-        $media->rememberMode(MediaService::MODE_HOTLINK);
+        // K47: mod yazılabilirlikten türetilir — hotlink'e düşmenin yolu yazılamaz klasördür.
+        $media = $this->media('public/olmayan-klasor');
 
         $result = $media->store($url);
 

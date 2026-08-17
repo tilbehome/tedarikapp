@@ -154,6 +154,7 @@ Adım sırası zorlanır: sırası gelmemiş uç `422 STATE_TRANSITION` + `meta.
 | `GET /api/system/state-machine` | (İE#8) `{product:{durum: [izinli...]}, list:{...}}` — docs/04 §2b geçiş matrisinin okunur kopyası. Panel durum menüsünü buradan kurar; **kural yine backend'de zorlanır**, bu uç yalnızca geçersiz seçeneğin kullanıcıya sunulmamasını sağlar |
 | `POST /api/system/migrate` | Auth + CSRF. Bekleyen migration'ları koşar → `{applied[], applied_count}`; sonuç `activity_log`'a yazılır |
 | `POST /api/system/setup-unlock` | K46 — kilit kaldırmanın ADMİN OTURUMU yolu (Auth + CSRF). → 200 `{unlocked:true}`; activity_log'a `setup_unlock (admin:<e-posta>)` yazılır |
+| `POST /api/system/media-migrate` | K47 — uzak görselleri arşive taşıma (Auth + CSRF). Tek çağrı BİR parti işler (≤20 kayıt) → 200 `{mode, scanned, migrated, failed:[{kind, id, product_id, url, error}], remaining}`; panel `remaining` sıfırlanana dek tekrar çağırır. Medya yazılamıyorsa 422 `MEDIA_NOT_WRITABLE`. İdempotent; başarısız kayıt bozulmaz. Sonuç `activity_log`'a yazılır |
 
 ## 9. Sözleşme Testleri
 

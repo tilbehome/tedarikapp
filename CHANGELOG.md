@@ -4,6 +4,12 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/) · Sürümleme: SemVe
 Her release'te bu dosya güncellenir (docs/07 bölüm 4). Kategoriler: Eklendi / Değişti / Düzeltildi / Kaldırıldı / Güvenlik.
 
 ## [Yayınlanmadı]
+### Eklendi (İE#9.6 · K47 — medya arşiv modu varsayılan)
+- **Varsayılan medya modu ARŞİV:** alicdn CDN'i Referer ACL uyguladığı için (canlı 403 kanıtı) 1688 görselleri hotlink ile gösterilemiyor; `public/media` yazılabilir olduğu anda uygulama **otomatik arşiv moduna geçer** (K47 — eski "hotlink" ayar kaydı modu artık kilitlemez). Ayarlar ekranı aktif modu + yazılabilirlik durumunu gösterir.
+- **İndirme istemcisine Referer/UA:** allowlist'teki alicdn/1688 hostlarına `Referer: https://detail.1688.com/` + gerçekçi tarayıcı UA gönderilir (host→başlık eşlemesi yapılandırılabilir; eşleme DIŞI hiçbir hosta eklenmez, sonek taklidi eşleşmez). SSRF kapısındaki tüm denetimler aynen durur.
+- **Toplu arşive geçiş:** `bin/media-migrate.php` (CLI, parti parti) + panel Ayarlar'da "Görselleri arşive taşı" düğmesi (`POST /api/system/media-migrate`, Auth+CSRF). İdempotent: taşınan kayıt tekrar işlenmez; başarısız indirme kaydı BOZMAZ (remote kalır, tekrar denenir) ve ürün+URL+hata sınıfıyla raporlanır.
+- **Kırık görsel dayanıklılığı:** indirme 403/404/zaman aşımı ürün kaydını artık REDDETMEZ (güvenlik reddi — beyaz liste dışı/iç ağ — reddetmeye devam eder: yeni `MediaDeniedException` ayrımı); panel ürün kartında yer tutucu + "yeniden dene" eylemi.
+
 ### Güvenlik (İE#9.5 · K46 — kilit kaldırma sahiplik kanıtı)
 - **K45'in kimliksiz `POST /api/setup/unlock` ucu kapatıldı** (internetteki herkes kilidi silebilirdi — K34/K37 ihlali). Kilit kaldırma artık sahiplik kanıtı ister: sihirbazda config.php'deki **APP_KEY'in tam değeri** (hash_equals, sabit zamanlı) VEYA panelde **admin oturumu** (`POST /api/system/setup-unlock`, Auth+CSRF). Yanlış denemeler IP bazlı **artan beklemeye** tabidir (429 + retry_after; sayaç activity_log'da); her deneme `setup_unlock`/`setup_unlock_failed` olarak loglanır, APP_KEY asla loglanmaz. "Temiz kurulum" (tablo sıfırlama) dahil YIKICI setup işlemleri aynı kanıt + ekranda birebir **"SIFIRLA"** yazılı onay olmadan çalışmaz. K45 amacı korunur: kilitliyken `/setup` sayfası seçenek ekranını göstermeye devam eder; API uçları kilitli kalır. CI'ya `php81-uyum` job'ı eklendi (taban 8.1 bekçisi).
 

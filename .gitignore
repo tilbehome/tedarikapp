@@ -24,6 +24,7 @@ docs-taslak/
 
 # Build çıktıları — panel derlemesi repoya GİRMEZ, sürüm zip'i içinde taşınır (İE#8 §5).
 frontend/dist/
+dist/
 public/panel/
 
 # Araç önbellekleri

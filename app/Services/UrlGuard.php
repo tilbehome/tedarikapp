@@ -28,17 +28,17 @@ final class UrlGuard
     {
         $parts = parse_url($url);
         if ($parts === false || !isset($parts['scheme'], $parts['host'])) {
-            throw new MediaException('Geçersiz adres.');
+            throw new MediaDeniedException('Geçersiz adres.');
         }
 
         // docs/04 §2d: yalnız HTTPS. Düz HTTP, araya girenin görseli değiştirmesine açıktır.
         if (strtolower($parts['scheme']) !== 'https') {
-            throw new MediaException('Yalnızca https adreslerinden indirme yapılır.');
+            throw new MediaDeniedException('Yalnızca https adreslerinden indirme yapılır.');
         }
 
         $host = strtolower($parts['host']);
         if (!$this->hostAllowed($host)) {
-            throw new MediaException(sprintf('Bu alan adından indirme yapılmaz: %s', $host));
+            throw new MediaDeniedException(sprintf('Bu alan adından indirme yapılmaz: %s', $host));
         }
 
         $this->assertPublicAddress($host);
@@ -75,7 +75,7 @@ final class UrlGuard
     {
         foreach ($this->resolve($host) as $ip) {
             if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
-                throw new MediaException('Adres iç ağa işaret ediyor, indirme reddedildi.');
+                throw new MediaDeniedException('Adres iç ağa işaret ediyor, indirme reddedildi.');
             }
         }
     }

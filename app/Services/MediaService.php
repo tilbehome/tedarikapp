@@ -46,14 +46,17 @@ final class MediaService
     ) {
     }
 
-    /** Etkin mod: ayarda yazılıysa o, yoksa yazılabilirlikten türetilir. */
+    /**
+     * Etkin mod — K47: yazılabilirlikten OTOMATİK türetilir.
+     *
+     * alicdn Referer ACL hotlink'i kullanılamaz kıldığı için varsayılan mod ARŞİV'dir:
+     * `public/media/` yazılabilir olduğu anda uygulama kendiliğinden arşiv moduna geçer,
+     * yazılamazsa hotlink'e düşer. Ayardaki değer görünürlük/iz içindir; eski bir
+     * "hotlink" kaydı yazılabilirlik geldiğinde modu ARTIK kilitlemez (canlı vaka:
+     * izin sonradan açıldı, rozet kalkmıyordu).
+     */
     public function mode(): string
     {
-        $stored = $this->settings->get(self::SETTING_KEY);
-        if ($stored === self::MODE_DOWNLOAD || $stored === self::MODE_HOTLINK) {
-            return $stored;
-        }
-
         return $this->detectMode();
     }
 
