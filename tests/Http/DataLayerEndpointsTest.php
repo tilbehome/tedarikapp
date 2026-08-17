@@ -122,14 +122,16 @@ final class DataLayerEndpointsTest extends AuthTestCase
 
     // ─────────────── Kur kilidi (K4) ───────────────
 
-    public function testTaslakListedeKurDegistirilebilir(): void
+    public function testTaslakListeGuncelKuruIzler(): void
     {
+        // K4 (K45 düzeltmesi): taslak listenin kuru GÜNCEL ayar kurudur; elle
+        // gönderilen yuan_rate taslakta görünümü değiştirmez, kur İletildi'de kilitlenir.
         $list = $this->createList();
 
         $response = $this->write('PATCH', '/api/lists/' . $list['id'], ['yuan_rate' => '7.5000']);
 
         self::assertSame(200, $response->getStatusCode());
-        self::assertSame('7.5000', $this->json($response)['data']['yuan_rate']);
+        self::assertSame('7.0400', $this->json($response)['data']['yuan_rate'], 'Taslak güncel ayar kurunu göstermeli.');
     }
 
     public function testSentDurumunaGecisteKurKilitlenir(): void

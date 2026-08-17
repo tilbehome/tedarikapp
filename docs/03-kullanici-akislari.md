@@ -22,7 +22,7 @@
 2. "Export" → Excel ve/veya PDF indir.
 3. "Paylaşım Linki" → link üret, kopyala.
 4. "Paylaş" menüsüyle linki firmaya ilet: WhatsApp hazır mesajı, e-posta taslağı veya kopyala; Excel/PDF'i aynı kanaldan eklersin. Firma linkten videoları da izler.
-5. Liste durumunu **İletildi** yap.
+5. Liste durumunu **İletildi** yap. Kur bu anda listeye kilitlenir (K48): taslakta liste güncel kuru izliyordu, iletildikten sonra TL değerleri iletim anındaki kurla sabittir.
 
 ## Akış 4 — Sipariş takibi
 
@@ -35,8 +35,8 @@
 
 1. Arşivden eski listeyi aç → "Kopyala".
 2. Yeni listede adetleri güncelle, gerekirse ürün çıkar/ekle.
-3. Kur ayarlardan güncellenir → TL fiyatları yeni kurla yeniden hesaplanır.
-4. Akış 3'ten devam.
+3. Kopya taslak açıldığı için güncel kuru izler (K48); ayarlardan kur güncellenirse TL fiyatları kendiliğinden yeni kurla hesaplanır.
+4. Akış 3'ten devam (İletildi'de kur kilitlenir).
 
 ## Akış 6 — Çıktı alındıktan sonra listede değişiklik
 

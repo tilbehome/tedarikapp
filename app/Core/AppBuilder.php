@@ -158,6 +158,8 @@ final class AppBuilder
             $group->get('/status', [$system, 'status']);
             $group->get('/state-machine', [$system, 'stateMachine']);
             $group->post('/migrate', [$system, 'migrate']);
+            // K46: kilit kaldırmanın admin-oturumu yolu (Auth + CSRF bu grupta).
+            $group->post('/setup-unlock', [$system, 'setupUnlock']);
         })
             ->add(new Csrf($services->session, $responseFactory))
             ->add(new Auth($services, $responseFactory));

@@ -32,10 +32,15 @@
     <p class="muted">Panel kullanıma hazır olmalı. Yeniden kurmak isterseniz kilidi kaldırabilirsiniz
       (mevcut ayar kilidi silinir; veritabanı tablolarına dokunulmaz — isterseniz sonraki adımda
       "Temiz kurulum" ile onları da sıfırlayabilirsiniz).</p>
+    <label>Sahiplik kanıtı — config.php içindeki APP_KEY (K46)
+      <input id="unlock-app-key" autocomplete="off" placeholder="64 haneli anahtar — File Manager ile config.php dosyasından kopyalayın">
+    </label>
     <div class="actions">
       <a class="button" href="/panel">Panele git</a>
       <button type="button" class="ghost" id="unlock-run">Kilidi kaldır ve yeniden kur</button>
     </div>
+    <p class="muted">Anahtar, WordPress'teki wp-config.php mantığıyla sunucudaki <code>config.php</code>
+      dosyasında durur; dosyayı okuyabilen = sistemin sahibi. Yanlış denemeler artan beklemeye tabidir.</p>
   </section>
 
   <!-- K42: adım başarısız olduğunda teşhis — dostane mesaj alert'te, teknik detay burada -->
@@ -112,10 +117,18 @@
     <p class="muted">Tablolar sırayla oluşturulacak. Bu adım tekrar çalıştırılabilir; var olan tablolar atlanır.</p>
     <div class="actions">
       <button type="button" id="migrate-run">Tabloları oluştur</button>
-      <button type="button" class="ghost" id="migrate-fresh">Temiz kurulum — önce tabloları sıfırla</button>
     </div>
     <p class="muted">"Tablo zaten var" hatası alırsanız: önceki yarım kurulumdan kalan tablolar vardır —
-      <strong>Temiz kurulum</strong> düğmesi veritabanındaki TÜM tabloları silip sıfırdan kurar.</p>
+      aşağıdaki <strong>Temiz kurulum</strong>, veritabanındaki TÜM tabloları silip sıfırdan kurar (K46: yazılı onay ister).</p>
+    <div class="form">
+      <label>Onay — kutuya birebir <strong>SIFIRLA</strong> yazın
+        <input id="fresh-confirm" autocomplete="off" placeholder="SIFIRLA"></label>
+      <label>APP_KEY (yalnız bu sihirbaz oturumu config.php'yi kendisi ÜRETMEDİYSE gerekir)
+        <input id="fresh-app-key" autocomplete="off" placeholder="config.php içindeki 64 haneli anahtar"></label>
+      <div class="actions">
+        <button type="button" class="ghost" id="migrate-fresh" disabled>Temiz kurulum — tabloları sıfırla ve kur</button>
+      </div>
+    </div>
     <div id="migrate-result" class="report" hidden></div>
   </section>
 

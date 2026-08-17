@@ -9,6 +9,13 @@ on:
 permissions:
   contents: read
 
+# Composer, GitHub'dan paketleri KİMLİKSİZ indirince codeload 429/504 veriyor
+# (canlı vaka: PR #13'te 4 job iki koşumda da bu yüzden kırmızıydı). GITHUB_TOKEN
+# işe özel geçici token'dır; kimlikli istekte limit sorunu yoktur. Sır değildir,
+# log'a yazılmaz — composer yalnız Authorization başlığında kullanır.
+env:
+  COMPOSER_AUTH: '{"github-oauth": {"github.com": "${{ secrets.GITHUB_TOKEN }}"}}'
+
 concurrency:
   # Aynı dala arka arkaya push gelirse eski koşumu iptal et — sıra beklemesin.
   group: ci-${{ github.ref }}
@@ -45,7 +52,11 @@ jobs:
 
       - name: Bağımlılıkları kur
         # --no-progress: log gürültüsünü azaltır. Lock dosyası repoda olduğu için sürümler sabittir (K19).
-        run: composer install --no-interaction --no-progress
+        # codeload 429/504 dalgalarına karşı 3 deneme + bekleme (canlı vaka: PR #13).
+        run: |
+          n=0; until composer install --no-interaction --no-progress; do
+            n=$((n+1)); [ $n -ge 3 ] && exit 1; echo "codeload hatası — 90 sn sonra deneme $((n+1))/3"; sleep 90
+          done
 
       - name: PHPUnit
         run: composer test
@@ -101,7 +112,10 @@ jobs:
           restore-keys: composer-${{ runner.os }}-
 
       - name: Bağımlılıkları kur
-        run: composer install --no-interaction --no-progress
+        run: |
+          n=0; until composer install --no-interaction --no-progress; do
+            n=$((n+1)); [ $n -ge 3 ] && exit 1; echo "codeload hatası — 90 sn sonra deneme $((n+1))/3"; sleep 90
+          done
 
       - name: MySQL entegrasyon testleri
         env:
@@ -109,6 +123,46 @@ jobs:
           TEDARIKAPP_TEST_DB_USER: root
           TEDARIKAPP_TEST_DB_PASS: root
         run: vendor/bin/phpunit --group mysql
+
+  php81-uyum:
+    name: PHP 8.1 uyum (K45 taban)
+    runs-on: ubuntu-latest
+    # Canlı sunucu MultiPHP ayarına göre 8.1 varsayılanına düşebiliyor (kanıtlı).
+    # Taban 8.1: tüm çalışma-zamanı kodu + üretim vendor'ı gerçek 8.1 ile lint edilir,
+    # uygulama 8.1 üzerinde AYAĞA KALKAR (sihirbaz state ucu 200).
+    steps:
+      - name: Depoyu al
+        uses: actions/checkout@v4
+
+      - name: PHP 8.1 kur
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: bcmath, curl, fileinfo, gd, mbstring, openssl, pdo_mysql, pdo_sqlite, zip
+          coverage: none
+          tools: none
+
+      - name: Üretim bağımlılıkları (paket php beyanları 8.2 der ama 8.1'de LINT ile kanıtlanır)
+        run: |
+          n=0; until composer install --no-dev --optimize-autoloader --no-interaction --no-progress --ignore-platform-req=php; do
+            n=$((n+1)); [ $n -ge 3 ] && exit 1; echo "codeload hatası — 90 sn sonra deneme $((n+1))/3"; sleep 90
+          done
+
+      - name: 8.1 sözdizimi taraması (uygulama + vendor)
+        run: |
+          hata=0
+          while IFS= read -r f; do
+            cikti=$(php -l "$f" 2>&1 | grep -v "No syntax errors" || true)
+            if [ -n "$cikti" ]; then echo "$cikti"; hata=1; fi
+          done < <(find app bin bootstrap public migrations vendor -name "*.php" ! -path "*platform_check*")
+          [ $hata -eq 0 ] && echo "8.1 lint TEMIZ"
+
+      - name: 8.1 üzerinde açılış smoke'u
+        run: |
+          APP_ENV=local php -S 127.0.0.1:8070 -t public public/index.php &
+          sleep 2
+          curl -sf http://127.0.0.1:8070/api/setup/state | grep -q '"success":true' || { echo "HATA: 8.1'de sihirbaz açılmadı"; exit 1; }
+          echo "8.1 açılış TAMAM"
 
   uretim-profili:
     name: Üretim profili (K41/K44)
@@ -154,7 +208,10 @@ jobs:
           restore-keys: composer-${{ runner.os }}-
 
       - name: Bağımlılıkları kur
-        run: composer install --no-interaction --no-progress
+        run: |
+          n=0; until composer install --no-interaction --no-progress; do
+            n=$((n+1)); [ $n -ge 3 ] && exit 1; echo "codeload hatası — 90 sn sonra deneme $((n+1))/3"; sleep 90
+          done
 
       - name: Üretim profili süiti
         run: vendor/bin/phpunit --group uretim-profili
@@ -176,7 +233,10 @@ jobs:
           npm run build
 
       - name: Üretim vendor'ı (dev bağımlılıkları düşür — testler yukarıda koştu)
-        run: composer install --no-dev --optimize-autoloader --no-interaction --no-progress
+        run: |
+          n=0; until composer install --no-dev --optimize-autoloader --no-interaction --no-progress; do
+            n=$((n+1)); [ $n -ge 3 ] && exit 1; echo "codeload hatası — 90 sn sonra deneme $((n+1))/3"; sleep 90
+          done
 
       - name: Release üret + zip doğrulaması (bin/release.php)
         run: php bin/release.php --out=dist --version=ci-denetim

@@ -59,19 +59,25 @@ final class SettingsEndpointsTest extends AuthTestCase
         self::assertSame('7.5000', $history[1]['rate']);
     }
 
-    /** KRİTİK: değişen kur SONRAKİ listeye kilitlenir, öncekini bozmaz (K4). */
+    /** KRİTİK (K4, K45 düzeltmesi): kur İLETİLDİ'de kilitlenir; taslak güncel kuru izler. */
     public function testYeniKurYalnizcaSonrakiListeyeUygulanir(): void
     {
-        $before = $this->json($this->write('POST', '/api/lists', ['name' => 'Kur değişmeden önce']))['data'];
-        self::assertSame('7.0400', $before['yuan_rate']);
+        $sent = $this->json($this->write('POST', '/api/lists', ['name' => 'Kilitlenecek liste']))['data'];
+        $this->write('PATCH', '/api/lists/' . $sent['id'], ['status' => 'sent']);
+
+        $draft = $this->json($this->write('POST', '/api/lists', ['name' => 'Taslak liste']))['data'];
+        self::assertSame('7.0400', $draft['yuan_rate']);
 
         $this->write('PUT', '/api/settings/rates', ['yuan_tl' => '9.1234']);
 
+        $locked = $this->json($this->call('GET', '/api/lists/' . $sent['id']))['data'];
+        self::assertSame('7.0400', $locked['yuan_rate'], 'İletilmiş listenin kilitli kuru DEĞİŞMEMELİ.');
+
+        $draftAfter = $this->json($this->call('GET', '/api/lists/' . $draft['id']))['data'];
+        self::assertSame('9.1234', $draftAfter['yuan_rate'], 'Taslak liste güncel kuru izlemeli.');
+
         $after = $this->json($this->write('POST', '/api/lists', ['name' => 'Kur değiştikten sonra']))['data'];
         self::assertSame('9.1234', $after['yuan_rate'], 'Yeni liste güncel kuru almalı.');
-
-        $unchanged = $this->json($this->call('GET', '/api/lists/' . $before['id']))['data'];
-        self::assertSame('7.0400', $unchanged['yuan_rate'], 'Mevcut listenin kuru DEĞİŞMEMELİ.');
     }
 
     public function testGecersizKurReddedilir(): void

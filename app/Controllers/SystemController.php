@@ -72,6 +72,23 @@ final class SystemController
     }
 
     /** GET /api/system/status — sürüm bilgisi + bekleyen migration sayısı. */
+    /**
+     * POST /api/system/setup-unlock — K46: kilit kaldırmanın ADMİN OTURUMU yolu.
+     * Auth + CSRF arkasındadır (rota grubu); sihirbazdaki APP_KEY yolunun paneldeki eşi.
+     */
+    public function setupUnlock(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        $user = $this->authenticatedUser($request);
+        $now = $this->clock->now();
+
+        (new \App\Setup\UnlockGate($this->connection, $this->basePath, new \DateTimeZone(date_default_timezone_get())))
+            ->recordSuccess(\App\Core\ClientIp::from($request), $now, 'admin:' . $user->email);
+
+        $this->lock->clear();
+
+        return \App\Core\Response::success($response, ['unlocked' => true]);
+    }
+
     public function status(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
         $this->authenticatedUser($request);

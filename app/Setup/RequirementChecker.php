@@ -24,10 +24,8 @@ final class RequirementChecker
 {
     public const MIN_PHP_VERSION = '8.1.0';
 
-    public function __construct(
-        private readonly string $basePath,
-        private readonly string $appEnv = 'production',
-    ) {
+    public function __construct(private readonly string $basePath)
+    {
     }
 
     /**
@@ -97,10 +95,9 @@ final class RequirementChecker
         // geliştirme ortamında yalnızca uyarıdır.
         $httpsOk = $this->isHttps($request);
         // K45 (Ürün Sahibi talimatı): HTTPS hiçbir modda BLOKLAMAZ — yalnız uyarı.
-        $httpsRequired = false;
         $https = [
             'ok' => $httpsOk,
-            'required' => $httpsRequired,
+            'required' => false,
             'hint' => $httpsOk
                 ? 'Bağlantı HTTPS — kurulum sırları güvenli kanaldan geçecek.'
                 : 'Bağlantı HTTPS değil. Şifreler ve gizli anahtarlar ağda açık gider. '
@@ -108,7 +105,7 @@ final class RequirementChecker
         ];
 
         $warnings = [];
-        if (!$httpsOk && !$httpsRequired) {
+        if (!$httpsOk) {
             $warnings[] = 'Bağlantı HTTPS değil. Oturum çerezi "Secure" işaretlenemez ve şifreniz '
                 . 'ağda açık gider. Kuruluma devam edebilirsiniz ama canlıya almadan önce SSL kurun.';
         }
@@ -135,8 +132,8 @@ final class RequirementChecker
         }
 
         return [
-            // Yazılabilirlik bilerek DAHİL DEĞİL (K37 §D10): hotlink/DB modu meşru bir kurulumdur.
-            'ok' => $php['ok'] && $extensionsOk && ($httpsOk || !$httpsRequired),
+            // Yazılabilirlik bilerek DAHİL DEĞİL (K37 §D10); HTTPS de bloklamaz (K45).
+            'ok' => $php['ok'] && $extensionsOk,
             'php' => $php,
             'extensions' => $extensions,
             'writable' => $writable,

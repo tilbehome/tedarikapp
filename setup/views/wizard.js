@@ -414,17 +414,24 @@
       }).finally(function () { busy(button, false); });
     });
 
-    // K45 temiz kurulum: önceki yarım denemeden kalan tablolar "already exists"
-    // veriyorsa tek tıkla sıfırla + kur (açık onay istenir — TÜM tablolar silinir).
+    // K46: buton, kutuya BİREBİR "SIFIRLA" yazılmadan pasiftir.
+    $('fresh-confirm').addEventListener('input', function (event) {
+      $('migrate-fresh').disabled = event.target.value.trim() !== 'SIFIRLA';
+    });
+
+    // K45 temiz kurulum + K46 kapısı: yazılı onay ("SIFIRLA") + sahiplik kanıtı.
     $('migrate-fresh').addEventListener('click', function (event) {
-      if (!window.confirm('Veritabanındaki TÜM tablolar SİLİNECEK ve sıfırdan kurulacak. Emin misiniz?')) return;
       clearAlert();
       var button = event.target;
       busy(button, true, 'Sıfırlanıyor…');
-      api('POST', '/api/setup/migrate', { fresh: true }).then(function (data) {
+      var payload = { fresh: true, confirm: $('fresh-confirm').value.trim() };
+      var appKey = $('fresh-app-key').value.trim();
+      if (appKey) payload.app_key = appKey;
+      api('POST', '/api/setup/migrate', payload).then(function (data) {
         alertBox('ok', 'Temiz kurulum tamam: ' + data.applied.length + ' migration uygulandı.');
         showStep('admin');
       }).catch(function (error) {
+        showFieldErrors($('panel-migrate'), error.fields);
         failBox(error);
       }).finally(function () { busy(button, false); });
     });
@@ -556,12 +563,14 @@
   // Kopyalama düğmesi bind()'den bağımsız: açılış bile başarısız olsa rapor alınabilir (K42).
   $('diag-copy').addEventListener('click', copyDiagnosticReport);
 
-  // K45: kilit kaldırma — kurulum tamamlanmışken bile yeniden kurulabilme.
+  // K45+K46: kilit kaldırma — çıkmaz sokak yok AMA sahiplik kanıtı (APP_KEY) şart.
   $('unlock-run').addEventListener('click', function (event) {
+    var appKey = $('unlock-app-key').value.trim();
+    if (!appKey) { alertBox('bad', 'Sahiplik kanıtı gerekli: config.php içindeki APP_KEY değerini girin.'); return; }
     if (!window.confirm('Kurulum kilidi kaldırılacak ve sihirbaz yeniden çalışacak. Emin misiniz?')) return;
     var button = event.target;
-    busy(button, true, 'Kaldırılıyor…');
-    api('POST', '/api/setup/unlock', {}).then(function () {
+    busy(button, true, 'Doğrulanıyor…');
+    api('POST', '/api/setup/unlock', { app_key: appKey }).then(function () {
       location.reload();
     }).catch(function (error) {
       failBox(error);
