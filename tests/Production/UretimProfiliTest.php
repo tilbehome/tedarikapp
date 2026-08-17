@@ -109,6 +109,18 @@ final class UretimProfiliTest extends AuthTestCase
         self::assertTrue($this->json($response)['success']);
     }
 
+    public function testAnaUygulamadaIntegrityUcuKimliksizCalisir(): void
+    {
+        // K43: kurulu sistemde de /api/system/integrity kimliksiz cevap verir
+        // (geliştirme ağacında manifest yok → denetim atlanır, hata üretilmez).
+        $response = $this->call('GET', '/api/system/integrity');
+
+        self::assertSame(200, $response->getStatusCode());
+        $data = $this->json($response)['data'];
+        self::assertFalse($data['manifest_exists']);
+        self::assertTrue($data['ok']);
+    }
+
     private function setupApp(): \Slim\App
     {
         $root = dirname(__DIR__, 2);
@@ -125,6 +137,57 @@ final class UretimProfiliTest extends AuthTestCase
             $this->clock,
             appEnv: 'production', // üretim profili: HTTPS kapısı ve gereksinim kuralları gerçek modda
         );
+    }
+
+    public function testSetupKlasoruEksikseAnlasilir503Doner(): void
+    {
+        // İki kez yaşanan üretim vakasının g-simülasyonu (İE#9.3): setup/ hiç açılmamış.
+        // Eskisi: sessiz NOT_FOUND JSON. Yenisi: NE YAPILACAĞINI söyleyen 503 HTML.
+        $root = dirname(__DIR__, 2);
+        copy($root . '/.env.example', $this->tempPath('.env.example'));
+        // setup/views BİLEREK kopyalanmıyor.
+
+        $app = SetupAppBuilder::build($this->tempRoot(), new NullLogger(), new ArraySession(), $this->clock, appEnv: 'production');
+        $response = $app->handle(
+            (new ServerRequestFactory())->createServerRequest('GET', 'https://ornek.test/setup', ['REMOTE_ADDR' => '203.0.113.7']),
+        );
+
+        self::assertSame(503, $response->getStatusCode());
+        self::assertStringContainsString('text/html', $response->getHeaderLine('Content-Type'));
+        $html = (string) $response->getBody();
+        self::assertStringContainsString('eksik yüklenmiş', $html);
+        self::assertStringContainsString('setup/', $html, 'Hangi klasörün eksik olduğu söylenmeli.');
+        self::assertStringContainsString('/api/system/integrity', $html, 'Tam listeye yönlendirme olmalı.');
+    }
+
+    public function testIntegrityUcuKurulumdanOnceCalisir(): void
+    {
+        // K43: manifest'e göre eksik dosyalar — sihirbazın gereksinim adımının kaynağı.
+        $root = dirname(__DIR__, 2);
+        copy($root . '/.env.example', $this->tempPath('.env.example'));
+        mkdir($this->tempPath('setup/views'), 0775, true);
+        foreach (['wizard.html', 'wizard.js', 'wizard.css'] as $file) {
+            copy($root . '/setup/views/' . $file, $this->tempPath('setup/views/' . $file));
+        }
+        // Manifest: biri mevcut, biri EKSİK dosya.
+        file_put_contents(
+            $this->tempPath('MANIFEST.txt'),
+            \App\Services\IntegrityChecker::manifestLine(
+                (string) hash_file('sha256', $this->tempPath('.env.example')),
+                '.env.example',
+            ) . "\n" . \App\Services\IntegrityChecker::manifestLine(str_repeat('a', 64), 'vendor/autoload.php') . "\n",
+        );
+
+        $app = SetupAppBuilder::build($this->tempRoot(), new NullLogger(), new ArraySession(), $this->clock, appEnv: 'production');
+        $response = $app->handle(
+            (new ServerRequestFactory())->createServerRequest('GET', 'https://ornek.test/api/system/integrity', ['REMOTE_ADDR' => '203.0.113.7']),
+        );
+
+        self::assertSame(200, $response->getStatusCode());
+        $data = json_decode((string) $response->getBody(), true)['data'];
+        self::assertTrue($data['manifest_exists']);
+        self::assertFalse($data['ok']);
+        self::assertContains('vendor/autoload.php', $data['missing'], 'Eksik dosya İSİM İSİM raporlanmalı.');
     }
 
     public function testGuardSessizGecisVeSetupDurumUcu(): void

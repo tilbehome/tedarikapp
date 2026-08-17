@@ -97,6 +97,13 @@ final class AppBuilder
 
         $app->get('/api/health', self::healthAction($config, $connection, $logger));
 
+        // K43: kurulum bütünlüğü — MANIFEST.txt'e göre eksik/bozuk dosya listesi.
+        // /api/health gibi kimliksizdir: sır içermez, yalnız göreli yol adları döner;
+        // "site tuhaf davranıyor" anında ilk bakılacak yer.
+        $app->get('/api/system/integrity', static function (ServerRequestInterface $request, ResponseInterface $response) use ($basePath): ResponseInterface {
+            return Response::success($response, (new \App\Services\IntegrityChecker($basePath))->check());
+        });
+
         // Auth uçları iki gruba ayrılır (İE#4 §3):
         //   • Giriş uçları — oturum YOKken çağrılır, LoginRateLimit ile kilitlenir.
         //   • Korumalı uçlar — Auth (oturum/remember) + Csrf ile korunur.

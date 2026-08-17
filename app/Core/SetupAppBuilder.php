@@ -86,6 +86,12 @@ final class SetupAppBuilder
         $app->get('/setup/wizard.js', self::viewAction($basePath . '/setup/views/wizard.js', 'application/javascript; charset=utf-8'));
         $app->get('/setup/wizard.css', self::viewAction($basePath . '/setup/views/wizard.css', 'text/css; charset=utf-8'));
 
+        // K43: kurulum bütünlüğü — MANIFEST.txt'e göre eksik/bozuk dosya listesi.
+        // Kurulumdan ÖNCE de çalışır; sihirbazın gereksinim adımı bunu gösterir. Sır içermez.
+        $app->get('/api/system/integrity', static function (ServerRequestInterface $request, ResponseInterface $response) use ($basePath): ResponseInterface {
+            return Response::success($response, (new \App\Services\IntegrityChecker($basePath))->check());
+        });
+
         $app->group('/api/setup', static function (RouteCollectorProxy $group) use ($controller): void {
             $group->get('/state', [$controller, 'state']);
             $group->get('/requirements', [$controller, 'requirements']);
@@ -147,7 +153,30 @@ final class SetupAppBuilder
         return static function (ServerRequestInterface $request, ResponseInterface $response) use ($file, $contentType): ResponseInterface {
             $content = @file_get_contents($file);
             if ($content === false) {
-                return Response::error($response, 'NOT_FOUND', 'Kurulum dosyası bulunamadı.', 404);
+                // K42/K43: "setup/ eksik açılmış" üretim vakasının cevabı — sessiz
+                // NOT_FOUND yerine NE YAPILACAĞINI söyleyen 503 HTML sayfası.
+                $eksik = basename(dirname($file, 2)) . '/' . basename(dirname($file)) . '/' . basename($file);
+                $html = '<!doctype html><html lang="tr"><head><meta charset="utf-8">'
+                    . '<meta name="viewport" content="width=device-width, initial-scale=1">'
+                    . '<title>Kurulum dosyaları eksik</title>'
+                    . '<style>body{font-family:system-ui,sans-serif;max-width:44rem;margin:4rem auto;'
+                    . 'padding:0 1rem;line-height:1.6;color:#1f2430}code{background:#f4f5f7;padding:.1rem .35rem;'
+                    . 'border-radius:4px}.badge{display:inline-block;background:#fde8e8;color:#9b1c1c;'
+                    . 'border-radius:4px;padding:.1rem .5rem;font-size:.8rem;font-weight:700}</style></head><body>'
+                    . '<p class="badge">tedarikapp — 503</p>'
+                    . '<h1>Kurulum dosyaları eksik yüklenmiş</h1>'
+                    . '<p>Sihirbaz dosyası bulunamadı: <code>' . htmlspecialchars($eksik, ENT_QUOTES, 'UTF-8') . '</code></p>'
+                    . '<p>Release zip\'i büyük olasılıkla EKSİK açıldı (<code>setup/</code> klasörü yüklenmemiş). '
+                    . 'Çözüm: zip\'i sunucuda uygulama köküne <strong>üzerine yazarak yeniden açın</strong>; '
+                    . 'tüm klasörler (<code>app/ bin/ bootstrap/ migrations/ public/ setup/ vendor/</code>) çıkmalı.</p>'
+                    . '<p>Eksiklerin tam listesi: <code>/api/system/integrity</code> adresi, MANIFEST\'e göre '
+                    . 'eksik/bozuk her dosyayı isim isim verir.</p></body></html>';
+                $response->getBody()->write($html);
+
+                return $response
+                    ->withHeader('Content-Type', 'text/html; charset=utf-8')
+                    ->withHeader('Cache-Control', 'no-store')
+                    ->withStatus(503);
             }
 
             $response->getBody()->write($content);

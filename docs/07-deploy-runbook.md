@@ -73,8 +73,25 @@ Sonraki sürümler: sihirbaz YOK — zip yüklenir, admin girişinde "veritaban�
    npm run build      # tsc --noEmit + vite build → ../public/panel/
    ```
    Çıktı `public/panel/` altına düşer ve **repoya commit EDİLMEZ** (`.gitignore`). Sürüm zip'i bu klasörü içermek ZORUNDADIR; yoksa `/panel` adresi "Panel henüz derlenmemiş" sayfasını (503) gösterir.
-2. Release zip'i oluştur (İE#9 §F15 — "zip'ten kurulabilirlik" tanımı: temiz bir sunucuda
-   zip → aç → sihirbaz → panel açılır; eksik klasör = kurulamayan sürüm):
+2. Release zip'ini üret — **TEK YOL: `php bin/release.php` (K43, İE#9.3).** Elle zip YASAK:
+   iki üretim vakası (vendor/ eksik, setup/ eksik) elle paketlemeden çıktı. Script:
+   - aşağıdaki tablodaki HER girdinin zip'te var olduğunu üretimden SONRA doğrular;
+     biri eksikse zip'i SİLER ve hata koduyla çıkar — eksik release var olamaz;
+   - zip köküne `MANIFEST.txt` (her dosya + sha256 + toplam) yazar; sunucudaki
+     `GET /api/system/integrity` ve sihirbazın gereksinim adımı eksik/bozuk dosyaları
+     bu manifeste göre isim isim raporlar;
+   - ön şartları da denetler: dev'siz vendor (`composer install --no-dev`), panel build.
+
+   ```
+   composer install --no-dev --optimize-autoloader
+   cd frontend && npm ci && npm run build && cd ..
+   php bin/release.php --version=v0.9.2-faz1 --out=dist
+   composer install   # geliştirme ortamına dönüş
+   ```
+
+   ("zip'ten kurulabilirlik" tanımı: temiz bir sunucuda zip → aç → sihirbaz → panel açılır;
+   eksik klasör = kurulamayan sürüm. CI `uretim-profili` job'ı bunu her PR'da zip üretip
+   çalıştırarak doğrular: `/setup` text/html + `/api/setup/state` 200 + integrity temiz.)
 
    | Zip'e GİRER | Neden |
    |---|---|

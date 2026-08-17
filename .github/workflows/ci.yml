@@ -144,6 +144,42 @@ jobs:
       - name: Üretim profili süiti
         run: vendor/bin/phpunit --group uretim-profili
 
+      # ── K43: kendini doğrulayan release (İE#9.3 Görev 3) ──
+      # Zip'i CI ÜRETİR, AÇAR ve ÇALIŞTIRIR: /setup gerçekten text/html döner,
+      # /api/setup/state 200, integrity ucu "eksik yok" der. Üçü yeşil olmadan release yok.
+      - name: Node 22 kur (panel build release zip'e girer)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Panel derle
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+
+      - name: Üretim vendor'ı (dev bağımlılıkları düşür — testler yukarıda koştu)
+        run: composer install --no-dev --optimize-autoloader --no-interaction --no-progress
+
+      - name: Release üret + zip doğrulaması (bin/release.php)
+        run: php bin/release.php --out=dist --version=ci-denetim
+
+      - name: Zip'i aç ve AÇILIŞI doğrula (setup HTML + state 200 + integrity temiz)
+        run: |
+          unzip -q dist/tedarikapp-ci-denetim.zip -d /tmp/rel
+          php -S 127.0.0.1:8080 -t /tmp/rel/public /tmp/rel/public/index.php &
+          sleep 2
+          durum=$(curl -s -o /tmp/setup.html -w "%{http_code};%{content_type}" http://127.0.0.1:8080/setup)
+          echo "GET /setup -> $durum"
+          echo "$durum" | grep -q "^200;text/html" || { echo "HATA: /setup HTML dönmedi"; exit 1; }
+          grep -q "tedarikapp kurulumu" /tmp/setup.html || { echo "HATA: sihirbaz sayfası içerik değil"; exit 1; }
+          curl -sf http://127.0.0.1:8080/api/setup/state | grep -q '"success":true' || { echo "HATA: setup state"; exit 1; }
+          curl -sf http://127.0.0.1:8080/api/system/integrity | tee /tmp/integrity.json
+          grep -q '"ok":true' /tmp/integrity.json || { echo "HATA: integrity eksik dosya bildirdi"; exit 1; }
+          echo "Release açılış doğrulaması TAMAM"
+
   panel:
     name: Panel (tsc + eslint + build)
     runs-on: ubuntu-latest

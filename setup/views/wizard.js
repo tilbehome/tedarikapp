@@ -232,7 +232,20 @@
   function loadRequirements() {
     var body = $('req-body');
     body.textContent = 'Denetleniyor…';
-    return api('GET', '/api/setup/requirements').then(function (data) {
+    return Promise.all([
+      api('GET', '/api/setup/requirements'),
+      // K43: MANIFEST'e göre eksik/bozuk dosya denetimi — ulaşılamazsa adımı düşürmez.
+      api('GET', '/api/system/integrity').catch(function () { return null; })
+    ]).then(function (results) {
+      var data = results[0];
+      var integrity = results[1];
+      return renderRequirements(data, integrity);
+    });
+  }
+
+  function renderRequirements(data, integrity) {
+    var body = $('req-body');
+    return (function () {
       var items = [{
         state: data.php.ok ? 'pass' : 'fail',
         title: 'PHP ' + data.php.current,
@@ -263,13 +276,32 @@
         });
       }
 
-      replaceContent(body, checklist(items));
-      $('req-next').disabled = !data.ok;
+      // K43: dosya bütünlüğü — eksik açılmış zip artık SESSİZ kalmaz, isim isim söylenir.
+      var integrityOk = true;
+      if (integrity && integrity.manifest_exists) {
+        if (integrity.ok) {
+          items.push({ state: 'pass', title: 'Dosya bütünlüğü', hint: integrity.message });
+        } else {
+          integrityOk = false;
+          var ornekler = (integrity.missing || []).concat(integrity.modified || []).slice(0, 10).join(', ');
+          items.push({
+            state: 'fail',
+            title: 'Dosya bütünlüğü — zip eksik/bozuk açılmış',
+            hint: integrity.message + (ornekler ? ' Eksik/bozuk örnekler: ' + ornekler : '')
+          });
+        }
+      } else if (integrity) {
+        items.push({ state: 'skip', title: 'Dosya bütünlüğü', hint: integrity.message });
+      }
 
-      if (!data.ok) alertBox('bad', 'Eksikler var. Yukarıdaki maddeleri giderip "Yeniden denetle" deyin.');
+      replaceContent(body, checklist(items));
+      $('req-next').disabled = !data.ok || !integrityOk;
+
+      if (!integrityOk) alertBox('bad', 'Yükleme eksik: release zip\'ini üzerine yazarak yeniden açın. Eksik dosyalar yukarıda listelendi.');
+      else if (!data.ok) alertBox('bad', 'Eksikler var. Yukarıdaki maddeleri giderip "Yeniden denetle" deyin.');
       else if (data.warnings.length) alertBox('warn', data.warnings.join(' '));
       else clearAlert();
-    });
+    })();
   }
 
   // ─────────── Bağlama ───────────

@@ -134,7 +134,8 @@
 | `GET /api/setup/diagnostics` | K42 — ortam özeti: `{app_version, php_version, sapi, os, extensions{ad: VAR\|YOK}, mysql_version, timestamp}`. "Tanılama raporunu kopyala" düğmesinin kaynağı; SIR İÇERMEZ. Adım hatalarında aynı biçim + `failure{step, exception, message, location, trace[]}` yanıtın `meta.diagnostics` alanında döner |
 | `GET /api/setup/requirements` | `{ok, php, extensions[], writable[], https, warnings[]}`. ZORUNLU (ok'u düşürür): PHP ≥ 8.4, zorunlu eklentiler, production'da HTTPS. Yazılabilirlik (`storage/`, `public/media/`) ZORUNLU DEĞİLDİR (K37 §D10): yazılamıyorsa hotlink + DB-log moduyla devam edilir, uyarı kartı gösterilir. Eksikler isim isim ve çözüm önerisiyle |
 | `POST /api/setup/database` | `{host, port?, name, user, pass}` → 200 `{version, charset}`; `SELECT VERSION()` sonucu döner, utf8mb4 değilse 422 |
-| `POST /api/setup/env` | `{app_url?}` → `.env` üretir (APP_KEY ve EXTENSION_TOKEN_SALT kriptografik, dosya izni 0600); `.env` zaten varsa 422 (K37 §A2 — üzerine yazılmaz) |
+| `POST /api/setup/env` | `{app_url?}` → `.env` üretir (APP_KEY ve EXTENSION_TOKEN_SALT kriptografik, dosya izni 0600); `.env` zaten varsa 422 (K37 §A2 — üzerine yazılmaz). Yazılamaz kökte `{manual: true, content}` döner (K33) |
+| `POST /api/setup/env/verify` | K33 manuel akışı: elle kaydedilen `.env` APP_KEY eşleşmesiyle doğrulanır → `{verified}`; dosya yok/yanlış içerik → 422 (İE#9.3 a — belgeye işlendi) |
 | `POST /api/setup/migrate` | Bekleyenleri koşar → `{applied[], migrations[{name, execution_ms}]}` |
 | `POST /api/setup/admin` | `{email, password}` → `{otpauth_uri, qr_svg, manual_key}`. Kullanıcı HENÜZ oluşturulmaz |
 | `POST /api/setup/admin/verify` | `{code}` → kullanıcı oluşur; `{user, recovery_codes[]}` — **kodlar yalnızca bu yanıtta bir kez** |
@@ -146,6 +147,8 @@ Adım sırası zorlanır: sırası gelmemiş uç `422 STATE_TRANSITION` + `meta.
 
 | Uç | Açıklama |
 |---|---|
+| `GET /api/health` | KİMLİKSİZ — `{app, time}`; DB'ye ulaşılamıyorsa 500 zarfı (İE#9.3 a — belgeye işlendi) |
+| `GET /api/system/integrity` | KİMLİKSİZ (K43) — MANIFEST.txt'e göre `{manifest_exists, ok, total, checked, missing[], missing_count, modified[], modified_count, message}`. Kurulumdan ÖNCE de çalışır (setup uygulaması da sunar); sihirbazın gereksinim adımı gösterir. Sır içermez — yalnız göreli yollar |
 | `GET /api/system/status` | `{app_version, php_version, db_version, installed_at, migrations:{applied, pending[], pending_count}, media:{mode, writable}, setup_lock_in_database}` |
 | `GET /api/system/state-machine` | (İE#8) `{product:{durum: [izinli...]}, list:{...}}` — docs/04 §2b geçiş matrisinin okunur kopyası. Panel durum menüsünü buradan kurar; **kural yine backend'de zorlanır**, bu uç yalnızca geçersiz seçeneğin kullanıcıya sunulmamasını sağlar |
 | `POST /api/system/migrate` | Auth + CSRF. Bekleyen migration'ları koşar → `{applied[], applied_count}`; sonuç `activity_log`'a yazılır |
