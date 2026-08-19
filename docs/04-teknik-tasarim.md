@@ -154,6 +154,10 @@ Kurallar (v1'den miras + v2 ekleri):
 - **Mükerrer denetimi (K25):** `source.platform + source.external_id` mevcut bir
   üründe varsa yanıt `duplicate: {product_id, list_id, list_name}` taşır — kayıt
   YİNE oluşturulur (engel değil uyarı; eklenti kullanıcıya gösterir).
+  **Sapma kaydı (İE#11 EK-3):** panel ürün ucundaki `409 DUPLICATE_WARNING` + `force:true`
+  modeli capture'da KULLANILMAZ; onay diyaloğu yerine bilgi alanı seçildi çünkü eklenti
+  akışı tek atımlıktır (kullanıcı sayfadan ayrılmadan tekrar denemez) ve kayıt kaybı
+  riski onay turundan daha ağır basar.
 - `raw` bloğu backend'de OLDUĞU GİBİ saklanır (`inbox_items.payload_json`) —
   normalized alan bozuk çıkarsa veri kaybolmaz, `status=error` ile panele düşer.
 - Doğrulama sınırları §2d tablosundaki gibi; gövde ≤ `CAPTURE_MAX_PAYLOAD_KB`,

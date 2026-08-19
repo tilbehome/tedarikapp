@@ -4,6 +4,15 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/) · Sürümleme: SemVe
 Her release'te bu dosya güncellenir (docs/07 bölüm 4). Kategoriler: Eklendi / Değişti / Düzeltildi / Kaldırıldı / Güvenlik.
 
 ## [Yayınlanmadı]
+### Eklendi (İE#11 · K53 — Faz 3: Chrome eklentisi + Gelen Kutusu)
+- **Chrome eklentisi (WXT + TypeScript, MV3):** 1688 ürün sayfasında popup ile yakalama — önizleme (görsel, ad, fiyat kademeleri, varyasyon sayısı), hedef seçici (Gelen Kutusu varsayılan + listeler), adet/koli/not, K25 mükerrer uyarısı. Parser saf fonksiyon; **birincil kaynak `context.result.global.globalData.model`** (rapor §13), ikincil `detailModel`/`data.*` dalları; seçiciler backend'den gelen VERİDİR (K53). 11 fixture testi — canlı 1688 isteği yok.
+- **Capture sözleşmesi v2 (K32):** üç blok `source`/`raw`/`normalized`; `capture_id` idempotansı; doğrulanamayan gövde RAW olarak kuyruğa (`inbox_items`, migration 0019); RAW blok ürünün `raw_attributes`'ına, menşe özniteliği varsa `country_of_origin`'a yazılır.
+- **Gelen Kutusu:** kuyruk ekranı (çoklu seçim, listeye taşı, sil), Ana Ekran sayacı, menüdeki "Yakında" kalktı.
+- **Eklenti token'ı:** Ayarlar > Güvenlik'ten üret/yenile/iptal (K34 hash; tek-token modeli — sapma kaydı docs/10'da).
+
+### Değişti (İE#11)
+- Export **üretimi** POST+CSRF'ye çevrildi (geçmişten indirme GET kaldı).
+- Yakalama hız sayacı satırları (`capture_request`) panel aktivite akışından gizlenir ve `bin/bakim.php` ile temizlenir.
 
 ## [0.9.7] — 19 Ağustos 2026 (Faz 2 kapanış release'i)
 ### Eklendi (İE#10.5 · K52 — bakım ve yedekleme)

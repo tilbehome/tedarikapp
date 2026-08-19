@@ -143,6 +143,44 @@ final class CaptureEndpointsTest extends AuthTestCase
         self::assertSame('remote', $gallery[0]['storage_mode']);
     }
 
+    /**
+     * İE#11 EK-3 (2): RAW blok ürünün raw_attributes'ına OLDUĞU GİBİ yazılır;
+     * menşe bilgisi varsa ülke kolonuna (ISO alpha-2), yoksa null (uydurma yok).
+     */
+    public function testYakalamaRawBlogunuVeMenseyiUruneYazar(): void
+    {
+        $listId = (int) $this->json($this->call('POST', '/api/lists', ['name' => 'RAW listesi'], [Csrf::HEADER => $this->csrf]))['data']['id'];
+        $payload = $this->validPayload('77777777-8888-4999-8aaa-bbbbbbbbbbbb');
+        $payload['target_list_id'] = $listId;
+        $payload['raw']['normalized_attributes'] = ['品牌' => '总裁小姐', '产地' => '浙江'];
+        $payload['raw']['origin_text'] = '浙江';
+        $payload['normalized']['country_of_origin'] = 'CN';
+
+        $productId = (int) $this->json($this->capture($payload))['data']['product_id'];
+
+        $row = $this->pdo->query('SELECT raw_attributes, country_of_origin FROM products WHERE id = ' . $productId)
+            ->fetch(\PDO::FETCH_ASSOC);
+        self::assertNotNull($row['raw_attributes'], 'RAW blok ürüne yazılmalı.');
+        $decoded = json_decode((string) $row['raw_attributes'], true);
+        self::assertSame('总裁小姐', $decoded['normalized_attributes']['品牌'] ?? null);
+        self::assertArrayHasKey('price_blocks', $decoded, 'Orijinal fiyat blokları da RAW içinde durmalı.');
+        self::assertSame('CN', $row['country_of_origin']);
+    }
+
+    /** Menşe yoksa kolon NULL kalır — sistem ülke uydurmaz. */
+    public function testMenseYoksaKolonBosKalir(): void
+    {
+        $listId = (int) $this->json($this->call('POST', '/api/lists', ['name' => 'Menşesiz'], [Csrf::HEADER => $this->csrf]))['data']['id'];
+        $payload = $this->validPayload('88888888-9999-4aaa-8bbb-cccccccccccc');
+        $payload['target_list_id'] = $listId;
+
+        $productId = (int) $this->json($this->capture($payload))['data']['product_id'];
+
+        self::assertNull(
+            $this->pdo->query('SELECT country_of_origin FROM products WHERE id = ' . $productId)->fetchColumn() ?: null,
+        );
+    }
+
     public function testMukerrerYakalamaUyariTasirAmaEngellemez(): void
     {
         $listId = (int) $this->json($this->call('POST', '/api/lists', ['name' => 'İlk liste'], [Csrf::HEADER => $this->csrf]))['data']['id'];

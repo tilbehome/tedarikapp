@@ -158,3 +158,15 @@ cPanel > Cron Jobs'a şu İKİ satır girilir (yollar kuruluma göre uyarlanır)
 - `bakim.php` — çöp kutusu kalıcı temizliği + yetim medya GC + app_logs saklama +
   yedek saklama; üç adımı tek raporla koşar. (`purge-trash.php` geriye uyum için
   durur; yeni kurulumda önerilen bu iki satırdır.)
+
+## Eklenti kurulumu (İE#11 — Faz 3)
+
+1. `extension/dist/chrome-mv3` klasörü Chrome'a "Paketlenmemiş öğe yükle" ile eklenir
+   (Store yayınında bu adım kullanıcıda mağaza linkiyle olur).
+2. Eklentinin **Kimlik** değeri alınır ve sunucuda `EXTENSION_ALLOWED_ORIGINS`
+   ayarına `chrome-extension://<kimlik>` olarak yazılır (K30 CORS allowlist; boşsa
+   eklenti bağlanamaz, virgülle birden çok kimlik yazılabilir).
+3. Panel > Ayarlar > Güvenlik > "Eklenti token'ı üret" — tam token bir kez görünür,
+   eklentinin ayar ekranına panel adresiyle birlikte girilir.
+4. Doğrulama: `detail.1688.com` ürün sayfasında eklenti simgesi → önizleme dolu gelmeli →
+   "Panele Gönder" → panel Gelen Kutusu'nda kayıt görünmeli.

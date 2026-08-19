@@ -45,3 +45,22 @@ panel adresidir (kullanıcı ayarı; Bearer token ile).
 1. developer.chrome.com/dashboard → yeni öğe → zip'i yükle.
 2. Görünürlük: **Unlisted**. Metinler yukarıdan; ekran görüntüsü: popup önizlemesi.
 3. Yayın onayı sonrası ID'yi al → config `EXTENSION_ALLOWED_ORIGINS` + SUNUCU-PROFILI + bu dosyaya işle.
+
+## Kurulum: CORS allowlist adımı (İE#11 EK-3 — ATLANIRSA EKLENTİ BAĞLANMAZ)
+
+Eklenti panele `chrome-extension://<id>` origin'iyle gelir; panel bu origin'i
+tanımıyorsa tarayıcı isteği bloklar ve popup "bağlantı yok" der. `EXTENSION_ALLOWED_ORIGINS`
+**boş gelir** (güvenli varsayılan) — kurulumda doldurulmalıdır:
+
+1. **Paketlenmemiş kurulum (geliştirme/deneme):** `chrome://extensions` → Geliştirici modu →
+   "Paketlenmemiş öğe yükle" → `extension/dist/chrome-mv3` klasörü. Karttaki **Kimlik**
+   değerini kopyala.
+2. Sunucuda `config.php`'ye (veya `.env`) yaz:
+   `'EXTENSION_ALLOWED_ORIGINS' => 'chrome-extension://<kimlik>'`
+3. **Store yayınından sonra** kalıcı kimlik farklıdır: virgülle ekle veya geçiciyi değiştir:
+   `chrome-extension://<gecici>,chrome-extension://<store-kimligi>`
+4. Panelde Ayarlar > Güvenlik'ten token üret → eklentinin ayar ekranına panel adresi +
+   token gir → "Kaydet ve bağlan" → durum "bağlı ✓" olmalı.
+
+> Not: Bu ayar dosya yapılandırmasındadır (DB'de değil) — sır sınıfı değildir ama
+> allowlist'tir; wildcard yazılmaz (K30).

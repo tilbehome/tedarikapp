@@ -168,6 +168,11 @@ final class CaptureService
                 'video_url' => isset($normalized['video_url']) && is_string($normalized['video_url']) ? $normalized['video_url'] : null,
                 'qty' => (int) ($payload['qty'] ?? 1),
                 'units_per_carton' => isset($payload['units_per_carton']) && is_int($payload['units_per_carton']) ? $payload['units_per_carton'] : null,
+                // İE#11 EK-3 (2): RAW blok OLDUĞU GİBİ ürüne yazılır (v2 TechnicalProfile'ın
+                // ham girdisi — docs/v2/02). Panel bunu göstermez; veri kaybolmaz.
+                'raw_attributes' => json_encode($payload['raw'] ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                'country_of_origin' => self::countryCode($normalized['country_of_origin'] ?? null),
+                'country_of_dispatch' => self::countryCode($normalized['country_of_dispatch'] ?? null),
                 'price_yuan' => (string) $normalized['price_yuan'],
                 'note' => isset($payload['note']) && is_string($payload['note']) ? mb_substr($payload['note'], 0, 2000) : null,
             ], $now);
@@ -178,6 +183,17 @@ final class CaptureService
 
             return $productId;
         });
+    }
+
+    /** ISO 3166-1 alpha-2 doğrulaması — geçersizse null (uydurma menşe yazılmaz). */
+    private static function countryCode(mixed $value): ?string
+    {
+        if (!is_string($value)) {
+            return null;
+        }
+        $code = strtoupper(trim($value));
+
+        return preg_match('/^[A-Z]{2}$/', $code) === 1 ? $code : null;
     }
 
     /**

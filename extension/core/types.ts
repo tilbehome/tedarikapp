@@ -30,6 +30,12 @@ export interface CaptureRaw {
   images: string[];
   video?: { id: string | null; poster: string | null } | null;
   attributes?: unknown;
+  /** İE#11 EK-3: featureAttributes → {ad: değer} (ürün raw_attributes'ına yazılır). */
+  normalized_attributes?: Record<string, string>;
+  min_order?: unknown;
+  unit?: unknown;
+  category_name?: unknown;
+  origin_text?: string | null;
 }
 
 export interface CaptureNormalized {
@@ -39,6 +45,8 @@ export interface CaptureNormalized {
   images: string[];
   sku_matrix: SkuEntry[] | null;
   video_url: string | null;
+  /** ISO 3166-1 alpha-2; menşe özniteliği yoksa null (İE#11 EK-3). */
+  country_of_origin?: string | null;
 }
 
 export interface CapturePayload {
@@ -64,6 +72,7 @@ export interface SelectorSet {
   paths: Record<string, string[]>;
   fallbacks: Record<string, string>;
   image_cleanup: { strip_suffixes: string[] };
+  origin_attribute_keys?: string[];
 }
 
 export interface ParseResult {

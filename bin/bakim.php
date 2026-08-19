@@ -96,6 +96,19 @@ try {
     }
     printf("(b) app_logs: %d kayıt silindi (%d günden eski)\n", $purgedLogs, $logRetentionDays);
 
+    // ── (b2) hız sayacı satırları (İE#11 EK-3): pencere 1 dakikadır, 2 günden eskisi ölü veridir ──
+    $purgedCounters = 0;
+    try {
+        $statement = $connection->pdo()->prepare(
+            "DELETE FROM activity_log WHERE action = 'capture_request' AND created_at <= :threshold",
+        );
+        $statement->execute(['threshold' => Dates::toStorage($now->modify('-2 days'))]);
+        $purgedCounters = $statement->rowCount();
+    } catch (Throwable $e) {
+        fwrite(STDERR, 'UYARI: hız sayacı satırları temizlenemedi: ' . $e->getMessage() . "\n");
+    }
+    printf("(b2) hız sayacı: %d capture_request satırı silindi (2 günden eski)\n", $purgedCounters);
+
     // ── (c) yedek saklama ──
     $backupService = new BackupService($config, $basePath);
     $pruned = $backupService->prune($config->getPositiveInt('BACKUP_RETENTION_DAYS', 14));

@@ -49,7 +49,14 @@ final class ActivityController extends ApiController
             $where[] = 'entity_id = :entity_id';
             $params['entity_id'] = (int) $entityId;
         }
-        $clause = $where === [] ? '' : ' WHERE ' . implode(' AND ', $where);
+        // İE#11 EK-3 (5): hız sayacı satırları (capture_request) İNSAN aktivitesi değildir —
+        // akıştan gizlenir. Sayaç LoginThrottle/ShareGate ile aynı disksiz desende
+        // activity_log'da kalır (ayrı tablo = yeni migration + K49 haritası + ikinci
+        // sayaç deseni; kazanç yok). Eskiler bin/bakim.php'de temizlenir.
+        $where[] = "action <> 'capture_request'";
+
+        // $where hep dolu (capture_request filtresi eklendi) — koşul kaldırıldı.
+        $clause = ' WHERE ' . implode(' AND ', $where);
 
         [$page, $perPage] = $this->pagination($request);
 

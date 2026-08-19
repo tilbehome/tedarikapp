@@ -77,6 +77,19 @@ final class InboxEndpointsTest extends AuthTestCase
         self::assertStringContainsString('detail.1688.com', (string) $products[0]['url']);
     }
 
+    /** İE#11 EK-3 (2): kuyruktan taşıma da CaptureService'ten geçer — RAW ürüne yazılır. */
+    public function testKuyruktanTasimaRawBlogunuUruneYazar(): void
+    {
+        $id = $this->seedCapture('eeeeeeee-1111-4222-8333-444444444444', 'RAW ürünü');
+        $listId = (int) $this->json($this->write('POST', '/api/lists', ['name' => 'RAW hedefi']))['data']['id'];
+
+        $this->write('POST', '/api/inbox/assign', ['ids' => [$id], 'list_id' => $listId]);
+
+        $raw = $this->pdo->query('SELECT raw_attributes FROM products ORDER BY id DESC LIMIT 1')->fetchColumn();
+        self::assertNotEmpty($raw, 'Taşımada da RAW blok ürüne yazılmalı (tek yol: CaptureService).');
+        self::assertStringContainsString('原文', (string) $raw, 'Orijinal başlık RAW içinde durmalı.');
+    }
+
     public function testTasinmisKayitTekrarTasinamaz(): void
     {
         $id = $this->seedCapture('cccccccc-1111-4222-8333-444444444444');

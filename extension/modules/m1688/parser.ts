@@ -16,7 +16,7 @@
 import { firstPath, resolveRefs } from '../../core/jsonpath';
 import type { CaptureNormalized, CaptureRaw, CaptureSource, ParseResult, PriceTier, SelectorSet, SkuEntry } from '../../core/types';
 
-export const PARSER_VERSION = '1688-2026.08';
+export const PARSER_VERSION = '1688-2026.08.2';
 
 interface DomFallback {
   ogTitle?: string | null;
@@ -42,7 +42,8 @@ export function extractTiers(priceBlock: unknown): PriceTier[] {
   for (const entry of priceBlock) {
     if (entry === null || typeof entry !== 'object') continue;
     const record = entry as Record<string, unknown>;
-    const price = record.price ?? record.priceText ?? record.value;
+    // globalData.model.tradeModel: currentPrices[] {price, beginAmount} · skuMap[] {price, discountPrice}
+    const price = record.discountPrice ?? record.price ?? record.priceText ?? record.value;
     const begin = record.beginAmount ?? record.beginNum ?? record.startAmount;
     if (price === undefined) continue;
     const priceText = String(price).replace(/[^\d.]/g, '');
@@ -67,6 +68,9 @@ export function extractSkuMatrix(skuProps: unknown, skuRange: unknown): SkuEntry
         for (const [key, value] of Object.entries(record.attributes as Record<string, unknown>)) {
           if (typeof value === 'string' || typeof value === 'number') props[key] = String(value);
         }
+      } else if (typeof record.specAttrs === 'string') {
+        // globalData.model.tradeModel.skuMap[] — gerçek yapı (rapor §4.2): specAttrs tek metin.
+        props['seçenek'] = record.specAttrs;
       } else if (typeof record.skuName === 'string') {
         props['seçenek'] = record.skuName;
       }
@@ -94,6 +98,45 @@ export function extractSkuMatrix(skuProps: unknown, skuRange: unknown): SkuEntry
     }
   }
   return entries.length > 0 ? entries : null;
+}
+
+/**
+ * featureAttributes[] → {ad: değer} sözlüğü (rapor B.6: {fid, name, value, values[]};
+ * çoklu değerde `values` dizisi tercih edilir).
+ *
+ * @returns [sözlük, menşe metni|null]
+ */
+export function extractAttributes(raw: unknown, originKeys: string[]): [Record<string, string>, string | null] {
+  const out: Record<string, string> = {};
+  let origin: string | null = null;
+  if (!Array.isArray(raw)) {
+    // Eski/ikincil biçim: düz {ad: değer} sözlüğü.
+    if (raw !== null && typeof raw === 'object') {
+      for (const [key, value] of Object.entries(raw as Record<string, unknown>)) {
+        if (typeof value === 'string' || typeof value === 'number') out[key] = String(value);
+      }
+    }
+  } else {
+    for (const item of raw) {
+      if (item === null || typeof item !== 'object') continue;
+      const record = item as Record<string, unknown>;
+      const name = typeof record.name === 'string' ? record.name : null;
+      if (name === null) continue;
+      const values = Array.isArray(record.values)
+        ? record.values.filter((v): v is string => typeof v === 'string')
+        : [];
+      const value = values.length > 0 ? values.join(', ') : typeof record.value === 'string' ? record.value : '';
+      if (value !== '') out[name] = value;
+    }
+  }
+  for (const key of originKeys) {
+    if (out[key] !== undefined && out[key] !== '') {
+      origin = out[key];
+      break;
+    }
+  }
+
+  return [out, origin];
 }
 
 /**
@@ -151,8 +194,15 @@ export function parse1688(
     images.push(cleanImageUrl(dom.ogImage.replace(/^http:/, 'https:'), strip));
   }
 
-  const videoId = firstPath(ctx, paths.video_id ?? []);
+  const videoIdRaw = firstPath(ctx, paths.video_id ?? []);
+  // Rapor §A.6: wirelessVideo.videoId === 0 → video YOK.
+  const videoId = videoIdRaw === undefined || videoIdRaw === null || String(videoIdRaw) === '0' ? undefined : videoIdRaw;
   const videoPoster = firstPath(ctx, paths.video_poster ?? []);
+
+  const [attributes, originText] = extractAttributes(
+    firstPath(ctx, paths.attributes ?? []),
+    selectors.origin_attribute_keys ?? [],
+  );
 
   const source: CaptureSource = {
     platform: '1688',
@@ -160,6 +210,7 @@ export function parse1688(
     url: pageUrl,
     seller_id: (firstPath(ctx, paths.seller_login_id ?? []) as string | undefined) ?? null,
     seller_name: (firstPath(ctx, paths.seller_name ?? []) as string | undefined) ?? null,
+    seller_url: (firstPath(ctx, paths.seller_url ?? []) as string | undefined) ?? null,
     captured_at: new Date().toISOString(),
   };
 
@@ -171,6 +222,12 @@ export function parse1688(
       ? { id: videoId !== undefined ? String(videoId) : null, poster: typeof videoPoster === 'string' ? videoPoster : null }
       : null,
     attributes: firstPath(ctx, paths.attributes ?? []) ?? null,
+    // İE#11 EK-3 (2): normalize sözlük + 1688 gerçekleri — ürün raw_attributes'ına yazılır.
+    normalized_attributes: attributes,
+    min_order: firstPath(ctx, paths.min_order ?? []) ?? null,
+    unit: firstPath(ctx, paths.unit ?? []) ?? null,
+    category_name: firstPath(ctx, paths.category_name ?? []) ?? null,
+    origin_text: originText,
   };
 
   const normalized: CaptureNormalized = {
@@ -180,6 +237,9 @@ export function parse1688(
     images,
     sku_matrix: extractSkuMatrix(firstPath(ctx, paths.sku_props ?? []), skuRangePrices),
     video_url: null, // oynatılabilir mp4 adresi MTOP ister; v1'de id+poster raw'da taşınır (İE#11 C3)
+    // İE#11 EK-3 (2): menşe — 1688 Çin tedarik platformudur; menşe özniteliği VARSA
+    // ülke CN'dir (il/şehir metni raw'da durur, uydurma yapılmaz).
+    country_of_origin: originText === null ? null : 'CN',
   };
 
   if (normalized.name === '') missing.push('normalized.name');
