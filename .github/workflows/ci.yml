@@ -28,7 +28,7 @@ jobs:
 
     steps:
       - name: Depoyu al
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: PHP 8.4 kur
         uses: shivammathur/setup-php@v2
@@ -94,7 +94,7 @@ jobs:
 
     steps:
       - name: Depoyu al
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: PHP 8.4 kur
         uses: shivammathur/setup-php@v2
@@ -132,7 +132,7 @@ jobs:
     # uygulama 8.1 üzerinde AYAĞA KALKAR (sihirbaz state ucu 200).
     steps:
       - name: Depoyu al
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: PHP 8.1 kur
         uses: shivammathur/setup-php@v2
@@ -219,7 +219,7 @@ jobs:
 
     steps:
       - name: Depoyu al
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: PHP 8.4 kur
         uses: shivammathur/setup-php@v2
@@ -317,7 +317,7 @@ jobs:
         working-directory: extension
     steps:
       - name: Depoyu al
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Node 22 kur
         uses: actions/setup-node@v4
         with:
@@ -348,7 +348,7 @@ jobs:
     # otomatik bekçisi. Bulgu = job kırmızı; yanlış pozitifler .gitleaksignore ile yönetilir.
     steps:
       - name: Depoyu al
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: gitleaks
@@ -367,7 +367,7 @@ jobs:
 
     steps:
       - name: Depoyu al
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Node 22 kur
         uses: actions/setup-node@v4
