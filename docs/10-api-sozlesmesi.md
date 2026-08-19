@@ -67,9 +67,11 @@
 | `PATCH /api/lists/{id}` | Kısmi güncelleme: `{name?, period?, supplier_name?, note?, visibility?, status?}` — geçersiz durum geçişi → 422 `STATE_TRANSITION`; terminal listede `visibility` dışındaki her alan → 422 `LIST_IMMUTABLE` (K37 §B4) |
 | `DELETE /api/lists/{id}` | Çöp kutusuna taşır (30 gün) → 204 |
 | `POST /api/lists/{id}/duplicate` | → 201 yeni liste (`draft`, günün kuru, ürünler `to_order`, export geçmişi taşınmaz) |
-| `POST /api/lists/{id}/share` | → 200 `{share_url}` — tam token YALNIZCA bu yanıtta bir kez görünür (DB'de hash'li). `{renew:true}` ile yenilenir (eski link ölür); `{expires_at}` opsiyoneldir |
+| `POST /api/lists/{id}/share` | K51 — → 200 `{share_url, share_token_prefix, share_expires_at}`; tam token YALNIZCA bu yanıtta bir kez görünür (DB'de SHA-256). Tekrar çağrı = YENİLEME (eski link anında ölür); `{expires_at}` opsiyonel (gelecek tarih, 422 denetimli) |
 | `DELETE /api/lists/{id}/share` | Linki iptal eder → 204 (paylaşım sayfası 404 döner) |
-| `GET /api/lists/{id}/export?format=xlsx\|pdf\|csv` | Dosya döner (`Content-Disposition: attachment`); export geçmişine kaydolur. Kayıt gerçek anlık görüntü tutar (K25): `snapshot_json` (üretim anındaki liste+ürün verisi), `sha256`, `file_size`, `status`, `list_revision` |
+| `GET /api/lists/{id}/export?format=xlsx\|pdf\|csv` | K50 — dosya BELLEKTE üretilir ve akışla döner (`Content-Disposition: attachment`; diske yazılmaz). Kayıt gerçek anlık görüntü tutar (K25): `snapshot_json`, `sha256`, `file_size`, `status`, `list_revision`. Geçersiz biçim 422 |
+| `GET /api/lists/{id}/exports` | K50 — export geçmişi → 200 `[{id, format, file_size, list_revision, created_at}]` (snapshot gövdesiz) |
+| `GET /api/exports/{id}/file` | K50 — geçmiş kaydını SAKLANAN snapshot'tan yeniden üretip akıtır; liste sonradan değişmiş olsa bile içerik AYNIDIR (yeni hali istemek = yeni export) |
 
 ## 4. Ürünler
 
@@ -117,7 +119,8 @@
 - `POST /api/capture` — istek şeması **docs/04 §2c'de sabit**. Yanıt: 201 `{inbox_id}` veya `{product_id}` (hedef liste seçiliyse); doğrulanamayan gövde → 201 `{inbox_id, status:"error"}` (veri kaybolmaz); hız aşımı → 429.
   - **Zorunlu `capture_id` (UUIDv4, K25):** sistemde UNIQUE'tir. Aynı `capture_id` tekrar gelirse yeni kayıt AÇILMAZ, ilk isteğin sonucu döner (idempotans) — eklentinin kuyruk tekrar denemeleri çift ürün oluşturamaz.
   - Gövdede ayrıca `schema_version`, `extension_version`, `parser_version` ve `platform` zorunludur; parser bozulduğunda hangi sürümün ürettiği kayıttan anlaşılır.
-- `GET /p/{share_token}` — API değil, sunucu render sayfa (docs/09 P1). Gelen token SHA-256'lanıp `share_token_hash` üzerinden aranır (K25). Geçersiz/iptal/süresi dolmuş token → 404. `noindex` başlığı zorunlu.
+- `GET /p/{share_token}` — API değil, sunucu render sayfa (docs/09 P1, K51). Token SHA-256'lanıp aranır; biçimsiz/bilinmeyen/iptal/süresi dolmuş token ve hız sınırı aşımı AYNI sabit 404'ü döndürür (ayrım sızmaz). Enumeration: IP başına 10 dk'da 30 geçersiz deneme → blok (sayaç activity_log'da, token loglanmaz). `noindex` + robots `/p/` kapsamı + CSP (stil `/p-style.css`). Sayfa CANLI listeyi gösterir — export snapshot'ının aksine (fark K50/K51'de belgeli). İptal edilen ürünler gösterilmez.
+- `GET /media/{name}` — İE#10 5c YEDEK HAT: /media normalde Apache statik sunar (.htaccess [END]); rewrite şaşarsa uygulama aynı adresi sunucu-üretimi ad deseni doğrulamasıyla akıtır (desen dışı/dosyasız → sade 404, SPA yönlendirmesi YOK).
 
 ## 8b. Kurulum ve Sistem (İE#5 — PM onaylı ek)
 
@@ -154,7 +157,9 @@ Adım sırası zorlanır: sırası gelmemiş uç `422 STATE_TRANSITION` + `meta.
 | `GET /api/system/state-machine` | (İE#8) `{product:{durum: [izinli...]}, list:{...}}` — docs/04 §2b geçiş matrisinin okunur kopyası. Panel durum menüsünü buradan kurar; **kural yine backend'de zorlanır**, bu uç yalnızca geçersiz seçeneğin kullanıcıya sunulmamasını sağlar |
 | `POST /api/system/migrate` | Auth + CSRF. Bekleyen migration'ları koşar → `{applied[], applied_count}`; sonuç `activity_log`'a yazılır |
 | `POST /api/system/setup-unlock` | K46 — kilit kaldırmanın ADMİN OTURUMU yolu (Auth + CSRF). → 200 `{unlocked:true}`; activity_log'a `setup_unlock (admin:<e-posta>)` yazılır |
-| `POST /api/system/media-migrate` | K47 — uzak görselleri arşive taşıma (Auth + CSRF). Tek çağrı BİR parti işler (≤20 kayıt) → 200 `{mode, scanned, migrated, failed:[{kind, id, product_id, url, error}], remaining}`; panel `remaining` sıfırlanana dek tekrar çağırır. Medya yazılamıyorsa 422 `MEDIA_NOT_WRITABLE`. İdempotent; başarısız kayıt bozulmaz. Sonuç `activity_log`'a yazılır |
+| `POST /api/system/media-migrate` | K47 — uzak görselleri arşive taşıma (Auth + CSRF). Gövde (İE#10 5b): `{exclude_products?:[], exclude_images?:[]}` — önceki turların başarısızları dışlanır, parti başı tıkanmaz. Tek çağrı BİR parti işler (≤20 kayıt) → 200 `{mode, scanned, migrated, failed:[{kind, id, product_id, url, error}], remaining}`; panel `remaining` sıfırlanana dek tekrar çağırır. Medya yazılamıyorsa 422 `MEDIA_NOT_WRITABLE`. İdempotent; başarısız kayıt bozulmaz. Sonuç `activity_log`'a yazılır |
+| `POST /api/system/media-check` | İE#10 5d — medya bütünlük denetimi + onarım (Auth + CSRF). Yerel /media kayıtlarını diskle karşılaştırır; kayıpları `main_image_source`/`source_url`'den yeniden indirir (parti ≤20) → 200 `{mode, checked, missing, repaired, failed[]}`. İdempotent; kaynaksız kayıt bozulmaz, raporlanır. Export ve paylaşım görselleri aynı kayıtlardan okunduğu için denetim o yüzeyleri de kapsar |
+| `POST /api/products/{id}/media-repair` | İE#10 5d — tek ürün görsel onarımı (panel "yeniden dene"): uzaksa arşive alır, yerel+kayıpsa kaynaktan indirir → 200 `{repaired, main_image}`; onarılamazsa 422 `MEDIA_REPAIR_FAILED` |
 | `POST /api/system/migrate-baseline` | K49 — migration defterini gerçeğe eşitler (Auth + CSRF; APP_KEY kanıtı GEREKMEZ — yıkıcı değil). Bekleyen her kayıt için hedef nesne şema sorgusuyla doğrulanır: VARSA kayıt KOŞULMADAN checksum'uyla deftere işlenir, YOKSA/haritada değilse atlanır → 200 `{recorded[], skipped:[{name, reason}], pending_count}`. HİÇBİR DDL çalıştırmaz; idempotent. Sonuç `activity_log`'a yazılır. CLI eşi: `bin/migrate-baseline.php` |
 
 ## 9. Sözleşme Testleri

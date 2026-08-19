@@ -41,8 +41,11 @@ final class SecurityHeaders implements MiddlewareInterface
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
+        // media-src img-src ile aynı kaynaklardan beslenir (İE#10 Blok 4): paylaşım
+        // sayfasındaki ürün videoları da aynı beyaz listeden gömülür (K31/K33).
         $csp = sprintf(
-            "default-src 'self'; img-src %s; object-src 'none'; frame-ancestors 'none'; base-uri 'self'",
+            "default-src 'self'; img-src %s; media-src %s; object-src 'none'; frame-ancestors 'none'; base-uri 'self'",
+            implode(' ', $this->imageSources),
             implode(' ', $this->imageSources),
         );
 

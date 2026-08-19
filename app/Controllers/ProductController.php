@@ -99,10 +99,14 @@ final class ProductController extends ApiController
             // K47 kırık-görsel dayanıklılığı: indirme hatası (403/404/zaman aşımı/bozuk
             // içerik) ürün kaydını BOZMAZ — URL uzak (remote) olarak saklanır, panel yer
             // tutucu + "yeniden dene" gösterir; arşive taşıma sonraki denemede yapılır.
+            $body['main_image_source'] = $value;
+
             return null;
         }
 
         $body['main_image'] = $stored['url'];
+        // İE#10 5d: orijinal adres SAKLANIR — dosya kaybolursa onarım buradan indirir.
+        $body['main_image_source'] = $value;
 
         return null;
     }
@@ -306,6 +310,37 @@ final class ProductController extends ApiController
      *
      * @param array<string, string> $args
      */
+    /**
+     * POST /api/products/{id}/media-repair — İE#10 5d: panel "yeniden dene".
+     *
+     * Uzak ana görseli arşive alır; yerel-ama-dosyası-kayıp görseli main_image_source'tan
+     * yeniden indirir. Başarısızlık kaydı bozmaz — hata mesajı döner, tekrar denenebilir.
+     *
+     * @param array<string, string> $args
+     */
+    public function mediaRepair(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    {
+        $productId = $this->intArg($args, 'id');
+        $product = $productId === null ? null : $this->products->find($productId);
+        if ($product === null) {
+            return Response::error($response, 'NOT_FOUND', 'Ürün bulunamadı.', 404);
+        }
+        if ($this->media === null) {
+            return Response::error($response, 'SERVER_ERROR', 'Medya servisi yapılandırılmamış.', 500);
+        }
+
+        $result = (new \App\Services\MediaIntegrity($this->connection, $this->media))->repairProduct((int) $product['id']);
+        if ($result['error'] !== null && !$result['repaired']) {
+            return Response::error($response, 'MEDIA_REPAIR_FAILED', $result['error'], 422);
+        }
+
+        return Response::success($response, [
+            'repaired' => $result['repaired'],
+            'main_image' => $result['main_image'],
+        ]);
+    }
+
+    /** @param array<string, string> $args */
     public function updateStatus(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
         $product = $this->requireProduct($args);

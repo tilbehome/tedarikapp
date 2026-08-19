@@ -294,6 +294,7 @@ abstract class AuthTestCase extends TestCase
                 sku_selection TEXT NULL,
                 sku_matrix TEXT NULL,
                 main_image TEXT NULL,
+                main_image_source TEXT NULL,
                 video_url TEXT NULL,
                 qty INTEGER NOT NULL DEFAULT 1,
                 price_yuan TEXT NOT NULL DEFAULT \'0\',

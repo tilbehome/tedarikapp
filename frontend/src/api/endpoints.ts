@@ -70,6 +70,29 @@ export const products = {
     api.patch<{ updated: number; failed: { id: number; error: string }[] }>('/api/products/bulk', body),
   reorder: (listId: number, orderedIds: number[]) =>
     api.patch<{ updated: number }>(`/api/lists/${listId}/products/reorder`, { ordered_ids: orderedIds }),
+  /** İE#10 5d: kırık görsel onarımı — uzaksa arşive alır, yerel+kayıpsa kaynaktan indirir. */
+  mediaRepair: (id: number) =>
+    api.post<{ repaired: boolean; main_image: string | null }>(`/api/products/${id}/media-repair`),
+};
+
+/** İE#10 Blok 1-4: export + paylaşım. */
+export const exports = {
+  /** Dosya indirme GET ile doğrudan tarayıcıya bırakılır (cookie oturumu yeter). */
+  downloadUrl: (listId: number, format: 'xlsx' | 'pdf' | 'csv') => `/api/lists/${listId}/export?format=${format}`,
+  history: (listId: number) =>
+    api.get<{ id: number; format: string; file_size: number | null; list_revision: number; created_at: string }[]>(
+      `/api/lists/${listId}/exports`,
+    ),
+  fileUrl: (exportId: number) => `/api/exports/${exportId}/file`,
+};
+
+export const share = {
+  create: (listId: number, body: { expires_at?: string } = {}) =>
+    api.post<{ share_url: string; share_token_prefix: string; share_expires_at: string | null }>(
+      `/api/lists/${listId}/share`,
+      body,
+    ),
+  revoke: (listId: number) => api.delete<void>(`/api/lists/${listId}/share`),
 };
 
 export const categories = {
@@ -97,8 +120,15 @@ export const system = {
   /** İzinli durum geçişleri — arayüz kendi kopyasını TUTMAZ (İE#8 §2). */
   stateMachine: () => api.get<StateMachineMap>('/api/system/state-machine'),
   migrate: () => api.post<{ applied: string[]; applied_count: number }>('/api/system/migrate'),
-  /** K47: uzak görselleri arşive taşıma — tek çağrı bir parti işler, kalan sıfırlanana dek tekrarlanır. */
-  mediaMigrate: () => api.post<MediaMigrateResult>('/api/system/media-migrate'),
+  /** K47: uzak görselleri arşive taşıma — tek çağrı bir parti işler, kalan sıfırlanana dek tekrarlanır.
+   *  İE#10 5b: önceki turların başarısız kimlikleri geçilir — parti başı tıkanmaz. */
+  mediaMigrate: (exclude?: { exclude_products?: number[]; exclude_images?: number[] }) =>
+    api.post<MediaMigrateResult>('/api/system/media-migrate', exclude ?? {}),
+  /** İE#10 5d: medya bütünlük denetimi — kayıp dosyaları kaynağından yeniden indirir. */
+  mediaCheck: () =>
+    api.post<{ mode: string; checked: number; missing: number; repaired: number; failed: unknown[] }>(
+      '/api/system/media-check',
+    ),
   /** K49: migration defterini gerçeğe eşitler — DDL koşmaz, idempotent. */
   migrateBaseline: () =>
     api.post<{ recorded: string[]; skipped: { name: string; reason: string }[]; pending_count: number }>(

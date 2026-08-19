@@ -1,0 +1,40 @@
+/* Paylaşım sayfası stili (İE#10 Blok 4) — CSP `default-src 'self'` gereği AYRI dosya.
+   Sayfa dışa açık tek yüzeydir: sade, mobil öncelikli, markasız-nötr görünüm. */
+* { box-sizing: border-box; margin: 0; }
+body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background: #f1f5f9; color: #0f172a; }
+main { max-width: 860px; margin: 0 auto; padding: 16px; }
+.baslik h1 { font-size: 1.35rem; }
+.kunye { color: #64748b; font-size: .85rem; margin-top: 4px; }
+.toplam-kart { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; margin: 16px 0; }
+.toplam-kart div { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 12px; }
+.toplam-kart span { display: block; color: #64748b; font-size: .75rem; }
+.toplam-kart strong { font-size: 1.05rem; }
+.urunler { display: flex; flex-direction: column; gap: 12px; }
+.kart { display: flex; gap: 12px; background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 12px; }
+.gorsel img { width: 96px; height: 96px; object-fit: cover; border-radius: 10px; border: 1px solid #e2e8f0; }
+.gorsel .yok { display: flex; width: 96px; height: 96px; align-items: center; justify-content: center;
+    background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 10px; color: #94a3b8; font-size: .7rem; }
+.bilgi { flex: 1; min-width: 0; }
+.bilgi h2 { font-size: 1rem; }
+.meta { color: #64748b; font-size: .8rem; margin: 2px 0 8px; }
+.rozet { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: .72rem; background: #e2e8f0; }
+.rozet-to_order { background: #fef9c3; color: #854d0e; }
+.rozet-ordered { background: #dbeafe; color: #1e40af; }
+.rozet-in_transit { background: #fde68a; color: #92400e; }
+.rozet-received { background: #dcfce7; color: #166534; }
+.fiyat { display: flex; flex-wrap: wrap; gap: 12px; font-size: .85rem; }
+.fiyat dt { color: #64748b; font-size: .72rem; }
+.fiyat dd { font-weight: 600; }
+details { margin-top: 8px; }
+summary { cursor: pointer; color: #2563eb; font-size: .82rem; }
+.detay { margin-top: 8px; font-size: .85rem; color: #334155; display: flex; flex-direction: column; gap: 8px; }
+.zh { color: #64748b; }
+.galeri { display: flex; flex-wrap: wrap; gap: 6px; }
+.galeri img { width: 72px; height: 72px; object-fit: cover; border-radius: 8px; border: 1px solid #e2e8f0; }
+video { width: 100%; max-width: 420px; border-radius: 10px; background: #000; }
+.sku { border-collapse: collapse; font-size: .8rem; width: 100%; }
+.sku caption { text-align: left; color: #64748b; font-size: .75rem; padding-bottom: 4px; }
+.sku th, .sku td { border: 1px solid #e2e8f0; padding: 4px 8px; text-align: left; font-weight: normal; }
+.sku th { background: #f8fafc; }
+.alt { text-align: center; color: #94a3b8; font-size: .75rem; margin: 24px 0 8px; }
+@media (max-width: 480px) { .kart { flex-direction: column; } .gorsel img, .gorsel .yok { width: 100%; height: 160px; } }

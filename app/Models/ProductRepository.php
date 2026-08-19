@@ -18,13 +18,13 @@ final class ProductRepository
 {
     private const COLUMNS = 'id, list_id, sort_no, category_id, platform, external_id,
         name, name_original, detail, url, vendor_name, vendor_url, sku_selection, sku_matrix,
-        main_image, video_url, qty, price_yuan, price_ddp_usd, units_per_carton, tracking_no,
+        main_image, main_image_source, video_url, qty, price_yuan, price_ddp_usd, units_per_carton, tracking_no,
         status, note, created_at, updated_at, deleted_at';
 
     /** Uçlardan yazılabilen alanlar (docs/10 §4). */
     public const WRITABLE = [
         'category_id', 'platform', 'external_id', 'name', 'name_original', 'detail', 'url',
-        'vendor_name', 'vendor_url', 'sku_selection', 'sku_matrix', 'main_image', 'video_url',
+        'vendor_name', 'vendor_url', 'sku_selection', 'sku_matrix', 'main_image', 'main_image_source', 'video_url',
         'qty', 'price_yuan', 'price_ddp_usd', 'units_per_carton', 'tracking_no', 'note',
     ];
 
@@ -105,11 +105,11 @@ final class ProductRepository
         $statement = $pdo->prepare(
             'INSERT INTO products (list_id, sort_no, category_id, platform, external_id, name,
                 name_original, detail, url, vendor_name, vendor_url, sku_selection, sku_matrix,
-                main_image, video_url, qty, price_yuan, price_ddp_usd, units_per_carton,
+                main_image, main_image_source, video_url, qty, price_yuan, price_ddp_usd, units_per_carton,
                 tracking_no, status, note, created_at, updated_at)
              VALUES (:list_id, :sort_no, :category_id, :platform, :external_id, :name,
                 :name_original, :detail, :url, :vendor_name, :vendor_url, :sku_selection, :sku_matrix,
-                :main_image, :video_url, :qty, :price_yuan, :price_ddp_usd, :units_per_carton,
+                :main_image, :main_image_source, :video_url, :qty, :price_yuan, :price_ddp_usd, :units_per_carton,
                 :tracking_no, :status, :note, :created_at, :updated_at)',
         );
         $statement->execute([
@@ -127,6 +127,7 @@ final class ProductRepository
             'sku_selection' => $data['sku_selection'] ?? null,
             'sku_matrix' => $data['sku_matrix'] ?? null,
             'main_image' => $data['main_image'] ?? null,
+            'main_image_source' => $data['main_image_source'] ?? null,
             'video_url' => $data['video_url'] ?? null,
             'qty' => $data['qty'],
             'price_yuan' => $data['price_yuan'] ?? '0',

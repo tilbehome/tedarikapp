@@ -47,5 +47,11 @@
 | D2 | `tsc --noEmit` 0 hata · ESLint 0 | |
 | D3 | K19 dışı bağımlılık yok (`frontend/package.json` denetimi) | |
 
-**Sonuç:** ☐ KABUL · ☐ ŞARTLI (eksikler listelenir) · ☐ RET
-İmza/tarih: ______________________
+**Sonuç:** ☑ KABUL · ☐ ŞARTLI (eksikler listelenir) · ☐ RET
+İmza/tarih: Bünyamin (Ürün Sahibi) · 19 Ağustos 2026
+
+> **FAZ 1 KAPANIŞ KAYDI (İE#10 Blok 6):** Ürün Sahibi 19 Ağu 2026'da masaüstü +
+> telefon kabul turunu canlı v0.9.5 üzerinde tamamladı, sorun bildirilmedi.
+> (Ekran kanıtları PM sohbetine iletildi: Ana Ekran masaüstü + mobil, liste detayı,
+> ürün formu — kur/K48 etiketi ve TOPLAM satırı doğrulanmış hâlde.) Tek tek satır
+> işaretleri yerine bu toplu kayıt geçerlidir — Ürün Sahibi kararı.

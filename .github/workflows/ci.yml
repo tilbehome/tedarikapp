@@ -144,7 +144,9 @@ jobs:
 
       - name: Üretim bağımlılıkları (paket php beyanları 8.2 der ama 8.1'de LINT ile kanıtlanır)
         run: |
-          n=0; until composer install --no-dev --optimize-autoloader --no-interaction --no-progress --ignore-platform-req=php; do
+          # php-64bit ayrı bir platform paketidir (İE#10 canlı vaka: zipstream-php ^8.2 beyanı) —
+          # ikisi de yok sayılır; GERÇEK uyum kanıtı bu job'ın 8.1 lint + smoke adımlarıdır.
+          n=0; until composer install --no-dev --optimize-autoloader --no-interaction --no-progress --ignore-platform-req=php --ignore-platform-req=php-64bit; do
             n=$((n+1)); [ $n -ge 3 ] && exit 1; echo "codeload hatası — 90 sn sonra deneme $((n+1))/3"; sleep 90
           done
 

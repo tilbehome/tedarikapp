@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, Download, FileSpreadsheet, ImageOff, Plus, Search, Share2, Trash2 } from 'lucide-react';
-import { lists as listsApi, products as productsApi } from '../api/endpoints';
+import { exports as exportsApi, lists as listsApi, products as productsApi, share as shareApi } from '../api/endpoints';
 import type { ListStatus, Product, ProductStatus } from '../api/types';
 import { useAsync, messageOf } from '../lib/useAsync';
 import { count, dateTime, money, rate } from '../lib/format';
 import { listStatusLabels, productStatusLabels } from '../locales/tr';
-import { EmptyState, ErrorNote, ListStatusBadge, PageHeader, Skeleton, SoonBadge } from '../components/ui';
+import { EmptyState, ErrorNote, ListStatusBadge, PageHeader, Skeleton } from '../components/ui';
 import StatusMenu from '../components/StatusMenu';
 import { useReference } from '../store/reference';
 import { useToast } from '../components/Toast';
@@ -31,6 +31,7 @@ export default function ListDetailScreen() {
   const categoryName = useReference((state) => state.categoryName);
   const machine = useReference((state) => state.machine);
 
+  const [shareOpen, setShareOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<ProductStatus | ''>('');
   const [sort, setSort] = useState<{ key: SortKey; asc: boolean }>({ key: 'sort_no', asc: true });
@@ -155,22 +156,24 @@ export default function ListDetailScreen() {
               <Plus className="h-4 w-4" aria-hidden />
               Ürün ekle
             </Link>
-            {/* Faz 2'ye kadar pasif — yeri şimdiden belli olsun diye görünür (İE#8 §2). */}
-            <span className="btn-ghost cursor-not-allowed opacity-60" aria-disabled title="Faz 2'de açılacak">
+            {/* İE#10: export GET ile doğrudan indirilir; kayıt + rozet backend'de güncellenir. */}
+            <a className="btn-ghost" href={exportsApi.downloadUrl(listId, 'xlsx')} onClick={() => setTimeout(refresh, 1200)}>
               <FileSpreadsheet className="h-4 w-4" aria-hidden />
-              Excel <SoonBadge />
-            </span>
-            <span className="btn-ghost cursor-not-allowed opacity-60" aria-disabled title="Faz 2'de açılacak">
+              Excel
+            </a>
+            <a className="btn-ghost" href={exportsApi.downloadUrl(listId, 'pdf')} onClick={() => setTimeout(refresh, 1200)}>
               <Download className="h-4 w-4" aria-hidden />
-              PDF <SoonBadge />
-            </span>
-            <span className="btn-ghost cursor-not-allowed opacity-60" aria-disabled title="Faz 2'de açılacak">
+              PDF
+            </a>
+            <button type="button" className="btn-ghost" onClick={() => setShareOpen((value) => !value)}>
               <Share2 className="h-4 w-4" aria-hidden />
-              Paylaş <SoonBadge />
-            </span>
+              Paylaş
+            </button>
           </>
         }
       />
+
+      {shareOpen ? <SharePanel listId={listId} tokenPrefix={list.share_token_prefix} onChanged={refresh} /> : null}
 
       {allowedListStatuses.length > 0 && (
         <div className="card mb-4 flex flex-wrap items-center gap-2 p-3 text-sm">
@@ -397,7 +400,124 @@ export default function ListDetailScreen() {
           </div>
         </>
       )}
+
+      <ExportHistory listId={listId} refreshKey={list.revision + (list.last_export?.created_at ?? '')} />
     </>
+  );
+}
+
+/**
+ * İE#10 Blok 4 — paylaşım paneli: link üret/yenile/iptal + hızlı paylaşım (K20:
+ * WhatsApp wa.me, e-posta mailto, kopyala). Tam token YALNIZ üretim yanıtında
+ * görünür; sayfa yenilenince yalnız önek kalır — link o an kopyalanmalıdır.
+ */
+function SharePanel({ listId, tokenPrefix, onChanged }: { listId: number; tokenPrefix: string | null; onChanged: () => void }) {
+  const push = useToast((state) => state.push);
+  const [busy, setBusy] = useState(false);
+  const [url, setUrl] = useState<string | null>(null);
+
+  const create = async () => {
+    setBusy(true);
+    try {
+      const result = await shareApi.create(listId);
+      setUrl(result.share_url);
+      onChanged();
+      push('Paylaşım linki hazır — bu link yalnız şimdi görünür, kopyalayın.');
+    } catch (caught) {
+      push(messageOf(caught), 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const revoke = async () => {
+    setBusy(true);
+    try {
+      await shareApi.revoke(listId);
+      setUrl(null);
+      onChanged();
+      push('Paylaşım linki iptal edildi — eski link artık açılmaz.');
+    } catch (caught) {
+      push(messageOf(caught), 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const copy = () => {
+    if (url) {
+      void navigator.clipboard.writeText(url).then(() => push('Link kopyalandı.'));
+    }
+  };
+
+  const message = url ? `Sipariş listemiz hazır, buradan inceleyebilirsiniz: ${url}` : '';
+
+  return (
+    <section className="card mb-4 p-4">
+      <h2 className="mb-2 text-sm font-semibold text-slate-700">Paylaşım linki</h2>
+      {url ? (
+        <>
+          <p className="break-all rounded-lg bg-slate-50 p-2 font-mono text-xs">{url}</p>
+          <p className="mt-1 text-xs text-amber-700">
+            Bu link yalnız şimdi görünür (güvenlik gereği kaydedilmez) — kopyalamadan sayfadan ayrılmayın.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button type="button" className="btn-primary" onClick={copy}>Bağlantıyı kopyala</button>
+            <a className="btn-ghost" href={`https://wa.me/?text=${encodeURIComponent(message)}`} target="_blank" rel="noreferrer">
+              WhatsApp
+            </a>
+            <a className="btn-ghost" href={`mailto:?subject=${encodeURIComponent('Sipariş listesi')}&body=${encodeURIComponent(message)}`}>
+              E-posta
+            </a>
+            <button type="button" className="btn-ghost" disabled={busy} onClick={() => void revoke()}>Linki iptal et</button>
+          </div>
+        </>
+      ) : (
+        <>
+          <p className="text-xs text-slate-500">
+            {tokenPrefix
+              ? `Aktif bir paylaşım linki var (${tokenPrefix}…). Yenilemek eski linki öldürür; iptal etmek sayfayı kapatır.`
+              : 'Firma için girişsiz, salt-okunur bir sayfa linki üretilir. Liste güncellendikçe sayfa da güncel kalır.'}
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button type="button" className="btn-primary" disabled={busy} onClick={() => void create()}>
+              {tokenPrefix ? 'Linki yenile' : 'Link üret'}
+            </button>
+            {tokenPrefix ? (
+              <button type="button" className="btn-ghost" disabled={busy} onClick={() => void revoke()}>Linki iptal et</button>
+            ) : null}
+          </div>
+        </>
+      )}
+    </section>
+  );
+}
+
+/** İE#10 Blok 1 — export geçmişi: tarih + tür + indir (kayıt snapshot'ından yeniden üretim). */
+function ExportHistory({ listId, refreshKey }: { listId: number; refreshKey: string | number }) {
+  const state = useAsync(() => exportsApi.history(listId), [listId, refreshKey]);
+
+  if (state.loading || state.error || (state.data ?? []).length === 0) return null;
+
+  return (
+    <section className="card mt-4 p-4">
+      <h2 className="mb-2 text-sm font-semibold text-slate-700">Export geçmişi</h2>
+      <ul className="divide-y divide-slate-100 text-sm">
+        {(state.data ?? []).map((entry) => (
+          <li key={entry.id} className="flex items-center justify-between gap-3 py-2">
+            <span className="uppercase text-slate-500">{entry.format}</span>
+            <span className="flex-1 text-slate-600">{dateTime(entry.created_at)}</span>
+            <a className="btn-ghost" href={exportsApi.fileUrl(entry.id)}>
+              <Download className="h-4 w-4" aria-hidden />
+              İndir
+            </a>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-2 text-xs text-slate-500">
+        Her indirme, kaydın üretildiği ANDAKİ anlık görüntüyü verir — liste sonradan değiştiyse yeni export alın.
+      </p>
+    </section>
   );
 }
 
@@ -424,33 +544,32 @@ function Thumb({ product, onChanged }: { product: Product; onChanged?: () => voi
     return <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-xs text-slate-400">—</span>;
   }
 
-  const isRemote = source.startsWith('http');
   if (broken) {
     return (
       <span className="flex h-14 w-14 shrink-0 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-slate-300 bg-slate-50 text-center">
         <ImageOff className="h-4 w-4 text-slate-400" aria-hidden />
-        {isRemote ? (
-          <button
-            type="button"
-            className="text-[10px] font-medium text-brand-600 disabled:opacity-50"
-            disabled={retrying}
-            onClick={() => {
-              setRetrying(true);
-              productsApi
-                .update(product.id, { main_image: source })
-                .then(() => {
-                  setBroken(false);
-                  onChanged?.();
-                })
-                .catch(() => {
-                  /* Görsel yine gelmezse yer tutucu kalır; kart çalışmaya devam eder. */
-                })
-                .finally(() => setRetrying(false));
-            }}
-          >
-            {retrying ? '…' : 'yeniden dene'}
-          </button>
-        ) : null}
+        <button
+          type="button"
+          className="text-[10px] font-medium text-brand-600 disabled:opacity-50"
+          disabled={retrying}
+          onClick={() => {
+            setRetrying(true);
+            // İE#10 5d: onarım ucu iki durumu da çözer — uzak URL'yi arşive alır,
+            // yerel-ama-dosyası-kayıp görseli kayıtlı kaynağından yeniden indirir.
+            productsApi
+              .mediaRepair(product.id)
+              .then(() => {
+                setBroken(false);
+                onChanged?.();
+              })
+              .catch(() => {
+                /* Görsel yine gelmezse yer tutucu kalır; kart çalışmaya devam eder. */
+              })
+              .finally(() => setRetrying(false));
+          }}
+        >
+          {retrying ? '…' : 'yeniden dene'}
+        </button>
       </span>
     );
   }

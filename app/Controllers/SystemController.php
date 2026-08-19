@@ -112,8 +112,14 @@ final class SystemController
             );
         }
 
+        // İE#10 Blok 5b: panel önceki turların başarısız kimliklerini geçer — parti başı tıkanmaz.
+        $body = (array) ($request->getParsedBody() ?? []);
+        $excludeProducts = array_map('intval', is_array($body['exclude_products'] ?? null) ? $body['exclude_products'] : []);
+        $excludeImages = array_map('intval', is_array($body['exclude_images'] ?? null) ? $body['exclude_images'] : []);
+
         try {
-            $result = (new \App\Services\MediaMigrator($this->connection, $this->media))->migrateBatch(20);
+            $result = (new \App\Services\MediaMigrator($this->connection, $this->media))
+                ->migrateBatch(20, $excludeProducts, $excludeImages);
         } catch (Throwable $e) {
             return Response::error($response, 'SERVER_ERROR', 'Arşive taşıma çalıştırılamadı: ' . $e->getMessage(), 500);
         }
@@ -174,6 +180,47 @@ final class SystemController
             'skipped' => $result['skipped'],
             'pending_count' => count($pending),
         ]);
+    }
+
+    /**
+     * POST /api/system/media-check — İE#10 5d: medya bütünlük denetimi + onarım (bir parti).
+     *
+     * Yerel /media kayıtlarını diskle karşılaştırır; dosyası kayıpları saklanan orijinal
+     * adresten yeniden indirir. İdempotent; kaynağı olmayan kayıt bozulmaz, raporlanır.
+     */
+    public function mediaCheck(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        $user = $this->authenticatedUser($request);
+
+        if ($this->media === null) {
+            return Response::error($response, 'SERVER_ERROR', 'Medya servisi yapılandırılmamış.', 500);
+        }
+
+        try {
+            $result = (new \App\Services\MediaIntegrity($this->connection, $this->media))->repairBatch(20);
+        } catch (Throwable $e) {
+            return Response::error($response, 'SERVER_ERROR', 'Bütünlük denetimi çalıştırılamadı: ' . $e->getMessage(), 500);
+        }
+
+        (new ActivityLog($this->connection))->record(
+            'system',
+            null,
+            'media_check',
+            sprintf(
+                '%s: %d denetlendi, %d kayıp, %d onarıldı, %d başarısız',
+                $user->email,
+                $result['checked'],
+                $result['missing'],
+                $result['repaired'],
+                count($result['failed']),
+            ),
+            ClientIp::from($request),
+            $this->clock->now(),
+            ActivityLog::ACTOR_ADMIN,
+            $user->id,
+        );
+
+        return Response::success($response, $result);
     }
 
     public function status(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
