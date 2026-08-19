@@ -13,6 +13,7 @@
         "ext-pdo_mysql": "*",
         "ext-zip": "*",
         "bacon/bacon-qr-code": "^3.1",
+        "ifsnop/mysqldump-php": "^2.12",
         "maennchen/zipstream-php": "~3.1.2",
         "monolog/monolog": "^3.7",
         "mpdf/mpdf": "^8.2",
@@ -43,7 +44,8 @@
     "config": {
         "sort-packages": true,
         "optimize-autoloader": true,
-        "platform-check": false
+        "platform-check": false,
+        "process-timeout": 1800
     },
     "scripts": {
         "test": "phpunit",

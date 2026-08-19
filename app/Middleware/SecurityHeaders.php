@@ -54,6 +54,9 @@ final class SecurityHeaders implements MiddlewareInterface
             ->withHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
             ->withHeader('X-Frame-Options', 'DENY')
             ->withHeader('X-Content-Type-Options', 'nosniff')
-            ->withHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+            ->withHeader('Referrer-Policy', 'strict-origin-when-cross-origin')
+            // Ürün Sahibi kararı (İE#10.5 ek): uygulama aramaya TAMAMEN kapalı —
+            // her yanıt indexleme/arşivleme yasağı taşır (paylaşım sayfası dahil).
+            ->withHeader('X-Robots-Tag', 'noindex, nofollow, noarchive');
     }
 }

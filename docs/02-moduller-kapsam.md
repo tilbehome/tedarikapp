@@ -31,7 +31,7 @@ Sistemin ana birimi tek tek ürünler değil, **sipariş listesidir**. Bir liste
 - Liste durumları: `Taslak → İletildi → Sipariş Verildi → Tamamlandı` (+ `İptal`).
 - Liste kopyalama (tekrar eden siparişler için önceki listeden başlat).
 - **Görünümler:** panel listeleri üç sekmede sunar — **Aktif** (üzerinde çalışılan/süren siparişler), **Pasif** (dondurulan/bekletilen listeler) ve **Arşiv** (bitenler). Tek tıkla "Pasife al / Aktife döndür / Arşivle".
-- **Düzenleme:** liste adı, dönem, tedarikçi ve not her zaman değiştirilebilir; ürün ekleme/çıkarma her durumda serbesttir — **export alınmış olması listeyi kilitlemez**, export yalnızca alındığı anın anlık görüntüsüdür.
+- **Düzenleme:** liste adı, dönem, tedarikçi ve not değiştirilebilir; ürün ekleme/çıkarma serbesttir — **export alınmış olması listeyi kilitlemez**, export yalnızca alındığı anın anlık görüntüsüdür (K50). İSTİSNA (K37 §B4): `Tamamlandı`/`İptal` (terminal) listeler DONMUŞTUR — içerik ve durum değiştirilemez, çözüm kopyalamaktır; yalnız arşivleme/çöp kutusu yaşam döngüsü işlemleri serbest kalır.
 - **Silme:** liste ve ürün silme çöp kutusuna gider, 30 gün içinde geri alınabilir; 30 gün sonra kalıcı silinir.
 
 ## M3 — Ürün Yönetimi

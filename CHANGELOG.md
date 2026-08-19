@@ -4,6 +4,16 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/) · Sürümleme: SemVe
 Her release'te bu dosya güncellenir (docs/07 bölüm 4). Kategoriler: Eklendi / Değişti / Düzeltildi / Kaldırıldı / Güvenlik.
 
 ## [Yayınlanmadı]
+### Eklendi (İE#10.5 · K52 — bakım ve yedekleme)
+- **Off-site yedekleme:** şifreli DB yedeği (AES-256-GCM, APP_KEY'den türetilen ayrı anahtar) — panel Ayarlar > Yedekler (elle al + liste/indir + 24 saat rozeti), `bin/backup.php` (cron), FTP/SMTP off-site gönderim (cURL; kimlikler yalnız dosya yapılandırmasında). CI **restore kanıtı**: dump boş MySQL'e geri yüklenip doğrulanır.
+- **Bekleyen-migration koruması:** veri uçları bekleyen migration varken 503 `MIGRATION_PENDING` döner; panel tam sayfa "Güncelleme tamamlanmalı" ekranı + tek tık baseline+migrate (canlı ders: 0018 bekleyenken panel çöküyordu).
+- **Repo hijyeni:** dependabot (composer/npm/actions), CI'ya gitleaks sır taraması, PR şablonu (ÇIKTI RAPORU iskeleti), SECURITY.md.
+
+### Değişti (İE#10.5)
+- **AppBuilder bölündü (saf refactor):** rota kayıtları `app/Core/Routes/` modüllerine (Auth/System/Data/Public) taşındı; davranış değişmedi (521+ test güvencesi).
+- **Belge çelişkileri kapatıldı:** docs/02 terminal-liste istisnası (K37), README opsiyonel 2FA (K45) + görünürlük ifadesi, SUNUCU-PROFILI canlı MariaDB / CI MySQL ayrımı.
+- **Composer 8.1 modeli:** platform pini DENENDİ ve geri alındı (twofactorauth v3 metadata'sı zorluyordu — düşürmek TOTP davranış riski); yerine php81-uyum job'ına platform bekçisi: bilinen 2 istisna (zipstream, twofactorauth — lint+smoke kanıtlı) dışında 8.1-uyumsuz YENİ paket = kırmızı.
+- **Release zip küçüldü (Blok 7):** mPDF font ayıklaması — yalnız DejaVu + Sun-ExtA/B paketlenir; PDF'e Çince için otomatik CJK font geçişi eklendi.
 ### Eklendi (İE#10 · Faz 2 — export motoru + Excel + PDF + paylaşım)
 - **Export motoru (K50):** dosya diske YAZILMAZ — snapshot (liste+ürünler+kurlar+toplamlar) `exports` tablosunda, dosya her indirmede BELLEKTE üretilip akıtılır; geçmişten indirme her zaman aynı içeriği verir (anlık görüntü, K25); "çıktı güncel değil" rozeti + liste detayında export geçmişi (tarih+tür+indir). Biçimler: **CSV**, **Excel** (phpspreadsheet ^2.4 — örnek dosyanın birebir kolon düzeni, TOPLAM satırı, ¥/₺/$ biçimleri, /media görselleri gömülü), **PDF** (mpdf ^8.3, DejaVu — Türkçe+₺; geçici dizin kaçış sıralı: sys_temp → public/media/.tmp).
 - **Paylaşım (K51):** `/p/<token>` girişsiz salt-okunur sayfa — K31 iki katmanlı detay (kart + genişleyen: galeri, video, varyasyon, Çince başlık), CANLI listeyi gösterir. Token 256-bit, DB'de hash, yalnız üretim yanıtında bir kez; iptal/yenileme anında öldürür; sabit 404 + IP hız sınırı; noindex+CSP+tam escape. Panelde hızlı paylaşım: WhatsApp / e-posta / kopyala (K20).

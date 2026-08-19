@@ -135,6 +135,26 @@ final class ExportEndpointsTest extends AuthTestCase
         self::assertStringStartsWith('%PDF-', (string) $response->getBody());
     }
 
+    /** İE#10.5 ek (b): NO sütunu 1'den ARDIŞIK — silinen ürünün numarası atlanmaz. */
+    public function testNoSutunuSilinenUrundenSonraArdisikKalir(): void
+    {
+        ['list' => $listId] = $this->seedList();
+        $third = $this->json($this->write('POST', '/api/lists/' . $listId . '/products', [
+            'name' => 'Üçüncü ürün', 'qty' => 1, 'price_yuan' => '5.00',
+        ]))['data'];
+        // Ortadaki ürünü sil: sort_no boşluklu kalır (1, _, 3) — çıktı 1,2 saymalı.
+        $products = $this->json($this->call('GET', '/api/lists/' . $listId . '/products'))['data'];
+        $this->write('DELETE', '/api/products/' . $products[1]['id']);
+
+        $body = (string) $this->call('GET', '/api/lists/' . $listId . '/export?format=csv')->getBody();
+
+        $lines = array_values(array_filter(explode("\n", $body), static fn (string $l): bool => str_starts_with(ltrim($l, "\u{FEFF}\""), '1;') || str_starts_with($l, '1;') || str_starts_with($l, '2;') || str_starts_with($l, '3;')));
+        self::assertStringContainsString("\n1;", "\n" . implode("\n", $lines) . "\n");
+        self::assertStringContainsString("\n2;", "\n" . implode("\n", $lines) . "\n");
+        self::assertStringNotContainsString("\n3;", "\n" . implode("\n", $lines) . "\n", '2 ürün kaldı — NO 3 OLMAMALI (ardışık 1,2).');
+        self::assertStringContainsString('Üçüncü ürün', $body);
+    }
+
     public function testGecersizBicim422(): void
     {
         ['list' => $listId] = $this->seedList();

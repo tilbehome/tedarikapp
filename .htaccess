@@ -2,6 +2,13 @@
 # Tüm trafiği public/ altına yönlendirir; app/, storage/, vendor/ webden erişilemez kalır.
 RewriteEngine On
 
+# İE#10.5 ek (Ürün Sahibi kararı): arama motorları İNDEXLEYEMEZ ve ERİŞEMEZ.
+# Katman 1: bilinen arama botlarına 403 (robots.txt + X-Robots-Tag ayrıca durur).
+# WhatsApp/Facebook önizleme botları BİLEREK listede YOK — paylaşım linki
+# önizlemesi çalışmaya devam eder (K20).
+RewriteCond %{HTTP_USER_AGENT} (Googlebot|Bingbot|Slurp|DuckDuckBot|Baiduspider|YandexBot|PetalBot|Bytespider|GPTBot|CCBot|Applebot|SemrushBot|AhrefsBot|MJ12bot) [NC]
+RewriteRule ^ - [F,L]
+
 # K45: tarayıcıdan /public/... yazılırsa DOĞRU adrese yönlendir (örn. /public/panel → /panel).
 # Ham /public/panel/ statik açılınca SPA rotası tutmuyor ve sayfa BOŞ görünüyordu (canlı vaka).
 # %{THE_REQUEST} yalnız istemcinin gerçekten yazdığı adreste tetiklenir; içerideki
@@ -9,10 +16,13 @@ RewriteEngine On
 RewriteCond %{THE_REQUEST} \s/+public/([^\s?]*)
 RewriteRule ^public/(.*)$ /$1 [R=301,L]
 
-# İE#10 5c (canlı vaka K47 sonrası): /media görselleri panelde açılmıyordu — dosyalar
-# diskte MEVCUTKEN istek uygulama yönlendiricisine düşüyordu. /media/* DOĞRUDAN statik
-# dosyaya eşlenir ve [END] ile TÜM rewrite işlemesi biter: PHP'ye düşme ihtimali kalmaz.
-RewriteRule ^media/(.+)$ public/media/$1 [END]
+# İE#10 5c + İE#10.5 GÖREV 0 (canlı kanıt): /media görselleri dosya diskteyken
+# yönlendiriciye düşüyordu; ilk çözümdeki [END] bayrağı CANLI sunucunun rewrite
+# motorunda DESTEKLENMİYOR ve .htaccess'i 500'e düşürdü (sunucu-katmanı hata sayfası,
+# app_logs'ta iz yok — istek PHP'ye ulaşmadı). [L] eşdeğeri her motorda çalışır:
+# yeniden yazım public/media'ya iner, oradaki .htaccess yalnız hotlink kuralı taşır
+# ve front-controller'a iletmez — statik servis korunur.
+RewriteRule ^media/(.+)$ public/media/$1 [L]
 
 RewriteCond %{REQUEST_URI} !^/public/
 RewriteRule ^(.*)$ public/$1 [L]

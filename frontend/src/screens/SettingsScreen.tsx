@@ -159,6 +159,8 @@ export default function SettingsScreen() {
         writable={settingsState.data?.media_writable ?? null}
       />
 
+      <BackupCard />
+
       <section className="card p-4">
         <h2 className="mb-3 text-sm font-semibold text-slate-700">Sistem durumu</h2>
         {statusState.loading ? (
@@ -345,6 +347,76 @@ function BaselineAction({ onDone }: { onDone: () => void }) {
         {busy ? 'Eşitleniyor…' : 'Defteri eşitle'}
       </button>
     </div>
+  );
+}
+
+/**
+ * İE#10.5 Blok 1 — Yedekler kartı: elle yedek al (+ off-site yapılandırıldıysa gönderir),
+ * son yedekler (tarih/boyut/indir), son yedek 24 saatten eskiyse uyarı rozeti.
+ * Dosyalar şifrelidir (AES-256-GCM, anahtar APP_KEY'den türetilir) ve web'den erişilemez.
+ */
+function BackupCard() {
+  const push = useToast((state) => state.push);
+  const state = useAsync(() => systemApi.backupList(), []);
+  const [busy, setBusy] = useState(false);
+
+  const create = async () => {
+    setBusy(true);
+    try {
+      const result = await systemApi.backupCreate();
+      state.reload();
+      const offsite = result.offsite.attempted
+        ? result.offsite.sent
+          ? ` Uzak hedefe gönderildi (${result.offsite.via}).`
+          : ` UZAK GÖNDERİM BAŞARISIZ: ${result.offsite.error ?? 'bilinmeyen hata'}`
+        : ' Uzak hedef yapılandırılmadı — dosyayı indirip ayrı bir yerde saklayın.';
+      push(`Yedek alındı: ${result.backup.name}.${offsite}`, result.offsite.attempted && !result.offsite.sent ? 'error' : 'success');
+    } catch (caught) {
+      push(messageOf(caught), 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const sizeOf = (bytes: number) => (bytes > 1048576 ? `${(bytes / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`);
+
+  return (
+    <section className="card mb-4 p-4">
+      <h2 className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700">
+        Yedekler
+        {state.data?.stale ? (
+          <span className="badge bg-amber-50 text-amber-800 ring-amber-200">Son yedek 24 saatten eski</span>
+        ) : null}
+      </h2>
+      {state.data && !state.data.writable ? (
+        <p className="text-sm text-red-600">
+          Yedek klasörü yazılamıyor (storage/backups) — cPanel'den storage klasörüne yazma izni (775) verin.
+        </p>
+      ) : null}
+      {state.data && state.data.backups.length > 0 ? (
+        <ul className="divide-y divide-slate-100 text-sm">
+          {state.data.backups.map((entry) => (
+            <li key={entry.name} className="flex items-center justify-between gap-3 py-2">
+              <span className="min-w-0 flex-1 truncate font-mono text-xs">{entry.name}</span>
+              <span className="text-slate-500">{sizeOf(entry.size)}</span>
+              <span className="text-slate-500">{dateTime(entry.created_at)}</span>
+              <a className="btn-ghost" href={systemApi.backupFileUrl(entry.name)}>İndir</a>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-sm text-slate-500">Henüz yedek alınmadı.</p>
+      )}
+      <p className="mt-2 text-xs text-slate-500">
+        Yedek, veritabanının şifreli dökümüdür (çözme APP_KEY ister).{' '}
+        {state.data?.offsite_configured
+          ? 'Uzak hedef yapılandırılmış: her yedek otomatik gönderilir.'
+          : 'Uzak hedef yapılandırılmamış: yedeği indirip bilgisayarınızda/bulutta saklayın. Otomatik için cPanel cron: php bin/backup.php'}
+      </p>
+      <button type="button" className="btn-primary mt-3" disabled={busy || state.data?.writable === false} onClick={() => void create()}>
+        {busy ? 'Yedek alınıyor…' : 'Şimdi yedek al'}
+      </button>
+    </section>
   );
 }
 

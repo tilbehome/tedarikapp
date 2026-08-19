@@ -17,3 +17,10 @@ parameters:
             identifier: return.type
             path: app/Core/SetupAppBuilder.php
             count: 1
+        # Aynı yanlış-pozitifin İE#10.5 Blok 6 (rota modülleri) yüzü: "App<C|null> bekleniyor,
+        # App<C|null> verildi" — birebir aynı tip. Kapsam: yalnız AppBuilder'daki 4 register çağrısı.
+        -
+            message: '#Parameter \#1 \$app of static method App\\Core\\Routes\\\w+Routes::register\(\) expects Slim\\App<Psr\\Container\\ContainerInterface\|null>, Slim\\App<Psr\\Container\\ContainerInterface\|null> given#'
+            identifier: argument.type
+            path: app/Core/AppBuilder.php
+            count: 4

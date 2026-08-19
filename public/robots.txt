@@ -1,12 +1,7 @@
-# tedarikapp — arama motoru yönergeleri
-#
-# Panel zaten kimlik doğrulaması ister; buradaki asıl amaç ürün görsellerinin ve
-# paylaşım sayfalarının aramaya düşmemesidir (K16: paylaşım sayfaları noindex).
-# robots.txt bir güvenlik önlemi DEĞİLDİR — erişim denetimi .htaccess ve uygulama
-# tarafında yapılır; bu dosya yalnızca iyi niyetli tarayıcılar içindir.
+# tedarikapp — arama motorlarina TAMAMEN kapali (Urun Sahibi karari, IE#10.5 ek).
+# robots.txt bir guvenlik onlemi DEGILDIR — erisim denetimi .htaccess (bot 403) ve
+# uygulama basliklariyla (X-Robots-Tag) ayrica zorlanir; bu dosya iyi niyetli
+# tarayicilar icindir.
 
 User-agent: *
-Disallow: /media/
-Disallow: /p/
-Disallow: /api/
-Disallow: /setup
+Disallow: /

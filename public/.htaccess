@@ -1,10 +1,10 @@
 # Tüm istekleri front controller'a yönlendir (dosya/klasör olarak var olanlar hariç)
 RewriteEngine On
 
-# İE#10 5c: /media her koşulda STATİK kalır — dosya varsa Apache sunar, yoksa uygulamanın
-# /media yedek ucu (404 yerine SPA yönlendirmesine düşmesin diye) devreye girer.
+# İE#10 5c + GÖREV 0: /media dosyası varsa STATİK kalır. [END] canlı sunucuda 500
+# verdiği için [L]'e çevrildi; '-' (değişiklik yok) + [L] iç yönlendirme başlatmaz.
 RewriteCond %{REQUEST_FILENAME} -f
-RewriteRule ^media/ - [END]
+RewriteRule ^media/ - [L]
 
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d

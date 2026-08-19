@@ -41,7 +41,7 @@ final class CsvRenderer implements ExportRenderer
 
         foreach ($snapshot['products'] as $product) {
             $write([
-                (string) $product['sort_no'],
+                (string) ($product['no'] ?? $product['sort_no']),
                 (string) $product['category'],
                 (string) $product['name'],
                 (string) ($product['detail'] ?? ''),
