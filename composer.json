@@ -44,7 +44,8 @@
     "config": {
         "sort-packages": true,
         "optimize-autoloader": true,
-        "platform-check": false
+        "platform-check": false,
+        "process-timeout": 1800
     },
     "scripts": {
         "test": "phpunit",
