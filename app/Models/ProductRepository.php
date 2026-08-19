@@ -18,7 +18,7 @@ final class ProductRepository
 {
     private const COLUMNS = 'id, list_id, sort_no, category_id, platform, external_id,
         name, name_original, detail, url, vendor_name, vendor_url, sku_selection, sku_matrix,
-        main_image, video_url, qty, price_yuan, price_ddp_usd, units_per_carton, tracking_no,
+        main_image, main_image_source, video_url, qty, price_yuan, price_ddp_usd, units_per_carton, tracking_no,
         status, note, created_at, updated_at, deleted_at';
 
     /** Uçlardan yazılabilen alanlar (docs/10 §4). */

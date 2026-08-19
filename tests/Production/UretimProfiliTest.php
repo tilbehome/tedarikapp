@@ -93,13 +93,16 @@ final class UretimProfiliTest extends AuthTestCase
         // K44 disksiz mod: public/media DIŞINA yazan kod yalnız izinli dosyalarda olabilir.
         // İzin gerekçeleri — ConfigWriter/EnvWriter: kök YAZILABİLİRSE kolaylık (manuel akış
         // asıl yol); MediaService: public/media; Logger: file sürücüsü (yalnız geliştirme;
-        // üretimde K44 zorlaması db); RequirementChecker: yazılabilirlik PROBU (@mkdir).
+        // üretimde K44 zorlaması db); RequirementChecker: yazılabilirlik PROBU (@mkdir);
+        // PdfRenderer (İE#10 Blok 3): mPDF geçici dizini — sys_temp, olmazsa
+        // public/media/.tmp (izinli bölge içinde; sweepOwnTemp yol önekini doğrular).
         $allowed = [
             'app/Setup/ConfigWriter.php',
             'app/Setup/EnvWriter.php',
             'app/Services/MediaService.php',
             'app/Core/Logger.php',
             'app/Setup/RequirementChecker.php',
+            'app/Services/Export/PdfRenderer.php',
         ];
         $pattern = '/(?<![>\w$:])(?<!function )(file_put_contents|fwrite|mkdir|tempnam|touch)\s*\(|(?<![>\w$:])fopen\s*\([^)]*,\s*[\'"][waxc]/';
 
