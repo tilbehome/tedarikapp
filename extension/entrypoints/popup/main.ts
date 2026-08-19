@@ -39,10 +39,21 @@ async function baglantiyiDene(): Promise<boolean> {
     await send({ type: 'LISTS' });
     durum.textContent = 'bağlı ✓';
     durum.className = 'durum ok';
+    $('baglanti-hata').hidden = true;
     return true;
   } catch (error) {
-    durum.textContent = error instanceof Error && error.message === 'AYAR_EKSIK' ? 'ayar gerekli' : 'bağlantı yok';
+    const mesaj = error instanceof Error ? error.message : String(error);
+    durum.textContent = mesaj === 'AYAR_EKSIK' ? 'ayar gerekli' : 'bağlantı yok';
     durum.className = 'durum hata';
+    // Sebebi GÖSTER: "bağlantı yok" tek başına teşhis ettirmiyordu (canlı vaka).
+    const kutu = $('baglanti-hata');
+    kutu.textContent =
+      mesaj === 'AYAR_EKSIK'
+        ? 'Panel adresi ve token girilmeli.'
+        : /token/i.test(mesaj) || /geçersiz|iptal/i.test(mesaj)
+          ? 'Token geçersiz veya iptal edilmiş — panelden yeni token üretip buraya yapıştırın.'
+          : 'Sebep: ' + mesaj;
+    kutu.hidden = false;
     return false;
   }
 }
@@ -73,10 +84,20 @@ async function sayfayiOku(): Promise<void> {
     return;
   }
 
-  const page = await new Promise<{ ok: boolean; context?: unknown; dom?: Record<string, string | null>; url?: string; error?: string }>(
-    (resolve) => chrome.tabs.sendMessage(tab.id as number, { type: 'PAGE_DATA' }, resolve),
+  const page = await new Promise<{ ok: boolean; context?: unknown; dom?: Record<string, string | null>; url?: string; error?: string } | undefined>(
+    (resolve) =>
+      chrome.tabs.sendMessage(tab.id as number, { type: 'PAGE_DATA' }, (yanit) => {
+        // lastError okunmazsa konsola "Unchecked runtime.lastError" düşer.
+        void chrome.runtime.lastError;
+        resolve(yanit);
+      }),
   );
   if (!page?.ok) {
+    // Eklenti AÇIK sekmeye sonradan kurulduysa content script enjekte EDİLMEMİŞTİR —
+    // adres doğru olduğu hâlde yanıt gelmez. Kullanıcıya doğru talimat: sayfayı yenile.
+    $('yenile-uyari').hidden = false;
+    $('desteklenmiyor-metin').textContent =
+      'Sayfa verisi okunamadı. Eklentiyi bu sekme açıkken kurduysanız sayfayı yenileyin (F5) ve tekrar deneyin.';
     goster('desteklenmiyor');
     return;
   }
