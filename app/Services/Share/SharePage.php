@@ -88,6 +88,40 @@ final class SharePage
     }
 
     /**
+     * Geçersiz/iptal/süresi dolmuş link sayfası (İE#10.5 ek — Ürün Sahibi talebi).
+     *
+     * SABİT YANIT ilkesi (K51) korunur: hangi nedenle geçersiz olursa olsun AYNI
+     * sayfa döner, neden ayrımı sızdırılmaz. Stil /p-style.css'ten gelir (CSP
+     * `default-src 'self'` — satır içi stil yok); marka işareti /panel/favicon.svg.
+     */
+    public function renderNotFound(): string
+    {
+        return '<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Bağlantı geçerli değil — Tedarikapp</title>
+<link rel="icon" type="image/svg+xml" href="/panel/favicon.svg">
+<link rel="stylesheet" href="/p-style.css">
+</head>
+<body>
+<main class="hata-sayfasi">
+    <section class="hata-karti">
+        <img class="hata-marka" src="/panel/favicon.svg" alt="Tedarikapp" width="64" height="64">
+        <h1>Bu bağlantı artık geçerli değil</h1>
+        <p>Paylaşım bağlantısı kaldırılmış, yenilenmiş veya süresi dolmuş olabilir.
+        Listeyi sizinle paylaşan kişiden <strong>güncel bağlantıyı</strong> isteyebilirsiniz.</p>
+        <p class="hata-ipucu">Bağlantıyı elle yazdıysanız eksiksiz kopyaladığınızdan emin olun.</p>
+    </section>
+    <footer class="alt">Tedarikapp — Ürün Tedarik Asistanı</footer>
+</main>
+</body>
+</html>';
+    }
+
+    /**
      * @param array<string, mixed> $product
      * @param array<int, string> $categoryNames
      * @param callable(mixed): string $e

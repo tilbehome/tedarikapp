@@ -74,11 +74,9 @@ final class PublicRoutes
             $ip = ClientIp::from($request);
             $token = (string) ($args['token'] ?? '');
 
-            $notFound = static function () use ($response): ResponseInterface {
-                $response->getBody()->write(
-                    '<!DOCTYPE html><html lang="tr"><head><meta charset="utf-8"><meta name="robots" content="noindex">'
-                    . '<title>Bulunamadı</title></head><body><p>Bu paylaşım linki geçersiz veya kaldırılmış.</p></body></html>',
-                );
+            // İE#10.5 ek: kurumsal 404 sayfası — sabit yanıt ilkesi aynen (tek sayfa, neden ayrımı yok).
+            $notFound = static function () use ($response, $sharePage): ResponseInterface {
+                $response->getBody()->write($sharePage->renderNotFound());
 
                 return $response->withStatus(404)->withHeader('Content-Type', 'text/html; charset=utf-8');
             };
