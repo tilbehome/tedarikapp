@@ -14,6 +14,7 @@
  */
 
 import { firstPath, resolveRefs } from '../../core/jsonpath';
+import { normalizeTiers } from './format';
 import type { CaptureNormalized, CaptureRaw, CaptureSource, ParseResult, PriceTier, SelectorSet, SkuEntry } from '../../core/types';
 
 export const PARSER_VERSION = '1688-2026.08.2';
@@ -167,8 +168,10 @@ export function parse1688(
 
   const currentPrices = firstPath(ctx, paths.current_prices ?? []);
   const skuRangePrices = firstPath(ctx, paths.sku_range_prices ?? []);
-  let tiers = extractTiers(currentPrices);
-  if (tiers.length === 0) tiers = extractTiers(skuRangePrices);
+  // İE#13 A3: normalizeTiers aynı min_qty'li kayıtları eritir — SKU fiyatları
+  // "1+ → ¥35 · 1+ → ¥1040" sahte kademesine dönüşmez, birim fiyat en düşük olur.
+  let tiers = normalizeTiers(extractTiers(currentPrices));
+  if (tiers.length === 0) tiers = normalizeTiers(extractTiers(skuRangePrices));
   if (tiers.length === 0 && dom.domPrice) {
     const domPrice = dom.domPrice.replace(/[^\d.]/g, '');
     if (/^\d{1,7}(\.\d{1,4})?$/.test(domPrice)) tiers = [{ min_qty: 1, price_yuan: domPrice }];

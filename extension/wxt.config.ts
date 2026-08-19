@@ -19,7 +19,9 @@ export default defineConfig({
     name: 'Tedarikapp — Ürün Yakalama',
     description: "1688 ürün sayfasından tek tıkla Tedarikapp'e ürün gönderin.",
     default_locale: undefined,
-    permissions: ['storage', 'activeTab'],
+    // `scripting`: İE#13 A2 — kurulum/güncelleme anında AÇIK 1688 sekmelerine
+    // content script enjeksiyonu (host izni yine yalnız detail.1688.com).
+    permissions: ['storage', 'activeTab', 'scripting'],
     host_permissions: ['https://detail.1688.com/*'],
     action: { default_title: 'Tedarikapp — Ürünü yakala' },
   },
