@@ -18,10 +18,59 @@ final class CurlMediaFetcher implements MediaFetcher
 {
     private const MAX_REDIRECTS = 3;
 
+    /**
+     * K47: alicdn CDN'i Referer ACL uygular — Referer'sız (boş dahil) istekler 403
+     * "denied by Referer ACL" alır (canlı kanıtlı). Bu hostlara 1688 ürün sayfası
+     * Referer'ı ve gerçekçi tarayıcı UA'sı gönderilir. Eşleme SADECE indirme
+     * allowlist'indeki hostlar içindir; başka hiçbir hosta bu başlıklar EKLENMEZ
+     * (Referer sızıntısı/kimlik karışması olmaz).
+     *
+     * @var array<string, array{referer: string, user_agent: string}> sonek → başlıklar
+     */
+    private const DEFAULT_HOST_HEADERS = [
+        'alicdn.com' => [
+            'referer' => 'https://detail.1688.com/',
+            'user_agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+                . '(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+        ],
+        '1688.com' => [
+            'referer' => 'https://detail.1688.com/',
+            'user_agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+                . '(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+        ],
+    ];
+
+    /** @param array<string, array{referer: string, user_agent: string}>|null $hostHeaders sonek → başlıklar (null = koddaki varsayılan) */
     public function __construct(
         private readonly UrlGuard $guard,
         private readonly int $timeoutSeconds = 25,
+        private readonly ?array $hostHeaders = null,
     ) {
+    }
+
+    /**
+     * Verilen adresin hostu için gönderilecek Referer/UA çifti — eşleşme yoksa null.
+     *
+     * UrlGuard ile AYNI sonek mantığı: `cbu01.alicdn.com` `alicdn.com` girdisiyle
+     * eşleşir, `alicdn.com.evil.com` eşleşMEZ. Public: testler ağ olmadan doğrular.
+     *
+     * @return array{referer: string, user_agent: string}|null
+     */
+    public function headersFor(string $url): ?array
+    {
+        $host = strtolower((string) (parse_url($url, PHP_URL_HOST) ?? ''));
+        if ($host === '') {
+            return null;
+        }
+
+        foreach ($this->hostHeaders ?? self::DEFAULT_HOST_HEADERS as $suffix => $headers) {
+            $suffix = strtolower(trim((string) $suffix));
+            if ($suffix !== '' && ($host === $suffix || str_ends_with($host, '.' . $suffix))) {
+                return $headers;
+            }
+        }
+
+        return null;
     }
 
     /** @return array{body: string, content_type: string, final_url: string} */
@@ -55,6 +104,8 @@ final class CurlMediaFetcher implements MediaFetcher
             throw new MediaException('İndirme başlatılamadı.');
         }
 
+        $matched = $this->headersFor($url);
+
         $body = '';
         curl_setopt_array($handle, [
             CURLOPT_RETURNTRANSFER => false,
@@ -64,7 +115,8 @@ final class CurlMediaFetcher implements MediaFetcher
             CURLOPT_SSL_VERIFYPEER => true,
             CURLOPT_SSL_VERIFYHOST => 2,
             CURLOPT_PROTOCOLS_STR => 'https',
-            CURLOPT_USERAGENT => 'tedarikapp/1.0',
+            CURLOPT_USERAGENT => $matched['user_agent'] ?? 'tedarikapp/1.0',
+            CURLOPT_HTTPHEADER => $matched === null ? [] : ['Referer: ' . $matched['referer']],
             CURLOPT_WRITEFUNCTION => static function ($_, string $chunk) use (&$body, $maxBytes): int {
                 $body .= $chunk;
                 if (strlen($body) > $maxBytes) {

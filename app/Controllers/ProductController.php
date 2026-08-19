@@ -14,6 +14,7 @@ use App\Services\ActivityLog;
 use App\Services\InputValidator;
 use App\Services\ListMutationPolicy;
 use App\Services\ListPresenter;
+use App\Services\MediaDeniedException;
 use App\Services\MediaException;
 use App\Services\MediaService;
 use App\Services\StateMachine;
@@ -91,8 +92,14 @@ final class ProductController extends ApiController
 
         try {
             $stored = $this->media->store($value);
-        } catch (MediaException $e) {
+        } catch (MediaDeniedException $e) {
+            // Güvenlik reddi (beyaz liste dışı / iç ağ / http): kayıt REDDEDİLİR.
             return $e->getMessage();
+        } catch (MediaException) {
+            // K47 kırık-görsel dayanıklılığı: indirme hatası (403/404/zaman aşımı/bozuk
+            // içerik) ürün kaydını BOZMAZ — URL uzak (remote) olarak saklanır, panel yer
+            // tutucu + "yeniden dene" gösterir; arşive taşıma sonraki denemede yapılır.
+            return null;
         }
 
         $body['main_image'] = $stored['url'];

@@ -76,6 +76,9 @@ abstract class AuthTestCase extends TestCase
         return new AuthServices($this->config(), $this->connection, $this->session, $this->clock, new NullLogger());
     }
 
+    /** Testin sahte indirici kullanması için (K47) — null ise gerçek cURL indiricisi. */
+    protected ?\App\Services\MediaFetcher $mediaFetcher = null;
+
     /** @return \Slim\App<\Psr\Container\ContainerInterface|null> */
     protected function app(): \Slim\App
     {
@@ -85,6 +88,10 @@ abstract class AuthTestCase extends TestCase
             new NullLogger(),
             $this->session,
             $this->clock,
+            null,
+            null,
+            null,
+            $this->mediaFetcher,
         );
     }
 

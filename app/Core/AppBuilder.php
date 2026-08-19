@@ -75,6 +75,7 @@ final class AppBuilder
         ?SetupLock $setupLock = null,
         ?RequestContext $requestContext = null,
         ?string $basePath = null,
+        ?\App\Services\MediaFetcher $mediaFetcher = null,
     ): App {
         $requestContext ??= new RequestContext();
         $basePath ??= dirname(__DIR__, 2);
@@ -145,7 +146,7 @@ final class AppBuilder
         $mediaService = new MediaService(
             $basePath,
             $urlGuard,
-            new CurlMediaFetcher($urlGuard, $config->getPositiveInt('MEDIA_DOWNLOAD_TIMEOUT', 25)),
+            $mediaFetcher ?? new CurlMediaFetcher($urlGuard, $config->getPositiveInt('MEDIA_DOWNLOAD_TIMEOUT', 25)),
             $settingsRepository,
             $config->getPositiveInt('MEDIA_MAX_MB', 8) * 1024 * 1024,
             $config->get('MEDIA_PATH', 'public/media'),
@@ -160,6 +161,8 @@ final class AppBuilder
             $group->post('/migrate', [$system, 'migrate']);
             // K46: kilit kaldırmanın admin-oturumu yolu (Auth + CSRF bu grupta).
             $group->post('/setup-unlock', [$system, 'setupUnlock']);
+            // K47: uzak görselleri arşive taşıma (parti parti; Auth + CSRF bu grupta).
+            $group->post('/media-migrate', [$system, 'mediaMigrate']);
         })
             ->add(new Csrf($services->session, $responseFactory))
             ->add(new Auth($services, $responseFactory));

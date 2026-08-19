@@ -10,6 +10,6 @@ use RuntimeException;
  * Medya indirme/işleme hatası. Mesajı kullanıcıya gösterilebilir (teknik ayrıntı içermez);
  * ayrıntı loga yazılır (CLAUDE.md §6).
  */
-final class MediaException extends RuntimeException
+class MediaException extends RuntimeException
 {
 }

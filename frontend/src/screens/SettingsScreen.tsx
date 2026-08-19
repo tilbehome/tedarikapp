@@ -143,6 +143,11 @@ export default function SettingsScreen() {
         </p>
       </section>
 
+      <MediaArchiveCard
+        mode={settingsState.data?.media_mode ?? null}
+        writable={settingsState.data?.media_writable ?? null}
+      />
+
       <section className="card p-4">
         <h2 className="mb-3 text-sm font-semibold text-slate-700">Sistem durumu</h2>
         {statusState.loading ? (
@@ -178,6 +183,75 @@ export default function SettingsScreen() {
         ) : null}
       </section>
     </>
+  );
+}
+
+/**
+ * K47 — Görsel arşivi kartı: aktif mod + yazılabilirlik durumu ve "Görselleri arşive
+ * taşı" düğmesi. Taşıma parti parti çalışır: uç tek çağrıda en fazla bir parti işler,
+ * kart "kalan" sıfırlanana dek (ya da ilerleme durana dek) tekrar çağırır.
+ */
+function MediaArchiveCard({ mode, writable }: { mode: 'download' | 'hotlink' | null; writable: boolean | null }) {
+  const push = useToast((state) => state.push);
+  const [running, setRunning] = useState(false);
+  const [summary, setSummary] = useState<string | null>(null);
+
+  const migrate = async () => {
+    setRunning(true);
+    setSummary(null);
+    try {
+      let migrated = 0;
+      let failed = 0;
+      let remaining = 0;
+      for (let batch = 0; batch < 100; batch++) {
+        const result = await systemApi.mediaMigrate();
+        migrated += result.migrated;
+        failed += result.failed.length;
+        remaining = result.remaining;
+        setSummary(`${migrated} taşındı, ${failed} başarısız, ${remaining} kaldı…`);
+        if (remaining === 0 || result.migrated === 0) break;
+      }
+      setSummary(`${migrated} görsel arşive taşındı · ${failed} başarısız · ${remaining} kaldı.`);
+      push(
+        failed === 0 && remaining === 0
+          ? 'Tüm görseller arşive taşındı.'
+          : 'Taşıma bitti; başarısız kalanlar bozulmadı, tekrar deneyebilirsiniz.',
+        failed === 0 ? 'success' : 'error',
+      );
+    } catch (caught) {
+      push(messageOf(caught), 'error');
+    } finally {
+      setRunning(false);
+    }
+  };
+
+  return (
+    <section className="card mb-4 p-4">
+      <h2 className="mb-3 text-sm font-semibold text-slate-700">Görsel arşivi</h2>
+      <dl className="space-y-2 text-sm">
+        <Line
+          label="Aktif mod"
+          value={mode === 'download' ? mediaModeLabels.download : mode === 'hotlink' ? mediaModeLabels.hotlink : '—'}
+        />
+        <Line
+          label="Medya klasörü (public/media)"
+          value={writable === null ? '—' : writable ? 'Yazılabilir' : 'Yazılamıyor — arşivleme kapalı'}
+        />
+      </dl>
+      <p className="mt-3 text-xs text-slate-500">
+        1688 görselleri orijinal adresinden gösterilemiyor (CDN Referer koruması). Bu düğme hotlink döneminden kalan
+        uzak görselleri sunucu arşivine indirir; başarısız olanlar bozulmaz ve tekrar denenebilir.
+      </p>
+      {summary ? <p className="mt-2 text-xs font-medium text-slate-600">{summary}</p> : null}
+      <button
+        type="button"
+        className="btn-primary mt-3"
+        disabled={running || writable !== true}
+        onClick={() => void migrate()}
+      >
+        {running ? 'Taşınıyor…' : 'Görselleri arşive taşı'}
+      </button>
+    </section>
   );
 }
 

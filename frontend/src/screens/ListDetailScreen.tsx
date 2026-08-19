@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, Download, FileSpreadsheet, Plus, Search, Share2, Trash2 } from 'lucide-react';
+import { ArrowLeft, Download, FileSpreadsheet, ImageOff, Plus, Search, Share2, Trash2 } from 'lucide-react';
 import { lists as listsApi, products as productsApi } from '../api/endpoints';
 import type { ListStatus, Product, ProductStatus } from '../api/types';
 import { useAsync, messageOf } from '../lib/useAsync';
@@ -251,7 +251,7 @@ export default function ListDetailScreen() {
             {items.map((product) => (
               <li key={product.id} className="card p-3">
                 <div className="flex gap-3">
-                  <Thumb product={product} />
+                  <Thumb product={product} onChanged={productState.reload} />
                   <div className="min-w-0 flex-1">
                     <Link to={`/listeler/${listId}/urun/${product.id}`} className="block truncate font-semibold">
                       {product.name}
@@ -329,7 +329,7 @@ export default function ListDetailScreen() {
                         />
                       </td>
                       <td className="px-3 py-2">
-                        <Thumb product={product} />
+                        <Thumb product={product} onChanged={productState.reload} />
                       </td>
                       <td className="max-w-xs px-3 py-2">
                         <Link to={`/listeler/${listId}/urun/${product.id}`} className="block truncate font-medium">
@@ -410,16 +410,57 @@ function Row({ label, value, strong }: { label: string; value: string; strong?: 
   );
 }
 
-function Thumb({ product }: { product: Product }) {
+/**
+ * K47 kırık-görsel dayanıklılığı: uzak görsel yüklenemezse (alicdn Referer ACL,
+ * 403/404) ürün kartı bozulmaz — yer tutucu + "yeniden dene" gösterilir. Yeniden
+ * dene, kaynak URL'yi tekrar kaydeder; arşiv modunda backend görseli indirip yerel
+ * yola çevirir ve sonraki yüklemede görsel kendi sunucumuzdan gelir.
+ */
+function Thumb({ product, onChanged }: { product: Product; onChanged?: () => void }) {
+  const [broken, setBroken] = useState(false);
+  const [retrying, setRetrying] = useState(false);
   const source = product.main_image ?? product.images[0]?.url ?? null;
   if (!source) {
     return <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-xs text-slate-400">—</span>;
   }
+
+  const isRemote = source.startsWith('http');
+  if (broken) {
+    return (
+      <span className="flex h-14 w-14 shrink-0 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-slate-300 bg-slate-50 text-center">
+        <ImageOff className="h-4 w-4 text-slate-400" aria-hidden />
+        {isRemote ? (
+          <button
+            type="button"
+            className="text-[10px] font-medium text-brand-600 disabled:opacity-50"
+            disabled={retrying}
+            onClick={() => {
+              setRetrying(true);
+              productsApi
+                .update(product.id, { main_image: source })
+                .then(() => {
+                  setBroken(false);
+                  onChanged?.();
+                })
+                .catch(() => {
+                  /* Görsel yine gelmezse yer tutucu kalır; kart çalışmaya devam eder. */
+                })
+                .finally(() => setRetrying(false));
+            }}
+          >
+            {retrying ? '…' : 'yeniden dene'}
+          </button>
+        ) : null}
+      </span>
+    );
+  }
+
   return (
     <img
       src={source}
       alt=""
       loading="lazy"
+      onError={() => setBroken(true)}
       className="h-14 w-14 shrink-0 rounded-xl border border-slate-200 object-cover"
     />
   );

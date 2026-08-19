@@ -89,6 +89,49 @@ final class SystemController
         return \App\Core\Response::success($response, ['unlocked' => true]);
     }
 
+    /**
+     * POST /api/system/media-migrate — K47: uzak görselleri arşive taşıma (bir parti).
+     *
+     * Auth + CSRF arkasındadır (rota grubu). Tek çağrı bir parti işler (zaman aşımı
+     * yememek için); panel "kalan" sayısı sıfırlanana dek tekrar çağırır. Aynı işin
+     * CLI eşi: `bin/media-migrate.php`.
+     */
+    public function mediaMigrate(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        $user = $this->authenticatedUser($request);
+
+        if ($this->media === null) {
+            return Response::error($response, 'SERVER_ERROR', 'Medya servisi yapılandırılmamış.', 500);
+        }
+        if ($this->media->mode() !== MediaService::MODE_DOWNLOAD) {
+            return Response::error(
+                $response,
+                'MEDIA_NOT_WRITABLE',
+                'Medya klasörü yazılabilir değil — arşiv modu kapalı. public/media klasörüne yazma izni verin.',
+                422,
+            );
+        }
+
+        try {
+            $result = (new \App\Services\MediaMigrator($this->connection, $this->media))->migrateBatch(20);
+        } catch (Throwable $e) {
+            return Response::error($response, 'SERVER_ERROR', 'Arşive taşıma çalıştırılamadı: ' . $e->getMessage(), 500);
+        }
+
+        (new ActivityLog($this->connection))->record(
+            'system',
+            null,
+            'media_migrate',
+            sprintf('%s: %d taşındı, %d başarısız, %d kaldı', $user->email, $result['migrated'], count($result['failed']), $result['remaining']),
+            ClientIp::from($request),
+            $this->clock->now(),
+            ActivityLog::ACTOR_ADMIN,
+            $user->id,
+        );
+
+        return Response::success($response, $result);
+    }
+
     public function status(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
         $this->authenticatedUser($request);

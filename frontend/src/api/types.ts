@@ -136,6 +136,15 @@ export interface SystemStatus {
   setup_lock_in_database: boolean;
 }
 
+/** POST /api/system/media-migrate — K47 arşive taşıma parti sonucu. */
+export interface MediaMigrateResult {
+  mode: string;
+  scanned: number;
+  migrated: number;
+  failed: { kind: string; id: number; product_id: number; url: string; error: string }[];
+  remaining: number;
+}
+
 /** GET /api/system/state-machine — docs/04 §2b kurallarının tek kaynağı backend'dir. */
 export interface StateMachineMap {
   product: Record<ProductStatus, ProductStatus[]>;
