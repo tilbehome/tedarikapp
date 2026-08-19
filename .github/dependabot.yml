@@ -1,0 +1,27 @@
+# Bağımlılık güncelleme botu (İE#10.5 Blok 5 — K19 disipliniyle uyumlu:
+# PR'lar öneridir, merge her zaman PM onayı + CI yeşili ister).
+version: 2
+updates:
+  - package-ecosystem: composer
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    labels: [bagimlilik, composer]
+
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    labels: [bagimlilik, npm]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+    labels: [bagimlilik, ci]
