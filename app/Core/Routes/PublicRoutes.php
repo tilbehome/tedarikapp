@@ -99,10 +99,12 @@ final class PublicRoutes
             }
 
             $categoryNames = array_column((new CategoryRepository($connection))->all(), 'name', 'id');
+            $uri = $request->getUri();
             $html = $sharePage->render(
                 $presenter->list($row),
                 $presenter->productsOf($products->forList((int) $row['id']), $row),
                 $categoryNames,
+                $uri->getScheme() . '://' . $uri->getAuthority() . '/p/' . $token,
             );
             $response->getBody()->write($html);
 

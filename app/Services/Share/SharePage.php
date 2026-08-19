@@ -27,7 +27,7 @@ final class SharePage
      * @param list<array<string, mixed>> $products ListPresenter::productsOf çıktısı
      * @param array<int, string> $categoryNames
      */
-    public function render(array $list, array $products, array $categoryNames): string
+    public function render(array $list, array $products, array $categoryNames, string $canonicalUrl = ''): string
     {
         $e = static fn (mixed $value): string => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
 
@@ -38,6 +38,9 @@ final class SharePage
             }
             $cards .= $this->card($product, $categoryNames, $e);
         }
+
+        // og:image mutlak adres ister (önizleme botları göreliyi çözmez).
+        $origin = $canonicalUrl !== '' ? (string) preg_replace('#(^https?://[^/]+).*#', '$1', $canonicalUrl) : '';
 
         $totals = $list['totals'];
         $period = is_string($list['period'] ?? null) && $list['period'] !== '' ? ' · ' . $e($list['period']) : '';
@@ -51,6 +54,14 @@ final class SharePage
 <meta name="description" content="Tedarikapp (Ürün Tedarik Asistanı) ile paylaşılan sipariş listesi — salt okunur görünüm.">
 <title>' . $e($list['name']) . ' — Tedarikapp</title>
 <link rel="icon" type="image/svg+xml" href="/panel/favicon.svg">
+<link rel="apple-touch-icon" sizes="180x180" href="/panel/apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Tedarikapp">
+<meta property="og:locale" content="tr_TR">
+<meta property="og:title" content="' . $e($list['name']) . ' — Tedarikapp">
+<meta property="og:description" content="Paylaşılan sipariş listesi — güncel durum ve toplamlar.">' . ($canonicalUrl !== '' ? '
+<meta property="og:url" content="' . $e($canonicalUrl) . '">' : '') . '
+<meta property="og:image" content="' . $e($origin) . '/panel/og-image.png">
 <link rel="stylesheet" href="/p-style.css">
 </head>
 <body>
