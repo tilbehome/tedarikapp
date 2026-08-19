@@ -12,6 +12,8 @@
         <span id="durum" class="durum">bağlantı denetleniyor…</span>
       </header>
 
+      <p id="baglanti-hata" class="uyari" hidden></p>
+
       <!-- Ayar ekranı: panel adresi + token (yalnız chrome.storage'da yaşar) -->
       <section id="ayarlar" hidden>
         <label>Panel adresi
@@ -59,7 +61,8 @@
       </section>
 
       <section id="desteklenmiyor" hidden>
-        <p>Bu sayfa desteklenmiyor. Eklenti <code>detail.1688.com</code> ürün sayfalarında çalışır.</p>
+        <p id="desteklenmiyor-metin">Bu sayfa desteklenmiyor. Eklenti <code>detail.1688.com</code> ürün sayfalarında çalışır.</p>
+        <p id="yenile-uyari" class="uyari" hidden>İpucu: eklentiyi yeni kurduysanız açık sekmelerde çalışmaz — sayfayı yenileyin.</p>
         <button id="ayar-ac-2" type="button" class="baglanti">Bağlantı ayarları</button>
       </section>
     </main>

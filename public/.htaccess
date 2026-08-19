@@ -1,6 +1,13 @@
 # Tüm istekleri front controller'a yönlendir (dosya/klasör olarak var olanlar hariç)
 RewriteEngine On
 
+# İE#11 CANLI DERSİ: cgi-fcgi altında Authorization başlığı PHP'ye HİÇ ulaşmıyordu —
+# eklenti token'ı boş geliyor, tüm istekler 401 dönüyordu. İki katman birden gerekir:
+# burada başlığı geçir, ExtensionAuth'ta da $_SERVER yedeğinden oku.
+CGIPassAuth On
+RewriteCond %{HTTP:Authorization} .
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
 # İE#10 5c + GÖREV 0: /media dosyası varsa STATİK kalır. [END] canlı sunucuda 500
 # verdiği için [L]'e çevrildi; '-' (değişiklik yok) + [L] iç yönlendirme başlatmaz.
 RewriteCond %{REQUEST_FILENAME} -f

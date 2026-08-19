@@ -50,11 +50,7 @@ final class ExtensionAuth implements MiddlewareInterface
                 ->withHeader('Access-Control-Max-Age', '600');
         }
 
-        $token = '';
-        $authorization = $request->getHeaderLine('Authorization');
-        if (str_starts_with($authorization, 'Bearer ')) {
-            $token = trim(substr($authorization, 7));
-        }
+        $token = $this->bearerToken($request);
 
         $storedHash = (new SettingsRepository($this->connection))->get(SettingsRepository::KEY_EXTENSION_TOKEN_HASH, '');
         if ($token === '' || $storedHash === null || $storedHash === '' || !hash_equals($storedHash, hash('sha256', $token))) {
@@ -72,6 +68,37 @@ final class ExtensionAuth implements MiddlewareInterface
         }
 
         return $this->withCors($handler->handle($request), $origin);
+    }
+
+    /**
+     * Bearer token'ı çıkarır — İE#11 canlı arızası: cgi-fcgi (LiteSpeed/Apache CGI) altında
+     * Authorization başlığı PHP'ye iletilmez; PSR-7 isteği başlığı BOŞ görür ve her istek 401 olur.
+     * .htaccess geçirmesi asıl çözümdür, burası kod yedeğidir: htaccess'in taşıdığı
+     * HTTP_AUTHORIZATION ve (iç yönlendirmede) REDIRECT_HTTP_AUTHORIZATION anahtarlarına bakar.
+     * Token değeri hiçbir dalda loglanmaz.
+     */
+    private function bearerToken(ServerRequestInterface $request): string
+    {
+        $adaylar = [$request->getHeaderLine('Authorization')];
+        $server = $request->getServerParams();
+        foreach (['HTTP_AUTHORIZATION', 'REDIRECT_HTTP_AUTHORIZATION'] as $key) {
+            $deger = $server[$key] ?? null;
+            if (is_string($deger)) {
+                $adaylar[] = $deger;
+            }
+        }
+
+        foreach ($adaylar as $aday) {
+            $aday = trim($aday);
+            if (stripos($aday, 'Bearer ') === 0) {
+                $token = trim(substr($aday, 7));
+                if ($token !== '') {
+                    return $token;
+                }
+            }
+        }
+
+        return '';
     }
 
     /** K30: origin allowlist'te ise CORS başlıkları eklenir; değilse HİÇ eklenmez (tarayıcı engeller). */

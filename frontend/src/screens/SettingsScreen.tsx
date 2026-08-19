@@ -196,7 +196,7 @@ export default function SettingsScreen() {
           </dl>
         ) : null}
         {statusState.data && statusState.data.migrations.pending_count > 0 ? (
-          <BaselineAction onDone={statusState.reload} />
+          <MigrationActions onDone={statusState.reload} />
         ) : null}
       </section>
     </>
@@ -312,15 +312,35 @@ function MediaArchiveCard({ mode, writable }: { mode: 'download' | 'hotlink' | n
 }
 
 /**
- * K49 — "Defteri eşitle": migrations defteri gerçeğin gerisindeyse (canlı vaka:
- * tablolar var ama defter boş, "Bekleyen 17") kayıtları KOŞMADAN deftere işler.
- * DDL çalıştırmaz, idempotenttir; yalnız bekleyen migration varken görünür.
+ * Güncelleme eylemleri — bekleyen migration varken görünür (İE#11 sonrası düzeltme:
+ * panelde "migrate" düğmesi YOKTU, kullanıcı yeni sürümü kuramıyordu).
+ *
+ *  • "Güncellemeyi çalıştır" (migrate): bekleyen migration'ları uygular — ASIL yol.
+ *  • "Defteri eşitle" (K49 baseline): tablolar VAR ama defter geride kalmışsa
+ *    kayıtları KOŞMADAN işler; DDL çalıştırmaz, idempotenttir.
  */
-function BaselineAction({ onDone }: { onDone: () => void }) {
+function MigrationActions({ onDone }: { onDone: () => void }) {
   const push = useToast((state) => state.push);
   const [busy, setBusy] = useState(false);
 
-  const run = async () => {
+  const migrate = async () => {
+    setBusy(true);
+    try {
+      const result = await systemApi.migrate();
+      push(
+        result.applied_count === 0
+          ? 'Uygulanacak yeni migration yoktu.'
+          : `Güncelleme tamam: ${count(result.applied_count)} migration uygulandı.`,
+      );
+      onDone();
+    } catch (caught) {
+      push(messageOf(caught), 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const baseline = async () => {
     setBusy(true);
     try {
       const result = await systemApi.migrateBaseline();
@@ -341,12 +361,17 @@ function BaselineAction({ onDone }: { onDone: () => void }) {
   return (
     <div className="mt-3 border-t border-slate-100 pt-3">
       <p className="text-xs text-slate-500">
-        Tablolar mevcutken defter "bekleyen" gösteriyorsa kayıtlar eşitlenebilir. Bu işlem tablo oluşturmaz/değiştirmez;
-        yalnız var olduğu doğrulanan kayıtları deftere işler.
+        Yeni sürüm veritabanı güncellemesi bekliyor. "Güncellemeyi çalıştır" bekleyen migration'ları uygular.
+        Tablolar zaten varsa (defter geride kalmışsa) "Defteri eşitle" kullanılır — o işlem tablo oluşturmaz.
       </p>
-      <button type="button" className="btn-ghost mt-2" disabled={busy} onClick={() => void run()}>
-        {busy ? 'Eşitleniyor…' : 'Defteri eşitle'}
-      </button>
+      <div className="mt-2 flex flex-wrap gap-2">
+        <button type="button" className="btn-primary" disabled={busy} onClick={() => void migrate()}>
+          {busy ? 'Çalışıyor…' : 'Güncellemeyi çalıştır'}
+        </button>
+        <button type="button" className="btn-ghost" disabled={busy} onClick={() => void baseline()}>
+          Defteri eşitle
+        </button>
+      </div>
     </div>
   );
 }

@@ -8,6 +8,9 @@ body { width: 340px; font-family: system-ui, -apple-system, "Segoe UI", sans-ser
 .durum.ok { color: #15803d; }
 .durum.hata { color: #b91c1c; }
 section { display: flex; flex-direction: column; gap: 8px; }
+/* KRİTİK: `section { display:flex }` tarayıcının [hidden] kuralını EZİYORDU —
+   tüm bölümler aynı anda görünüyordu (canlı vaka). Bu satır onu geri alır. */
+[hidden] { display: none !important; }
 label { display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: #475569; }
 input, select { padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; }
 button { padding: 8px 10px; border: 0; border-radius: 8px; background: #1d4ed8; color: #fff; font-weight: 600; cursor: pointer; }

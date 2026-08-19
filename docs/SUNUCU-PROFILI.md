@@ -28,6 +28,7 @@
 | SSL | Let's Encrypt **VAR** | Üretimde HTTPS zorunlu (K37 §A3 kapısı çalışır) |
 | Cron | **VAR** | `bin/purge-trash.php` housekeeping cron adayı (docs/07 §7) |
 | Dışa cURL | **VAR** (1688/alicdn doğrulandı) | Medya indirme/hotlink SSRF beyaz listesiyle çalışır |
+| PHP çalışma kipi | **cgi-fcgi** | `Authorization` başlığını PHP'ye İLETMEZ — Bearer kimlik doğrulaması sessizce 401'e düşer (İE#11 canlı arızası). İKİ katman şart: `public/.htaccess`'te `CGIPassAuth On` + `E=HTTP_AUTHORIZATION` geçirmesi, kodda `$_SERVER['HTTP_AUTHORIZATION' / 'REDIRECT_HTTP_AUTHORIZATION']` yedeği (`ExtensionAuth::bearerToken`) |
 
 ## Bu manifeste aykırı olduğu için YASAK olanlar (özet)
 
