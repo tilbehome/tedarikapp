@@ -105,6 +105,9 @@ final class DataRoutes
             // İE#11 Görev D: Gelen Kutusu.
             $group->get('/inbox', [$inboxController, 'index']);
             $group->post('/inbox/assign', [$inboxController, 'assign']);
+            // İE#13 B1: toplu silme — sabit yol, {id} deseninden ÖNCE tanımlanır.
+            $group->post('/inbox/delete', [$inboxController, 'bulkDelete']);
+            $group->get('/inbox/{id}', [$inboxController, 'show']);
             $group->delete('/inbox/{id}', [$inboxController, 'destroy']);
 
             // İE#13 C4: ZH→TR başlık ÖNERİSİ (K54 — hiçbir alana kendiliğinden yazılmaz).

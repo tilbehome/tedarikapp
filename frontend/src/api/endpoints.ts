@@ -87,28 +87,69 @@ export const exports = {
   fileUrl: (exportId: number) => `/api/exports/${exportId}/file`,
 };
 
+export interface InboxItem {
+  id: number;
+  status: 'pending' | 'error';
+  platform: string;
+  external_id: string | null;
+  name: string | null;
+  price_yuan: string | null;
+  image_url: string | null;
+  url: string | null;
+  error_note: string | null;
+  created_at: string;
+}
+
+/** GET /api/inbox/{id} — detay çekmecesi (İE#13 B3). */
+export interface InboxDetail extends InboxItem {
+  images: string[];
+  price_tiers: { min_qty: number; price_yuan: string }[];
+  sku_matrix: { label: string; price_yuan: string | null }[];
+  attributes: Record<string, string>;
+  seller_name: string | null;
+  captured_at: string | null;
+  raw_title: string | null;
+}
+
+export interface InboxQueueParams {
+  q?: string;
+  platform?: string;
+  from?: string;
+  to?: string;
+  page?: number;
+}
+
 export const inbox = {
-  queue: () =>
-    api.get<
-      {
-        id: number;
-        status: 'pending' | 'error';
-        platform: string;
-        external_id: string | null;
-        name: string | null;
-        price_yuan: string | null;
-        image_url: string | null;
-        url: string | null;
-        error_note: string | null;
-        created_at: string;
-      }[]
-    >('/api/inbox'),
-  assign: (ids: number[], listId: number) =>
+  /** İE#13 B5: filtreli + sayfalı kuyruk; meta içinde toplam ve platform listesi gelir. */
+  queue: (params: InboxQueueParams = {}) => {
+    const query = new URLSearchParams();
+    if (params.q) query.set('q', params.q);
+    if (params.platform) query.set('platform', params.platform);
+    if (params.from) query.set('from', params.from);
+    if (params.to) query.set('to', params.to);
+    if (params.page && params.page > 1) query.set('page', String(params.page));
+    const suffix = query.toString();
+    return api.getWithMeta<InboxItem[]>(`/api/inbox${suffix ? `?${suffix}` : ''}`);
+  },
+  detail: (id: number) => api.get<InboxDetail>(`/api/inbox/${id}`),
+  /** `names`: yalnız kullanıcının "Kullan" dediği çeviri önerileri (K54). */
+  assign: (ids: number[], listId: number, names: Record<number, string> = {}) =>
     api.post<{ moved: number; failed: { id: number; error: string }[] }>('/api/inbox/assign', {
       ids,
       list_id: listId,
+      ...(Object.keys(names).length > 0 ? { names } : {}),
     }),
+  removeMany: (ids: number[]) => api.post<{ deleted: number }>('/api/inbox/delete', { ids }),
   remove: (id: number) => api.delete<void>(`/api/inbox/${id}`),
+};
+
+/** İE#13 C4 (K54): ZH→TR başlık önerisi — panelin hiçbir alanı kendiliğinden değişmez. */
+export const translate = {
+  suggest: (text: string) =>
+    api.post<{ suggestion: string | null; cached: boolean; provider: string | null }>(
+      '/api/panel/translate-suggest',
+      { text },
+    ),
 };
 
 export const share = {

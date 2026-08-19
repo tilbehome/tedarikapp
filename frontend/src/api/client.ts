@@ -68,7 +68,17 @@ interface RequestOptions {
   silentUnauthorized?: boolean;
 }
 
+/** Zarfın `meta` alanını da isteyen çağrılar için (sayfalama, filtre menüleri). */
+export interface WithMeta<T> {
+  data: T;
+  meta: Record<string, unknown>;
+}
+
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  return (await requestWithMeta<T>(path, options)).data;
+}
+
+async function requestWithMeta<T>(path: string, options: RequestOptions = {}): Promise<WithMeta<T>> {
   const method = options.method ?? 'GET';
   const headers: Record<string, string> = { Accept: 'application/json' };
 
@@ -93,7 +103,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
 
   // 204: gövde yok (silme uçları).
   if (response.status === 204) {
-    return undefined as T;
+    return { data: undefined as T, meta: {} };
   }
 
   let envelope: Envelope<T> | null = null;
@@ -104,7 +114,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   }
 
   if (response.ok && envelope?.success) {
-    return envelope.data;
+    return { data: envelope.data, meta: (envelope.meta as Record<string, unknown>) ?? {} };
   }
 
   const error: ApiErrorBody = envelope?.error ?? {
@@ -168,6 +178,7 @@ async function postBlob(path: string): Promise<void> {
 export const api = {
   postBlob,
   get: <T>(path: string, options?: RequestOptions) => request<T>(path, { ...options, method: 'GET' }),
+  getWithMeta: <T>(path: string, options?: RequestOptions) => requestWithMeta<T>(path, { ...options, method: 'GET' }),
   post: <T>(path: string, body?: unknown, options?: RequestOptions) =>
     request<T>(path, { ...options, method: 'POST', body: body ?? {} }),
   patch: <T>(path: string, body?: unknown) => request<T>(path, { method: 'PATCH', body: body ?? {} }),

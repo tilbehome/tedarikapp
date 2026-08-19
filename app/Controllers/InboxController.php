@@ -22,6 +22,9 @@ use Psr\Http\Message\ServerRequestInterface;
  */
 final class InboxController extends ApiController
 {
+    private const PER_PAGE = 20;
+    private const MAX_IDS = 100;
+
     public function __construct(
         private readonly InboxRepository $inbox,
         private readonly ListRepository $lists,
@@ -32,26 +35,103 @@ final class InboxController extends ApiController
     ) {
     }
 
-    /** GET /api/inbox — bekleyen kuyruk (pending + error). */
+    /**
+     * GET /api/inbox — bekleyen kuyruk (pending + error), filtreli + sayfali (IE#13 B5).
+     *
+     * Sorgu: `q` (baslikta arama), `platform`, `from`/`to` (YYYY-AA-GG), `page`.
+     * Yanit IE#13'te `data + meta` zarfina gecti (aktivite ucuyla ayni desen).
+     */
     public function index(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
+        $params = $request->getQueryParams();
+        $filters = [
+            'q' => $this->query($request, 'q'),
+            'platform' => $this->query($request, 'platform'),
+            'from' => $this->gun($this->query($request, 'from')),
+            'to' => $this->gun($this->query($request, 'to')),
+        ];
+
+        $perPage = self::PER_PAGE;
+        $page = max(1, (int) (is_string($params['page'] ?? null) ? $params['page'] : 1));
+        $total = $this->inbox->countQueue($filters);
+
         $rows = [];
-        foreach ($this->inbox->queue() as $row) {
-            $rows[] = [
-                'id' => (int) $row['id'],
-                'status' => (string) $row['status'],
-                'platform' => (string) $row['platform'],
-                'external_id' => $row['external_id'] === null ? null : (string) $row['external_id'],
-                'name' => $row['name'] === null ? null : (string) $row['name'],
-                'price_yuan' => $row['price_yuan'] === null ? null : (string) $row['price_yuan'],
-                'image_url' => $row['image_url'] === null ? null : (string) $row['image_url'],
-                'url' => $row['url'] === null ? null : (string) $row['url'],
-                'error_note' => $row['error_note'] === null ? null : (string) $row['error_note'],
-                'created_at' => Dates::toIso((string) $row['created_at'], $this->timezone),
-            ];
+        foreach ($this->inbox->queue($filters, $perPage, ($page - 1) * $perPage) as $row) {
+            $rows[] = $this->ozet($row);
         }
 
-        return Response::success($response, $rows);
+        return Response::success($response, $rows, [
+            'page' => $page,
+            'per_page' => $perPage,
+            'total' => $total,
+            'platforms' => $this->inbox->platforms(),
+        ]);
+    }
+
+    /**
+     * GET /api/inbox/{id} — detay cekmecesi (IE#13 B3): payload'dan gorseller, fiyat
+     * kademeleri, varyasyonlar, yakalanan ozellikler ve kaynak linki.
+     *
+     * Ham payload OLDUGU GIBI degil, ayiklanmis haliyle doner: arayuzun ihtiyaci budur,
+     * bilinmeyen alanlar disari sizdirilmaz.
+     *
+     * @param array<string, string> $args
+     */
+    public function show(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    {
+        $id = $this->intArg($args, 'id');
+        $item = $id === null ? null : $this->inbox->find($id);
+        if ($item === null) {
+            return Response::error($response, 'NOT_FOUND', 'Kayit bulunamadi.', 404);
+        }
+
+        /** @var array<string, mixed> $payload */
+        $payload = json_decode((string) $item['payload_json'], true) ?: [];
+        $normalized = is_array($payload['normalized'] ?? null) ? $payload['normalized'] : [];
+        $raw = is_array($payload['raw'] ?? null) ? $payload['raw'] : [];
+        $source = is_array($payload['source'] ?? null) ? $payload['source'] : [];
+
+        $detay = $this->ozet($item);
+        $detay['images'] = $this->metinListesi($normalized['images'] ?? null);
+        $detay['price_tiers'] = $this->kademeler($normalized['price_tiers'] ?? null);
+        $detay['sku_matrix'] = $this->varyasyonlar($normalized['sku_matrix'] ?? null);
+        $detay['attributes'] = $this->ozellikler($raw['normalized_attributes'] ?? null);
+        $detay['seller_name'] = is_string($source['seller_name'] ?? null) ? $source['seller_name'] : null;
+        $detay['captured_at'] = is_string($source['captured_at'] ?? null) ? $source['captured_at'] : null;
+        $detay['raw_title'] = is_string($raw['title'] ?? null) ? $raw['title'] : null;
+
+        return Response::success($response, $detay);
+    }
+
+    /**
+     * POST /api/inbox/delete — toplu silme (IE#13 B1).
+     *
+     * SOZLESME NOTU: Gelen Kutusu kaydi COP KUTUSUNA GIRMEZ (docs/10, IE#11) — ham
+     * yakalama verisidir ve `inbox_items` tablosunda `deleted_at` yoktur. Toplu silme
+     * de bu nedenle kalicidir; arayuz onay ister. (Is emrindeki "cop kutusuna" ifadesi
+     * belgeyle celisiyor; CLAUDE.md 1 geregi BELGE uygulandi, celiski raporlandi.)
+     */
+    public function bulkDelete(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        $ids = $this->kimlikler($this->body($request)['ids'] ?? null);
+        if ($ids === []) {
+            return Response::error($response, 'VALIDATION', 'Dogrulama hatasi', 422, ['body' => 'ids (1-100 kimlik) zorunlu.']);
+        }
+
+        $silinen = $this->inbox->deleteMany($ids);
+
+        $this->activity->record(
+            'inbox',
+            null,
+            'inbox_deleted',
+            sprintf('toplu silme: %d kayit', $silinen),
+            ClientIp::from($request),
+            $this->clock->now(),
+            ActivityLog::ACTOR_ADMIN,
+            $this->user($request)->id,
+        );
+
+        return Response::success($response, ['deleted' => $silinen]);
     }
 
     /** POST /api/inbox/assign — {ids:[], list_id}: seçilenleri listeye ürün olarak taşır. */
@@ -60,6 +140,9 @@ final class InboxController extends ApiController
         $body = $this->body($request);
         $listId = $body['list_id'] ?? null;
         $ids = $body['ids'] ?? null;
+        // İE#13 B6 (K54): kullanıcı çeviri önerisini "Kullan" dediyse ürün adı bu olur.
+        // Yalnız KULLANICI ONAYLI adlar gelir; RAW başlık payload'da değişmeden kalır.
+        $adlar = $this->adlar($body['names'] ?? null);
 
         if (!is_int($listId) || $listId < 1 || !is_array($ids) || $ids === [] || count($ids) > 100) {
             return Response::error($response, 'VALIDATION', 'Doğrulama hatası', 422, [
@@ -91,6 +174,10 @@ final class InboxController extends ApiController
                 $failed[] = ['id' => $id, 'error' => 'Yakalama verisi okunamadı.'];
 
                 continue;
+            }
+
+            if (isset($adlar[$id]) && is_array($payload['normalized'] ?? null)) {
+                $payload['normalized']['name'] = $adlar[$id];
             }
 
             // error kayıtları da taşınabilir OLMAYA ÇALIŞIR: zorunlu alanlar hâlâ eksikse net hata.
@@ -153,5 +240,157 @@ final class InboxController extends ApiController
         );
 
         return $response->withStatus(204);
+    }
+
+    /**
+     * Liste/detay ortak ozet alanlari.
+     *
+     * @param array<string, mixed> $row
+     *
+     * @return array<string, mixed>
+     */
+    private function ozet(array $row): array
+    {
+        return [
+            'id' => (int) $row['id'],
+            'status' => (string) $row['status'],
+            'platform' => (string) $row['platform'],
+            'external_id' => $row['external_id'] === null ? null : (string) $row['external_id'],
+            'name' => $row['name'] === null ? null : (string) $row['name'],
+            'price_yuan' => $row['price_yuan'] === null ? null : (string) $row['price_yuan'],
+            'image_url' => $row['image_url'] === null ? null : (string) $row['image_url'],
+            'url' => $row['url'] === null ? null : (string) $row['url'],
+            'error_note' => $row['error_note'] === null ? null : (string) $row['error_note'],
+            'created_at' => Dates::toIso((string) $row['created_at'], $this->timezone),
+        ];
+    }
+
+    /** YYYY-AA-GG disindaki her sey yok sayilir (uydurma tarihle sorgu yapilmaz). */
+    private function gun(string $value): string
+    {
+        return preg_match('/^\d{4}-\d{2}-\d{2}$/', $value) === 1 ? $value : '';
+    }
+
+    /**
+     * `{ "12": "Türkçe ad" }` → [12 => 'Türkçe ad']. Geçersiz anahtar/boş ad elenir;
+     * ad 300 karakterle sınırlıdır (ürün adı kolonunun sınırı).
+     *
+     * @return array<int, string>
+     */
+    private function adlar(mixed $raw): array
+    {
+        if (!is_array($raw)) {
+            return [];
+        }
+        $out = [];
+        foreach ($raw as $key => $value) {
+            $id = is_int($key) ? $key : (preg_match('/^\d+$/', (string) $key) === 1 ? (int) $key : 0);
+            if ($id < 1 || !is_string($value)) {
+                continue;
+            }
+            $ad = trim($value);
+            if ($ad !== '') {
+                $out[$id] = mb_substr($ad, 0, 300);
+            }
+        }
+
+        return $out;
+    }
+
+    /** @return list<int> */
+    private function kimlikler(mixed $raw): array
+    {
+        if (!is_array($raw)) {
+            return [];
+        }
+        $ids = [];
+        foreach (array_slice($raw, 0, self::MAX_IDS) as $id) {
+            if (is_int($id) && $id > 0) {
+                $ids[] = $id;
+            }
+        }
+
+        return $ids;
+    }
+
+    /** @return list<string> */
+    private function metinListesi(mixed $raw): array
+    {
+        if (!is_array($raw)) {
+            return [];
+        }
+        $out = [];
+        foreach ($raw as $value) {
+            if (is_string($value) && $value !== '') {
+                $out[] = $value;
+            }
+        }
+
+        return $out;
+    }
+
+    /** @return list<array{min_qty: int, price_yuan: string}> */
+    private function kademeler(mixed $raw): array
+    {
+        if (!is_array($raw)) {
+            return [];
+        }
+        $out = [];
+        foreach ($raw as $tier) {
+            if (!is_array($tier)) {
+                continue;
+            }
+            $price = $tier['price_yuan'] ?? null;
+            if (!is_string($price) && !is_numeric($price)) {
+                continue;
+            }
+            $out[] = ['min_qty' => (int) ($tier['min_qty'] ?? 1), 'price_yuan' => (string) $price];
+        }
+
+        return $out;
+    }
+
+    /** @return list<array{label: string, price_yuan: string|null}> */
+    private function varyasyonlar(mixed $raw): array
+    {
+        if (!is_array($raw)) {
+            return [];
+        }
+        $out = [];
+        foreach ($raw as $entry) {
+            if (!is_array($entry)) {
+                continue;
+            }
+            $props = is_array($entry['props'] ?? null) ? $entry['props'] : [];
+            $parcalar = [];
+            foreach ($props as $value) {
+                if (is_string($value) || is_numeric($value)) {
+                    $parcalar[] = (string) $value;
+                }
+            }
+            $price = $entry['price_yuan'] ?? null;
+            $out[] = [
+                'label' => $parcalar === [] ? '—' : implode(' / ', $parcalar),
+                'price_yuan' => is_string($price) || is_numeric($price) ? (string) $price : null,
+            ];
+        }
+
+        return $out;
+    }
+
+    /** @return array<string, string> */
+    private function ozellikler(mixed $raw): array
+    {
+        if (!is_array($raw)) {
+            return [];
+        }
+        $out = [];
+        foreach ($raw as $key => $value) {
+            if (is_string($key) && (is_string($value) || is_numeric($value))) {
+                $out[$key] = (string) $value;
+            }
+        }
+
+        return $out;
     }
 }
