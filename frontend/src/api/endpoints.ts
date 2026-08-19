@@ -129,6 +129,21 @@ export const system = {
     api.post<{ mode: string; checked: number; missing: number; repaired: number; failed: unknown[] }>(
       '/api/system/media-check',
     ),
+  /** İE#10.5: yedekleme — elle al (+ yapılandırılmışsa off-site), listele, indir. */
+  backupCreate: () =>
+    api.post<{
+      backup: { name: string; size: number; sha256: string; created_at: string };
+      offsite: { attempted: boolean; sent: boolean; via: string | null; error: string | null };
+    }>('/api/system/backup'),
+  backupList: () =>
+    api.get<{
+      backups: { name: string; size: number; created_at: string }[];
+      writable: boolean;
+      last_age_seconds: number | null;
+      stale: boolean;
+      offsite_configured: boolean;
+    }>('/api/system/backups'),
+  backupFileUrl: (name: string) => `/api/system/backups/${encodeURIComponent(name)}/file`,
   /** K49: migration defterini gerçeğe eşitler — DDL koşmaz, idempotent. */
   migrateBaseline: () =>
     api.post<{ recorded: string[]; skipped: { name: string; reason: string }[]; pending_count: number }>(

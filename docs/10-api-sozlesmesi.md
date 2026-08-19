@@ -26,6 +26,13 @@
 - **Sayfalama (Faz 4 notu — İE#9 F13):** Faz 1'de liste/ürün uçları sayfalama YAPMAZ (tek kullanıcılı sistemde veri hacmi düşük); yalnızca `GET /api/activity` sayfalıdır (`page`, `per_page` — varsayılan 25, üst sınır 100, yanıtta `meta: {page, per_page, total}`). Genel sayfalama Faz 4'te değerlendirilecektir.
 - **Sıralama/filtre:** uca özel filtreler (aşağıda). Sıralama sabittir (listeler `created_at DESC`, ürünler `sort_no`); `?sort=` parametresi Faz 1'de yoktur. Bilinmeyen sorgu parametreleri yok sayılır; tanımlı bir filtrenin geçersiz DEĞERİ 422 döner.
 
+
+> **MIGRATION_PENDING (İE#10.5):** defterde bekleyen migration varken veri uçları
+> (liste/ürün/çöp/export/paylaşım-yönetimi grubu) **503** `MIGRATION_PENDING` döner;
+> panel tam sayfa "Güncelleme tamamlanmalı" ekranına geçer ve migrate+baseline'ı buradan
+> koşar. `/api/system/*`, `/api/auth/*`, `/api/health` ve kurulum uçları bu korumanın
+> DIŞINDADIR. Defter okunamıyorsa (taze kurulum) koruma isteği geçirir.
+
 ## 2. Kimlik Doğrulama
 
 | Uç | Gövde → Yanıt |
@@ -160,6 +167,9 @@ Adım sırası zorlanır: sırası gelmemiş uç `422 STATE_TRANSITION` + `meta.
 | `POST /api/system/media-migrate` | K47 — uzak görselleri arşive taşıma (Auth + CSRF). Gövde (İE#10 5b): `{exclude_products?:[], exclude_images?:[]}` — önceki turların başarısızları dışlanır, parti başı tıkanmaz. Tek çağrı BİR parti işler (≤20 kayıt) → 200 `{mode, scanned, migrated, failed:[{kind, id, product_id, url, error}], remaining}`; panel `remaining` sıfırlanana dek tekrar çağırır. Medya yazılamıyorsa 422 `MEDIA_NOT_WRITABLE`. İdempotent; başarısız kayıt bozulmaz. Sonuç `activity_log`'a yazılır |
 | `POST /api/system/media-check` | İE#10 5d — medya bütünlük denetimi + onarım (Auth + CSRF). Yerel /media kayıtlarını diskle karşılaştırır; kayıpları `main_image_source`/`source_url`'den yeniden indirir (parti ≤20) → 200 `{mode, checked, missing, repaired, failed[]}`. İdempotent; kaynaksız kayıt bozulmaz, raporlanır. Export ve paylaşım görselleri aynı kayıtlardan okunduğu için denetim o yüzeyleri de kapsar |
 | `POST /api/products/{id}/media-repair` | İE#10 5d — tek ürün görsel onarımı (panel "yeniden dene"): uzaksa arşive alır, yerel+kayıpsa kaynaktan indirir → 200 `{repaired, main_image}`; onarılamazsa 422 `MEDIA_REPAIR_FAILED` |
+| `POST /api/system/backup` | İE#10.5 — elle yedek (Auth+CSRF): şifreli DB dökümü üretir (AES-256-GCM; anahtar APP_KEY'den HKDF ile türetilir) → 200 `{backup:{name,size,sha256,created_at}, offsite:{attempted,sent,via,error}}`. Off-site hedef dosya yapılandırmasından okunur (BACKUP_FTP_*/BACKUP_SMTP_* — sır, DB'ye yazılmaz); yapılandırılmamışsa gönderim atlanır. Üretilemezse 500 `BACKUP_FAILED` |
+| `GET /api/system/backups` | İE#10.5 — → 200 `{backups:[{name,size,created_at}], writable, last_age_seconds, stale, offsite_configured}`; `stale`=son yedek >24 saat (panel rozeti) |
+| `GET /api/system/backups/{name}/file` | İE#10.5 — şifreli yedeği indirir (Auth'lu; ad deseni `yedek-*.sql.enc` doğrulanır, desen dışı 404) |
 | `POST /api/system/migrate-baseline` | K49 — migration defterini gerçeğe eşitler (Auth + CSRF; APP_KEY kanıtı GEREKMEZ — yıkıcı değil). Bekleyen her kayıt için hedef nesne şema sorgusuyla doğrulanır: VARSA kayıt KOŞULMADAN checksum'uyla deftere işlenir, YOKSA/haritada değilse atlanır → 200 `{recorded[], skipped:[{name, reason}], pending_count}`. HİÇBİR DDL çalıştırmaz; idempotent. Sonuç `activity_log`'a yazılır. CLI eşi: `bin/migrate-baseline.php` |
 
 ## 9. Sözleşme Testleri

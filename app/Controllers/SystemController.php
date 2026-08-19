@@ -39,7 +39,94 @@ final class SystemController
         private readonly Clock $clock,
         private readonly ?MediaService $media = null,
         private readonly ?StateMachine $stateMachine = null,
+        private readonly ?\App\Core\Config $appConfig = null,
     ) {
+    }
+
+    /**
+     * POST /api/system/backup — İE#10.5: elle yedek al (+ yapılandırılmışsa off-site gönder).
+     * Auth + CSRF arkasında. Sırlar/anahtar loglanmaz; sonuç activity_log'a yazılır.
+     */
+    public function backupCreate(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        $user = $this->authenticatedUser($request);
+        if ($this->appConfig === null) {
+            return Response::error($response, 'SERVER_ERROR', 'Yapılandırma erişilemiyor.', 500);
+        }
+
+        $service = new \App\Services\BackupService($this->appConfig, $this->basePath);
+        try {
+            $backup = $service->create();
+        } catch (Throwable $e) {
+            return Response::error($response, 'BACKUP_FAILED', $e->getMessage(), 500);
+        }
+
+        $offsite = (new \App\Services\BackupOffsite($this->appConfig))
+            ->send((string) $service->pathFor($backup['name']), $backup['name']);
+
+        (new ActivityLog($this->connection))->record(
+            'system',
+            null,
+            'backup_created',
+            sprintf(
+                '%s: %s (%.1f KB) · off-site: %s',
+                $user->email,
+                $backup['name'],
+                $backup['size'] / 1024,
+                $offsite['attempted'] ? ($offsite['sent'] ? 'gönderildi (' . $offsite['via'] . ')' : 'BAŞARISIZ') : 'yapılandırılmadı',
+            ),
+            ClientIp::from($request),
+            $this->clock->now(),
+            ActivityLog::ACTOR_ADMIN,
+            $user->id,
+        );
+
+        return Response::success($response, ['backup' => $backup, 'offsite' => $offsite]);
+    }
+
+    /** GET /api/system/backups — son yedekler + 24 saat uyarısı + off-site durumu. */
+    public function backupList(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        $this->authenticatedUser($request);
+        if ($this->appConfig === null) {
+            return Response::error($response, 'SERVER_ERROR', 'Yapılandırma erişilemiyor.', 500);
+        }
+
+        $service = new \App\Services\BackupService($this->appConfig, $this->basePath);
+        $age = $service->lastBackupAgeSeconds();
+
+        return Response::success($response, [
+            'backups' => array_slice($service->list(), 0, 10),
+            'writable' => $service->isWritable(),
+            'last_age_seconds' => $age,
+            'stale' => $age === null || $age > 86400,
+            'offsite_configured' => (new \App\Services\BackupOffsite($this->appConfig))->configured(),
+        ]);
+    }
+
+    /**
+     * GET /api/system/backups/{name}/file — şifreli yedeği indirir (Auth'lu; ad deseni doğrulanır).
+     *
+     * @param array<string, string> $args
+     */
+    public function backupDownload(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    {
+        $this->authenticatedUser($request);
+        if ($this->appConfig === null) {
+            return Response::error($response, 'SERVER_ERROR', 'Yapılandırma erişilemiyor.', 500);
+        }
+
+        $path = (new \App\Services\BackupService($this->appConfig, $this->basePath))->pathFor((string) ($args['name'] ?? ''));
+        if ($path === null) {
+            return Response::error($response, 'NOT_FOUND', 'Yedek bulunamadı.', 404);
+        }
+
+        $response->getBody()->write((string) file_get_contents($path));
+
+        return $response
+            ->withHeader('Content-Type', 'application/octet-stream')
+            ->withHeader('Content-Disposition', 'attachment; filename="' . basename($path) . '"')
+            ->withHeader('Cache-Control', 'no-store');
     }
 
     /**

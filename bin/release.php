@@ -91,6 +91,15 @@ $collect = function (string $relativeDir) use ($basePath, &$files, $excludedBase
         if (str_starts_with($relative, 'public/media/') && $relative !== 'public/media/.htaccess') {
             continue;
         }
+        // İE#10.5 Blok 7: mPDF font ayıklaması — kullanılan yalnız DejaVu (TR/₺/¥) ve
+        // Sun-ExtA/B (Çince başlıklar, autoLangToFont). Kalan ~60 font ailesi pakete girmez;
+        // PdfRenderer başka font istemez (default_font=dejavusans + CJK oto-geçiş).
+        if (str_starts_with($relative, 'vendor/mpdf/mpdf/ttfonts/')) {
+            $font = strtolower(basename($relative));
+            if (!str_starts_with($font, 'dejavu') && !str_starts_with($font, 'sun-ext')) {
+                continue;
+            }
+        }
         $files[] = $relative;
     }
 };

@@ -50,6 +50,10 @@ final class PdfRenderer implements ExportRenderer
                 'margin_top' => 10,
                 'margin_bottom' => 12,
                 'default_font' => 'dejavusans',
+                // Çince başlıklar (K31): betik algılama + CJK fontuna otomatik geçiş —
+                // DejaVu CJK glif taşımaz; bu iki bayrak olmadan kutu (□) basılır.
+                'autoScriptToLang' => true,
+                'autoLangToFont' => true,
             ]);
             $mpdf->SetTitle('tedarikapp — ' . (string) ($snapshot['list']['name'] ?? 'liste'));
             $mpdf->WriteHTML($this->html($snapshot));
