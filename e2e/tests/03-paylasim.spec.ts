@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { girisYap, listeAc, urunEkle } from './yardimcilar';
+import { girisYap, gorunen, listeAc, urunEkle } from './yardimcilar';
 
 /**
  * E2E-3 (İE#13 E2 · K51): paylaşım linki GİRİŞSİZ açılır; iptalden sonra 404 verir.
@@ -27,16 +27,16 @@ test.describe('Paylaşım sayfası', () => {
     const misafirSayfa = await misafir.newPage();
     const yanit = await misafirSayfa.goto(url);
     expect(yanit?.status()).toBe(200);
-    await expect(misafirSayfa.getByText('E2E Paylaşım Listesi')).toBeVisible();
-    await expect(misafirSayfa.getByText('Paylaşılan ürün')).toBeVisible();
+    await expect(gorunen(misafirSayfa.getByText('E2E Paylaşım Listesi'))).toBeVisible();
+    await expect(gorunen(misafirSayfa.getByText('Paylaşılan ürün'))).toBeVisible();
 
     // ── İptal: eski link ANINDA ölür (K51) ──
     await page.getByRole('button', { name: 'Linki iptal et' }).click();
-    await expect(page.getByText(/iptal edildi/i)).toBeVisible();
+    await expect(gorunen(page.getByText(/iptal edildi/i))).toBeVisible();
 
     const iptalSonrasi = await misafirSayfa.goto(url);
     expect(iptalSonrasi?.status(), 'İptal edilen link SABİT 404 döndürmeli (K51)').toBe(404);
-    await expect(misafirSayfa.getByText(/bağlantı|link/i).first()).toBeVisible();
+    await expect(gorunen(misafirSayfa.getByText(/bağlantı|link/i))).toBeVisible();
 
     await misafir.close();
   });

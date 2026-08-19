@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { girisYap, listeAc, urunEkle } from './yardimcilar';
+import { girisYap, gorunen, listeAc, urunEkle } from './yardimcilar';
 
 /**
  * E2E-2 (İE#13 E2): Excel ve PDF çıktısı ÜRETİLİR ve İNDİRİLİR.
@@ -15,7 +15,7 @@ test.describe('Çıktılar', () => {
     await urunEkle(page, listId, 'Çıktı ürünü', 40);
 
     await page.goto(`/panel/listeler/${listId}`);
-    await expect(page.getByText('Çıktı ürünü').first()).toBeVisible();
+    await expect(gorunen(page.getByText('Çıktı ürünü'))).toBeVisible();
 
     for (const [buton, uzanti] of [
       ['Excel', '.xlsx'],

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { csrfToken, girisYap, listeAc } from './yardimcilar';
+import { csrfToken, girisYap, gorunen, listeAc } from './yardimcilar';
 
 /**
  * E2E-4 (İE#13 E2): sahte yakalama → Gelen Kutusu → listeye taşı → listede gör.
@@ -47,12 +47,12 @@ test.describe('Gelen Kutusu', () => {
 
     // ── Panel: Gelen Kutusu'nda görünür ──
     await page.goto('/panel/gelen-kutusu');
-    await expect(page.getByText('E2E Yakalanan Ürün').first()).toBeVisible();
+    await expect(gorunen(page.getByText('E2E Yakalanan Ürün'))).toBeVisible();
 
     // ── Detay çekmecesi (İE#13 B3): kaynak veriler görünür ──
-    await page.getByText('E2E Yakalanan Ürün').first().click();
+    await gorunen(page.getByText('E2E Yakalanan Ürün')).click();
     await expect(page.getByRole('dialog', { name: 'Yakalama detayı' })).toBeVisible();
-    await expect(page.getByText('便携式榨汁机')).toBeVisible();
+    await expect(gorunen(page.getByText('便携式榨汁机'))).toBeVisible();
     await page.getByRole('button', { name: 'Kapat' }).first().click();
 
     // ── Listeye taşı (İE#13 B1: seç → hedef → taşı) ──
@@ -60,11 +60,11 @@ test.describe('Gelen Kutusu', () => {
     await page.getByLabel('Hedef liste').selectOption(String(listId));
     await page.getByRole('button', { name: /Seçilenleri taşı/ }).click();
 
-    await expect(page.getByText(/listeye taşındı/i)).toBeVisible();
+    await expect(gorunen(page.getByText(/listeye taşındı/i))).toBeVisible();
 
     // ── Listede ürün olarak duruyor ──
     await page.goto(`/panel/listeler/${listId}`);
     // Panel ürünü hem masaüstü hem mobil düzende basar — ilk eşleşme yeterlidir.
-    await expect(page.getByText('E2E Yakalanan Ürün').first()).toBeVisible();
+    await expect(gorunen(page.getByText('E2E Yakalanan Ürün'))).toBeVisible();
   });
 });

@@ -1,9 +1,16 @@
-import { expect, type Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 
 /**
  * E2E ortak yardımcıları (İE#13 Blok E).
  * Kullanıcı CI'da `bin/user-create.php --no-totp` ile tohumlanır: 2FA'sız akış (K45).
  */
+/**
+ * GÖRÜNÜR eşleşme. Panel aynı veriyi masaüstü tablosunda ve mobil kartında BASAR;
+ * biri CSS ile gizlidir. `.first()` gizli olanı seçip "hidden" hatası veriyordu
+ * (CI kanıtı) — bu yardımcı yalnız görünür olanı alır.
+ */
+export const gorunen = (locator: Locator): Locator => locator.filter({ visible: true }).first();
+
 export const KULLANICI = {
   email: process.env.E2E_EMAIL ?? 'e2e@tedarikapp.test',
   password: process.env.E2E_PASSWORD ?? 'e2e-cok-gizli-sifre',
