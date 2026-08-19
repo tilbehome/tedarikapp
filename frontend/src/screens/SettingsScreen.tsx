@@ -29,6 +29,9 @@ export default function SettingsScreen() {
   useEffect(() => {
     const data = settingsState.data;
     if (!data) return;
+    // Yüklenen ayarlar form alanlarını tohumlar — react-hooks 7 bu deseni uyarıyor; formun sunucu
+    // verisiyle ilklenmesi mevcut davranıştır ve F41 kapsamında ele alınacak.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setYuan(data.yuan_tl);
     setUsd(data.usd_tl);
   }, [settingsState.data]);

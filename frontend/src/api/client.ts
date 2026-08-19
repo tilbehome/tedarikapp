@@ -106,7 +106,7 @@ async function requestWithMeta<T>(path: string, options: RequestOptions = {}): P
     return { data: undefined as T, meta: {} };
   }
 
-  let envelope: Envelope<T> | null = null;
+  let envelope: Envelope<T> | null;
   try {
     envelope = (await response.json()) as Envelope<T>;
   } catch {
@@ -150,7 +150,7 @@ async function postBlob(path: string): Promise<void> {
 
   const response = await fetch(path, { method: 'POST', headers, credentials: 'same-origin' });
   if (!response.ok) {
-    let envelope: Envelope<unknown> | null = null;
+    let envelope: Envelope<unknown> | null;
     try {
       envelope = (await response.json()) as Envelope<unknown>;
     } catch {

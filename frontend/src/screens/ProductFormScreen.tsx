@@ -56,6 +56,9 @@ export default function ProductFormScreen() {
   useEffect(() => {
     const product = existing.data;
     if (!product) return;
+    // Yüklenen ürün formu tohumlar — react-hooks 7 bu deseni uyarıyor; formun sunucu
+    // verisiyle ilklenmesi mevcut davranıştır ve F41 kapsamında ele alınacak.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setForm({
       name: product.name,
       name_original: product.name_original ?? '',

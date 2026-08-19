@@ -28,10 +28,17 @@ export function useAsync<T>(loader: () => Promise<T>, deps: unknown[]): AsyncSta
   const alive = useRef(true);
 
   // Bağımlılıklar çağıran ekranın elinde; loader her render'da yeni referans olur.
+  // react-hooks 7 dizi LİTERALİ ister — bu kanca deps'i bilerek dışarıdan alır
+  // (jenerik veri çekme kancasının tüm anlamı bu). F41: kancanın imzası v2'de
+  // gözden geçirilecek; şimdi davranış değişmemeli.
+  // eslint-disable-next-line react-hooks/exhaustive-deps, react-hooks/use-memo
   const run = useCallback(loader, deps);
 
   useEffect(() => {
     alive.current = true;
+    // react-hooks 7 "set-state-in-effect": burada amaç DIŞ SİSTEMLE (API) eşitlenmek;
+    // yükleme bayrağı isteğin başladığı anda kalkmalı. F41 kapsamında ele alınacak.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setState((previous) => ({ ...previous, loading: true, error: null }));
 
     run()
