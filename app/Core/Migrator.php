@@ -58,7 +58,10 @@ final class Migrator
         '0017_create_sessions' => [['table' => 'sessions']],
         '0018_add_products_main_image_source' => [['column' => ['products', 'main_image_source']]],
         '0019_create_inbox_items' => [['table' => 'inbox_items']],
-        '0020_create_translation_cache' => [['table' => 'translation_cache']],
+        '0020_create_translation_cache' => [
+            ['table' => 'translation_cache'],
+            ['column' => ['products', 'price_target_try']],
+        ],
     ];
 
     /** @param array<string, list<array{table?: string, column?: array{string, string}}>>|null $baselineObjects test amaçlı harita (null = gerçek harita) */

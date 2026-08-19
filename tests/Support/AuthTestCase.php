@@ -303,6 +303,7 @@ abstract class AuthTestCase extends TestCase
                 qty INTEGER NOT NULL DEFAULT 1,
                 price_yuan TEXT NOT NULL DEFAULT \'0\',
                 price_ddp_usd TEXT NOT NULL DEFAULT \'0\',
+                price_target_try TEXT NULL,
                 units_per_carton INTEGER NULL,
                 raw_attributes TEXT NULL,
                 country_of_origin TEXT NULL,

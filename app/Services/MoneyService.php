@@ -67,6 +67,36 @@ final class MoneyService
     }
 
     /**
+     * Fark: a − b (İE#13 F5 kâr hesabı). NEGATİF SONUÇ MEŞRUDUR — hedef satış fiyatı
+     * maliyetin altındaysa zarar görünmelidir; bu yüzden `assertAmount` yalnız
+     * girdilere uygulanır, sonuca değil.
+     */
+    public function subtract(string $a, string $b): string
+    {
+        $this->assertAmount($a);
+        $this->assertAmount($b);
+
+        return $this->format(bcsub($a, $b, self::SCALE));
+    }
+
+    /** Tutar sıfırdan büyük mü? (Karşılaştırma da bcmath ile — float'a düşülmez.) */
+    public function isPositive(string $amount): bool
+    {
+        return bccomp($amount, '0', self::MONEY_SCALE) > 0;
+    }
+
+    /**
+     * Tutar × adet — `lineTotal`den farkı NEGATİF tutara izin vermesidir (F5 zarar
+     * satırı). Bu yüzden `assertAmount` uygulanmaz; girdi zaten hesaplanmış bir farktır.
+     */
+    public function times(string $amount, int $qty): string
+    {
+        $this->assertQty($qty);
+
+        return $this->format(bcmul($amount, (string) $qty, self::SCALE));
+    }
+
+    /**
      * Yuvarlanmış satır toplamlarını toplar.
      *
      * @param list<string> $amounts

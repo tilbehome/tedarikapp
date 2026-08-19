@@ -103,6 +103,8 @@ final class PublicRoutes
                 $presenter->productsOf($products->forList((int) $row['id']), $row),
                 $categoryNames,
                 $uri->getScheme() . '://' . $uri->getAuthority() . '/p/' . $token,
+                // İE#13 F4: paylaşım sayfası da belge antedini taşır (aynı kurumsal dil).
+                (new \App\Models\SettingsRepository($connection))->documentHeader(),
             );
             $response->getBody()->write($html);
 

@@ -56,6 +56,8 @@ final class DataRoutes
             $group->get('/settings', [$settingsController, 'show']);
             $group->put('/settings/rates', [$settingsController, 'updateRates']);
             $group->get('/settings/rates/history', [$settingsController, 'rateHistory']);
+            // İE#13 F1: belge antedi (çıktı üst bandı) — boş alan basılmaz.
+            $group->put('/settings/document-header', [$settingsController, 'updateDocumentHeader']);
 
             $group->get('/activity', [$activityController, 'index']);
 

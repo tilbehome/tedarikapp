@@ -121,6 +121,13 @@ final class ListPresenter
         $priceYuan = $this->money->format((string) $row['price_yuan']);
         $priceDdp = $this->money->format((string) $row['price_ddp_usd']);
         $qty = (int) $row['qty'];
+        $priceTargetRaw = $this->nullableString($row['price_target_try'] ?? null);
+        [$priceTarget, $unitProfit, $lineProfit] = $this->profit(
+            $priceTargetRaw === null ? null : $this->money->format($priceTargetRaw),
+            $this->money->convert($priceDdp, $usdRate),
+            $this->money->convert($priceYuan, $yuanRate),
+            $qty,
+        );
 
         return [
             'id' => (int) $row['id'],
@@ -139,6 +146,8 @@ final class ListPresenter
             'sku_matrix' => $this->decodeJson($row['sku_matrix']),
             'main_image' => $this->nullableString($row['main_image']),
             'video_url' => $this->nullableString($row['video_url']),
+            // İE#13 F1: MOQ gibi alanlar yakalamanın RAW bloğundan okunur (uydurma kolon yok).
+            'raw_attributes' => $this->nullableString($row['raw_attributes'] ?? null),
             'qty' => $qty,
             'price_yuan' => $priceYuan,
             'price_ddp_usd' => $priceDdp,
@@ -147,6 +156,11 @@ final class ListPresenter
             'price_ddp_tl' => $this->money->convert($priceDdp, $usdRate),
             'line_total_yuan' => $this->money->lineTotal($priceYuan, $qty),
             'line_total_yuan_tl' => $this->money->lineTotalInTl($priceYuan, $qty, $yuanRate),
+            // İE#13 F5 — hedef satış ve kâr: YALNIZ iç kopya çıktısında basılır,
+            // firma kopyasında ve paylaşım sayfasında ASLA görünmez.
+            'price_target_try' => $priceTarget,
+            'unit_profit_try' => $unitProfit,
+            'line_profit_try' => $lineProfit,
             'units_per_carton' => $this->nullableInt($row['units_per_carton']),
             'tracking_no' => $this->nullableString($row['tracking_no']),
             'status' => (string) $row['status'],
@@ -193,6 +207,32 @@ final class ListPresenter
      * @param list<array<string, mixed>> $productRows
      *
      * @return array<string, int|string>
+     */
+    /**
+     * F5 kâr hesabı — MALİYET TABANI: birim DDP ₺ (KDV dahil, kapıya teslim).
+     * DDP girilmemişse (0) taban birim Yuan ₺'dir; bu durum çıktıda "DDP yok" demektir
+     * ve kârı olduğundan büyük göstermemek için en azından mal bedeli düşülür.
+     * Hedef girilmemişse üçü de null döner — çıktıda "—" basılır.
+     *
+     * @return array{0: string|null, 1: string|null, 2: string|null}
+     */
+    private function profit(?string $priceTarget, string $ddpTl, string $yuanTl, int $qty): array
+    {
+        if ($priceTarget === null) {
+            return [null, null, null];
+        }
+
+        $maliyet = $this->money->isPositive($ddpTl) ? $ddpTl : $yuanTl;
+        $birimKar = $this->money->subtract($priceTarget, $maliyet);
+        $satirKar = $this->money->times($birimKar, $qty);
+
+        return [$priceTarget, $birimKar, $satirKar];
+    }
+
+    /**
+     * @param list<array<string, mixed>> $productRows
+     *
+     * @return array<string, string|int>
      */
     private function totals(array $productRows, string $yuanRate, string $usdRate): array
     {

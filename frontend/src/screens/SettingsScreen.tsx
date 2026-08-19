@@ -7,6 +7,7 @@ import { count, dateTime, rate } from '../lib/format';
 import { mediaModeLabels } from '../locales/tr';
 import { ErrorNote, Field, PageHeader, Skeleton } from '../components/ui';
 import { useToast } from '../components/Toast';
+import BelgeAntedi from './ayarlar/BelgeAntedi';
 
 /**
  * E8 — Ayarlar: kurlar (tarihçeli), kategoriler, güvenlik, sistem durumu.
@@ -95,6 +96,10 @@ export default function SettingsScreen() {
           </form>
         )}
       </section>
+
+      {settingsState.data ? (
+        <BelgeAntedi mevcut={settingsState.data.document_header} onSaved={settingsState.reload} />
+      ) : null}
 
       <section className="card mb-4 p-4">
         <h2 className="mb-3 text-sm font-semibold text-slate-700">Kur tarihçesi</h2>

@@ -144,11 +144,17 @@ async function requestWithMeta<T>(path: string, options: RequestOptions = {}): P
  * İE#11 Görev E: POST ile dosya indirme — export üretimi CSRF'li POST'tur; yanıt
  * zarf değil DOSYA olduğundan ayrı yol: blob alınır ve tarayıcıya indirilir.
  */
-async function postBlob(path: string): Promise<void> {
+async function postBlob(path: string, body?: unknown): Promise<void> {
   const headers: Record<string, string> = {};
   if (csrfToken) headers['X-CSRF-Token'] = csrfToken;
+  if (body !== undefined) headers['Content-Type'] = 'application/json';
 
-  const response = await fetch(path, { method: 'POST', headers, credentials: 'same-origin' });
+  const response = await fetch(path, {
+    method: 'POST',
+    headers,
+    credentials: 'same-origin',
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
   if (!response.ok) {
     let envelope: Envelope<unknown> | null;
     try {

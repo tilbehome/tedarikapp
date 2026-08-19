@@ -1,49 +1,241 @@
-/* Paylaşım sayfası stili (İE#10 Blok 4) — CSP `default-src 'self'` gereği AYRI dosya.
-   Sayfa dışa açık tek yüzeydir: sade, mobil öncelikli, markasız-nötr görünüm. */
-* { box-sizing: border-box; margin: 0; }
-body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background: #f1f5f9; color: #0f172a; }
-main { max-width: 860px; margin: 0 auto; padding: 16px; }
-.baslik h1 { font-size: 1.35rem; }
-.kunye { color: #64748b; font-size: .85rem; margin-top: 4px; }
-.toplam-kart { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; margin: 16px 0; }
-.toplam-kart div { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 12px; }
-.toplam-kart span { display: block; color: #64748b; font-size: .75rem; }
-.toplam-kart strong { font-size: 1.05rem; }
-.urunler { display: flex; flex-direction: column; gap: 12px; }
-.kart { display: flex; gap: 12px; background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 12px; }
-.gorsel img { width: 96px; height: 96px; object-fit: cover; border-radius: 10px; border: 1px solid #e2e8f0; }
-.gorsel .yok { display: flex; width: 96px; height: 96px; align-items: center; justify-content: center;
-    background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 10px; color: #94a3b8; font-size: .7rem; }
-.bilgi { flex: 1; min-width: 0; }
-.bilgi h2 { font-size: 1rem; }
-.meta { color: #64748b; font-size: .8rem; margin: 2px 0 8px; }
-.rozet { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: .72rem; background: #e2e8f0; }
-.rozet-to_order { background: #fef9c3; color: #854d0e; }
-.rozet-ordered { background: #dbeafe; color: #1e40af; }
-.rozet-in_transit { background: #fde68a; color: #92400e; }
-.rozet-received { background: #dcfce7; color: #166534; }
-.fiyat { display: flex; flex-wrap: wrap; gap: 12px; font-size: .85rem; }
-.fiyat dt { color: #64748b; font-size: .72rem; }
-.fiyat dd { font-weight: 600; }
-details { margin-top: 8px; }
-summary { cursor: pointer; color: #2563eb; font-size: .82rem; }
-.detay { margin-top: 8px; font-size: .85rem; color: #334155; display: flex; flex-direction: column; gap: 8px; }
-.zh { color: #64748b; }
-.galeri { display: flex; flex-wrap: wrap; gap: 6px; }
-.galeri img { width: 72px; height: 72px; object-fit: cover; border-radius: 8px; border: 1px solid #e2e8f0; }
-video { width: 100%; max-width: 420px; border-radius: 10px; background: #000; }
-.sku { border-collapse: collapse; font-size: .8rem; width: 100%; }
-.sku caption { text-align: left; color: #64748b; font-size: .75rem; padding-bottom: 4px; }
-.sku th, .sku td { border: 1px solid #e2e8f0; padding: 4px 8px; text-align: left; font-weight: normal; }
-.sku th { background: #f8fafc; }
-.alt { text-align: center; color: #94a3b8; font-size: .75rem; margin: 24px 0 8px; }
-@media (max-width: 480px) { .kart { flex-direction: column; } .gorsel img, .gorsel .yok { width: 100%; height: 160px; } }
+/*
+ * Paylaşım sayfası stili (İE#13 F4) — ŞARTNAME: docs/sablon/paylasim-v4-premium.html.
+ * Örnek dosyanın stil bloğu BİREBİR alınmıştır; altına yalnız şunlar eklenmiştir:
+ * self-host font bildirimi, yazdırma (print) kuralları ve geçersiz-bağlantı sayfası.
+ *
+ * Harici dosyadır: CSP `default-src 'self'` satır içi stile izin vermez (K51).
+ * FONTLAR SELF-HOST (K45/K51): Google Fonts'a DIŞ İSTEK YOKTUR — Inter dosyaları
+ * /fonts altındadır. Çince için sistem CJK yığını kullanılır (bkz. .zh kuralı);
+ * Noto Sans SC'nin tüm alt kümeleri ~5 MB olduğu için pakete konmadı (SAPMA kaydı).
+ */
+@import url('/fonts/inter.css');
 
-/* Geçersiz bağlantı sayfası (İE#10.5 ek) — kart ortalanır, marka nötr ve sakin. */
-.hata-sayfasi { display: flex; min-height: 92vh; flex-direction: column; align-items: center; justify-content: center; }
-.hata-karti { background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 32px 28px;
-    max-width: 440px; text-align: center; box-shadow: 0 1px 3px rgba(15, 23, 42, .06); }
-.hata-marka { border-radius: 14px; margin-bottom: 14px; }
-.hata-karti h1 { font-size: 1.15rem; margin-bottom: 10px; }
-.hata-karti p { color: #475569; font-size: .9rem; line-height: 1.55; }
-.hata-ipucu { margin-top: 10px; color: #94a3b8; font-size: .8rem; }
+:root {
+  --navy:#0F2557; --navy2:#16336E; --navy3:#1E4086; --gold:#D4A017; --blue:#2A5BD7;
+  --t1:#101828; --t2:#5B6472; --t3:#98A2B3;
+  --ln:#E6E9F0; --ln2:#F0F2F7; --bg:#F3F5F9; --w:#fff;
+  --okc:#0E7A4A; --okbg:#E5F6EE; --wtc:#9A6700; --wtbg:#FFF4D6;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:Inter,system-ui,sans-serif; background:var(--bg); color:var(--t1);
+  font-size:14px; -webkit-font-smoothing:antialiased; }
+.zh { font-family:'Noto Sans SC',Inter,sans-serif; }
+.page { max-width:1400px; margin:0 auto; padding:26px clamp(12px,3vw,28px) 56px; }
+@media screen and (min-width:1600px){ .page { max-width:1540px; } }
+.shell { border-radius:18px; overflow:hidden; box-shadow:0 1px 3px rgba(16,24,40,.06), 0 14px 34px -14px rgba(15,37,87,.18); border:1px solid var(--ln); background:var(--w); }
+
+/* ---- koyu kurumsal üst bant ---- */
+.hero { background:linear-gradient(120deg,#0E2251 0%,#16336E 70%,#1E4086 100%); color:#fff;
+  padding:22px 26px 20px; display:flex; justify-content:space-between; gap:18px; flex-wrap:wrap; position:relative; }
+.hero::after { content:""; position:absolute; left:0; right:0; bottom:0; height:3px; background:var(--gold); }
+.hb { display:flex; gap:14px; align-items:center; }
+.hb img { width:46px; height:46px; border-radius:12px; }
+.ht { font-size:23px; font-weight:800; letter-spacing:-.02em; }
+.hs { font-size:12.5px; color:#A9BCEB; margin-top:3px; font-weight:500; }
+.hm { display:flex; gap:clamp(14px,2.4vw,30px); text-align:right; flex-wrap:wrap; align-items:center; }
+.hm b { display:block; font-size:9.5px; letter-spacing:.12em; color:#7E97D8; font-weight:700; margin-bottom:2px; }
+.hm span { font-size:13.5px; font-weight:700; font-variant-numeric:tabular-nums; }
+
+/* ---- araç çubuğu ---- */
+.tools { display:flex; gap:7px; padding:12px 26px; border-bottom:1px solid var(--ln); background:#FBFCFE; flex-wrap:wrap; }
+.tb { display:inline-flex; align-items:center; gap:7px; font:inherit; font-size:12.5px; font-weight:600;
+  color:var(--t2); background:var(--w); border:1px solid var(--ln); border-radius:10px; padding:8px 13px; cursor:pointer; transition:.15s; }
+.tb svg { width:14px; height:14px; }
+.tb:hover { color:var(--navy); border-color:#C9D3E8; }
+.tb.wa { color:#0E7A4A; }
+.tb.pri { background:var(--navy); border-color:var(--navy); color:#fff; margin-left:auto; }
+.tb.pri:hover { background:var(--navy2); }
+
+/* ---- KPI şeridi ---- */
+.kpis { display:grid; grid-template-columns:repeat(5,1fr); border-bottom:1px solid var(--ln); }
+.kpi { padding:15px 20px; border-right:1px solid var(--ln2); }
+.kpi:last-child { border-right:none; }
+.kpi b { display:block; font-size:10px; letter-spacing:.09em; color:var(--t3); font-weight:700; margin-bottom:3px; }
+.kpi span { font-size:19px; font-weight:800; letter-spacing:-.02em; color:var(--navy); font-variant-numeric:tabular-nums; }
+.kpi .u { font-size:12.5px; color:var(--t3); font-weight:700; }
+
+/* ---- tablo ---- */
+.twrap { overflow-x:auto; }
+table { width:100%; border-collapse:collapse; min-width:1180px; }
+@media screen and (max-width:940px){ table { min-width:0; } .twrap { overflow:visible; } }
+thead th { background:var(--navy2); color:#fff; font-size:10.5px; font-weight:700; letter-spacing:.05em;
+  padding:8px 8px 7px; text-align:center; vertical-align:top; border-left:1px solid rgba(255,255,255,.09); white-space:nowrap; }
+thead th:first-child { border-left:none; padding-left:12px; }
+.z2 { display:block; font-size:9.5px; color:#9DB4E8; font-weight:400; margin-top:2px; }
+.z3 { display:block; font-size:8.5px; color:#6D87C8; font-weight:400; font-style:italic; }
+td { padding:12px 8px; font-size:12.5px; border-bottom:1px solid var(--ln2); border-left:1px solid var(--ln2); vertical-align:middle; }
+td:first-child { border-left:none; padding-left:16px; }
+tr.r:nth-child(4n+3) td { background:#FAFBFE; }
+tr.r:hover td { background:#F3F7FF; }
+.lab { display:none; }
+.val { display:block; }
+td.c { text-align:center; } td.n { text-align:right; font-variant-numeric:tabular-nums; font-weight:600; white-space:nowrap; }
+td.n .val, td.c .val { display:inline; }
+.mut { color:var(--t2); font-weight:500; }
+.prod { display:flex; gap:11px; align-items:center; min-width:215px; }
+.pi { position:relative; flex:none; cursor:zoom-in; }
+.pi img { width:50px; height:50px; border-radius:11px; object-fit:cover; display:block; box-shadow:0 1px 4px rgba(15,37,87,.14); }
+.pi .vb { position:absolute; right:-5px; bottom:-5px; width:20px; height:20px; border-radius:50%;
+  background:var(--navy); border:2px solid #fff; color:#fff; display:flex; align-items:center; justify-content:center; }
+.pi .vb svg { width:7px; height:7px; fill:currentColor; }
+.pno { font-size:10px; color:var(--t3); font-weight:700; letter-spacing:.06em; }
+.pn { font-size:13px; font-weight:700; color:var(--navy); text-decoration:none; letter-spacing:-.01em; line-height:1.3; }
+.pn:hover { color:var(--blue); }
+.pz { font-size:11.5px; color:var(--t3); margin-top:1px; }
+.pk { font-size:11.5px; color:var(--t2); margin-top:2px; }
+.pill { display:inline-flex; align-items:center; gap:6px; font-size:10.5px; font-weight:700;
+  border-radius:10px; padding:4px 9px; line-height:1.25; text-align:left; }
+.pill .d { width:6px; height:6px; border-radius:50%; background:currentColor; }
+.p-ok { background:var(--okbg); color:var(--okc); } .p-wt { background:var(--wtbg); color:var(--wtc); }
+.src { font-size:10.5px; font-weight:800; color:#fff; background:#F60; border-radius:6px; padding:3px 8px; letter-spacing:.02em; }
+.ops { display:flex; gap:5px; justify-content:flex-end; white-space:nowrap; }
+.op-git { display:inline-flex; align-items:center; gap:5px; font-size:11.5px; font-weight:700; color:var(--blue);
+  background:#EDF2FE; border-radius:8px; padding:7px 9px; text-decoration:none; white-space:nowrap; }
+.op-git svg { width:12px; height:12px; }
+.op-git:hover { background:#DFE9FD; }
+.op-det { display:inline-flex; align-items:center; gap:5px; font:inherit; font-size:11.5px; font-weight:700;
+  color:#fff; background:var(--navy); border:none; border-radius:8px; padding:7px 9px; cursor:pointer; white-space:nowrap; }
+.op-det svg { width:13px; height:13px; transition:transform .2s; }
+.op-det.on { background:var(--gold); color:var(--navy); }
+.op-det.on svg { transform:rotate(180deg); }
+
+/* ---- detay paneli ---- */
+.dt td { background:#F6F8FC; padding:16px 26px 20px; border-left:none; }
+.din { background:#fff; border:1px solid var(--ln); border-radius:14px; padding:18px 20px;
+  display:grid; grid-template-columns:1.15fr .62fr; gap:0; box-shadow:0 1px 2px rgba(16,24,40,.03); }
+.din > .sag { border-left:1px solid var(--ln2); padding-left:20px; margin-left:20px; min-width:0; }
+.dh { font-size:10px; letter-spacing:.1em; color:var(--t3); font-weight:800; margin-bottom:9px; }
+.dh .zh { font-weight:400; color:#C3CBD8; }
+.sg { display:grid; grid-template-columns:1fr 1fr; }
+.sg > div:nth-child(even) { border-left:1px solid var(--ln2); padding-left:16px; margin-left:16px; }
+.sg div { display:flex; justify-content:space-between; align-items:baseline; gap:12px;
+  padding:6.5px 0; border-bottom:1px solid var(--ln2); font-size:12.5px; min-width:0; }
+.sg b { color:var(--t2); font-weight:500; white-space:nowrap; }
+.sg b .zh { font-size:10.5px; color:#C3CBD8; font-weight:400; }
+.sg span { font-weight:600; text-align:right; overflow-wrap:anywhere; }
+.sg .yok { color:#C9D0DC; font-weight:400; }
+.score { display:flex; align-items:center; gap:12px; border:1px solid #EADFBF; border-radius:12px;
+  padding:10px 13px; margin-bottom:14px; background:linear-gradient(100deg,#FDF9EE,#fff 60%); }
+.score .sn { font-size:23px; font-weight:800; color:var(--navy); letter-spacing:-.03em; }
+.score .sn small { font-size:10.5px; color:var(--t3); font-weight:700; }
+.score .sb { flex:1; min-width:60px; }
+.score .sl { font-size:9.5px; letter-spacing:.08em; color:var(--t3); font-weight:800; margin-bottom:4px; }
+.score .bar { height:6px; border-radius:99px; background:var(--ln2); overflow:hidden; }
+.score .bar i { display:block; height:100%; width:87%; background:linear-gradient(90deg,var(--gold),#EFC14E); }
+.vr div { display:flex; justify-content:space-between; font-size:12.5px; padding:6.5px 0; border-bottom:1px solid var(--ln2); }
+.vr b { font-variant-numeric:tabular-nums; }
+.nt { margin-top:12px; font-size:12px; color:#8A6A00; background:#FFFBEB; border:1px solid #F3E3AC; border-radius:9px; padding:7px 10px; }
+.gl { grid-column:1/-1; border-top:1px solid var(--ln2); margin-top:16px; padding-top:13px; }
+.gl .gr { display:flex; gap:8px; flex-wrap:wrap; }
+.gl img { width:54px; height:54px; border-radius:9px; object-fit:cover; cursor:zoom-in; border:1px solid var(--ln); }
+.gl img:hover { border-color:var(--blue); }
+
+/* ---- toplam + alt ---- */
+.tot { background:var(--navy); color:#fff; display:flex; justify-content:space-between; align-items:center;
+  gap:10px; padding:14px 26px; font-weight:700; font-size:14px; position:relative; flex-wrap:wrap; }
+.tot::after { content:""; position:absolute; left:0; right:0; bottom:0; height:3px; background:var(--gold); }
+.tot small { font-weight:500; font-size:12px; color:#A9BCEB; }
+.legal { text-align:center; color:var(--t3); font-size:11.5px; line-height:1.9; padding:18px 8px 0; }
+.lbx { position:fixed; inset:0; background:rgba(10,16,38,.86); display:none; align-items:center;
+  justify-content:center; z-index:50; flex-direction:column; gap:12px; }
+.lbx.on { display:flex; }
+.lbx img { max-width:min(88vw,560px); border-radius:16px; }
+.lbx div { color:#B9C2DA; font-size:12.5px; }
+
+/* ---- mobil ---- */
+@media screen and (max-width:940px) {
+  thead { display:none; }
+  table, tbody, tr, td { display:block; width:100%; }
+  td, td:first-child { border-left:none; padding:0 16px; }
+  tr.r { padding:14px 0; border-bottom:1px solid var(--ln); }
+  tr.r td { border-bottom:none; background:none !important; }
+  .prod { min-width:0; padding:2px 0 10px; } tr.r td:nth-child(2) { display:block; border-bottom:none; }
+  td.c, td.n { text-align:left; }
+  tr.r td:first-child { display:none; }
+  tr.r td:not(:first-child):not(:last-child) { display:flex; justify-content:space-between; align-items:center;
+    padding:8px 16px; border-bottom:1px dashed var(--ln2); }
+  .lab { display:block; font-size:10px; letter-spacing:.09em; font-weight:700; color:var(--t3); }
+  .ops { padding:12px 16px 2px; gap:8px; }
+  .op-git, .op-det { flex:1; justify-content:center; padding:11px; font-size:13px; }
+  .dt td { padding:12px 14px 16px; }
+  .din { grid-template-columns:1fr; padding:14px; }
+  .din > .sag { border-left:none; padding-left:0; margin-left:0; margin-top:16px; }
+  .sg { grid-template-columns:1fr; }
+  .sg > div:nth-child(even) { border-left:none; padding-left:0; margin-left:0; }
+  .kpis { grid-template-columns:1fr 1fr; }
+  .kpi:nth-child(odd) { border-right:1px solid var(--ln2); }
+  .kpi { border-right:none; border-bottom:1px solid var(--ln2); padding:12px 16px; }
+  .hero { padding:18px 16px 16px; }
+  .hm { text-align:left; }
+  .tools { padding:10px 12px; }
+  .tb span { display:none; } .tb.pri span { display:inline; }
+}
+
+/* ---- YAZDIRMA ŞABLONU ---- */
+@media print {
+  @page { size: A4 landscape; margin: 10mm; }
+  body { background:#fff; font-size:9.5pt; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .page { max-width:none; padding:0; margin:0; }
+  .shell { border:none; box-shadow:none; border-radius:0; }
+  .tools, .ops, .lbx, .pi .vb { display:none !important; }
+  thead th:last-child, tr.r td:last-child { display:none; }
+  .hero { background:#fff !important; color:var(--t1); padding:0 0 10px;
+    border-bottom:2.5pt solid var(--navy); position:relative; }
+  .hero::after { background:var(--gold); height:1.2pt; bottom:-4pt; }
+  .ht { color:var(--navy); font-size:16pt; }
+  .hs { color:var(--t2); }
+  .hm b { color:var(--t3); } .hm span { color:var(--t1); }
+  .kpis { border:none; margin:8pt 0 6pt; }
+  .kpi { padding:6pt 10pt; border-right:0.6pt solid var(--ln); }
+  .kpi span { font-size:12pt; }
+  table { page-break-inside:auto; }
+  thead { display:table-header-group; }           /* her sayfada başlık tekrarı */
+  tr { page-break-inside:avoid; }
+  thead th { background:var(--navy2) !important; color:#fff !important;
+    border:0.6pt solid #2A4A8F; padding:5pt 6pt 4pt; }
+  .z2 { color:#9DB4E8 !important; } .z3 { color:#6D87C8 !important; }
+  td { border:0.5pt solid var(--ln); padding:6pt; }
+  td:first-child { padding-left:6pt; }
+  tr.r:hover td { background:inherit; }
+  .pi img { width:38pt; height:38pt; box-shadow:none; }
+  .pn { color:var(--navy); }
+  .pill { border:0.6pt solid currentColor; padding:2pt 6pt; }
+  .src { background:#F60 !important; color:#fff !important; }
+  .dt { display:none; }                            /* detay panelleri baskıya girmez */
+  .tot { background:var(--navy) !important; color:#fff !important; padding:7pt 10pt; }
+  .tot::after { height:1.5pt; }
+  .legal { padding-top:8pt; font-size:7.5pt; }
+  a { text-decoration:none; color:inherit; }
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * İE#13 F4 EKLERİ — şartname dosyasında OLMAYAN, uygulamaya özgü kurallar.
+ * Yazdırma şablonu YUKARIDA (şartnameden birebir) gelir; burada tekrarlanmaz.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+/* Çince metin: Noto Sans SC paketlenmedi (tüm alt kümeleri ~5 MB — SAPMA kaydı),
+   sistem CJK yığınına düşülür; Inter self-host olduğu için DIŞ İSTEK YOKTUR. */
+.zh { font-family: 'Noto Sans SC', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', Inter, sans-serif; }
+
+/* Not sütunu italik (şartname). */
+td.not-hucre .val { font-style: italic; }
+
+/* Görselsiz ürün için yer tutucu. */
+.pi .yok-gorsel { display: flex; align-items: center; justify-content: center; width: 56px; height: 56px;
+  border-radius: 11px; border: 1px dashed var(--ln); color: #C9D0DC; font-size: 9px; text-align: center; line-height: 1.2; }
+
+/* "Linki kopyala" onayı (JS ekler). */
+.tb.kopyalandi { color: var(--okc); border-color: #BFE6D2; }
+
+/* İptal edilen ürün rozeti (şartnamede yok — durum makinesinde var). */
+.p-no { background: #FEE2E2; color: #991B1B; }
+
+/* Geçersiz bağlantı sayfası (İE#10.5 — kurumsal 404). */
+.hata-sayfasi { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 82vh; }
+.hata-karti { background: #fff; border: 1px solid var(--ln); border-radius: 18px; padding: 32px 28px; max-width: 460px;
+  text-align: center; box-shadow: 0 1px 3px rgba(16,24,40,.06), 0 14px 34px -14px rgba(15,37,87,.18); }
+.hata-marka { margin-bottom: 12px; }
+.hata-karti h1 { margin: 0 0 10px; font-size: 20px; color: var(--navy); }
+.hata-karti p { margin: 0 0 8px; color: #334155; font-size: 14px; }
+.hata-ipucu { color: var(--t3); font-size: 12px; }
+.alt { margin-top: 18px; text-align: center; color: var(--t3); font-size: 12px; }

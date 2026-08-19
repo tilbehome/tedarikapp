@@ -216,6 +216,7 @@ final class AppBuilder
             $exportRenderers,
             $services->activity,
             $services->clock,
+            $settingsRepository,
         );
 
         $shareController = new ShareController($lists, $services->activity, $services->clock);

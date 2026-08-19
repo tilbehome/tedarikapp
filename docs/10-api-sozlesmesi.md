@@ -115,6 +115,7 @@
 | Uç | Açıklama |
 |---|---|
 | `GET /api/settings` | `{yuan_tl, usd_tl, totp_enabled, extension_token_preview}` (token'ın yalnızca son 4 hanesi) |
+| `PUT /api/settings/document-header` | İE#13 F1 — Belge Antedi: `{company?, web?, email?, prepared_by?}` (her biri ≤120 karakter, e-posta biçim denetimli) → 200 güncel antet. Boş gönderilen alan TEMİZLENİR ve çıktıda basılmaz. Alanlar Excel/PDF üst bandında ve paylaşım sayfası antedinde görünür; `prepared_by` yalnız belgelerin imza satırındadır |
 | `PUT /api/settings/rates` | `{yuan_tl?, usd_tl?}` → 200 `{yuan_tl, usd_tl, changes:[{currency, from, to}]}`. İE#9.8 3b (K48 ek): yalnız DEĞİŞEN değer ayara + rate_history'ye yazılır; gönderilen değer kayıtlıyla aynıysa tarihçeye satır YAZILMAZ ve `changes` boş döner (panel "zaten güncel" der). Yalnızca `draft` listelerin görünen TL'sini etkiler (kur `sent` ile kilitlenir — K4/K48) |
 | `GET /api/settings/rates/history` | Kur tarihçesi (sayfalı) |
 | `POST /api/settings/extension-token` | Yeni token üretir → **tam token yalnızca bu yanıtta bir kez** görünür; DB'de SHA-256 hash (K34). **SAPMA KAYDI (İE#11 EK-3):** TEK-TOKEN modeli — ayrı `extension_tokens` tablosu yerine `settings`'te tek hash tutulur. Sonuç: tüm cihazlar AYNI token'ı paylaşır, **cihaz-başına iptal YOKTUR** (yenileme/iptal hepsini birden düşürür) ve "hangi cihazdan geldi" izi tutulmaz. Gerekçe: kullanıcı tek kişidir (K9), çoklu-token tablo + kayıt/iptal arayüzü bugünkü ihtiyacı aşar; v2'de çok kullanıcı/cihaz gerekirse tabloya taşınması mekaniktir (hash doğrulama noktası tek yerde) |
@@ -128,6 +129,18 @@
 | `GET/POST/PATCH/DELETE /api/categories` | CRUD; kullanımda olan kategori silinirken → 422 `VALIDATION` + `meta.product_count` (İE#9 düzeltmesi: 422 standardı — 409 yalnızca tekrar-ekleme ve geri alma bağımlılığında) |
 | `GET /api/activity` | Filtre: `entity_type`, `entity_id`, sayfalı (`page`, `per_page` — varsayılan 25, üst sınır 100) — E9 ekranının kaynağı. Yanıt `data: [{id, entity_type, entity_id, action, detail, ip, actor_type, created_at}]`, `meta: {page, per_page, total}`. Salt okunur |
 
+### Çıktı üretimi seçenekleri (İE#13 F2/F5/F6/F7)
+
+`POST /api/lists/{id}/export?format=xlsx|pdf|csv` gövdesi (hepsi isteğe bağlı):
+
+| Alan | Anlamı |
+|---|---|
+| `copy` | `firma` (varsayılan) veya `ic`. **İç kopya** üç ek sütun taşır (hedef satış ₺ / birim kâr ₺ / toplam kâr ₺); firma kopyasında bu sütunlar DOSYAYA HİÇ GİRMEZ ve dosya adı "(IC KOPYA)" ibaresi taşır |
+| `statuses[]` | Ürün durum kodları (`to_order`,`ordered`,`in_transit`,`received`,`cancelled`). Verilmezse tümü basılır; geçersiz kod sessizce elenir, hiç geçerli kod kalmazsa filtre uygulanmaz. Seçim snapshot'a KAYDEDİLİR |
+| `share_url` | Listenin AKTİF paylaşım adresi. Verilirse belgeye QR gömülür (F6). Adres doğrulanır: biçim `/p/<64hex>` olmalı ve token'ın hash'i listenin kaydıyla EŞLEŞMELİDİR — yabancı adres bastırılamaz. Tam token sunucuda saklanmaz (K51), bu yüzden panel onu oturum boyunca `sessionStorage`'da tutar ve isteğe ekler |
+
+Belge kodu ve revizyon (F7): kod `TDK-<yıl>-<liste no>` + `· Rev <harf>`; harf listenin kaçıncı çıktısı olduğundan türer (1→A, 2→B…). Rev A dışındaki her belge "bu belge aynı listenin önceki çıktılarını GEÇERSİZ KILAR" ibaresi taşır. Snapshot `options` bloğu bu seçimleri saklar — geçmişten indirme AYNI belgeyi üretir.
+
 ## 8. Yakalama ve Dışa Açık Sayfa
 
 - `POST /api/capture` — istek şeması **docs/04 §2c v2'de sabit** (İE#11/K32: source+raw+normalized üç blok). Yanıt: 201 `{inbox_id}` veya `{product_id}` (hedef liste seçiliyse) + varsa `duplicate:{product_id, list_id, list_name}` (K25 uyarısı — engel değil); doğrulanamayan gövde → 201 `{inbox_id, status:"error"}` (raw saklanır, veri kaybolmaz); hız aşımı → 429. CORS: yalnız allowlist'teki extension origin'i (K30, wildcard YOK).
@@ -135,7 +148,13 @@
 - `POST /api/extension/translate-suggest` — Bearer'lı; panel ucuyla AYNI gövde ve yanıt (K54). Eklentinin mevcut hız sınırına ve CORS allowlist'ine tabidir; önbellek paylaşılır (panelde çevrilen başlık eklentide tekrar sorulmaz).
   - **Zorunlu `capture_id` (UUIDv4, K25):** sistemde UNIQUE'tir. Aynı `capture_id` tekrar gelirse yeni kayıt AÇILMAZ, ilk isteğin sonucu döner (idempotans) — eklentinin kuyruk tekrar denemeleri çift ürün oluşturamaz.
   - Gövdede ayrıca `schema_version`, `extension_version`, `parser_version` ve `platform` zorunludur; parser bozulduğunda hangi sürümün ürettiği kayıttan anlaşılır.
-- `GET /p/{share_token}` — API değil, sunucu render sayfa (docs/09 P1, K51). Token SHA-256'lanıp aranır; biçimsiz/bilinmeyen/iptal/süresi dolmuş token ve hız sınırı aşımı AYNI sabit 404'ü döndürür (ayrım sızmaz). Enumeration: IP başına 10 dk'da 30 geçersiz deneme → blok (sayaç activity_log'da, token loglanmaz). `noindex` + robots `/p/` kapsamı + CSP (stil `/p-style.css`). Sayfa CANLI listeyi gösterir — export snapshot'ının aksine (fark K50/K51'de belgeli). İptal edilen ürünler gösterilmez.
+- `GET /p/{share_token}` — API değil, sunucu render sayfa (docs/09 P1, K51). **İE#13 F4 ile tam yenilendi**
+  (şartname `docs/sablon/paylasim-v4-premium.html`): kurumsal üst bant + araç çubuğu (Yazdır · Excel · PDF ·
+  WhatsApp · Linki kopyala) + 5'li KPI şeridi + üç dilli başlıklı sütun tablosu (mobilde etiketli kart) + satır
+  altı detay paneli (14+ alanlık bilgi ızgarası, varyasyonlar, not, galeri) + lightbox/video modalı + yazdırma
+  şablonu (yatay A4, başlık her sayfada, araç çubuğu ve detaylar baskıya girmez). Excel/PDF düğmeleri YALNIZ panel
+  oturumu olan görüntüleyende basılır (uçlar oturum+CSRF ister); firma tarafında görünmez. TEDARİK PUANI bölümü
+  skor verisi gelene dek (V3-A) basılmaz. Fontlar self-host (`/fonts`), dış istek yoktur. Token SHA-256'lanıp aranır; biçimsiz/bilinmeyen/iptal/süresi dolmuş token ve hız sınırı aşımı AYNI sabit 404'ü döndürür (ayrım sızmaz). Enumeration: IP başına 10 dk'da 30 geçersiz deneme → blok (sayaç activity_log'da, token loglanmaz). `noindex` + robots `/p/` kapsamı + CSP (stil `/p-style.css`). Sayfa CANLI listeyi gösterir — export snapshot'ının aksine (fark K50/K51'de belgeli). İptal edilen ürünler gösterilmez.
 - `GET /media/{name}` — İE#10 5c YEDEK HAT: /media normalde Apache statik sunar (.htaccess [END]); rewrite şaşarsa uygulama aynı adresi sunucu-üretimi ad deseni doğrulamasıyla akıtır (desen dışı/dosyasız → sade 404, SPA yönlendirmesi YOK).
 
 ## 8b. Kurulum ve Sistem (İE#5 — PM onaylı ek)

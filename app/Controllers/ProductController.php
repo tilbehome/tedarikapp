@@ -644,6 +644,10 @@ final class ProductController extends ApiController
         if (array_key_exists('price_ddp_usd', $body)) {
             $errors['price_ddp_usd'] = $this->validator->price($body['price_ddp_usd'], 'DDP fiyatı');
         }
+        // İE#13 F5: hedef satış fiyatı (₺) — boş bırakılabilir; girilirse para kuralları geçerli.
+        if (array_key_exists('price_target_try', $body) && $body['price_target_try'] !== null && $body['price_target_try'] !== '') {
+            $errors['price_target_try'] = $this->validator->price($body['price_target_try'], 'Hedef satış fiyatı');
+        }
         if (array_key_exists('name_original', $body)) {
             $errors['name_original'] = $this->validator->nameOriginal($body['name_original']);
         }

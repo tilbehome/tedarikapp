@@ -110,17 +110,16 @@ final class ExportEndpointsTest extends AuthTestCase
         $body = (string) $response->getBody();
         self::assertStringStartsWith("PK", $body, 'xlsx bir zip konteyneridir.');
 
-        // İçerik doğrulaması: dosyayı geri okuyup örnek düzenin hücrelerini denetle.
+        // İçerik doğrulaması (İE#13 F1 — şablon v2/rev7 düzeni): dosya geri okunur.
         $temp = tempnam(sys_get_temp_dir(), 'xlsx');
         file_put_contents($temp, $body);
         $sheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($temp)->getActiveSheet();
-        self::assertStringContainsString('ÇİNDEN DDP', (string) $sheet->getCell('B2')->getValue());
-        self::assertSame('NO', (string) $sheet->getCell('B6')->getValue());
-        self::assertSame('YUAN', (string) $sheet->getCell('P8')->getValue());
-        self::assertSame('Termos', (string) $sheet->getCell('H9')->getValue());
-        self::assertSame(24, (int) $sheet->getCell('N9')->getValue());
-        self::assertSame('TOPLAM', (string) $sheet->getCell('B11')->getValue());
-        self::assertSame(44, (int) $sheet->getCell('N11')->getValue());
+        self::assertSame('TEDARİK SİPARİŞ LİSTESİ', (string) $sheet->getCell('D2')->getValue());
+        self::assertSame('No', (string) $sheet->getCell('B8')->getValue());
+        self::assertSame('Vitrin Fiyatı', (string) $sheet->getCell('L8')->getValue());
+        self::assertSame('Termos', (string) $sheet->getCell('D11')->getValue());
+        self::assertSame(24, (int) $sheet->getCell('K11')->getValue());
+        self::assertSame('GENEL TOPLAM', (string) $sheet->getCell('B13')->getValue());
         unlink($temp);
     }
 

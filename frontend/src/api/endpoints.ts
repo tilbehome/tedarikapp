@@ -76,10 +76,18 @@ export const products = {
 };
 
 /** İE#10 Blok 1-4: export + paylaşım. */
+/** İE#13 F2/F5/F6: çıktı seçenekleri — kopya türü, durum filtresi, QR adresi. */
+export interface ExportOptions {
+  copy?: 'firma' | 'ic';
+  statuses?: string[];
+  /** Aktif paylaşım adresi; verilirse belgeye QR olarak gömülür (F6). */
+  share_url?: string;
+}
+
 export const exports = {
   /** İE#11 Görev E: üretim POST'a çevrildi (CSRF'li) — dosya blob olarak alınır. */
-  create: (listId: number, format: 'xlsx' | 'pdf' | 'csv') =>
-    api.postBlob(`/api/lists/${listId}/export?format=${format}`),
+  create: (listId: number, format: 'xlsx' | 'pdf' | 'csv', options: ExportOptions = {}) =>
+    api.postBlob(`/api/lists/${listId}/export?format=${format}`, options),
   history: (listId: number) =>
     api.get<{ id: number; format: string; file_size: number | null; list_revision: number; created_at: string }[]>(
       `/api/lists/${listId}/exports`,
@@ -144,6 +152,19 @@ export const inbox = {
 };
 
 /** İE#13 C4 (K54): ZH→TR başlık önerisi — panelin hiçbir alanı kendiliğinden değişmez. */
+/** İE#13 F1: Ayarlar > Belge Antedi — çıktıların üst bandındaki firma kimliği. */
+export interface DocumentHeader {
+  company: string | null;
+  web: string | null;
+  email: string | null;
+  prepared_by: string | null;
+}
+
+export const documentHeader = {
+  update: (body: Partial<Record<keyof DocumentHeader, string>>) =>
+    api.put<DocumentHeader>('/api/settings/document-header', body),
+};
+
 export const translate = {
   suggest: (text: string) =>
     api.post<{ suggestion: string | null; cached: boolean; provider: string | null }>(
