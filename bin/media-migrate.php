@@ -68,10 +68,14 @@ try {
     $totalMigrated = 0;
     $totalFailed = 0;
     $batch = 0;
+    // İE#10 Blok 5b: başarısızlar tur belleğine alınır ve sonraki partilerde atlanır —
+    // kalıcı-başarısız kayıtlar sırayı tutmaz, denenmemişlere sıra gelir.
+    $failedProducts = [];
+    $failedImages = [];
 
     while (true) {
         $batch++;
-        $result = $migrator->migrateBatch($batchSize);
+        $result = $migrator->migrateBatch($batchSize, $failedProducts, $failedImages);
 
         printf(
             "Parti %d: %d tarandı, %d taşındı, %d başarısız · kalan %d\n",
@@ -94,9 +98,16 @@ try {
 
         $totalMigrated += $result['migrated'];
         $totalFailed += count($result['failed']);
+        foreach ($result['failed'] as $failure) {
+            if ($failure['kind'] === 'main_image') {
+                $failedProducts[] = $failure['id'];
+            } else {
+                $failedImages[] = $failure['id'];
+            }
+        }
 
-        $done = $result['remaining'] === 0
-            || $result['migrated'] === 0 // ilerleme yok: kalanların hepsi başarısız — döngüye girme
+        $done = $result['remaining'] <= count($failedProducts) + count($failedImages)
+            || $result['scanned'] === 0 // dışlananlar hariç aday kalmadı
             || ($maxBatches > 0 && $batch >= $maxBatches);
         if ($done) {
             break;

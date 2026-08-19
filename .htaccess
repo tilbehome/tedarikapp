@@ -9,5 +9,10 @@ RewriteEngine On
 RewriteCond %{THE_REQUEST} \s/+public/([^\s?]*)
 RewriteRule ^public/(.*)$ /$1 [R=301,L]
 
+# İE#10 5c (canlı vaka K47 sonrası): /media görselleri panelde açılmıyordu — dosyalar
+# diskte MEVCUTKEN istek uygulama yönlendiricisine düşüyordu. /media/* DOĞRUDAN statik
+# dosyaya eşlenir ve [END] ile TÜM rewrite işlemesi biter: PHP'ye düşme ihtimali kalmaz.
+RewriteRule ^media/(.+)$ public/media/$1 [END]
+
 RewriteCond %{REQUEST_URI} !^/public/
 RewriteRule ^(.*)$ public/$1 [L]

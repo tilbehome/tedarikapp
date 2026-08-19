@@ -286,7 +286,7 @@ final class ListController extends ApiController
         $body = $this->body($request);
         $name = $this->str($body, 'name');
         if ($name === '') {
-            $name = mb_substr((string) $row['name'] . ' (kopya)', 0, 200);
+            $name = $this->copyName((string) $row['name']);
         }
         $nameError = $this->validator->listName($name);
         if ($nameError !== null) {
@@ -328,6 +328,35 @@ final class ListController extends ApiController
         $created = $this->lists->find($newId);
 
         return Response::success($response, $created === null ? null : $this->presenter->list($created), [], 201);
+    }
+
+    /**
+     * Kopya adı üretimi (İE#10 Blok 5a): "ad (kopya)" → "ad (kopya 2)" → "ad (kopya 3)".
+     *
+     * Canlı vaka: kopyanın kopyası "test (kopya) (kopya)" diye yığılıyordu ve listeler
+     * ayırt edilemiyordu. Taban ad, sondaki "(kopya)"/"(kopya N)" eklerinden arındırılır;
+     * mevcut listelerdeki EN BÜYÜK kopya numarasının bir fazlası verilir. Eski kayıtlara
+     * dokunulmaz — kural yalnız YENİ kopya adlarını üretir.
+     */
+    private function copyName(string $sourceName): string
+    {
+        $base = trim((string) preg_replace('/\s*\(kopya(?:\s+\d+)?\)\s*$/u', '', $sourceName));
+        if ($base === '') {
+            $base = $sourceName;
+        }
+
+        $highest = 1; // "ad (kopya)" 1 sayılır → ilk yeni kopya "(kopya 2)"... taban hiç kopyalanmadıysa 0.
+        $anyCopyExists = false;
+        foreach ($this->lists->namesLike($base . ' (kopya%') as $existing) {
+            if (preg_match('/\(kopya(?:\s+(\d+))?\)\s*$/u', $existing, $match) === 1) {
+                $anyCopyExists = true;
+                $highest = max($highest, isset($match[1]) ? (int) $match[1] : 1);
+            }
+        }
+
+        $suffix = $anyCopyExists ? ' (kopya ' . ($highest + 1) . ')' : ' (kopya)';
+
+        return mb_substr($base, 0, 200 - mb_strlen($suffix)) . $suffix;
     }
 
     // ─────────────── yardımcılar ───────────────

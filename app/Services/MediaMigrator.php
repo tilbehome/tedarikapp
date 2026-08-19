@@ -34,6 +34,15 @@ final class MediaMigrator
     /**
      * Bir parti uzak görseli arşive taşır.
      *
+     * İE#10 Blok 5b: kalıcı-başarısız kayıtlar parti başını TUTMAZ — çağıran, önceki
+     * turlarda başarısız olan kimlikleri `$excludeProducts`/`$excludeImages` ile geçer;
+     * seçim onları atlar ve sıra hiç denenmemişlere gelir. Başarısızlar bozulmaz,
+     * dışlama yalnız BU koşum turunun belleğidir (kalıcı işaret yok — sonraki koşumda
+     * yeniden denenirler).
+     *
+     * @param list<int> $excludeProducts bu turda atlanacak ürün kimlikleri (main_image)
+     * @param list<int> $excludeImages bu turda atlanacak galeri kayıt kimlikleri
+     *
      * @return array{
      *     mode: string,
      *     scanned: int,
@@ -42,7 +51,7 @@ final class MediaMigrator
      *     remaining: int
      * }
      */
-    public function migrateBatch(int $limit = 20): array
+    public function migrateBatch(int $limit = 20, array $excludeProducts = [], array $excludeImages = []): array
     {
         if ($this->media->mode() !== MediaService::MODE_DOWNLOAD) {
             // Yazılamayan diske taşıma denenmez — çağıran kullanıcıya net mesaj gösterir.
@@ -53,7 +62,7 @@ final class MediaMigrator
         $migrated = 0;
         $failed = [];
 
-        foreach ($this->remoteMainImages($limit) as $row) {
+        foreach ($this->remoteMainImages($limit, $excludeProducts) as $row) {
             $scanned++;
             $result = $this->fetchLocal((string) $row['main_image']);
             if (isset($result['error'])) {
@@ -61,14 +70,16 @@ final class MediaMigrator
 
                 continue;
             }
-            $statement = $this->connection->pdo()->prepare('UPDATE products SET main_image = :path WHERE id = :id');
-            $statement->execute(['path' => $result['url'], 'id' => (int) $row['id']]);
+            $statement = $this->connection->pdo()->prepare(
+                'UPDATE products SET main_image = :path, main_image_source = :source WHERE id = :id',
+            );
+            $statement->execute(['path' => $result['url'], 'source' => (string) $row['main_image'], 'id' => (int) $row['id']]);
             $migrated++;
         }
 
         $left = $limit - $scanned;
         if ($left > 0) {
-            foreach ($this->remoteGalleryImages($left) as $row) {
+            foreach ($this->remoteGalleryImages($left, $excludeImages) as $row) {
                 $scanned++;
                 $source = (string) ($row['source_url'] ?? '') !== '' ? (string) $row['source_url'] : (string) $row['path'];
                 $result = $this->fetchLocal($source);
@@ -124,11 +135,17 @@ final class MediaMigrator
         return ['path' => $stored['path'], 'url' => $stored['url']];
     }
 
-    /** @return list<array{id: int|string, main_image: string}> */
-    private function remoteMainImages(int $limit): array
+    /**
+     * @param list<int> $exclude
+     *
+     * @return list<array{id: int|string, main_image: string}>
+     */
+    private function remoteMainImages(int $limit, array $exclude = []): array
     {
         $statement = $this->connection->pdo()->prepare(
-            "SELECT id, main_image FROM products WHERE main_image LIKE 'http%' ORDER BY id LIMIT " . max(1, $limit),
+            "SELECT id, main_image FROM products WHERE main_image LIKE 'http%'"
+            . $this->exclusion($exclude)
+            . ' ORDER BY id LIMIT ' . max(1, $limit),
         );
         $statement->execute();
 
@@ -136,15 +153,33 @@ final class MediaMigrator
         return $statement->fetchAll(\PDO::FETCH_ASSOC) ?: [];
     }
 
-    /** @return list<array{id: int|string, product_id: int|string, path: string, source_url: string|null}> */
-    private function remoteGalleryImages(int $limit): array
+    /**
+     * @param list<int> $exclude
+     *
+     * @return list<array{id: int|string, product_id: int|string, path: string, source_url: string|null}>
+     */
+    private function remoteGalleryImages(int $limit, array $exclude = []): array
     {
         $statement = $this->connection->pdo()->prepare(
-            "SELECT id, product_id, path, source_url FROM product_images WHERE storage_mode = 'remote' ORDER BY id LIMIT " . max(1, $limit),
+            "SELECT id, product_id, path, source_url FROM product_images WHERE storage_mode = 'remote'"
+            . $this->exclusion($exclude)
+            . ' ORDER BY id LIMIT ' . max(1, $limit),
         );
         $statement->execute();
 
         /** @var list<array{id: int|string, product_id: int|string, path: string, source_url: string|null}> */
         return $statement->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+    }
+
+    /**
+     * Dışlama parçası — kimlikler tam sayıya zorlanır (SQL enjeksiyonu yapısal olarak imkânsız).
+     *
+     * @param list<int> $ids
+     */
+    private function exclusion(array $ids): string
+    {
+        $ids = array_values(array_filter(array_map('intval', $ids), static fn (int $id): bool => $id > 0));
+
+        return $ids === [] ? '' : ' AND id NOT IN (' . implode(',', $ids) . ')';
     }
 }
