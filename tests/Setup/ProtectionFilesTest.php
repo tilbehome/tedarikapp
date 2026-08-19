@@ -64,13 +64,14 @@ final class ProtectionFilesTest extends TestCase
         self::assertStringContainsString('tilbehometoptan', $content);
     }
 
-    public function testRobotsTxtMediaVePaylasimiKapatir(): void
+    public function testRobotsTxtTumSiteyiKapatir(): void
     {
+        // İE#10.5 ek (Ürün Sahibi kararı): uygulama aramaya TAMAMEN kapalı —
+        // tek tek yollar yerine kökten Disallow: / (media ve /p/ dahil her şeyi kapsar).
         $content = $this->contents('public/robots.txt');
 
         self::assertStringContainsString('User-agent: *', $content);
-        self::assertStringContainsString('Disallow: /media/', $content);
-        self::assertStringContainsString('Disallow: /p/', $content);
+        self::assertMatchesRegularExpression('#Disallow: /\s#', $content, 'Kök Disallow: / olmalı.');
     }
 
     public function testGitignoreMediaHtaccessiDISLAMAZ(): void
