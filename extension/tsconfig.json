@@ -1,0 +1,10 @@
+{
+    "extends": "./.wxt/tsconfig.json",
+    "compilerOptions": {
+        "strict": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "types": ["chrome", "vitest/globals"]
+    },
+    "include": ["entrypoints", "core", "modules", "tests", "wxt.config.ts"]
+}

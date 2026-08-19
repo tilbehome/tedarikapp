@@ -307,6 +307,40 @@ jobs:
           php bin/smoke-kurulum.php http://127.0.0.1:8090 127.0.0.1 3306 tedarikapp_smoke root root
           echo "DİSKSİZ SİMÜLASYON TAMAM"
 
+  eklenti:
+    name: Eklenti (tsc + vitest + build)
+    runs-on: ubuntu-latest
+    # İE#11/K53: üretim bundle'ı repo'daki kaynaktan CI'da derlenir — bağımsız
+    # denetlenebilirlik. Fixture testleri canlı 1688 isteği YAPMAZ (K35 kabulü).
+    defaults:
+      run:
+        working-directory: extension
+    steps:
+      - name: Depoyu al
+        uses: actions/checkout@v4
+      - name: Node 22 kur
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: extension/package-lock.json
+      - name: Bağımlılıkları kur
+        run: npm ci
+      - name: WXT tip üretimi
+        run: npx wxt prepare
+      - name: Tip denetimi
+        run: npm run typecheck
+      - name: Fixture testleri (canlı istek YOK)
+        run: npm test
+      - name: Üretim bundle'ı + Store zip'i
+        run: npm run zip
+      - name: Zip'i artefakt olarak yükle
+        uses: actions/upload-artifact@v4
+        with:
+          name: eklenti-zip
+          path: extension/dist/*.zip
+          retention-days: 30
+
   gitleaks:
     name: Sır taraması (gitleaks)
     runs-on: ubuntu-latest
