@@ -137,6 +137,38 @@ final class ListRepository
         $statement->execute($params);
     }
 
+    /**
+     * Ada göre desen araması — kopya numaralandırması için (İE#10 Blok 5a).
+     * Çöp kutusundakiler DE sayılır: geri yüklenince ad çakışması olmasın.
+     *
+     * @return list<string>
+     */
+    public function namesLike(string $pattern): array
+    {
+        $statement = $this->connection->pdo()->prepare('SELECT name FROM lists WHERE name LIKE :pattern');
+        $statement->execute(['pattern' => $pattern]);
+
+        /** @var list<string> */
+        return $statement->fetchAll(\PDO::FETCH_COLUMN) ?: [];
+    }
+
+    /**
+     * Paylaşım token'ı araması (K34 — DB'de yalnız SHA-256 hash durur, İE#10 Blok 4).
+     * Silinmiş/çöpteki liste paylaşılmaz; süre denetimi çağırana aittir (sabit 404 için).
+     *
+     * @return array<string, mixed>|null
+     */
+    public function findByShareHash(string $hash): ?array
+    {
+        $statement = $this->connection->pdo()->prepare(
+            'SELECT ' . self::COLUMNS . ' FROM lists WHERE share_token_hash = :hash AND deleted_at IS NULL',
+        );
+        $statement->execute(['hash' => $hash]);
+        $row = $statement->fetch();
+
+        return is_array($row) ? $row : null;
+    }
+
     /** Ürün/fiyat/adet/sıra değişiminde çağrılır — "çıktı güncel değil" rozetinin sayacı (K25). */
     public function bumpRevision(int $id, DateTimeImmutable $now): void
     {
