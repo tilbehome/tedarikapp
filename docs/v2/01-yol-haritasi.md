@@ -30,7 +30,7 @@ kartta görünür; RAW veri panelde "orijinal" sekmesinde okunur.
 ### V2-B — Çok Kaynak + Karşılaştırma
 Kapsam:
 - Connector mimarisi genişler (P0 1688 referans; P1 Tmall/Taobao, Alibaba.com;
-  P2 AliExpress/JD/PDD; P3 DHgate/Made-in-China/Yiwugo — F37/F38 listesi).
+  P2 AliExpress/JD/PDD; P3 DHgate/Made-in-China/Yiwugo — F37 listesi).
 - Listing'e `source_type` (wholesale/retail/factory/trading/unknown).
 - Karşılaştırma matrisi ekranı (fiyat, MOQ, kademeli fiyat, satıcı yaşı,
   termin, koli, birim-normalize fiyat) + adet bazlı fiyat simülasyonu.
@@ -75,7 +75,7 @@ Kapsam (hepsi "yardımcı" statüsünde, Kaynak→Gerçek→Karar ilkesiyle):
   (inference etiketi + güven yüzdesi zorunlu).
 - Görsel benzerlik: önce image hash + başlık/öznitelik benzerliği; embeddings
   ileri aşama.
-- F30-lite GTİP aday önerisi (K36 çerçevesi) + tarife sürümü/geçerlilik/
+- F30-lite GTİP aday önerisi (opsiyonel — Ürün Sahibi kararına bağlı; K36 çerçevesi) + tarife sürümü/geçerlilik/
   doğrulayan kaydı.
 - Landed cost lite: DDP fiyat + iç maliyet kalemleri → Türkiye depo birim ₺;
   adet senaryolu.

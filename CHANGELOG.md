@@ -4,6 +4,8 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/) · Sürümleme: SemVe
 Her release'te bu dosya güncellenir (docs/07 bölüm 4). Kategoriler: Eklendi / Değişti / Düzeltildi / Kaldırıldı / Güvenlik.
 
 ## [Yayınlanmadı]
+
+## [0.9.7] — 19 Ağustos 2026 (Faz 2 kapanış release'i)
 ### Eklendi (İE#10.5 · K52 — bakım ve yedekleme)
 - **Off-site yedekleme:** şifreli DB yedeği (AES-256-GCM, APP_KEY'den türetilen ayrı anahtar) — panel Ayarlar > Yedekler (elle al + liste/indir + 24 saat rozeti), `bin/backup.php` (cron), FTP/SMTP off-site gönderim (cURL; kimlikler yalnız dosya yapılandırmasında). CI **restore kanıtı**: dump boş MySQL'e geri yüklenip doğrulanır.
 - **Bekleyen-migration koruması:** veri uçları bekleyen migration varken 503 `MIGRATION_PENDING` döner; panel tam sayfa "Güncelleme tamamlanmalı" ekranı + tek tık baseline+migrate (canlı ders: 0018 bekleyenken panel çöküyordu).

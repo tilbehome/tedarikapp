@@ -32,7 +32,7 @@ Efsane: **F5** = v1 Faz 5 (f40) · **V2-A..E** = v2 fazı · **RET** = gerekçel
 | 22 | Teklif versiyonları | V2-C |
 | 23 | Numune yönetimi | V2-C |
 | 24 | QC checklist | V2-C |
-| 25–26 | GTİP çekirdek yardımcı + zengin kayıt | V2-E (F30-lite, K36 çerçevesi) |
+| 25–26 | GTİP çekirdek yardımcı + zengin kayıt | V2-E (F30-lite — opsiyonel, Ürün Sahibi kararına bağlı; K36 çerçevesi) |
 | 27 | İthalat uygunluk motoru (İGV/TAREKS) | RET (tetikleyicili) |
 | 28 | Compliance File | RET (F30-lite notu yeter) |
 | 29 | Sertifika doğrulama | RET ("hüküm veren AI" hali); uyuşmazlık-işaretleyici hali V2-E havuz |
@@ -53,7 +53,7 @@ Efsane: **F5** = v1 Faz 5 (f40) · **V2-A..E** = v2 fazı · **RET** = gerekçel
 | 47 | Source freshness | F5 (rozet) + V2-B (yenile/snapshot) |
 | 48 | Değişiklik zekâsı | V2-B (F09 ile birleşir) |
 | 49 | Watchlist | V2-B havuz (kullanıcı-kontrollü refresh; anti-bot aşma YOK) |
-| 50 | Platform önceliği P0–P3 | V2-B (F37/F38 ile birleştirildi) |
+| 50 | Platform önceliği P0–P3 | V2-B (F37 ile birleştirildi) |
 | 51 | source_type (retail/wholesale…) | V2-A şemasına |
 | 52 | Medya arşivi + usage_scope | V2-A (kolon eklemesi) |
 | 53 | Medya seçici | V2-C |
