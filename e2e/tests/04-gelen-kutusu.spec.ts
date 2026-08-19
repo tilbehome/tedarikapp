@@ -57,7 +57,7 @@ test.describe('Gelen Kutusu', () => {
 
     // ── Listeye taşı (İE#13 B1: seç → hedef → taşı) ──
     await page.getByLabel('Seç').first().check();
-    await page.getByLabel('Hedef liste:').or(page.locator('select').first()).selectOption(String(listId));
+    await page.getByLabel('Hedef liste').selectOption(String(listId));
     await page.getByRole('button', { name: /Seçilenleri taşı/ }).click();
 
     await expect(page.getByText(/listeye taşındı/i)).toBeVisible();

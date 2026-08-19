@@ -224,6 +224,7 @@ export default function InboxScreen() {
 
           <span className="text-slate-600">Hedef liste:</span>
           <select
+            aria-label="Hedef liste"
             className="field-input max-w-56"
             value={targetList}
             onChange={(event) => {
