@@ -119,7 +119,7 @@ final class PdfRenderer implements ExportRenderer
                 }
             }
             $rows .= '<tr>'
-                . '<td class="c">' . $e($product['sort_no']) . '</td>'
+                . '<td class="c">' . $e($product['no'] ?? $product['sort_no']) . '</td>'
                 . '<td class="c">' . $image . '</td>'
                 . '<td>' . $e($product['category']) . '</td>'
                 . '<td>' . $e($product['name'])

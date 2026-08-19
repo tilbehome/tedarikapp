@@ -52,7 +52,10 @@ final class ExportSnapshot
                 'rate_locked_at' => $list['rate_locked_at'],
             ],
             'totals' => $list['totals'],
-            'products' => array_map(static fn (array $product): array => [
+            'products' => array_map(static fn (array $product, int $index): array => [
+                // İE#10.5 ek (b): çıktıdaki NO 1'den ARDIŞIK — silinen ürünün numarası
+                // atlanmaz (sort_no boşluklu kalabilir; firma listesi 1..N okur).
+                'no' => $index + 1,
                 'sort_no' => $product['sort_no'],
                 'category' => $product['category_id'] !== null
                     ? ($categoryNames[(int) $product['category_id']] ?? 'Kategorisiz')
@@ -70,7 +73,7 @@ final class ExportSnapshot
                 'line_total_yuan' => $product['line_total_yuan'],
                 'line_total_yuan_tl' => $product['line_total_yuan_tl'],
                 'status' => $product['status'],
-            ], $products),
+            ], $products, array_keys($products)),
         ];
     }
 }

@@ -88,7 +88,7 @@ final class XlsxRenderer implements ExportRenderer
         // Veri satırları.
         $row = self::DATA_START_ROW;
         foreach ($snapshot['products'] as $product) {
-            $sheet->setCellValueExplicit('B' . $row, (string) $product['sort_no'], DataType::TYPE_STRING);
+            $sheet->setCellValueExplicit('B' . $row, (string) ($product['no'] ?? $product['sort_no']), DataType::TYPE_STRING);
             $sheet->setCellValueExplicit('F' . $row, (string) $product['category'], DataType::TYPE_STRING);
             $sheet->setCellValueExplicit('H' . $row, (string) $product['name'], DataType::TYPE_STRING);
             $sheet->setCellValueExplicit('J' . $row, (string) ($product['detail'] ?? ''), DataType::TYPE_STRING);

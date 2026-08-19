@@ -411,10 +411,25 @@ export default function ListDetailScreen() {
  * WhatsApp wa.me, e-posta mailto, kopyala). Tam token YALNIZ üretim yanıtında
  * görünür; sayfa yenilenince yalnız önek kalır — link o an kopyalanmalıdır.
  */
+/**
+ * İE#10.5 ek (a): tam link yalnız üretim yanıtında gelir; veri tazelemesi ekranı
+ * yeniden kurunca kaybolmamalı — oturum ömürlü bellek önbelleğinde tutulur
+ * (sayfa YENİLENİRSE kaybolur, bu bilinçli: link kalıcı saklanmaz — K51).
+ */
+const shareUrlCache = new Map<number, string>();
+
 function SharePanel({ listId, tokenPrefix, onChanged }: { listId: number; tokenPrefix: string | null; onChanged: () => void }) {
   const push = useToast((state) => state.push);
   const [busy, setBusy] = useState(false);
-  const [url, setUrl] = useState<string | null>(null);
+  const [url, setUrlState] = useState<string | null>(shareUrlCache.get(listId) ?? null);
+  const setUrl = (value: string | null) => {
+    if (value === null) {
+      shareUrlCache.delete(listId);
+    } else {
+      shareUrlCache.set(listId, value);
+    }
+    setUrlState(value);
+  };
 
   const create = async () => {
     setBusy(true);
