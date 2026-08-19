@@ -144,20 +144,29 @@ Sonraki sürümler: sihirbaz YOK — zip yüklenir, admin girişinde "veritaban�
 - Ayda bir yedekten geri yükleme denemesi (test DB'ye) yapılır — denenmemiş yedek, yedek değildir.
 - **Off-site yedek CANLIYA ALMA ÖN ŞARTIDIR (İE#4 REV2, havuzdaki F11 yeniden sınıflandırıldı):** gece yedeğinin sunucu dışına da kopyalanması (ör. Google Drive) canlıya çıkmadan ÖNCE kurulur. Yalnızca aynı sunucuda duran yedek, sunucu kaybında yedek değildir.
 
-## Zamanlanmış görevler (İE#11 EK-2 — cron listesi TEK yerde)
+## Zamanlanmış görevler (İE#13 EK-A — TEK CRON)
 
-cPanel > Cron Jobs'a şu İKİ satır girilir (yollar kuruluma göre uyarlanır):
+cPanel > Cron Jobs'a **tek satır** girilir (yol kuruluma göre uyarlanır):
 
 ```
-0 3 * * *   /usr/local/bin/php /home/<kullanıcı>/<alan-adı>/bin/backup.php
-30 3 * * *  /usr/local/bin/php /home/<kullanıcı>/<alan-adı>/bin/bakim.php
+0 3 * * *  /usr/local/bin/php /home/<kullanıcı>/<alan-adı>/bin/backup.php
 ```
 
-- `backup.php` — şifreli veritabanı yedeği alır, yapılandırılmışsa off-site gönderir,
-  eski yedekleri temizler (BACKUP_RETENTION_DAYS; en yeni 5 korunur).
-- `bakim.php` — çöp kutusu kalıcı temizliği + yetim medya GC + app_logs saklama +
-  yedek saklama; üç adımı tek raporla koşar. (`purge-trash.php` geriye uyum için
-  durur; yeni kurulumda önerilen bu iki satırdır.)
+`backup.php` gecelik koşunun tamamıdır ve iki adımı AYNI süreçte, arka arkaya çalıştırır:
+
+1. **Yedek** — şifreli veritabanı yedeği alır, yapılandırılmışsa off-site gönderir.
+2. **Bakım** — çöp kutusu kalıcı temizliği + yetim medya GC + app_logs saklama +
+   hız sayacı satırları + yedek saklama (BACKUP_RETENTION_DAYS; en yeni 5 korunur).
+
+**İki iş birbirinin hatasını yutmaz:** yedek adımı başarısız olsa bile bakım adımları
+koşar (ve tersi). Sonuç `app_logs`a TEK birleşik özet satırı olarak yazılır — seviye
+`LOG_LEVEL` ayarından bağımsız olarak Info'dur, yani başarılı koşunun da izi kalır.
+
+Çıkış kodları: `0` her iki adım tamam · `2` kısmi (bir adım hatalı, diğeri koştu) ·
+`1` koşu hiç başlayamadı (yapılandırma/bağlantı).
+
+Elle koşum: `php bin/bakim.php` yalnız bakım adımlarını çalıştırır (cron'da GEREKMEZ).
+`purge-trash.php` geriye uyum için durur.
 
 ## Eklenti kurulumu (İE#11 — Faz 3)
 
