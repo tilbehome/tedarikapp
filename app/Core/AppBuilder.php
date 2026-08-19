@@ -50,7 +50,6 @@ use Slim\App;
 use Slim\Exception\HttpMethodNotAllowedException;
 use Slim\Exception\HttpNotFoundException;
 use Slim\Factory\AppFactory;
-use Slim\Routing\RouteCollectorProxy;
 use Throwable;
 
 /**
@@ -117,20 +116,7 @@ final class AppBuilder
         $controller = new AuthController($services);
         $responseFactory = $app->getResponseFactory();
 
-        $app->group('/api/auth', static function (RouteCollectorProxy $group) use ($controller): void {
-            $group->post('/login', [$controller, 'login']);
-            $group->post('/totp', [$controller, 'totp']);
-            $group->post('/recovery', [$controller, 'recovery']);
-        })->add(new LoginRateLimit($services, $responseFactory));
-
-        $app->group('/api/auth', static function (RouteCollectorProxy $group) use ($controller): void {
-            $group->get('/me', [$controller, 'me']);
-            $group->get('/sessions', [$controller, 'sessions']);
-            $group->post('/logout', [$controller, 'logout']);
-            $group->delete('/sessions/{id}', [$controller, 'revokeSession']);
-        })
-            ->add(new Csrf($services->session, $responseFactory))
-            ->add(new Auth($services, $responseFactory));
+        Routes\AuthRoutes::register($app, $controller, $services, $responseFactory);
 
         // Paylaşılan servisler (İE#6 + İE#7) — rotalar bunların üzerine kurulur.
         $lists = new ListRepository($connection);
@@ -156,22 +142,8 @@ final class AppBuilder
 
         // Güncelleme yolu (İE#5 §12): kurulum kilitlendikten sonra migration koşmanın
         // kimlik doğrulamalı yolu. Yazma ucu ayrıca CSRF ister.
-        $system = new SystemController($basePath, $connection, $setupLock, $services->clock, $mediaService, $stateMachine);
-        $app->group('/api/system', static function (RouteCollectorProxy $group) use ($system): void {
-            $group->get('/status', [$system, 'status']);
-            $group->get('/state-machine', [$system, 'stateMachine']);
-            $group->post('/migrate', [$system, 'migrate']);
-            // K46: kilit kaldırmanın admin-oturumu yolu (Auth + CSRF bu grupta).
-            $group->post('/setup-unlock', [$system, 'setupUnlock']);
-            // K47: uzak görselleri arşive taşıma (parti parti; Auth + CSRF bu grupta).
-            $group->post('/media-migrate', [$system, 'mediaMigrate']);
-            // K49: migration defterini gerçeğe eşitleme (DDL koşmaz; Auth + CSRF bu grupta).
-            $group->post('/migrate-baseline', [$system, 'migrateBaseline']);
-            // İE#10 5d: medya bütünlük denetimi + kayıp dosya onarımı (parti parti).
-            $group->post('/media-check', [$system, 'mediaCheck']);
-        })
-            ->add(new Csrf($services->session, $responseFactory))
-            ->add(new Auth($services, $responseFactory));
+        $system = new SystemController($basePath, $connection, $setupLock, $services->clock, $mediaService, $stateMachine, $config);
+        Routes\SystemRoutes::register($app, $system, $services, $responseFactory);
 
         $listController = new ListController(
             $connection,
@@ -244,131 +216,25 @@ final class AppBuilder
             $services->clock,
         );
 
-        $app->group('/api', static function (RouteCollectorProxy $group) use ($settingsController, $categoryController, $activityController): void {
-            $group->get('/settings', [$settingsController, 'show']);
-            $group->put('/settings/rates', [$settingsController, 'updateRates']);
-            $group->get('/settings/rates/history', [$settingsController, 'rateHistory']);
-
-            $group->get('/activity', [$activityController, 'index']);
-
-            $group->get('/categories', [$categoryController, 'index']);
-            $group->post('/categories', [$categoryController, 'store']);
-            $group->patch('/categories/{id}', [$categoryController, 'update']);
-            $group->delete('/categories/{id}', [$categoryController, 'destroy']);
-        })
-            ->add(new Csrf($services->session, $responseFactory))
-            ->add(new Auth($services, $responseFactory));
-
-        // İE#10 5c YEDEK HAT: /media normalde Apache'nin statik işidir (.htaccess [END]
-        // kuralları); rewrite zinciri hangi yerleşimde şaşarsa şaşsın görsel yine açılsın
-        // diye uygulama da AYNI adresi sunabilir. Yalnız sunucu-üretimi ad deseni kabul
-        // edilir (fileNameFor path-traversal kalkanı); dosya yoksa sade 404 (SPA yönlendirmesi YOK).
-        $app->get('/media/{name}', static function (ServerRequestInterface $request, ResponseInterface $response, array $args) use ($mediaService): ResponseInterface {
-            $fileName = $mediaService->fileNameFor('/media/' . (string) ($args['name'] ?? ''));
-            $path = $fileName === null ? null : $mediaService->directory() . '/' . $fileName;
-            if ($path === null || !is_file($path)) {
-                return $response->withStatus(404)->withHeader('Content-Type', 'text/plain; charset=utf-8');
-            }
-
-            $mime = match (strtolower(pathinfo($path, PATHINFO_EXTENSION))) {
-                'png' => 'image/png',
-                'gif' => 'image/gif',
-                'webp' => 'image/webp',
-                'avif' => 'image/avif',
-                default => 'image/jpeg',
-            };
-            $response->getBody()->write((string) file_get_contents($path));
-
-            return $response
-                ->withHeader('Content-Type', $mime)
-                ->withHeader('Cache-Control', 'public, max-age=86400')
-                ->withHeader('X-Robots-Tag', 'noindex');
-        });
-
         $shareController = new ShareController($lists, $services->activity, $services->clock);
 
-        // İE#10 Blok 4: GİRİŞSİZ paylaşım sayfası — /p/{token}. Sabit yanıt ilkesi:
-        // geçersiz/iptal/süresi dolmuş token ve hız sınırı aşımı AYNI 404'ü döndürür.
-        $sharePage = new \App\Services\Share\SharePage();
-        $shareGate = new \App\Services\Share\ShareGate($connection);
-        $app->get('/p/{token}', static function (ServerRequestInterface $request, ResponseInterface $response, array $args) use ($lists, $products, $presenter, $connection, $sharePage, $shareGate, $services): ResponseInterface {
-            $now = $services->clock->now();
-            $ip = \App\Core\ClientIp::from($request);
-            $token = (string) ($args['token'] ?? '');
-
-            $notFound = static function () use ($response): ResponseInterface {
-                $response->getBody()->write(
-                    '<!DOCTYPE html><html lang="tr"><head><meta charset="utf-8"><meta name="robots" content="noindex">'
-                    . '<title>Bulunamadı</title></head><body><p>Bu paylaşım linki geçersiz veya kaldırılmış.</p></body></html>',
-                );
-
-                return $response->withStatus(404)->withHeader('Content-Type', 'text/html; charset=utf-8');
-            };
-
-            // 64 hex dışındaki her şey ve hız sınırı aşımı: sorgusuz sabit 404.
-            if (preg_match('/^[0-9a-f]{64}$/', $token) !== 1 || $shareGate->blocked($ip, $now)) {
-                return $notFound();
-            }
-
-            $row = $lists->findByShareHash(hash('sha256', $token));
-            if ($row === null) {
-                $shareGate->recordInvalid($ip, $token, $now);
-
-                return $notFound();
-            }
-            if ($row['share_expires_at'] !== null && \App\Core\Dates::fromStorage((string) $row['share_expires_at'], $services->timezone) <= $now) {
-                return $notFound();
-            }
-
-            $categoryNames = array_column((new CategoryRepository($connection))->all(), 'name', 'id');
-            $html = $sharePage->render(
-                $presenter->list($row),
-                $presenter->productsOf($products->forList((int) $row['id']), $row),
-                $categoryNames,
-            );
-            $response->getBody()->write($html);
-
-            return $response
-                ->withHeader('Content-Type', 'text/html; charset=utf-8')
-                ->withHeader('X-Robots-Tag', 'noindex, nofollow')
-                ->withHeader('Cache-Control', 'no-store');
-        });
-
-        $app->group('/api', static function (RouteCollectorProxy $group) use ($listController, $productController, $trashController, $exportController, $shareController): void {
-            $group->get('/lists', [$listController, 'index']);
-            $group->post('/lists', [$listController, 'store']);
-            $group->get('/lists/{id}', [$listController, 'show']);
-            $group->patch('/lists/{id}', [$listController, 'update']);
-            $group->delete('/lists/{id}', [$listController, 'destroy']);
-            $group->post('/lists/{id}/duplicate', [$listController, 'duplicate']);
-
-            // İE#10 Blok 4: paylaşım linki üret/yenile + iptal (token yalnız yanıtın içinde bir kez).
-            $group->post('/lists/{id}/share', [$shareController, 'create']);
-            $group->delete('/lists/{id}/share', [$shareController, 'destroy']);
-
-            // İE#10: export üretimi + geçmiş + geçmişten indirme (snapshot'tan yeniden üretim).
-            $group->get('/lists/{id}/export', [$exportController, 'export']);
-            $group->get('/lists/{id}/exports', [$exportController, 'history']);
-            $group->get('/exports/{id}/file', [$exportController, 'download']);
-
-            $group->get('/lists/{id}/products', [$productController, 'index']);
-            $group->post('/lists/{id}/products', [$productController, 'store']);
-            $group->patch('/lists/{id}/products/reorder', [$productController, 'reorder']);
-
-            // bulk, {id} deseninden ÖNCE tanımlanır; aksi hâlde "bulk" bir kimlik sanılır.
-            $group->patch('/products/bulk', [$productController, 'bulk']);
-            $group->patch('/products/{id}', [$productController, 'update']);
-            $group->patch('/products/{id}/status', [$productController, 'updateStatus']);
-            // İE#10 5d: kırık görsel onarımı — uzaksa arşive al, yerel+kayıpsa kaynaktan indir.
-            $group->post('/products/{id}/media-repair', [$productController, 'mediaRepair']);
-            $group->delete('/products/{id}', [$productController, 'destroy']);
-
-            $group->get('/trash', [$trashController, 'index']);
-            $group->post('/trash/{type}/{id}/restore', [$trashController, 'restore']);
-            $group->delete('/trash/{type}/{id}', [$trashController, 'destroy']);
-        })
-            ->add(new Csrf($services->session, $responseFactory))
-            ->add(new Auth($services, $responseFactory));
+        // İE#10.5 Blok 6: rota kayıtları modül dosyalarında — AppBuilder yalnız kompozisyon kökü.
+        Routes\PublicRoutes::register($app, $mediaService, $lists, $products, $presenter, $connection, $services);
+        Routes\DataRoutes::register(
+            $app,
+            $settingsController,
+            $categoryController,
+            $activityController,
+            $listController,
+            $productController,
+            $trashController,
+            $exportController,
+            $shareController,
+            $services,
+            $responseFactory,
+            $connection,
+            $basePath . '/migrations',
+        );
 
         // Panel (İE#8 §5): Vite çıktısı public/panel/ altındadır. Var olan dosyaları
         // Apache doğrudan sunar; /panel/listeler/5 gibi istemci tarafı rotalar buraya
