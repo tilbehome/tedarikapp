@@ -380,9 +380,12 @@ jobs:
           key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
           restore-keys: composer-${{ runner.os }}-
 
-      - name: Bağımlılıkları kur
+      - name: Bağımlılıkları kur (dev araçları GEREKMEZ)
+        # --no-dev: E2E uygulamayı çalıştırır, kod kalitesi araçlarını değil. Kilit
+        # dosyasındaki dev paketleri (php-cs-fixer/symfony 8.x) PHP >= 8.4 ister;
+        # bu job üretim tabanına yakın 8.3'te koşar ve onlara ihtiyaç duymaz.
         run: |
-          n=0; until composer install --no-interaction --no-progress; do
+          n=0; until composer install --no-dev --optimize-autoloader --no-interaction --no-progress; do
             n=$((n+1)); [ $n -ge 3 ] && exit 1; echo "codeload hatası — 90 sn sonra deneme $((n+1))/3"; sleep 90
           done
 
