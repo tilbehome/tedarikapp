@@ -48,8 +48,8 @@ final class SharePage
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<meta name="description" content="Tedarik App ile paylaşılan sipariş listesi — salt okunur görünüm.">
-<title>' . $e($list['name']) . ' — Tedarik App</title>
+<meta name="description" content="Tedarikapp (Ürün Tedarik Asistanı) ile paylaşılan sipariş listesi — salt okunur görünüm.">
+<title>' . $e($list['name']) . ' — Tedarikapp</title>
 <link rel="icon" type="image/svg+xml" href="/panel/favicon.svg">
 <link rel="stylesheet" href="/p-style.css">
 </head>
