@@ -132,6 +132,50 @@ final class SystemController
         return Response::success($response, $result);
     }
 
+    /**
+     * POST /api/system/migrate-baseline — K49: migration defterini gerçeğe eşitler.
+     *
+     * Auth + CSRF arkasındadır (rota grubu). PM kararı: APP_KEY kanıtı GEREKMEZ —
+     * eylem yıkıcı değildir (HİÇBİR DDL çalıştırmaz; yalnız var olduğu doğrulanan
+     * nesnelerin kayıtlarını deftere işler). İdempotent; CLI eşi bin/migrate-baseline.php.
+     */
+    public function migrateBaseline(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        $user = $this->authenticatedUser($request);
+        $now = $this->clock->now();
+
+        try {
+            $migrator = new Migrator($this->connection->pdo(), $this->basePath . '/migrations');
+            $result = $migrator->baseline();
+            $pending = $migrator->pending();
+        } catch (Throwable $e) {
+            return Response::error($response, 'SERVER_ERROR', 'Defter eşitleme çalıştırılamadı: ' . $e->getMessage(), 500);
+        }
+
+        (new ActivityLog($this->connection))->record(
+            'system',
+            null,
+            'migrate_baseline',
+            sprintf(
+                '%s: %d deftere işlendi, %d atlandı, kalan bekleyen %d',
+                $user->email,
+                count($result['recorded']),
+                count($result['skipped']),
+                count($pending),
+            ),
+            ClientIp::from($request),
+            $now,
+            ActivityLog::ACTOR_ADMIN,
+            $user->id,
+        );
+
+        return Response::success($response, [
+            'recorded' => $result['recorded'],
+            'skipped' => $result['skipped'],
+            'pending_count' => count($pending),
+        ]);
+    }
+
     public function status(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
         $this->authenticatedUser($request);

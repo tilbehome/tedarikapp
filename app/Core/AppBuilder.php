@@ -163,6 +163,8 @@ final class AppBuilder
             $group->post('/setup-unlock', [$system, 'setupUnlock']);
             // K47: uzak görselleri arşive taşıma (parti parti; Auth + CSRF bu grupta).
             $group->post('/media-migrate', [$system, 'mediaMigrate']);
+            // K49: migration defterini gerçeğe eşitleme (DDL koşmaz; Auth + CSRF bu grupta).
+            $group->post('/migrate-baseline', [$system, 'migrateBaseline']);
         })
             ->add(new Csrf($services->session, $responseFactory))
             ->add(new Auth($services, $responseFactory));

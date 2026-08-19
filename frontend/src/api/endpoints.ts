@@ -82,7 +82,12 @@ export const categories = {
 export const settings = {
   read: () => api.get<Settings>('/api/settings'),
   updateRates: (body: { yuan_tl?: string; usd_tl?: string }) =>
-    api.put<{ yuan_tl: string; usd_tl: string }>('/api/settings/rates', body),
+    api.put<{
+      yuan_tl: string;
+      usd_tl: string;
+      /** 3b (K48 ek): boş liste = değer değişmedi, tarihçeye yazılmadı. */
+      changes: { currency: 'CNY' | 'USD'; from: string; to: string }[];
+    }>('/api/settings/rates', body),
   rateHistory: (currency?: string) =>
     api.get<RateHistoryEntry[]>(`/api/settings/rates/history${currency ? `?currency=${currency}` : ''}`),
 };
@@ -94,6 +99,11 @@ export const system = {
   migrate: () => api.post<{ applied: string[]; applied_count: number }>('/api/system/migrate'),
   /** K47: uzak görselleri arşive taşıma — tek çağrı bir parti işler, kalan sıfırlanana dek tekrarlanır. */
   mediaMigrate: () => api.post<MediaMigrateResult>('/api/system/media-migrate'),
+  /** K49: migration defterini gerçeğe eşitler — DDL koşmaz, idempotent. */
+  migrateBaseline: () =>
+    api.post<{ recorded: string[]; skipped: { name: string; reason: string }[]; pending_count: number }>(
+      '/api/system/migrate-baseline',
+    ),
 };
 
 export const trash = {

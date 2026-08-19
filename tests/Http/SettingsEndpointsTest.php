@@ -80,6 +80,38 @@ final class SettingsEndpointsTest extends AuthTestCase
         self::assertSame('9.1234', $after['yuan_rate'], 'Yeni liste güncel kuru almalı.');
     }
 
+    /** İE#9.8 3b (K48 ek): AYNI değerle basmak tarihçeye satır YAZMAZ — canlı vaka: aynı kur 8 kez kayıtlıydı. */
+    public function testAyniDegerTarihceyeYazilmaz(): void
+    {
+        $before = count($this->json($this->call('GET', '/api/settings/rates/history'))['data']);
+
+        $payload = $this->json($this->write('PUT', '/api/settings/rates', ['yuan_tl' => '7.0400', 'usd_tl' => '41.5000']));
+
+        self::assertTrue($payload['success']);
+        self::assertSame([], $payload['data']['changes'], 'Değişmeyen kur "changes" listesine girmemeli.');
+        self::assertSame('7.0400', $payload['data']['yuan_tl']);
+
+        $after = count($this->json($this->call('GET', '/api/settings/rates/history'))['data']);
+        self::assertSame($before, $after, 'Aynı değer tarihçeye TEKRAR yazılmamalı.');
+    }
+
+    /** 3b: değişen değer eski→yeni ile döner; yalnız DEĞİŞEN para birimi tarihçeye yazılır. */
+    public function testDegisenDegerEskiYeniIleDonerVeTekSatirYazilir(): void
+    {
+        $before = count($this->json($this->call('GET', '/api/settings/rates/history'))['data']);
+
+        $payload = $this->json($this->write('PUT', '/api/settings/rates', ['yuan_tl' => '7.5000', 'usd_tl' => '41.5000']));
+
+        self::assertSame(
+            [['currency' => 'CNY', 'from' => '7.0400', 'to' => '7.5000']],
+            $payload['data']['changes'],
+            'Yalnız değişen Yuan "changes" listesinde olmalı (eski→yeni ile).',
+        );
+
+        $after = count($this->json($this->call('GET', '/api/settings/rates/history'))['data']);
+        self::assertSame($before + 1, $after, 'Yalnız değişen para birimi için TEK satır yazılmalı.');
+    }
+
     public function testGecersizKurReddedilir(): void
     {
         foreach (['0', '1000.0001', '-7', 'abc', '7.00001'] as $rate) {

@@ -38,10 +38,21 @@ export default function SettingsScreen() {
     setBusy(true);
     setFields({});
     try {
-      await settingsApi.updateRates({ yuan_tl: yuan.trim().replace(',', '.'), usd_tl: usd.trim().replace(',', '.') });
+      const result = await settingsApi.updateRates({
+        yuan_tl: yuan.trim().replace(',', '.'),
+        usd_tl: usd.trim().replace(',', '.'),
+      });
       settingsState.reload();
       historyState.reload();
-      push('Kurlar güncellendi. Kilitli listeler etkilenmedi.');
+      // 3b (K48 ek): aynı değerle basmak tarihçeye yazmaz — bildirim de bunu söyler.
+      if (result.changes.length === 0) {
+        push(`Kurlar zaten güncel (${rate(result.yuan_tl)} / ${rate(result.usd_tl)}).`);
+      } else {
+        const parts = result.changes.map(
+          (change) => `${change.currency === 'CNY' ? 'Yuan' : 'Dolar'} ${rate(change.from)} → ${rate(change.to)}`,
+        );
+        push(`${parts.join(', ')} güncellendi. Kilitli listeler etkilenmedi.`);
+      }
     } catch (caught) {
       push(messageOf(caught), 'error');
       const fieldErrors = (caught as { fields?: Record<string, string> }).fields;
@@ -181,6 +192,9 @@ export default function SettingsScreen() {
             <Line label="Kurulum tarihi" value={dateTime(statusState.data.installed_at)} />
           </dl>
         ) : null}
+        {statusState.data && statusState.data.migrations.pending_count > 0 ? (
+          <BaselineAction onDone={statusState.reload} />
+        ) : null}
       </section>
     </>
   );
@@ -252,6 +266,46 @@ function MediaArchiveCard({ mode, writable }: { mode: 'download' | 'hotlink' | n
         {running ? 'Taşınıyor…' : 'Görselleri arşive taşı'}
       </button>
     </section>
+  );
+}
+
+/**
+ * K49 — "Defteri eşitle": migrations defteri gerçeğin gerisindeyse (canlı vaka:
+ * tablolar var ama defter boş, "Bekleyen 17") kayıtları KOŞMADAN deftere işler.
+ * DDL çalıştırmaz, idempotenttir; yalnız bekleyen migration varken görünür.
+ */
+function BaselineAction({ onDone }: { onDone: () => void }) {
+  const push = useToast((state) => state.push);
+  const [busy, setBusy] = useState(false);
+
+  const run = async () => {
+    setBusy(true);
+    try {
+      const result = await systemApi.migrateBaseline();
+      push(
+        result.skipped.length === 0
+          ? `Defter eşitlendi: ${count(result.recorded.length)} kayıt işlendi, bekleyen ${count(result.pending_count)}.`
+          : `${count(result.recorded.length)} kayıt işlendi; ${count(result.skipped.length)} kayıt atlandı (nesnesi yok) — bekleyen ${count(result.pending_count)}.`,
+        result.skipped.length === 0 ? 'success' : 'error',
+      );
+      onDone();
+    } catch (caught) {
+      push(messageOf(caught), 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="mt-3 border-t border-slate-100 pt-3">
+      <p className="text-xs text-slate-500">
+        Tablolar mevcutken defter "bekleyen" gösteriyorsa kayıtlar eşitlenebilir. Bu işlem tablo oluşturmaz/değiştirmez;
+        yalnız var olduğu doğrulanan kayıtları deftere işler.
+      </p>
+      <button type="button" className="btn-ghost mt-2" disabled={busy} onClick={() => void run()}>
+        {busy ? 'Eşitleniyor…' : 'Defteri eşitle'}
+      </button>
+    </div>
   );
 }
 

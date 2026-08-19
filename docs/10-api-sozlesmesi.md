@@ -106,7 +106,7 @@
 | Uç | Açıklama |
 |---|---|
 | `GET /api/settings` | `{yuan_tl, usd_tl, totp_enabled, extension_token_preview}` (token'ın yalnızca son 4 hanesi) |
-| `PUT /api/settings/rates` | `{yuan_tl?, usd_tl?}` → rate_history'ye yazar; yalnızca `draft` durumundaki listelerin görünen TL'sini etkiler (kur `sent` ile kilitlenir — K4) |
+| `PUT /api/settings/rates` | `{yuan_tl?, usd_tl?}` → 200 `{yuan_tl, usd_tl, changes:[{currency, from, to}]}`. İE#9.8 3b (K48 ek): yalnız DEĞİŞEN değer ayara + rate_history'ye yazılır; gönderilen değer kayıtlıyla aynıysa tarihçeye satır YAZILMAZ ve `changes` boş döner (panel "zaten güncel" der). Yalnızca `draft` listelerin görünen TL'sini etkiler (kur `sent` ile kilitlenir — K4/K48) |
 | `GET /api/settings/rates/history` | Kur tarihçesi (sayfalı) |
 | `POST /api/settings/extension-token` | Yeni token üretir → **tam token yalnızca bu yanıtta bir kez** görünür; DB'de hash saklanır |
 | `GET/POST/PATCH/DELETE /api/categories` | CRUD; kullanımda olan kategori silinirken → 422 `VALIDATION` + `meta.product_count` (İE#9 düzeltmesi: 422 standardı — 409 yalnızca tekrar-ekleme ve geri alma bağımlılığında) |
@@ -155,6 +155,7 @@ Adım sırası zorlanır: sırası gelmemiş uç `422 STATE_TRANSITION` + `meta.
 | `POST /api/system/migrate` | Auth + CSRF. Bekleyen migration'ları koşar → `{applied[], applied_count}`; sonuç `activity_log`'a yazılır |
 | `POST /api/system/setup-unlock` | K46 — kilit kaldırmanın ADMİN OTURUMU yolu (Auth + CSRF). → 200 `{unlocked:true}`; activity_log'a `setup_unlock (admin:<e-posta>)` yazılır |
 | `POST /api/system/media-migrate` | K47 — uzak görselleri arşive taşıma (Auth + CSRF). Tek çağrı BİR parti işler (≤20 kayıt) → 200 `{mode, scanned, migrated, failed:[{kind, id, product_id, url, error}], remaining}`; panel `remaining` sıfırlanana dek tekrar çağırır. Medya yazılamıyorsa 422 `MEDIA_NOT_WRITABLE`. İdempotent; başarısız kayıt bozulmaz. Sonuç `activity_log`'a yazılır |
+| `POST /api/system/migrate-baseline` | K49 — migration defterini gerçeğe eşitler (Auth + CSRF; APP_KEY kanıtı GEREKMEZ — yıkıcı değil). Bekleyen her kayıt için hedef nesne şema sorgusuyla doğrulanır: VARSA kayıt KOŞULMADAN checksum'uyla deftere işlenir, YOKSA/haritada değilse atlanır → 200 `{recorded[], skipped:[{name, reason}], pending_count}`. HİÇBİR DDL çalıştırmaz; idempotent. Sonuç `activity_log`'a yazılır. CLI eşi: `bin/migrate-baseline.php` |
 
 ## 9. Sözleşme Testleri
 

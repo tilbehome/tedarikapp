@@ -111,6 +111,27 @@ if (is_file($basePath . '/storage/.htaccess')) {
 sort($files);
 $files = array_values(array_unique($files));
 
+// ── 2b) SÜRÜM DAMGASI (İE#9.8): zip'e kopyalanan AppVersion.php VALUE'yu bu release'in
+// sürümüyle taşır — panel "0.1.0-dev" göstermez. REPODAKİ dosya değişmez ('0.1.0-dev'
+// kalır; çift kaynak oluşmaz). MANIFEST özeti de DAMGALI içerikten alınır ki sunucudaki
+// integrity denetimi damgalı dosyayı "bozuk" sanmasın.
+$appVersionRelative = 'app/Core/AppVersion.php';
+$stampValue = ltrim($version, 'vV');
+$appVersionSource = file_get_contents($basePath . '/' . $appVersionRelative);
+if ($appVersionSource === false) {
+    $fail($appVersionRelative . ' okunamadı.');
+}
+$appVersionStamped = preg_replace(
+    "/public const VALUE = '[^']*';/",
+    "public const VALUE = '" . $stampValue . "';",
+    $appVersionSource,
+    1,
+    $stampCount,
+);
+if (!is_string($appVersionStamped) || $stampCount !== 1) {
+    $fail($appVersionRelative . " içinde \"public const VALUE = '...';\" satırı bulunamadı — damga başarısız.");
+}
+
 // ── 3) MANIFEST üretimi ──
 $manifestLines = [
     '# tedarikapp release manifesti — GET /api/system/integrity bu dosyaya göre doğrular (K43)',
@@ -119,7 +140,9 @@ $manifestLines = [
     '# dosya_sayisi: ' . count($files),
 ];
 foreach ($files as $relative) {
-    $hash = hash_file('sha256', $basePath . '/' . $relative);
+    $hash = $relative === $appVersionRelative
+        ? hash('sha256', $appVersionStamped) // damgalı içerik zip'e girer; manifest de onu doğrular
+        : hash_file('sha256', $basePath . '/' . $relative);
     if ($hash === false) {
         $fail('Özet alınamadı: ' . $relative);
     }
@@ -139,6 +162,11 @@ if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
     $fail('Zip açılamadı: ' . $zipPath);
 }
 foreach ($files as $relative) {
+    if ($relative === $appVersionRelative) {
+        $zip->addFromString($relative, $appVersionStamped); // damgalı kopya (İE#9.8)
+
+        continue;
+    }
     if (!$zip->addFile($basePath . '/' . $relative, $relative)) {
         $fail('Zip\'e eklenemedi: ' . $relative);
     }
@@ -191,6 +219,13 @@ if ($verify->locateName('storage/logs/') === false) {
 }
 if ($verify->locateName('.env') !== false) {
     $missing[] = 'İHLAL: .env zip\'e girmiş!';
+}
+
+// İE#9.8: paketteki AppVersion.php gerçekten bu sürümü mü taşıyor?
+// (/api/system/status aynı sabiti okur — panel artık release sürümünü gösterir.)
+$packedAppVersion = (string) $verify->getFromName($appVersionRelative);
+if (!str_contains($packedAppVersion, "public const VALUE = '" . $stampValue . "';")) {
+    $missing[] = $appVersionRelative . " (sürüm damgası yok: '" . $stampValue . "' bekleniyordu)";
 }
 
 // Manifest ile zip birebir mi? (manifest'teki her dosya zip'te olmalı)
