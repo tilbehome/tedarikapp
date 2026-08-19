@@ -23,9 +23,9 @@ test.describe('Panel temel akışı', () => {
     await page.getByRole('button', { name: 'Yeni liste' }).click();
     await page.getByLabel('Liste adı').fill('E2E Listesi');
     await page.getByLabel('Dönem').fill('2026 Sonbahar');
-    await page.getByRole('button', { name: 'Oluştur' }).click();
+    await page.getByRole('button', { name: 'Oluştur' }).first().click();
 
-    await expect(page.getByText('E2E Listesi')).toBeVisible();
+    await expect(page.getByText('E2E Listesi').first()).toBeVisible();
 
     // ── Ürün ekle (arayüzden) ──
     await page.getByText('E2E Listesi').first().click();
@@ -35,7 +35,7 @@ test.describe('Panel temel akışı', () => {
     await page.getByLabel('Birim fiyat (¥)').fill('12,50');
     await page.getByRole('button', { name: /Kaydet|Oluştur/ }).click();
 
-    await expect(page.getByText('E2E Ürünü')).toBeVisible();
+    await expect(page.getByText('E2E Ürünü').first()).toBeVisible();
 
     // ── Liste durumunu ilerlet: Taslak → İletildi (K48: kur BU ANDA kilitlenir) ──
     await expect(page.getByText('Liste durumunu ilerlet:')).toBeVisible();

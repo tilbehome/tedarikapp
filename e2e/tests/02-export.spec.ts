@@ -15,7 +15,7 @@ test.describe('Çıktılar', () => {
     await urunEkle(page, listId, 'Çıktı ürünü', 40);
 
     await page.goto(`/panel/listeler/${listId}`);
-    await expect(page.getByText('Çıktı ürünü')).toBeVisible();
+    await expect(page.getByText('Çıktı ürünü').first()).toBeVisible();
 
     for (const [buton, uzanti] of [
       ['Excel', '.xlsx'],
@@ -40,9 +40,10 @@ test.describe('Çıktılar', () => {
     const csrf = await page.request
       .get('/api/auth/me')
       .then(async (r) => ((await r.json()) as { data: { csrf_token: string } }).data.csrf_token);
-    const uretim = await page.request.post(`/api/lists/${listId}/export`, {
+    // Biçim SORGU parametresidir (docs/10); gövde yalnız seçenekleri taşır (İE#13 F2/F5).
+    const uretim = await page.request.post(`/api/lists/${listId}/export?format=csv`, {
       headers: { 'X-CSRF-Token': csrf },
-      data: { format: 'csv' },
+      data: {},
     });
     expect(uretim.ok(), await uretim.text()).toBeTruthy();
 

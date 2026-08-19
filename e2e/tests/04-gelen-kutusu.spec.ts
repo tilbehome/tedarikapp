@@ -47,7 +47,7 @@ test.describe('Gelen Kutusu', () => {
 
     // ── Panel: Gelen Kutusu'nda görünür ──
     await page.goto('/panel/gelen-kutusu');
-    await expect(page.getByText('E2E Yakalanan Ürün')).toBeVisible();
+    await expect(page.getByText('E2E Yakalanan Ürün').first()).toBeVisible();
 
     // ── Detay çekmecesi (İE#13 B3): kaynak veriler görünür ──
     await page.getByText('E2E Yakalanan Ürün').first().click();
@@ -64,6 +64,7 @@ test.describe('Gelen Kutusu', () => {
 
     // ── Listede ürün olarak duruyor ──
     await page.goto(`/panel/listeler/${listId}`);
-    await expect(page.getByText('E2E Yakalanan Ürün')).toBeVisible();
+    // Panel ürünü hem masaüstü hem mobil düzende basar — ilk eşleşme yeterlidir.
+    await expect(page.getByText('E2E Yakalanan Ürün').first()).toBeVisible();
   });
 });
