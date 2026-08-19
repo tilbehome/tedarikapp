@@ -217,13 +217,23 @@ function MediaArchiveCard({ mode, writable }: { mode: 'download' | 'hotlink' | n
       let migrated = 0;
       let failed = 0;
       let remaining = 0;
+      // İE#10 5b: başarısız kimlikler tur belleğinde birikir ve sonraki partilerde
+      // dışlanır — kalıcı-başarısızlar sırayı tutmaz, denenmemişlere sıra gelir.
+      const excludeProducts: number[] = [];
+      const excludeImages: number[] = [];
       for (let batch = 0; batch < 100; batch++) {
-        const result = await systemApi.mediaMigrate();
+        const result = await systemApi.mediaMigrate({
+          exclude_products: excludeProducts,
+          exclude_images: excludeImages,
+        });
         migrated += result.migrated;
         failed += result.failed.length;
         remaining = result.remaining;
+        for (const failure of result.failed) {
+          (failure.kind === 'main_image' ? excludeProducts : excludeImages).push(failure.id);
+        }
         setSummary(`${migrated} taşındı, ${failed} başarısız, ${remaining} kaldı…`);
-        if (remaining === 0 || result.migrated === 0) break;
+        if (remaining <= excludeProducts.length + excludeImages.length || result.scanned === 0) break;
       }
       setSummary(`${migrated} görsel arşive taşındı · ${failed} başarısız · ${remaining} kaldı.`);
       push(
@@ -231,6 +241,25 @@ function MediaArchiveCard({ mode, writable }: { mode: 'download' | 'hotlink' | n
           ? 'Tüm görseller arşive taşındı.'
           : 'Taşıma bitti; başarısız kalanlar bozulmadı, tekrar deneyebilirsiniz.',
         failed === 0 ? 'success' : 'error',
+      );
+    } catch (caught) {
+      push(messageOf(caught), 'error');
+    } finally {
+      setRunning(false);
+    }
+  };
+
+  // İE#10 5d: DB↔disk bütünlük denetimi — dosyası kayıp yerel kayıtları kaynağından onarır.
+  const check = async () => {
+    setRunning(true);
+    try {
+      const result = await systemApi.mediaCheck();
+      setSummary(`${result.checked} kayıt denetlendi · ${result.missing} kayıp · ${result.repaired} onarıldı.`);
+      push(
+        result.missing === 0
+          ? 'Tüm görsel kayıtları diskle uyumlu.'
+          : `${result.repaired} görsel onarıldı; ${result.failed.length} kayıt onarılamadı (kaynağı yok/erişilemedi).`,
+        result.missing === 0 || result.repaired > 0 ? 'success' : 'error',
       );
     } catch (caught) {
       push(messageOf(caught), 'error');
@@ -257,14 +286,24 @@ function MediaArchiveCard({ mode, writable }: { mode: 'download' | 'hotlink' | n
         uzak görselleri sunucu arşivine indirir; başarısız olanlar bozulmaz ve tekrar denenebilir.
       </p>
       {summary ? <p className="mt-2 text-xs font-medium text-slate-600">{summary}</p> : null}
-      <button
-        type="button"
-        className="btn-primary mt-3"
-        disabled={running || writable !== true}
-        onClick={() => void migrate()}
-      >
-        {running ? 'Taşınıyor…' : 'Görselleri arşive taşı'}
-      </button>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <button
+          type="button"
+          className="btn-primary"
+          disabled={running || writable !== true}
+          onClick={() => void migrate()}
+        >
+          {running ? 'Taşınıyor…' : 'Görselleri arşive taşı'}
+        </button>
+        <button
+          type="button"
+          className="btn-ghost"
+          disabled={running || writable !== true}
+          onClick={() => void check()}
+        >
+          Eksik dosyaları denetle/onar
+        </button>
+      </div>
     </section>
   );
 }

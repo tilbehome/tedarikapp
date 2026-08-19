@@ -10,9 +10,11 @@ use App\Auth\SessionInterface;
 use App\Controllers\ActivityController;
 use App\Controllers\AuthController;
 use App\Controllers\CategoryController;
+use App\Controllers\ExportController;
 use App\Controllers\ListController;
 use App\Controllers\ProductController;
 use App\Controllers\SettingsController;
+use App\Controllers\ShareController;
 use App\Controllers\SystemController;
 use App\Controllers\TrashController;
 use App\Middleware\Auth;
@@ -165,6 +167,8 @@ final class AppBuilder
             $group->post('/media-migrate', [$system, 'mediaMigrate']);
             // K49: migration defterini gerçeğe eşitleme (DDL koşmaz; Auth + CSRF bu grupta).
             $group->post('/migrate-baseline', [$system, 'migrateBaseline']);
+            // İE#10 5d: medya bütünlük denetimi + kayıp dosya onarımı (parti parti).
+            $group->post('/media-check', [$system, 'mediaCheck']);
         })
             ->add(new Csrf($services->session, $responseFactory))
             ->add(new Auth($services, $responseFactory));
@@ -223,6 +227,23 @@ final class AppBuilder
 
         $activityController = new ActivityController($connection, $services->timezone);
 
+        // İE#10 Blok 1-3: export motoru — dosya diske YAZILMAZ, snapshot'tan akıtılır (K25/K33/K44).
+        $exportRenderers = [
+            'csv' => new \App\Services\Export\CsvRenderer(),
+            'xlsx' => new \App\Services\Export\XlsxRenderer($basePath),
+            'pdf' => new \App\Services\Export\PdfRenderer($basePath),
+        ];
+        $exportController = new ExportController(
+            $lists,
+            $products,
+            new CategoryRepository($connection),
+            new \App\Models\ExportRepository($connection),
+            new \App\Services\Export\ExportSnapshot($presenter),
+            $exportRenderers,
+            $services->activity,
+            $services->clock,
+        );
+
         $app->group('/api', static function (RouteCollectorProxy $group) use ($settingsController, $categoryController, $activityController): void {
             $group->get('/settings', [$settingsController, 'show']);
             $group->put('/settings/rates', [$settingsController, 'updateRates']);
@@ -238,13 +259,97 @@ final class AppBuilder
             ->add(new Csrf($services->session, $responseFactory))
             ->add(new Auth($services, $responseFactory));
 
-        $app->group('/api', static function (RouteCollectorProxy $group) use ($listController, $productController, $trashController): void {
+        // İE#10 5c YEDEK HAT: /media normalde Apache'nin statik işidir (.htaccess [END]
+        // kuralları); rewrite zinciri hangi yerleşimde şaşarsa şaşsın görsel yine açılsın
+        // diye uygulama da AYNI adresi sunabilir. Yalnız sunucu-üretimi ad deseni kabul
+        // edilir (fileNameFor path-traversal kalkanı); dosya yoksa sade 404 (SPA yönlendirmesi YOK).
+        $app->get('/media/{name}', static function (ServerRequestInterface $request, ResponseInterface $response, array $args) use ($mediaService): ResponseInterface {
+            $fileName = $mediaService->fileNameFor('/media/' . (string) ($args['name'] ?? ''));
+            $path = $fileName === null ? null : $mediaService->directory() . '/' . $fileName;
+            if ($path === null || !is_file($path)) {
+                return $response->withStatus(404)->withHeader('Content-Type', 'text/plain; charset=utf-8');
+            }
+
+            $mime = match (strtolower(pathinfo($path, PATHINFO_EXTENSION))) {
+                'png' => 'image/png',
+                'gif' => 'image/gif',
+                'webp' => 'image/webp',
+                'avif' => 'image/avif',
+                default => 'image/jpeg',
+            };
+            $response->getBody()->write((string) file_get_contents($path));
+
+            return $response
+                ->withHeader('Content-Type', $mime)
+                ->withHeader('Cache-Control', 'public, max-age=86400')
+                ->withHeader('X-Robots-Tag', 'noindex');
+        });
+
+        $shareController = new ShareController($lists, $services->activity, $services->clock);
+
+        // İE#10 Blok 4: GİRİŞSİZ paylaşım sayfası — /p/{token}. Sabit yanıt ilkesi:
+        // geçersiz/iptal/süresi dolmuş token ve hız sınırı aşımı AYNI 404'ü döndürür.
+        $sharePage = new \App\Services\Share\SharePage();
+        $shareGate = new \App\Services\Share\ShareGate($connection);
+        $app->get('/p/{token}', static function (ServerRequestInterface $request, ResponseInterface $response, array $args) use ($lists, $products, $presenter, $connection, $sharePage, $shareGate, $services): ResponseInterface {
+            $now = $services->clock->now();
+            $ip = \App\Core\ClientIp::from($request);
+            $token = (string) ($args['token'] ?? '');
+
+            $notFound = static function () use ($response): ResponseInterface {
+                $response->getBody()->write(
+                    '<!DOCTYPE html><html lang="tr"><head><meta charset="utf-8"><meta name="robots" content="noindex">'
+                    . '<title>Bulunamadı</title></head><body><p>Bu paylaşım linki geçersiz veya kaldırılmış.</p></body></html>',
+                );
+
+                return $response->withStatus(404)->withHeader('Content-Type', 'text/html; charset=utf-8');
+            };
+
+            // 64 hex dışındaki her şey ve hız sınırı aşımı: sorgusuz sabit 404.
+            if (preg_match('/^[0-9a-f]{64}$/', $token) !== 1 || $shareGate->blocked($ip, $now)) {
+                return $notFound();
+            }
+
+            $row = $lists->findByShareHash(hash('sha256', $token));
+            if ($row === null) {
+                $shareGate->recordInvalid($ip, $token, $now);
+
+                return $notFound();
+            }
+            if ($row['share_expires_at'] !== null && \App\Core\Dates::fromStorage((string) $row['share_expires_at'], $services->timezone) <= $now) {
+                return $notFound();
+            }
+
+            $categoryNames = array_column((new CategoryRepository($connection))->all(), 'name', 'id');
+            $html = $sharePage->render(
+                $presenter->list($row),
+                $presenter->productsOf($products->forList((int) $row['id']), $row),
+                $categoryNames,
+            );
+            $response->getBody()->write($html);
+
+            return $response
+                ->withHeader('Content-Type', 'text/html; charset=utf-8')
+                ->withHeader('X-Robots-Tag', 'noindex, nofollow')
+                ->withHeader('Cache-Control', 'no-store');
+        });
+
+        $app->group('/api', static function (RouteCollectorProxy $group) use ($listController, $productController, $trashController, $exportController, $shareController): void {
             $group->get('/lists', [$listController, 'index']);
             $group->post('/lists', [$listController, 'store']);
             $group->get('/lists/{id}', [$listController, 'show']);
             $group->patch('/lists/{id}', [$listController, 'update']);
             $group->delete('/lists/{id}', [$listController, 'destroy']);
             $group->post('/lists/{id}/duplicate', [$listController, 'duplicate']);
+
+            // İE#10 Blok 4: paylaşım linki üret/yenile + iptal (token yalnız yanıtın içinde bir kez).
+            $group->post('/lists/{id}/share', [$shareController, 'create']);
+            $group->delete('/lists/{id}/share', [$shareController, 'destroy']);
+
+            // İE#10: export üretimi + geçmiş + geçmişten indirme (snapshot'tan yeniden üretim).
+            $group->get('/lists/{id}/export', [$exportController, 'export']);
+            $group->get('/lists/{id}/exports', [$exportController, 'history']);
+            $group->get('/exports/{id}/file', [$exportController, 'download']);
 
             $group->get('/lists/{id}/products', [$productController, 'index']);
             $group->post('/lists/{id}/products', [$productController, 'store']);
@@ -254,6 +359,8 @@ final class AppBuilder
             $group->patch('/products/bulk', [$productController, 'bulk']);
             $group->patch('/products/{id}', [$productController, 'update']);
             $group->patch('/products/{id}/status', [$productController, 'updateStatus']);
+            // İE#10 5d: kırık görsel onarımı — uzaksa arşive al, yerel+kayıpsa kaynaktan indir.
+            $group->post('/products/{id}/media-repair', [$productController, 'mediaRepair']);
             $group->delete('/products/{id}', [$productController, 'destroy']);
 
             $group->get('/trash', [$trashController, 'index']);
