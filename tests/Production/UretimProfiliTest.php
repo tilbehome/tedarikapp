@@ -103,6 +103,11 @@ final class UretimProfiliTest extends AuthTestCase
             'app/Core/Logger.php',
             'app/Setup/RequirementChecker.php',
             'app/Services/Export/PdfRenderer.php',
+            // İE#10.5: yedekler storage/backups'a yazılır (web'den deny; şifreli; K44 istisnası
+            // gerekçeli — yedek diske yazılmadan var olamaz; storage yazılamıyorsa net hata döner).
+            'app/Services/BackupService.php',
+            // BackupOffsite: fwrite hedefi php://temp BELLEK akışıdır (SMTP gövdesi) — diske yazmaz.
+            'app/Services/BackupOffsite.php',
         ];
         $pattern = '/(?<![>\w$:])(?<!function )(file_put_contents|fwrite|mkdir|tempnam|touch)\s*\(|(?<![>\w$:])fopen\s*\([^)]*,\s*[\'"][waxc]/';
 
