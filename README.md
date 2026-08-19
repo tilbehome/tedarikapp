@@ -8,7 +8,7 @@ Panel Web Uygulaması · Chrome Eklentisi · Excel/PDF/HTML Çıktı Motoru
 
 Teknoloji taban çizgisi: [docs/TECH-BASELINE.md](docs/TECH-BASELINE.md) (PHP · Slim · MySQL · React · Vite · MV3)
 
-🌐 Üretim: `tedarikapp.tilbehometoptan.com` · 🔒 Private · 📋 Durum: **Faz 1 kapanışı — İE#9 sağlamlaştırma sprinti (üretim kurulumunun ön şartı)**
+🌐 Üretim: `tedarikapp.tilbehometoptan.com` · 🔒 Görünürlük politikası: docs/08 K28 · 📋 Durum: **Faz 1 kapanışı — İE#9 sağlamlaştırma sprinti (üretim kurulumunun ön şartı)**
 
 </div>
 
@@ -48,10 +48,10 @@ Elle Excel doldurma, fiyat/görsel kopyalama, kur hesaplama ve "hangi ürün ner
 - **🔗 Paylaşım Linki:** firmaya tek link — girişsiz açılır, ürün kartları + **gömülü video oynatıcı**, her zaman canlı güncel, arama motorlarına kapalı
 
 ### 🔐 Güvenlik
-- **Zorunlu 2FA (TOTP)** + kurtarma kodları · Argon2id şifre hash'i
+- **Opsiyonel 2FA (TOTP, K45)** + kurtarma kodları · Argon2id şifre hash'i — sihirbazda atlanabilir, sonradan eklenebilir
 - Artan bekleme + IP kilidi, CSRF koruması, güvenlik başlıkları (CSP/HSTS), hash'li API token
 - `storage/` webden tamamen kapalı; sırlar yalnızca `.env`'de
-- 🧙 **Kurulum sihirbazı:** WordPress tarzı tek seferlik kurulum (gereksinim denetimi → DB → migration → admin+2FA), sonra kendini kalıcı kilitler; güncellemeler tek tık migration
+- 🧙 **Kurulum sihirbazı:** WordPress tarzı tek seferlik kurulum (gereksinim denetimi → DB → migration → admin; 2FA opsiyonel — K45), sonra kendini kalıcı kilitler; güncellemeler tek tık migration
 
 ## 🏗️ Mimari
 
@@ -122,7 +122,7 @@ Claude (PM) ──İŞ EMRİ #N──► Bünyamin ──► Claude Code (Geliş
 ## ⚡ Kurulum (özet)
 
 1. cPanel'de MySQL veritabanı + kullanıcı oluştur
-2. Release zip'ini yükle, siteye gir → 🧙 kurulum sihirbazı gerisini yönetir (gereksinim denetimi, `.env`, migration, admin + 2FA)
+2. Release zip'ini yükle, siteye gir → 🧙 kurulum sihirbazı gerisini yönetir (gereksinim denetimi, config.php, migration, admin; 2FA opsiyonel)
 3. Bitti — sihirbaz kendini kilitler. Ayrıntı: [docs/07-deploy-runbook.md](docs/07-deploy-runbook.md)
 
 ---
