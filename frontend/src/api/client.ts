@@ -50,6 +50,17 @@ export function onUnauthorized(listener: Listener): () => void {
   return () => unauthorizedListeners.delete(listener);
 }
 
+/**
+ * İE#10.5 Blok 2: bekleyen migration (503 MIGRATION_PENDING) haber verilir —
+ * uygulama tam sayfa "Güncelleme tamamlanmalı" ekranına geçer.
+ */
+const migrationPendingListeners = new Set<Listener>();
+
+export function onMigrationPending(listener: Listener): () => void {
+  migrationPendingListeners.add(listener);
+  return () => migrationPendingListeners.delete(listener);
+}
+
 interface RequestOptions {
   method?: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
   body?: unknown;
@@ -104,6 +115,10 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   if (response.status === 401 && !options.silentUnauthorized) {
     setCsrfToken(null);
     unauthorizedListeners.forEach((listener) => listener());
+  }
+
+  if (response.status === 503 && error.code === 'MIGRATION_PENDING') {
+    migrationPendingListeners.forEach((listener) => listener());
   }
 
   throw new ApiError(

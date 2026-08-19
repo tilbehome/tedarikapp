@@ -1,6 +1,8 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
-import { onUnauthorized } from './api/client';
+import { onMigrationPending, onUnauthorized } from './api/client';
+import { system as systemApi } from './api/endpoints';
+import { messageOf } from './lib/useAsync';
 import { useSession } from './store/session';
 import { useReference } from './store/reference';
 import Layout from './components/Layout';
@@ -49,8 +51,17 @@ export default function App() {
     }
   }, [stage, referenceLoaded, loadReference]);
 
+  // İE#10.5 Blok 2: veri uçları 503 MIGRATION_PENDING dönerse tam sayfa
+  // "Güncelleme tamamlanmalı" ekranı — hata kartları yerine tek yönlendirme.
+  const [migrationPending, setMigrationPending] = useState(false);
+  useEffect(() => onMigrationPending(() => setMigrationPending(true)), []);
+
   if (!checked) {
     return <Spinner label="Oturum kontrol ediliyor…" />;
+  }
+
+  if (migrationPending) {
+    return <MigrationPendingScreen onDone={() => setMigrationPending(false)} />;
   }
 
   if (stage !== 'authenticated') {
@@ -79,5 +90,47 @@ export default function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>
+  );
+}
+
+/**
+ * İE#10.5 Blok 2 — "Güncelleme tamamlanmalı" ekranı: bekleyen migration varken
+ * veri uçları 503 döner; kullanıcı buradan migrate + defter eşitlemeyi koşar.
+ */
+function MigrationPendingScreen({ onDone }: { onDone: () => void }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const run = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      // Önce defter eşitlenir (K49 — tablolar var ama defter geride olabilir),
+      // sonra kalan gerçek migration'lar koşulur.
+      await systemApi.migrateBaseline();
+      await systemApi.migrate();
+      onDone();
+      window.location.reload();
+    } catch (caught) {
+      setError(messageOf(caught));
+      setBusy(false);
+    }
+  };
+
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-slate-50 p-6">
+      <div className="card max-w-md p-6 text-center">
+        <h1 className="text-lg font-semibold">Güncelleme tamamlanmalı</h1>
+        <p className="mt-2 text-sm text-slate-600">
+          Yeni sürüm veritabanı güncellemesi bekliyor. Veri ekranları, güncelleme
+          tamamlanana kadar güvenlik için kapalı tutulur — bu, verinizi yarım şemayla
+          çalışmaktan korur.
+        </p>
+        {error ? <p className="mt-3 text-sm text-red-600">{error}</p> : null}
+        <button type="button" className="btn-primary mt-4" disabled={busy} onClick={() => void run()}>
+          {busy ? 'Güncelleniyor…' : 'Güncellemeyi tamamla'}
+        </button>
+      </div>
+    </main>
   );
 }
