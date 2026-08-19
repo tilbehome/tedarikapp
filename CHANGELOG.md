@@ -4,6 +4,9 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/) · Sürümleme: SemVe
 Her release'te bu dosya güncellenir (docs/07 bölüm 4). Kategoriler: Eklendi / Değişti / Düzeltildi / Kaldırıldı / Güvenlik.
 
 ## [Yayınlanmadı]
+### Düzeltildi (İE#9.7 — PHP 8.1'de arşive taşıma çöküşü)
+- **`CURLOPT_PROTOCOLS_STR` 8.1 uyumu:** sabit PHP 8.3'te geldi; canlı 8.1.34'te ilk gerçek indirme "Undefined constant" ile düştü (satır İE#9.6 öncesinden beri vardı — üretimde indirme hattına ilk kez K47 ile girildi). Protokol kısıtı artık sürüme göre kurulur: sabit tanımlıysa `CURLOPT_PROTOCOLS_STR='https'`, değilse `CURLOPT_PROTOCOLS=CURLPROTO_HTTPS` — etki iki yolda aynı (yalnız https; yönlendirmeler FOLLOWLOCATION kapalı olduğundan her sıçramada aynı kısıttan geçer).
+- **Bekçi onarıldı:** cURL seçenek kurulumu saf `requestOptions()` metoduna ayrıldı; `php81-uyum` CI job'ı bu metodu GERÇEK 8.1 ile ÇALIŞTIRIR — tanımsız sabit bir daha lint'ten kaçamaz. Repo genelinde 8.2+/8.3+ sabit-fonksiyon-sözdizimi taraması yapıldı: başka bulgu YOK.
 ### Eklendi (İE#9.6 · K47 — medya arşiv modu varsayılan)
 - **Varsayılan medya modu ARŞİV:** alicdn CDN'i Referer ACL uyguladığı için (canlı 403 kanıtı) 1688 görselleri hotlink ile gösterilemiyor; `public/media` yazılabilir olduğu anda uygulama **otomatik arşiv moduna geçer** (K47 — eski "hotlink" ayar kaydı modu artık kilitlemez). Ayarlar ekranı aktif modu + yazılabilirlik durumunu gösterir.
 - **İndirme istemcisine Referer/UA:** allowlist'teki alicdn/1688 hostlarına `Referer: https://detail.1688.com/` + gerçekçi tarayıcı UA gönderilir (host→başlık eşlemesi yapılandırılabilir; eşleme DIŞI hiçbir hosta eklenmez, sonek taklidi eşleşmez). SSRF kapısındaki tüm denetimler aynen durur.

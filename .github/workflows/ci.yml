@@ -157,6 +157,20 @@ jobs:
           done < <(find app bin bootstrap public migrations vendor -name "*.php" ! -path "*platform_check*")
           [ $hata -eq 0 ] && echo "8.1 lint TEMIZ"
 
+      - name: 8.1 üzerinde cURL seçenek kurulumu (İE#9.7 bekçisi — tanımsız sabit lint'ten kaçamaz)
+        # Canlı vaka: CURLOPT_PROTOCOLS_STR (PHP 8.3+) lint'te görünmez, ilk indirmede
+        # "Undefined constant" ile patladı. Bu adım seçenek dizisini GERÇEK 8.1'de KURAR.
+        run: |
+          php -r '
+            require "vendor/autoload.php";
+            $f = new App\Services\CurlMediaFetcher(new App\Services\UrlGuard(["alicdn.com"]));
+            $o = $f->requestOptions("https://cbu01.alicdn.com/img/ibank/ornek.jpg");
+            if (!isset($o[CURLOPT_PROTOCOLS]) || $o[CURLOPT_PROTOCOLS] !== CURLPROTO_HTTPS) {
+              fwrite(STDERR, "HATA: 8.1 yolunda CURLOPT_PROTOCOLS+CURLPROTO_HTTPS bekleniyordu\n"); exit(1);
+            }
+            echo "8.1 cURL secenek kurulumu TAMAM (yalniz https kisiti aktif)\n";
+          '
+
       - name: 8.1 üzerinde açılış smoke'u
         run: |
           APP_ENV=local php -S 127.0.0.1:8070 -t public public/index.php &
