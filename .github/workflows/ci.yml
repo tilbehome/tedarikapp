@@ -159,6 +159,20 @@ jobs:
           done < <(find app bin bootstrap public migrations vendor -name "*.php" ! -path "*platform_check*")
           [ $hata -eq 0 ] && echo "8.1 lint TEMIZ"
 
+      - name: Platform gereksinimi bekçisi (İE#10.5 — istisnalar paket bazında belgeli)
+        # config.platform.php=8.1.34 pini DENENDİ ve geri alındı: robthree/twofactorauth v3'ü
+        # (php>=8.2 beyanlı) v2'ye düşürmeye zorluyor — TOTP kütüphanesi düşürmek mevcut
+        # secret'lar için davranış riskidir. Bunun yerine bu adım: 8.1'de check-platform-reqs
+        # koşar, BİLİNEN İKİ İSTİSNA dışında (zipstream-php, twofactorauth — ikisi de yalnız
+        # METADATA'da 8.2+; gerçek 8.1 uyumu bu job'ın vendor lint + smoke adımlarıyla kanıtlı)
+        # herhangi bir paket 8.1'i tutmuyorsa job KIRMIZI olur.
+        run: |
+          ihlal=$(composer check-platform-reqs --no-dev 2>/dev/null | grep -i "failed" | grep -vE "maennchen/zipstream-php|robthree/twofactorauth" || true)
+          if [ -n "$ihlal" ]; then
+            echo "HATA: 8.1 ile uyumsuz YENİ paket(ler):"; echo "$ihlal"; exit 1
+          fi
+          echo "Platform bekçisi TEMİZ (bilinen istisnalar: zipstream-php, twofactorauth — lint+smoke kanıtlı)"
+
       - name: 8.1 üzerinde cURL seçenek kurulumu (İE#9.7 bekçisi — tanımsız sabit lint'ten kaçamaz)
         # Canlı vaka: CURLOPT_PROTOCOLS_STR (PHP 8.3+) lint'te görünmez, ilk indirmede
         # "Undefined constant" ile patladı. Bu adım seçenek dizisini GERÇEK 8.1'de KURAR.
@@ -292,6 +306,21 @@ jobs:
           sleep 2
           php bin/smoke-kurulum.php http://127.0.0.1:8090 127.0.0.1 3306 tedarikapp_smoke root root
           echo "DİSKSİZ SİMÜLASYON TAMAM"
+
+  gitleaks:
+    name: Sır taraması (gitleaks)
+    runs-on: ubuntu-latest
+    # İE#10.5 Blok 5: commit geçmişi dahil sır sızıntısı taraması — CLAUDE.md §5'in
+    # otomatik bekçisi. Bulgu = job kırmızı; yanlış pozitifler .gitleaksignore ile yönetilir.
+    steps:
+      - name: Depoyu al
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   panel:
     name: Panel (tsc + eslint + build)
