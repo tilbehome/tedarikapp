@@ -285,7 +285,7 @@ final class AppBuilder
         // Panel (İE#8 §5): Vite çıktısı public/panel/ altındadır. Var olan dosyaları
         // Apache doğrudan sunar; /panel/listeler/5 gibi istemci tarafı rotalar buraya
         // düşer ve index.html'e verilir ki sayfa yenilendiğinde 404 alınmasın.
-        $app->get('/panel[/{path:.*}]', self::panelAction($basePath));
+        $app->get('/panel[/{path:.*}]', self::panelAction($basePath, $connection));
 
         $app->addErrorMiddleware(
             displayErrorDetails: !$config->isProduction(),
@@ -311,10 +311,14 @@ final class AppBuilder
     /**
      * Panelin tek sayfa uygulaması. Build alınmamışsa teknik detay değil,
      * ne yapılacağını söyleyen düz bir sayfa gösterilir (docs/07 build adımı).
+     *
+     * İE#13 EK-B: giriş ekranının vitrin rakamları ve 2FA durumu BURADA gömülür —
+     * girişsiz bir API ucu açılmaz (PM şartı). Taşıyıcı bir META etiketidir, satır içi
+     * script DEĞİL: K45 CSP kararı (satır içi script yok) korunur.
      */
-    private static function panelAction(string $basePath): Closure
+    private static function panelAction(string $basePath, Connection $connection): Closure
     {
-        return static function (ServerRequestInterface $request, ResponseInterface $response) use ($basePath): ResponseInterface {
+        return static function (ServerRequestInterface $request, ResponseInterface $response) use ($basePath, $connection): ResponseInterface {
             $index = $basePath . '/public/panel/index.html';
             $html = is_file($index) ? file_get_contents($index) : false;
 
@@ -331,13 +335,38 @@ final class AppBuilder
                 return $response->withHeader('Content-Type', 'text/html; charset=utf-8')->withStatus(503);
             }
 
-            $response->getBody()->write($html);
+            $response->getBody()->write(self::withLoginMeta($html, $connection));
 
             return $response
                 ->withHeader('Content-Type', 'text/html; charset=utf-8')
                 // index.html önbelleğe alınmaz; varlık dosyaları zaten hash'li adlarla gelir.
                 ->withHeader('Cache-Control', 'no-store');
         };
+    }
+
+    /**
+     * Giriş ekranı meta etiketini `<head>`e ekler (İE#13 EK-B).
+     *
+     * Değerler yuvarlanmış metinlerdir; ham ciro/kesin sayı taşınmaz. Kaçış
+     * `htmlspecialchars` ile yapılır — içerik tümüyle sunucu üretimi olsa da meta
+     * içeriğine kaçışsız veri yazma alışkanlığı bırakılmaz (K20).
+     */
+    private static function withLoginMeta(string $html, Connection $connection): string
+    {
+        $stats = new \App\Services\LoginStats($connection);
+        $ozet = $stats->summary();
+        $payload = json_encode([
+            'products' => $ozet['products'],
+            'volume' => $ozet['volume'],
+            'two_factor' => $stats->twoFactorEnabled(),
+            'version' => AppVersion::VALUE,
+        ], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+
+        $meta = '<meta name="tedarikapp-giris" content="' . htmlspecialchars($payload, ENT_QUOTES, 'UTF-8') . '">';
+
+        return str_contains($html, '</head>')
+            ? str_replace('</head>', $meta . '</head>', $html)
+            : $meta . $html;
     }
 
     private static function healthAction(Config $config, Connection $connection, LoggerInterface $logger): Closure

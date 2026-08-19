@@ -10,7 +10,7 @@ test.describe('Panel temel akışı', () => {
     await page.goto('/panel');
     await page.getByLabel('E-posta').fill(KULLANICI.email);
     await page.getByLabel('Şifre').fill('yanlis-sifre-123');
-    await page.getByRole('button', { name: 'Devam et' }).click();
+    await page.getByRole('button', { name: 'Panele gir' }).click();
 
     await expect(page.getByText(/hatalı|geçersiz|başarısız/i)).toBeVisible();
   });

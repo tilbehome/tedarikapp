@@ -14,7 +14,7 @@ export async function girisYap(page: Page): Promise<void> {
   await page.goto('/panel');
   await page.getByLabel('E-posta').fill(KULLANICI.email);
   await page.getByLabel('Şifre').fill(KULLANICI.password);
-  await page.getByRole('button', { name: 'Devam et' }).click();
+  await page.getByRole('button', { name: 'Panele gir' }).click();
 
   // 2FA kapalı kullanıcıda giriş TEK adımdır (K45) — doğrudan panele düşer.
   await expect(page.getByRole('navigation')).toBeVisible({ timeout: 15_000 });
