@@ -130,7 +130,43 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   );
 }
 
+/**
+ * İE#11 Görev E: POST ile dosya indirme — export üretimi CSRF'li POST'tur; yanıt
+ * zarf değil DOSYA olduğundan ayrı yol: blob alınır ve tarayıcıya indirilir.
+ */
+async function postBlob(path: string): Promise<void> {
+  const headers: Record<string, string> = {};
+  if (csrfToken) headers['X-CSRF-Token'] = csrfToken;
+
+  const response = await fetch(path, { method: 'POST', headers, credentials: 'same-origin' });
+  if (!response.ok) {
+    let envelope: Envelope<unknown> | null = null;
+    try {
+      envelope = (await response.json()) as Envelope<unknown>;
+    } catch {
+      envelope = null;
+    }
+    throw new ApiError(
+      envelope?.error?.code ?? 'SERVER_ERROR',
+      envelope?.error?.message ?? errorMessages.SERVER_ERROR ?? 'Beklenmeyen bir hata oluştu.',
+      response.status,
+    );
+  }
+
+  const blob = await response.blob();
+  const disposition = response.headers.get('Content-Disposition') ?? '';
+  const match = /filename="([^"]+)"/.exec(disposition);
+  const anchor = document.createElement('a');
+  anchor.href = URL.createObjectURL(blob);
+  anchor.download = match?.[1] ?? 'tedarik-listesi';
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(anchor.href);
+}
+
 export const api = {
+  postBlob,
   get: <T>(path: string, options?: RequestOptions) => request<T>(path, { ...options, method: 'GET' }),
   post: <T>(path: string, body?: unknown, options?: RequestOptions) =>
     request<T>(path, { ...options, method: 'POST', body: body ?? {} }),

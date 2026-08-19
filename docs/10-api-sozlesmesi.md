@@ -117,13 +117,18 @@
 | `GET /api/settings` | `{yuan_tl, usd_tl, totp_enabled, extension_token_preview}` (token'ın yalnızca son 4 hanesi) |
 | `PUT /api/settings/rates` | `{yuan_tl?, usd_tl?}` → 200 `{yuan_tl, usd_tl, changes:[{currency, from, to}]}`. İE#9.8 3b (K48 ek): yalnız DEĞİŞEN değer ayara + rate_history'ye yazılır; gönderilen değer kayıtlıyla aynıysa tarihçeye satır YAZILMAZ ve `changes` boş döner (panel "zaten güncel" der). Yalnızca `draft` listelerin görünen TL'sini etkiler (kur `sent` ile kilitlenir — K4/K48) |
 | `GET /api/settings/rates/history` | Kur tarihçesi (sayfalı) |
-| `POST /api/settings/extension-token` | Yeni token üretir → **tam token yalnızca bu yanıtta bir kez** görünür; DB'de hash saklanır |
+| `POST /api/settings/extension-token` | Yeni token üretir → **tam token yalnızca bu yanıtta bir kez** görünür; DB'de SHA-256 hash (K34); tek kullanıcı çok cihaz — iptal hepsini düşürür |
+| `DELETE /api/settings/extension-token` | Token'ı iptal eder → 204; eklenti istekleri anında 401 alır |
+| `GET /api/inbox` | İE#11 — Gelen Kutusu: 200 `[{id, status(pending\|error), name, price_yuan, image_url, url, platform, external_id, created_at}]` |
+| `POST /api/inbox/assign` | İE#11 — `{ids:[], list_id}` → seçilenleri listeye ürün olarak taşır (K25 mükerrer uyarısı ürün oluşturmada uygulanmaz — kullanıcı bilinçli taşıyor); 200 `{moved, failed:[{id, error}]}` |
+| `DELETE /api/inbox/{id}` | İE#11 — kaydı siler (çöp kutusuna girmez; ham yakalama verisidir) → 204 |
 | `GET/POST/PATCH/DELETE /api/categories` | CRUD; kullanımda olan kategori silinirken → 422 `VALIDATION` + `meta.product_count` (İE#9 düzeltmesi: 422 standardı — 409 yalnızca tekrar-ekleme ve geri alma bağımlılığında) |
 | `GET /api/activity` | Filtre: `entity_type`, `entity_id`, sayfalı (`page`, `per_page` — varsayılan 25, üst sınır 100) — E9 ekranının kaynağı. Yanıt `data: [{id, entity_type, entity_id, action, detail, ip, actor_type, created_at}]`, `meta: {page, per_page, total}`. Salt okunur |
 
 ## 8. Yakalama ve Dışa Açık Sayfa
 
-- `POST /api/capture` — istek şeması **docs/04 §2c'de sabit**. Yanıt: 201 `{inbox_id}` veya `{product_id}` (hedef liste seçiliyse); doğrulanamayan gövde → 201 `{inbox_id, status:"error"}` (veri kaybolmaz); hız aşımı → 429.
+- `POST /api/capture` — istek şeması **docs/04 §2c v2'de sabit** (İE#11/K32: source+raw+normalized üç blok). Yanıt: 201 `{inbox_id}` veya `{product_id}` (hedef liste seçiliyse) + varsa `duplicate:{product_id, list_id, list_name}` (K25 uyarısı — engel değil); doğrulanamayan gövde → 201 `{inbox_id, status:"error"}` (raw saklanır, veri kaybolmaz); hız aşımı → 429. CORS: yalnız allowlist'teki extension origin'i (K30, wildcard YOK).
+- `GET /api/extension/selectors?platform=1688` — Bearer'lı; schema_version'lı seçici JSON'ı (K53: seçiciler KOD DEĞİL VERİ — site değişince eklenti güncellemesiz düzeltme).
   - **Zorunlu `capture_id` (UUIDv4, K25):** sistemde UNIQUE'tir. Aynı `capture_id` tekrar gelirse yeni kayıt AÇILMAZ, ilk isteğin sonucu döner (idempotans) — eklentinin kuyruk tekrar denemeleri çift ürün oluşturamaz.
   - Gövdede ayrıca `schema_version`, `extension_version`, `parser_version` ve `platform` zorunludur; parser bozulduğunda hangi sürümün ürettiği kayıttan anlaşılır.
 - `GET /p/{share_token}` — API değil, sunucu render sayfa (docs/09 P1, K51). Token SHA-256'lanıp aranır; biçimsiz/bilinmeyen/iptal/süresi dolmuş token ve hız sınırı aşımı AYNI sabit 404'ü döndürür (ayrım sızmaz). Enumeration: IP başına 10 dk'da 30 geçersiz deneme → blok (sayaç activity_log'da, token loglanmaz). `noindex` + robots `/p/` kapsamı + CSP (stil `/p-style.css`). Sayfa CANLI listeyi gösterir — export snapshot'ının aksine (fark K50/K51'de belgeli). İptal edilen ürünler gösterilmez.

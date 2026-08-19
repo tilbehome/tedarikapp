@@ -101,31 +101,70 @@ Geçersiz geçiş isteğini API reddeder (HTTP 422 + açıklama); kural yalnızc
 - **İptal edilen ürün liste toplamlarına GİRMEZ** — sipariş edilmeyecek mala para bağlanmaz. İlerleme sayacında (`progress`) görünmeye devam eder.
 - **Yanlış iptalin çözümü:** ürünü kopyalayıp yeni kayıtla devam etmek. Durum makinesini gevşetmek yerine bu yol seçilmiştir; tarihçe bozulmaz, iptal kaydı yerinde kalır.
 
-## 2c. Veri Sözleşmesi — Eklenti → `POST /api/capture` (SABİT ŞEMA, K14)
+## 2c. Veri Sözleşmesi v2 — Eklenti → `POST /api/capture` (SABİT ŞEMA, K14/K32 — İE#11 TEK SEFERDE revize)
+
+K32 hükmü yerine getirildi: kaynak alanları AYRI blokta — v2'de `source_listings`
+tablosuna geçiş mekanik olacak (docs/v2/02 §3). Yük ÜÇ blok taşır:
+**source** (kaynağın kimliği), **raw** (orijinal veri, dokunulmaz), **normalized**
+(panelin kullandığı standart hali). AI/çıkarım yok — normalized, parser'ın kural
+tabanlı standartlaştırmasıdır (v2-00 Kaynak→Gerçek→Karar ilkesine hazır zemin).
 
 ```json
 {
   "capture_id": "9f1c8d2e-4b7a-4c31-9f0e-2a6d5b3c8e11",
-  "schema_version": 1,
+  "schema_version": 2,
   "extension_version": "1.0.0",
   "parser_version": "1688-2026.08",
-  "platform": "1688",
-  "external_id": "678239127001",
-  "title_original": "304不锈钢保温饭盒...",
-  "url": "https://detail.1688.com/offer/....html",
-  "vendor": { "name": "...", "url": "..." },
-  "price_yuan": "9.00",
-  "sku_matrix": [ { "props": {"颜色": "白色"}, "price_yuan": "9.00", "min_qty": 24 } ],
-  "sku_selection": null,
-  "images": ["https://cbu01.alicdn.com/...jpg"],
-  "video_url": null,
-  "target_list_id": null
+  "target_list_id": null,
+  "qty": 24,
+  "units_per_carton": null,
+  "note": null,
+  "source": {
+    "platform": "1688",
+    "external_id": "678239127001",
+    "url": "https://detail.1688.com/offer/678239127001.html",
+    "seller_id": "b2b-2216...",
+    "seller_name": "永康市...",
+    "seller_url": "https://...1688.com",
+    "captured_at": "2026-08-19T15:00:00+03:00"
+  },
+  "raw": {
+    "title": "304不锈钢保温饭盒...",
+    "price_blocks": { "currentPrices": [], "skuRangePrices": [] },
+    "images": ["https://cbu01.alicdn.com/img/ibank/...jpg"],
+    "video": { "id": "452123...", "poster": "https://..." },
+    "attributes": { "材质": "304不锈钢" }
+  },
+  "normalized": {
+    "name": "304不锈钢保温饭盒...",
+    "price_yuan": "9.00",
+    "price_tiers": [ { "min_qty": 24, "price_yuan": "9.00" } ],
+    "images": ["https://cbu01.alicdn.com/img/ibank/...jpg"],
+    "sku_matrix": [ { "props": {"颜色": "白色"}, "price_yuan": "9.00", "min_qty": 24 } ],
+    "video_url": null
+  }
 }
 ```
 
-Kurallar: para alanları STRING taşınır (float hassasiyet kaybına karşı); `target_list_id: null` → Gelen Kutusu; alan adları değiştirilemez, şema değişikliği PM kararı + belge güncellemesi gerektirir. Backend her alanı doğrular (tip, uzunluk, URL deseni), doğrulanamayan istek ham haliyle `inbox_items.raw_json`'a düşer ve panelde "hatalı yakalama" (`status = error`) olarak gösterilir.
-
-**İdempotans (K25):** `capture_id` UUIDv4'tür ve `inbox_items` üzerinde UNIQUE'tir. Eklenti bir isteği tekrar denerse (kuyruk mantığı — §4) aynı `capture_id` gelir; sunucu yeni kayıt AÇMAZ, ilk isteğin sonucunu döner. Böylece ağ kopmasında çift ürün oluşmaz. `schema_version`, `extension_version` ve `parser_version` her kayda yazılır: 1688 sayfa yapısı değişip parser bozulduğunda hatalı kayıtların hangi sürümden geldiği kaynaktan okunur.
+Kurallar (v1'den miras + v2 ekleri):
+- Para alanları STRING (K14); `target_list_id: null` → Gelen Kutusu; alan adları
+  sabit, şema değişikliği PM kararı ister.
+- **İdempotans (K25):** `capture_id` UUIDv4, `inbox_items.capture_id` UNIQUE —
+  tekrar denemede yeni kayıt açılmaz, ilk sonucun aynısı döner.
+- **Mükerrer denetimi (K25):** `source.platform + source.external_id` mevcut bir
+  üründe varsa yanıt `duplicate: {product_id, list_id, list_name}` taşır — kayıt
+  YİNE oluşturulur (engel değil uyarı; eklenti kullanıcıya gösterir).
+- `raw` bloğu backend'de OLDUĞU GİBİ saklanır (`inbox_items.payload_json`) —
+  normalized alan bozuk çıkarsa veri kaybolmaz, `status=error` ile panele düşer.
+- Doğrulama sınırları §2d tablosundaki gibi; gövde ≤ `CAPTURE_MAX_PAYLOAD_KB`,
+  hız ≤ `CAPTURE_RATE_PER_MIN` (IP+token bazlı), ihlalde 429.
+- Kimlik: `Authorization: Bearer <extension_token>` — token panel Ayarlar >
+  Güvenlik'ten üretilir, DB'de SHA-256 hash (K34), tam değeri yalnız üretim
+  yanıtında; tek kullanıcı ÇOK CİHAZ: aynı token birden çok tarayıcıya girilebilir,
+  iptal hepsini birden düşürür.
+- **Seçiciler veridir:** eklenti, `GET /api/extension/selectors?platform=1688`
+  ucundan schema_version'lı seçici JSON'ı alır; 1688 yapısı değişince düzeltme
+  eklenti güncellemesi olmadan sunucudan dağıtılır (K53).
 
 ## 2d. Veri Doğrulama Kuralları (sistem sınırında zorlanır — K18)
 

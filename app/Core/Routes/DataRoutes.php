@@ -38,6 +38,7 @@ final class DataRoutes
     public static function register(
         App $app,
         SettingsController $settingsController,
+        \App\Controllers\InboxController $inboxController,
         CategoryController $categoryController,
         ActivityController $activityController,
         ListController $listController,
@@ -57,6 +58,10 @@ final class DataRoutes
 
             $group->get('/activity', [$activityController, 'index']);
 
+            // İE#11: eklenti token yönetimi (Faz 3 rozeti kalktı).
+            $group->post('/settings/extension-token', [$settingsController, 'extensionTokenCreate']);
+            $group->delete('/settings/extension-token', [$settingsController, 'extensionTokenRevoke']);
+
             $group->get('/categories', [$categoryController, 'index']);
             $group->post('/categories', [$categoryController, 'store']);
             $group->patch('/categories/{id}', [$categoryController, 'update']);
@@ -65,7 +70,7 @@ final class DataRoutes
             ->add(new Csrf($services->session, $responseFactory))
             ->add(new Auth($services, $responseFactory));
 
-        $app->group('/api', static function (RouteCollectorProxy $group) use ($listController, $productController, $trashController, $exportController, $shareController): void {
+        $app->group('/api', static function (RouteCollectorProxy $group) use ($listController, $productController, $trashController, $exportController, $shareController, $inboxController): void {
             $group->get('/lists', [$listController, 'index']);
             $group->post('/lists', [$listController, 'store']);
             $group->get('/lists/{id}', [$listController, 'show']);
@@ -78,7 +83,9 @@ final class DataRoutes
             $group->delete('/lists/{id}/share', [$shareController, 'destroy']);
 
             // İE#10: export üretimi + geçmiş + geçmişten indirme (snapshot'tan yeniden üretim).
-            $group->get('/lists/{id}/export', [$exportController, 'export']);
+            // İE#11 Görev E: ÜRETİM POST'a çevrildi (CSRF'li — durum değiştiren işlem);
+            // geçmişten indirme GET kalır (salt okunur, kayıt açmaz).
+            $group->post('/lists/{id}/export', [$exportController, 'export']);
             $group->get('/lists/{id}/exports', [$exportController, 'history']);
             $group->get('/exports/{id}/file', [$exportController, 'download']);
 
@@ -93,6 +100,11 @@ final class DataRoutes
             // İE#10 5d: kırık görsel onarımı — uzaksa arşive al, yerel+kayıpsa kaynaktan indir.
             $group->post('/products/{id}/media-repair', [$productController, 'mediaRepair']);
             $group->delete('/products/{id}', [$productController, 'destroy']);
+
+            // İE#11 Görev D: Gelen Kutusu.
+            $group->get('/inbox', [$inboxController, 'index']);
+            $group->post('/inbox/assign', [$inboxController, 'assign']);
+            $group->delete('/inbox/{id}', [$inboxController, 'destroy']);
 
             $group->get('/trash', [$trashController, 'index']);
             $group->post('/trash/{type}/{id}/restore', [$trashController, 'restore']);

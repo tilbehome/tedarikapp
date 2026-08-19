@@ -77,13 +77,38 @@ export const products = {
 
 /** İE#10 Blok 1-4: export + paylaşım. */
 export const exports = {
-  /** Dosya indirme GET ile doğrudan tarayıcıya bırakılır (cookie oturumu yeter). */
-  downloadUrl: (listId: number, format: 'xlsx' | 'pdf' | 'csv') => `/api/lists/${listId}/export?format=${format}`,
+  /** İE#11 Görev E: üretim POST'a çevrildi (CSRF'li) — dosya blob olarak alınır. */
+  create: (listId: number, format: 'xlsx' | 'pdf' | 'csv') =>
+    api.postBlob(`/api/lists/${listId}/export?format=${format}`),
   history: (listId: number) =>
     api.get<{ id: number; format: string; file_size: number | null; list_revision: number; created_at: string }[]>(
       `/api/lists/${listId}/exports`,
     ),
   fileUrl: (exportId: number) => `/api/exports/${exportId}/file`,
+};
+
+export const inbox = {
+  queue: () =>
+    api.get<
+      {
+        id: number;
+        status: 'pending' | 'error';
+        platform: string;
+        external_id: string | null;
+        name: string | null;
+        price_yuan: string | null;
+        image_url: string | null;
+        url: string | null;
+        error_note: string | null;
+        created_at: string;
+      }[]
+    >('/api/inbox'),
+  assign: (ids: number[], listId: number) =>
+    api.post<{ moved: number; failed: { id: number; error: string }[] }>('/api/inbox/assign', {
+      ids,
+      list_id: listId,
+    }),
+  remove: (id: number) => api.delete<void>(`/api/inbox/${id}`),
 };
 
 export const share = {
@@ -104,6 +129,10 @@ export const categories = {
 
 export const settings = {
   read: () => api.get<Settings>('/api/settings'),
+  /** İE#11: eklenti token'ı — tam değer yalnız üretim yanıtında bir kez. */
+  extensionTokenCreate: () =>
+    api.post<{ token: string; extension_token_preview: string }>('/api/settings/extension-token'),
+  extensionTokenRevoke: () => api.delete<void>('/api/settings/extension-token'),
   updateRates: (body: { yuan_tl?: string; usd_tl?: string }) =>
     api.put<{
       yuan_tl: string;

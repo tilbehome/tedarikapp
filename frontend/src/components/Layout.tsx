@@ -21,7 +21,7 @@ interface NavItem {
 const primary: NavItem[] = [
   { to: '/', label: 'Ana Ekran', icon: Home },
   { to: '/listeler', label: 'Listeler', icon: ListChecks },
-  { to: '/gelen-kutusu', label: 'Gelen Kutusu', icon: Inbox, soon: true },
+  { to: '/gelen-kutusu', label: 'Gelen Kutusu', icon: Inbox },
   { to: '/ayarlar', label: 'Ayarlar', icon: Settings },
 ];
 

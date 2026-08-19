@@ -440,6 +440,28 @@ final class ProductRepository
     }
 
     /** @return list<array{id: int, url: string, sort: int}> */
+    /**
+     * Yakalamadan gelen ek görselleri REMOTE galeri satırı olarak yazar (İE#11).
+     * K47 arşive-taşıma hattı bunları sonra indirir (storage_mode=remote + source_url).
+     *
+     * @param list<string> $urls
+     */
+    public function addRemoteImages(int $productId, array $urls): void
+    {
+        $statement = $this->connection->pdo()->prepare(
+            "INSERT INTO product_images (product_id, path, sort, storage_mode, source_url)
+             VALUES (:product_id, :path, :sort, 'remote', :source_url)",
+        );
+        $sort = 0;
+        foreach ($urls as $url) {
+            if (!str_starts_with($url, 'https://') || mb_strlen($url) > 1000) {
+                continue;
+            }
+            $statement->execute(['product_id' => $productId, 'path' => $url, 'sort' => ++$sort, 'source_url' => $url]);
+        }
+    }
+
+    /** @return list<array<string, mixed>> */
     public function images(int $productId): array
     {
         $statement = $this->connection->pdo()->prepare(

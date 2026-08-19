@@ -319,6 +319,24 @@ abstract class AuthTestCase extends TestCase
             )',
         );
         $this->pdo->exec(
+            'CREATE TABLE inbox_items (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                capture_id TEXT NOT NULL UNIQUE,
+                status TEXT NOT NULL DEFAULT \'pending\',
+                platform TEXT NOT NULL,
+                external_id TEXT NULL,
+                name TEXT NULL,
+                price_yuan TEXT NULL,
+                image_url TEXT NULL,
+                url TEXT NULL,
+                payload_json TEXT NOT NULL,
+                error_note TEXT NULL,
+                assigned_product_id INTEGER NULL,
+                assigned_at TEXT NULL,
+                created_at TEXT NOT NULL
+            )',
+        );
+        $this->pdo->exec(
             'CREATE TABLE product_status_history (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 product_id INTEGER NOT NULL,

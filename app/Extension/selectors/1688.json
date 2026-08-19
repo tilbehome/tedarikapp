@@ -1,0 +1,38 @@
+{
+    "schema_version": 1,
+    "platform": "1688",
+    "updated_at": "2026-08-19",
+    "notes": "Seçiciler VERİDİR (K53): 1688 yapısı değişince bu dosya güncellenir, eklenti güncellemesi gerekmez. Kaynak: docs/arastirma/1688-parser-raporu.md (GL_PAGE_ID PC-DEFAULT-2026).",
+    "url_pattern": "^https://detail\\.1688\\.com/offer/(\\d+)\\.html",
+    "context": {
+        "global_name": "context",
+        "html_regex": "window\\.context\\s*=\\s*(\\{[\\s\\S]*?\\})\\s*;?\\s*</script>",
+        "model_path": "result.data.detailModel",
+        "data_path": "result.data",
+        "params_path": "result.data.detailModel.parametersMap"
+    },
+    "paths": {
+        "offer_id": ["result.data.detailModel.offerDetail.offerId"],
+        "title": ["result.data.detailModel.offerDetail.subject"],
+        "current_prices": ["result.data.detailModel.orderParamModel.orderParam.skuParam.currentPrices"],
+        "sku_range_prices": ["result.data.detailModel.orderParamModel.orderParam.skuParam.skuRangePrices"],
+        "gallery": ["result.data.gallery.fields.offerImgList"],
+        "video_id": ["result.data.gallery.fields.videoId"],
+        "video_poster": ["result.data.gallery.fields.videoCoverUrl"],
+        "seller_name": ["result.data.sellerInfo.fields.companyName"],
+        "seller_login_id": ["result.data.detailModel.parametersMap.loginId"],
+        "attributes": ["result.data.productAttribute.fields.attributes"],
+        "sku_props": ["result.data.detailModel.orderParamModel.orderParam.skuParam.skuProps"]
+    },
+    "fallbacks": {
+        "og_title": "meta[property='og:title']",
+        "og_image": "meta[property='og:image']",
+        "dom_title": "h1, .title-content .title-text",
+        "dom_price": ".price-content .price-text, .price-column .price",
+        "offer_id_from_url": "offer/(\\d+)"
+    },
+    "image_cleanup": {
+        "strip_suffixes": ["_.webp", "_100x100.jpg", "_310x310.jpg", "_50x50.jpg"],
+        "note": "Lazy-load sonekleri temizlenir; orijinal tam boy görsel kalır."
+    }
+}

@@ -5,7 +5,7 @@ import { settings as settingsApi, system as systemApi } from '../api/endpoints';
 import { useAsync, messageOf } from '../lib/useAsync';
 import { count, dateTime, rate } from '../lib/format';
 import { mediaModeLabels } from '../locales/tr';
-import { ErrorNote, Field, PageHeader, Skeleton, SoonBadge } from '../components/ui';
+import { ErrorNote, Field, PageHeader, Skeleton } from '../components/ui';
 import { useToast } from '../components/Toast';
 
 /**
@@ -149,9 +149,10 @@ export default function SettingsScreen() {
             value={settingsState.data?.extension_token_preview ?? 'Henüz üretilmedi'}
           />
         </dl>
-        <p className="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-500">
-          Token üretimi ve kurtarma kodu yenileme <SoonBadge>Faz 3</SoonBadge>
-        </p>
+        <ExtensionTokenActions
+          preview={settingsState.data?.extension_token_preview ?? null}
+          onChanged={settingsState.reload}
+        />
       </section>
 
       <MediaArchiveCard
@@ -417,6 +418,75 @@ function BackupCard() {
         {busy ? 'Yedek alınıyor…' : 'Şimdi yedek al'}
       </button>
     </section>
+  );
+}
+
+/**
+ * İE#11 — eklenti token'ı üret/iptal: tam token YALNIZ üretim yanıtında bir kez
+ * görünür (K34; DB'de hash). Tek kullanıcı çok cihaz: aynı token her tarayıcıya
+ * girilebilir; yenileme/iptal hepsini birden düşürür.
+ */
+function ExtensionTokenActions({ preview, onChanged }: { preview: string | null; onChanged: () => void }) {
+  const push = useToast((state) => state.push);
+  const [busy, setBusy] = useState(false);
+  const [token, setToken] = useState<string | null>(null);
+
+  const create = async () => {
+    setBusy(true);
+    try {
+      const result = await settingsApi.extensionTokenCreate();
+      setToken(result.token);
+      onChanged();
+      push('Token üretildi — yalnız şimdi görünür, eklentiye şimdi yapıştırın.');
+    } catch (caught) {
+      push(messageOf(caught), 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const revoke = async () => {
+    setBusy(true);
+    try {
+      await settingsApi.extensionTokenRevoke();
+      setToken(null);
+      onChanged();
+      push('Token iptal edildi — tüm cihazlardaki eklentiler düştü.');
+    } catch (caught) {
+      push(messageOf(caught), 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="mt-3">
+      {token ? (
+        <>
+          <p className="break-all rounded-lg bg-slate-50 p-2 font-mono text-xs">{token}</p>
+          <p className="mt-1 text-xs text-amber-700">
+            Bu token yalnız şimdi görünür (güvenlik gereği kaydedilmez) — eklentinin ayar ekranına yapıştırın.
+          </p>
+          <button type="button" className="btn-primary mt-2" onClick={() => void navigator.clipboard.writeText(token).then(() => push('Token kopyalandı.'))}>
+            Kopyala
+          </button>
+        </>
+      ) : (
+        <div className="flex flex-wrap gap-2">
+          <button type="button" className="btn-primary" disabled={busy} onClick={() => void create()}>
+            {preview ? 'Token yenile' : "Eklenti token'ı üret"}
+          </button>
+          {preview ? (
+            <button type="button" className="btn-ghost" disabled={busy} onClick={() => void revoke()}>
+              Token iptal et
+            </button>
+          ) : null}
+        </div>
+      )}
+      <p className="mt-2 text-xs text-slate-500">
+        Chrome eklentisi bu token ile panele bağlanır. Yenileme/iptal, token'ı kullanan TÜM cihazları düşürür.
+      </p>
+    </div>
   );
 }
 

@@ -218,11 +218,38 @@ final class AppBuilder
 
         $shareController = new ShareController($lists, $services->activity, $services->clock);
 
+        // İE#11 Faz 3: eklenti uçları — Bearer + CORS allowlist + hız sınırı (ExtensionAuth).
+        $inboxRepository = new \App\Models\InboxRepository($connection);
+        $captureService = new \App\Services\CaptureService($connection, $lists, $products, $mediaService, $validator);
+        $extensionController = new \App\Controllers\ExtensionController($captureService, $inboxRepository, $lists, $services->clock, $basePath);
+        $extensionAuth = new \App\Middleware\ExtensionAuth(
+            $connection,
+            $responseFactory,
+            $config->get('EXTENSION_ALLOWED_ORIGINS', ''),
+            $config->getPositiveInt('CAPTURE_RATE_PER_MIN', 30),
+            $services->timezone,
+        );
+        $app->group('', static function (\Slim\Routing\RouteCollectorProxy $group) use ($extensionController): void {
+            $group->map(['POST', 'OPTIONS'], '/api/capture', [$extensionController, 'capture']);
+            $group->map(['GET', 'OPTIONS'], '/api/extension/selectors', [$extensionController, 'selectors']);
+            $group->map(['GET', 'OPTIONS'], '/api/extension/lists', [$extensionController, 'lists']);
+        })->add($extensionAuth);
+
+        $inboxController = new \App\Controllers\InboxController(
+            $inboxRepository,
+            $lists,
+            $captureService,
+            $services->activity,
+            $services->clock,
+            $services->timezone,
+        );
+
         // İE#10.5 Blok 6: rota kayıtları modül dosyalarında — AppBuilder yalnız kompozisyon kökü.
         Routes\PublicRoutes::register($app, $mediaService, $lists, $products, $presenter, $connection, $services);
         Routes\DataRoutes::register(
             $app,
             $settingsController,
+            $inboxController,
             $categoryController,
             $activityController,
             $listController,
