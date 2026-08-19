@@ -209,6 +209,37 @@ final class CaptureEndpointsTest extends AuthTestCase
         self::assertArrayHasKey('offer_id', $data['paths']);
     }
 
+    /**
+     * CANLI ARIZA (İE#11): cgi-fcgi Authorization başlığını PHP'ye iletmiyordu — istek
+     * başlıksız geliyor, token boş kalıyor, her şey 401 oluyordu. .htaccess başlığı
+     * HTTP_AUTHORIZATION olarak taşır; kod bu yedeği okumazsa arıza sürer.
+     */
+    public function testAuthorizationBasligiDusersePhpDegiskeninden_Okunur(): void
+    {
+        $request = (new \Slim\Psr7\Factory\ServerRequestFactory())->createServerRequest(
+            'GET',
+            '/api/extension/lists',
+            ['REMOTE_ADDR' => '203.0.113.7', 'HTTP_AUTHORIZATION' => 'Bearer ' . $this->token],
+        );
+        self::assertSame('', $request->getHeaderLine('Authorization'), 'Kurgu geçersiz: başlık BOŞ olmalı ki yedek yol sınansın.');
+
+        $response = $this->app()->handle($request);
+
+        self::assertSame(200, $response->getStatusCode());
+    }
+
+    /** Aynı yol iç yönlendirmede REDIRECT_ önekiyle gelir (htaccess rewrite sonrası). */
+    public function testYonlendirmeOnekliAuthorizationDaKabulEdilir(): void
+    {
+        $request = (new \Slim\Psr7\Factory\ServerRequestFactory())->createServerRequest(
+            'GET',
+            '/api/extension/lists',
+            ['REMOTE_ADDR' => '203.0.113.7', 'REDIRECT_HTTP_AUTHORIZATION' => 'Bearer ' . $this->token],
+        );
+
+        self::assertSame(200, $this->app()->handle($request)->getStatusCode());
+    }
+
     public function testTokenIptaliEklentiyiAnindaDusurur(): void
     {
         self::assertSame(201, $this->capture($this->validPayload('55555555-6666-4777-8888-999999999999'))->getStatusCode());
