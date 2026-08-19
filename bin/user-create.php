@@ -12,8 +12,13 @@ declare(strict_types=1);
  * Kullanım:
  *   php bin/user-create.php --email=admin@example.com
  *   php bin/user-create.php --email=admin@example.com --password="en az 10 karakter"
+ *   php bin/user-create.php --email=e2e@test --password=... --no-totp
  *
  * Şifre argümanla verilmezse ekrandan istenir (kabuk geçmişine düşmemesi için tercih edilir).
+ *
+ * `--no-totp` (İE#13 Blok E): 2FA'sız kullanıcı açar — K45 ile 2FA opsiyoneldir ve
+ * E2E süiti girişi tek adımda sürer. ÜRETİMDE KULLANMAYIN: ikinci faktör güvenliğin
+ * bir katmanıdır; bu bayrak test tohumlaması içindir.
  */
 
 use App\Auth\PasswordHasher;
@@ -92,13 +97,30 @@ try {
     $totp = new TotpService($config, new Encrypter($config), $clock);
     $recoveryCodes = new RecoveryCodeService($connection, $hasher);
 
-    $secret = $totp->createSecret();
-    $userId = $users->create($email, $hasher->hash($password), $totp->encryptSecret($secret), $now);
+    $totpsuz = in_array('--no-totp', $arguments, true);
+    $secret = $totpsuz ? null : $totp->createSecret();
+    $userId = $users->create(
+        $email,
+        $hasher->hash($password),
+        $secret === null ? null : $totp->encryptSecret($secret),
+        $now,
+    );
 
     $codes = $recoveryCodes->generate();
     $recoveryCodes->replaceForUser($userId, $codes);
 
     (new ActivityLog($connection))->recordAuth(ActivityLog::USER_CREATED, $email, 'cli', $now, $userId);
+
+    if ($totpsuz) {
+        echo PHP_EOL;
+        echo "Kullanıcı oluşturuldu (2FA KAPALI — yalnız test): {$email} (id: {$userId})" . PHP_EOL;
+        echo PHP_EOL;
+        echo 'Kurtarma kodları:' . PHP_EOL;
+        foreach ($codes as $index => $code) {
+            echo sprintf('   %2d) %s', $index + 1, $code) . PHP_EOL;
+        }
+        exit(0);
+    }
 
     $uri = $totp->provisioningUri($email, $secret);
 

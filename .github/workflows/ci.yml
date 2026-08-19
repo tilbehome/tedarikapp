@@ -341,6 +341,121 @@ jobs:
           path: extension/dist/*.zip
           retention-days: 30
 
+  e2e:
+    name: E2E (Playwright)
+    runs-on: ubuntu-latest
+    # İE#13 Blok E (F22): uçtan uca akışlar GERÇEK MySQL + gerçek HTTP üzerinden koşar
+    # (SQLite yok — E1). Eklenti E2E kapsam DIŞIDIR (E3): Playwright'ın MV3 desteği
+    # kırılgandır; parser fixture testleri (eklenti job'ı) o boşluğu doldurur.
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: tedarikapp_e2e
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=5s
+          --health-timeout=3s
+          --health-retries=12
+
+    steps:
+      - name: Depoyu al
+        uses: actions/checkout@v7
+
+      - name: PHP 8.3 kur
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: bcmath, curl, fileinfo, gd, intl, mbstring, openssl, pdo_mysql, pdo_sqlite, zip
+          coverage: none
+          tools: none
+
+      - name: Composer önbelleği
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache
+          key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-
+
+      - name: Bağımlılıkları kur
+        run: |
+          n=0; until composer install --no-interaction --no-progress; do
+            n=$((n+1)); [ $n -ge 3 ] && exit 1; echo "codeload hatası — 90 sn sonra deneme $((n+1))/3"; sleep 90
+          done
+
+      - name: Node 22 kur
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Panel derle (E2E gerçek panele bakar)
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+
+      - name: Ortam dosyası (yalnız CI — sır değil, tek kullanımlık)
+        run: |
+          cat > .env <<'ENV'
+          APP_ENV=local
+          APP_URL=http://127.0.0.1:8099
+          APP_KEY=e2e0e2e0e2e0e2e0e2e0e2e0e2e0e2e0e2e0e2e0e2e0e2e0e2e0e2e0e2e0e2e0
+          TZ=Europe/Istanbul
+          DB_HOST=127.0.0.1
+          DB_PORT=3306
+          DB_NAME=tedarikapp_e2e
+          DB_USER=root
+          DB_PASS=root
+          LOG_DRIVER=file
+          LOG_LEVEL=warning
+          EXTENSION_TOKEN_SALT=e2e-salt-e2e-salt-e2e-salt-e2e-s
+          TRANSLATE_ENABLED=0
+          ENV
+
+      - name: Şema + test kullanıcısı (2FA'sız — K45)
+        run: |
+          php bin/migrate.php
+          php bin/user-create.php --email=e2e@tedarikapp.test --password=e2e-cok-gizli-sifre --no-totp
+
+      - name: Playwright kur
+        working-directory: e2e
+        run: |
+          npm ci
+          npm run typecheck
+          npx playwright install --with-deps chromium
+
+      - name: Uygulamayı başlat
+        run: |
+          php -S 127.0.0.1:8099 -t public e2e/router.php > /tmp/e2e-server.log 2>&1 &
+          for i in $(seq 1 20); do
+            curl -sf http://127.0.0.1:8099/api/health > /dev/null && break
+            sleep 1
+          done
+          curl -sf http://127.0.0.1:8099/api/health | head -c 200
+
+      - name: E2E süiti
+        working-directory: e2e
+        env:
+          E2E_BASE_URL: http://127.0.0.1:8099
+        run: npm test
+
+      - name: Sunucu günlüğü (hata ayıklama)
+        if: failure()
+        run: tail -100 /tmp/e2e-server.log
+
+      - name: Playwright raporu
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-raporu
+          path: e2e/playwright-report
+          retention-days: 7
+
   gitleaks:
     name: Sır taraması (gitleaks)
     runs-on: ubuntu-latest
