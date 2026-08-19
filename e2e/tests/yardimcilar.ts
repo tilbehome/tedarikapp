@@ -9,11 +9,16 @@ export const KULLANICI = {
   password: process.env.E2E_PASSWORD ?? 'e2e-cok-gizli-sifre',
 };
 
-/** Panele giriş yapar ve ana ekranın açıldığını doğrular. */
+/**
+ * Panele giriş yapar ve ana ekranın açıldığını doğrular.
+ *
+ * `exact: true` ŞART: giriş ekranındaki "Şifreyi göster" düğmesinin erişilebilir adı
+ * da "Şifre" ile başlar (İE#13 EK-B) — gevşek eşleşme iki öğe bulup patlıyordu.
+ */
 export async function girisYap(page: Page): Promise<void> {
   await page.goto('/panel');
-  await page.getByLabel('E-posta').fill(KULLANICI.email);
-  await page.getByLabel('Şifre').fill(KULLANICI.password);
+  await page.getByLabel('E-posta', { exact: true }).fill(KULLANICI.email);
+  await page.getByLabel('Şifre', { exact: true }).fill(KULLANICI.password);
   await page.getByRole('button', { name: 'Panele gir' }).click();
 
   // 2FA kapalı kullanıcıda giriş TEK adımdır (K45) — doğrudan panele düşer.

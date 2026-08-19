@@ -8,8 +8,8 @@ import { girisYap, KULLANICI } from './yardimcilar';
 test.describe('Panel temel akışı', () => {
   test('yanlış şifre girişi reddeder', async ({ page }) => {
     await page.goto('/panel');
-    await page.getByLabel('E-posta').fill(KULLANICI.email);
-    await page.getByLabel('Şifre').fill('yanlis-sifre-123');
+    await page.getByLabel('E-posta', { exact: true }).fill(KULLANICI.email);
+    await page.getByLabel('Şifre', { exact: true }).fill('yanlis-sifre-123');
     await page.getByRole('button', { name: 'Panele gir' }).click();
 
     await expect(page.getByText(/hatalı|geçersiz|başarısız/i)).toBeVisible();
