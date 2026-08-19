@@ -145,6 +145,33 @@ final class BackupService
     }
 
     /**
+     * Yedek saklama (İE#11 EK-2 REV2): BACKUP_RETENTION_DAYS'ten eski dosyalar silinir;
+     * her koşulda EN YENİ 5 dosya korunur; yalnız NAME_PATTERN eşleşenlere dokunulur
+     * (yedek-*.sql.enc dışındaki hiçbir dosya silinemez — .htaccess dahil).
+     *
+     * @return list<string> silinen dosya adları
+     */
+    public function prune(int $retentionDays): array
+    {
+        $entries = $this->list(); // yeniden → eskiye sıralı, yalnız desen eşleşenler
+        $keep = 5;
+        $threshold = time() - max(1, $retentionDays) * 86400;
+
+        $deleted = [];
+        foreach (array_slice($entries, $keep) as $entry) {
+            if ((int) strtotime($entry['created_at']) >= $threshold) {
+                continue;
+            }
+            $path = $this->pathFor($entry['name']);
+            if ($path !== null && @unlink($path)) {
+                $deleted[] = $entry['name'];
+            }
+        }
+
+        return $deleted;
+    }
+
+    /**
      * Şifreli yedeği çözer (CI restore kanıtı + olağanüstü durum kurtarması).
      * Panelden ÇAĞRILMAZ — düz dump yalnız geri yükleme anında var olur.
      */

@@ -409,7 +409,8 @@ function BackupCard() {
         <p className="text-sm text-slate-500">Henüz yedek alınmadı.</p>
       )}
       <p className="mt-2 text-xs text-slate-500">
-        Yedek, veritabanının şifreli dökümüdür (çözme APP_KEY ister).{' '}
+        Yedek, veritabanının şifreli dökümüdür (çözme APP_KEY ister). Saklama: eski yedekler
+        otomatik silinir, en yeni 5 her koşulda korunur.{' '}
         {state.data?.offsite_configured
           ? 'Uzak hedef yapılandırılmış: her yedek otomatik gönderilir.'
           : 'Uzak hedef yapılandırılmamış: yedeği indirip bilgisayarınızda/bulutta saklayın. Otomatik için cPanel cron: php bin/backup.php'}

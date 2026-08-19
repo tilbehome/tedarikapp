@@ -34,6 +34,12 @@ try {
     $backup = $service->create();
     printf("YEDEK ALINDI  %s (%.1f KB, sha256 %s...)\n", $backup['name'], $backup['size'] / 1024, substr($backup['sha256'], 0, 12));
 
+    $pruned = $service->prune($config->getPositiveInt('BACKUP_RETENTION_DAYS', 14));
+    if ($pruned !== []) {
+        printf("SAKLAMA: %d eski yedek silindi (%s)
+", count($pruned), implode(', ', $pruned));
+    }
+
     $offsite = (new BackupOffsite($config))->send((string) $service->pathFor($backup['name']), $backup['name']);
     if (!$offsite['attempted']) {
         echo "OFF-SITE: yapılandırılmadı (BACKUP_FTP_* veya BACKUP_SMTP_* girilirse otomatik gönderilir).\n";
