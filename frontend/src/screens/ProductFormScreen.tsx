@@ -8,6 +8,7 @@ import { useAsync, messageOf } from '../lib/useAsync';
 import { Field, PageHeader, Skeleton, ErrorNote } from '../components/ui';
 import { useReference } from '../store/reference';
 import { useToast } from '../components/Toast';
+import { isSupportedSourceUrl } from '../lib/sourceUrl';
 import { useMediaMode } from '../lib/useMediaMode';
 
 /**
@@ -227,6 +228,14 @@ export default function ProductFormScreen() {
             value={form.url}
             onChange={(event) => set('url', event.target.value)}
           />
+          {/* İE#11 EK-2 (4): yumuşak uyarı — kaydetmeyi ENGELLEMEZ (canlı gözlem:
+              alana panel adresi girilmişti). Eklenti yakalamalarında bu form hiç
+              kullanılmadığı için uyarı orada görünmez. */}
+          {form.url.trim() !== '' && !isSupportedSourceUrl(form.url.trim()) ? (
+            <p className="mt-1 text-xs text-amber-700">
+              Bu bir 1688 ürün linki gibi görünmüyor — firmanın ürünü bulacağı adres bu alana girilmelidir.
+            </p>
+          ) : null}
         </Field>
 
         <Field label="Satıcı adı" error={fields['vendor_name']}>

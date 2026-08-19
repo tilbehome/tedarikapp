@@ -15,6 +15,9 @@ use App\Core\Connection;
 final class SettingsRepository
 {
     public const KEY_YUAN_RATE = 'yuan_tl';
+    /** İE#11: eklenti token'ı — DB'de yalnız SHA-256 hash + tanıma için son 4 hane (K34). */
+    public const KEY_EXTENSION_TOKEN_HASH = 'extension_token_hash';
+    public const KEY_EXTENSION_TOKEN_PREVIEW = 'extension_token_preview';
     public const KEY_USD_RATE = 'usd_tl';
 
     /**

@@ -19,6 +19,7 @@ final class ProductRepository
     private const COLUMNS = 'id, list_id, sort_no, category_id, platform, external_id,
         name, name_original, detail, url, vendor_name, vendor_url, sku_selection, sku_matrix,
         main_image, main_image_source, video_url, qty, price_yuan, price_ddp_usd, units_per_carton, tracking_no,
+        raw_attributes, country_of_origin, country_of_dispatch,
         status, note, created_at, updated_at, deleted_at';
 
     /** Uçlardan yazılabilen alanlar (docs/10 §4). */
@@ -26,6 +27,8 @@ final class ProductRepository
         'category_id', 'platform', 'external_id', 'name', 'name_original', 'detail', 'url',
         'vendor_name', 'vendor_url', 'sku_selection', 'sku_matrix', 'main_image', 'main_image_source', 'video_url',
         'qty', 'price_yuan', 'price_ddp_usd', 'units_per_carton', 'tracking_no', 'note',
+        // İE#11 EK-3 (2): yakalamanın RAW bloğu + menşe (capture ile dolar; panelden de düzenlenebilir).
+        'raw_attributes', 'country_of_origin', 'country_of_dispatch',
     ];
 
     /** Değişince listenin `revision` sayacını artıran alanlar (K25). */
@@ -106,10 +109,12 @@ final class ProductRepository
             'INSERT INTO products (list_id, sort_no, category_id, platform, external_id, name,
                 name_original, detail, url, vendor_name, vendor_url, sku_selection, sku_matrix,
                 main_image, main_image_source, video_url, qty, price_yuan, price_ddp_usd, units_per_carton,
+                raw_attributes, country_of_origin, country_of_dispatch,
                 tracking_no, status, note, created_at, updated_at)
              VALUES (:list_id, :sort_no, :category_id, :platform, :external_id, :name,
                 :name_original, :detail, :url, :vendor_name, :vendor_url, :sku_selection, :sku_matrix,
                 :main_image, :main_image_source, :video_url, :qty, :price_yuan, :price_ddp_usd, :units_per_carton,
+                :raw_attributes, :country_of_origin, :country_of_dispatch,
                 :tracking_no, :status, :note, :created_at, :updated_at)',
         );
         $statement->execute([
@@ -133,6 +138,9 @@ final class ProductRepository
             'price_yuan' => $data['price_yuan'] ?? '0',
             'price_ddp_usd' => $data['price_ddp_usd'] ?? '0',
             'units_per_carton' => $data['units_per_carton'] ?? null,
+            'raw_attributes' => $data['raw_attributes'] ?? null,
+            'country_of_origin' => $data['country_of_origin'] ?? null,
+            'country_of_dispatch' => $data['country_of_dispatch'] ?? null,
             'tracking_no' => $data['tracking_no'] ?? null,
             'status' => $data['status'] ?? 'to_order',
             'note' => $data['note'] ?? null,
@@ -440,6 +448,28 @@ final class ProductRepository
     }
 
     /** @return list<array{id: int, url: string, sort: int}> */
+    /**
+     * Yakalamadan gelen ek görselleri REMOTE galeri satırı olarak yazar (İE#11).
+     * K47 arşive-taşıma hattı bunları sonra indirir (storage_mode=remote + source_url).
+     *
+     * @param list<string> $urls
+     */
+    public function addRemoteImages(int $productId, array $urls): void
+    {
+        $statement = $this->connection->pdo()->prepare(
+            "INSERT INTO product_images (product_id, path, sort, storage_mode, source_url)
+             VALUES (:product_id, :path, :sort, 'remote', :source_url)",
+        );
+        $sort = 0;
+        foreach ($urls as $url) {
+            if (!str_starts_with($url, 'https://') || mb_strlen($url) > 1000) {
+                continue;
+            }
+            $statement->execute(['product_id' => $productId, 'path' => $url, 'sort' => ++$sort, 'source_url' => $url]);
+        }
+    }
+
+    /** @return list<array<string, mixed>> */
     public function images(int $productId): array
     {
         $statement = $this->connection->pdo()->prepare(

@@ -46,12 +46,63 @@ final class SettingsController extends ApiController
             'yuan_tl' => $this->money->formatRate($this->settings->yuanRate()),
             'usd_tl' => $this->money->formatRate($this->settings->usdRate()),
             'totp_enabled' => $this->totpEnabled(),
-            // Eklenti token'ı ayarlar iş emrinde üretilecek; alan sözleşmede var, değeri henüz yok.
-            'extension_token_preview' => null,
+            // İE#11: token DB'de hash'lidir; panelde yalnız son 4 hane görünür (K34).
+            'extension_token_preview' => $this->settings->get(SettingsRepository::KEY_EXTENSION_TOKEN_PREVIEW),
             // K33 çift modu: panel rozeti bunu okur (Faz 1D).
             'media_mode' => $this->media->mode(),
             'media_writable' => $this->media->isWritable(),
         ]);
+    }
+
+    /**
+     * POST /api/settings/extension-token — İE#11: eklenti token'ı üretir/yeniler.
+     * Tam token YALNIZ bu yanıtta bir kez görünür; DB'de SHA-256 hash durur (K34).
+     * Tek kullanıcı ÇOK CİHAZ: aynı token birden çok tarayıcıya girilir; yenileme/iptal
+     * hepsini birden düşürür.
+     */
+    public function extensionTokenCreate(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        $token = 'tdk_' . bin2hex(random_bytes(24)); // 192-bit + tanınabilir önek
+        $now = $this->clock->now();
+        $this->settings->set(SettingsRepository::KEY_EXTENSION_TOKEN_HASH, hash('sha256', $token));
+        $this->settings->set(SettingsRepository::KEY_EXTENSION_TOKEN_PREVIEW, '…' . substr($token, -4));
+
+        $this->activity->record(
+            'settings',
+            null,
+            'extension_token_created',
+            'önizleme:…' . substr($token, -4),
+            ClientIp::from($request),
+            $now,
+            ActivityLog::ACTOR_ADMIN,
+            $this->user($request)->id,
+        );
+
+        return Response::success($response, [
+            'token' => $token,
+            'extension_token_preview' => '…' . substr($token, -4),
+        ]);
+    }
+
+    /** DELETE /api/settings/extension-token — iptal: eklenti istekleri anında 401 alır. */
+    public function extensionTokenRevoke(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        $now = $this->clock->now();
+        $this->settings->set(SettingsRepository::KEY_EXTENSION_TOKEN_HASH, '');
+        $this->settings->set(SettingsRepository::KEY_EXTENSION_TOKEN_PREVIEW, '');
+
+        $this->activity->record(
+            'settings',
+            null,
+            'extension_token_revoked',
+            null,
+            ClientIp::from($request),
+            $now,
+            ActivityLog::ACTOR_ADMIN,
+            $this->user($request)->id,
+        );
+
+        return $response->withStatus(204);
     }
 
     /** PUT /api/settings/rates — {yuan_tl?, usd_tl?} */

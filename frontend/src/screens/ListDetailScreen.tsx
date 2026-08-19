@@ -156,15 +156,15 @@ export default function ListDetailScreen() {
               <Plus className="h-4 w-4" aria-hidden />
               Ürün ekle
             </Link>
-            {/* İE#10: export GET ile doğrudan indirilir; kayıt + rozet backend'de güncellenir. */}
-            <a className="btn-ghost" href={exportsApi.downloadUrl(listId, 'xlsx')} onClick={() => setTimeout(refresh, 1200)}>
+            {/* İE#11 Görev E: üretim CSRF'li POST — dosya blob olarak iner, rozet tazelenir. */}
+            <button type="button" className="btn-ghost" onClick={() => void exportsApi.create(listId, 'xlsx').then(refresh).catch((c) => push(messageOf(c), 'error'))}>
               <FileSpreadsheet className="h-4 w-4" aria-hidden />
               Excel
-            </a>
-            <a className="btn-ghost" href={exportsApi.downloadUrl(listId, 'pdf')} onClick={() => setTimeout(refresh, 1200)}>
+            </button>
+            <button type="button" className="btn-ghost" onClick={() => void exportsApi.create(listId, 'pdf').then(refresh).catch((c) => push(messageOf(c), 'error'))}>
               <Download className="h-4 w-4" aria-hidden />
               PDF
-            </a>
+            </button>
             <button type="button" className="btn-ghost" onClick={() => setShareOpen((value) => !value)}>
               <Share2 className="h-4 w-4" aria-hidden />
               Paylaş

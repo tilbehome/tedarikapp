@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { Activity, ArrowRight, ListChecks, Plus, Truck } from 'lucide-react';
-import { activity as activityApi, lists as listsApi } from '../api/endpoints';
+import { Activity, ArrowRight, Inbox as InboxIcon, ListChecks, Plus, Truck } from 'lucide-react';
+import { activity as activityApi, inbox as inboxApi, lists as listsApi } from '../api/endpoints';
 import { useAsync } from '../lib/useAsync';
 import { count, dateTime } from '../lib/format';
 import { EmptyState, ErrorNote, PageHeader, Skeleton } from '../components/ui';
@@ -16,6 +16,9 @@ import { actionLabel } from '../lib/activityLabels';
 export default function HomeScreen() {
   const listsState = useAsync(() => listsApi.all({ visibility: 'active' }), []);
   const activityState = useAsync(() => activityApi.read({ page: 1 }), []);
+  // İE#11: gelen kutusu sayacı — hata olursa kart gösterilmez, ekran çalışır.
+  const inboxState = useAsync(() => inboxApi.queue(), []);
+  const inboxCount = (inboxState.data ?? []).length;
 
   const activeLists = listsState.data ?? [];
   const inTransit = activeLists.reduce((total, list) => total + (list.progress.in_transit ?? 0), 0);
@@ -41,6 +44,14 @@ export default function HomeScreen() {
       ) : (
         <>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {inboxCount > 0 ? (
+              <SummaryCard
+                icon={<InboxIcon className="h-5 w-5" aria-hidden />}
+                label="Gelen kutusunda ürün"
+                value={count(inboxCount)}
+                to="/gelen-kutusu"
+              />
+            ) : null}
             <SummaryCard
               icon={<ListChecks className="h-5 w-5" aria-hidden />}
               label="Aktif liste"

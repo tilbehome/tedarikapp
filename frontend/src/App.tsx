@@ -14,6 +14,7 @@ import ListDetailScreen from './screens/ListDetailScreen';
 import ProductFormScreen from './screens/ProductFormScreen';
 import SettingsScreen from './screens/SettingsScreen';
 import CategoriesScreen from './screens/CategoriesScreen';
+import InboxScreen from './screens/InboxScreen';
 import TrashScreen from './screens/TrashScreen';
 import ActivityScreen from './screens/ActivityScreen';
 
@@ -84,6 +85,7 @@ export default function App() {
         <Route path="/listeler/:id/urun/:productId" element={<ProductFormScreen />} />
         <Route path="/ayarlar" element={<SettingsScreen />} />
         <Route path="/ayarlar/kategoriler" element={<CategoriesScreen />} />
+        <Route path="/gelen-kutusu" element={<InboxScreen />} />
         <Route path="/cop-kutusu" element={<TrashScreen />} />
         <Route path="/aktivite" element={<ActivityScreen />} />
         <Route path="/giris" element={<Navigate to="/" replace />} />

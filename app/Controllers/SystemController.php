@@ -64,6 +64,9 @@ final class SystemController
         $offsite = (new \App\Services\BackupOffsite($this->appConfig))
             ->send((string) $service->pathFor($backup['name']), $backup['name']);
 
+        // İE#11 EK-2: saklama — eskiler silinir (en yeni 5 her koşulda kalır).
+        $pruned = $service->prune($this->appConfig->getPositiveInt('BACKUP_RETENTION_DAYS', 14));
+
         (new ActivityLog($this->connection))->record(
             'system',
             null,
@@ -74,14 +77,14 @@ final class SystemController
                 $backup['name'],
                 $backup['size'] / 1024,
                 $offsite['attempted'] ? ($offsite['sent'] ? 'gönderildi (' . $offsite['via'] . ')' : 'BAŞARISIZ') : 'yapılandırılmadı',
-            ),
+            ) . ($pruned === [] ? '' : sprintf(' · %d eski yedek silindi', count($pruned))),
             ClientIp::from($request),
             $this->clock->now(),
             ActivityLog::ACTOR_ADMIN,
             $user->id,
         );
 
-        return Response::success($response, ['backup' => $backup, 'offsite' => $offsite]);
+        return Response::success($response, ['backup' => $backup, 'offsite' => $offsite, 'pruned' => count($pruned)]);
     }
 
     /** GET /api/system/backups — son yedekler + 24 saat uyarısı + off-site durumu. */
@@ -121,10 +124,16 @@ final class SystemController
             return Response::error($response, 'NOT_FOUND', 'Yedek bulunamadı.', 404);
         }
 
-        $response->getBody()->write((string) file_get_contents($path));
+        // İE#11 EK-2 (3): akışla oku — büyük yedek indirmesi belleği şişirmez.
+        $stream = fopen($path, 'rb');
+        if ($stream === false) {
+            return Response::error($response, 'SERVER_ERROR', 'Yedek dosyası okunamadı.', 500);
+        }
 
         return $response
+            ->withBody(new \Slim\Psr7\Stream($stream))
             ->withHeader('Content-Type', 'application/octet-stream')
+            ->withHeader('Content-Length', (string) filesize($path))
             ->withHeader('Content-Disposition', 'attachment; filename="' . basename($path) . '"')
             ->withHeader('Cache-Control', 'no-store');
     }

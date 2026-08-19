@@ -143,3 +143,30 @@ Sonraki sürümler: sihirbaz YOK — zip yüklenir, admin girişinde "veritaban�
   `--dry-run` ile ne silineceği yazdırılır, dokunulmaz.
 - Ayda bir yedekten geri yükleme denemesi (test DB'ye) yapılır — denenmemiş yedek, yedek değildir.
 - **Off-site yedek CANLIYA ALMA ÖN ŞARTIDIR (İE#4 REV2, havuzdaki F11 yeniden sınıflandırıldı):** gece yedeğinin sunucu dışına da kopyalanması (ör. Google Drive) canlıya çıkmadan ÖNCE kurulur. Yalnızca aynı sunucuda duran yedek, sunucu kaybında yedek değildir.
+
+## Zamanlanmış görevler (İE#11 EK-2 — cron listesi TEK yerde)
+
+cPanel > Cron Jobs'a şu İKİ satır girilir (yollar kuruluma göre uyarlanır):
+
+```
+0 3 * * *   /usr/local/bin/php /home/<kullanıcı>/<alan-adı>/bin/backup.php
+30 3 * * *  /usr/local/bin/php /home/<kullanıcı>/<alan-adı>/bin/bakim.php
+```
+
+- `backup.php` — şifreli veritabanı yedeği alır, yapılandırılmışsa off-site gönderir,
+  eski yedekleri temizler (BACKUP_RETENTION_DAYS; en yeni 5 korunur).
+- `bakim.php` — çöp kutusu kalıcı temizliği + yetim medya GC + app_logs saklama +
+  yedek saklama; üç adımı tek raporla koşar. (`purge-trash.php` geriye uyum için
+  durur; yeni kurulumda önerilen bu iki satırdır.)
+
+## Eklenti kurulumu (İE#11 — Faz 3)
+
+1. `extension/dist/chrome-mv3` klasörü Chrome'a "Paketlenmemiş öğe yükle" ile eklenir
+   (Store yayınında bu adım kullanıcıda mağaza linkiyle olur).
+2. Eklentinin **Kimlik** değeri alınır ve sunucuda `EXTENSION_ALLOWED_ORIGINS`
+   ayarına `chrome-extension://<kimlik>` olarak yazılır (K30 CORS allowlist; boşsa
+   eklenti bağlanamaz, virgülle birden çok kimlik yazılabilir).
+3. Panel > Ayarlar > Güvenlik > "Eklenti token'ı üret" — tam token bir kez görünür,
+   eklentinin ayar ekranına panel adresiyle birlikte girilir.
+4. Doğrulama: `detail.1688.com` ürün sayfasında eklenti simgesi → önizleme dolu gelmeli →
+   "Panele Gönder" → panel Gelen Kutusu'nda kayıt görünmeli.

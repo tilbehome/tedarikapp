@@ -300,6 +300,9 @@ abstract class AuthTestCase extends TestCase
                 price_yuan TEXT NOT NULL DEFAULT \'0\',
                 price_ddp_usd TEXT NOT NULL DEFAULT \'0\',
                 units_per_carton INTEGER NULL,
+                raw_attributes TEXT NULL,
+                country_of_origin TEXT NULL,
+                country_of_dispatch TEXT NULL,
                 tracking_no TEXT NULL,
                 status TEXT NOT NULL DEFAULT \'to_order\',
                 note TEXT NULL,
@@ -316,6 +319,24 @@ abstract class AuthTestCase extends TestCase
                 sort INTEGER NOT NULL DEFAULT 0,
                 storage_mode TEXT NOT NULL DEFAULT \'local\',
                 source_url TEXT NULL
+            )',
+        );
+        $this->pdo->exec(
+            'CREATE TABLE inbox_items (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                capture_id TEXT NOT NULL UNIQUE,
+                status TEXT NOT NULL DEFAULT \'pending\',
+                platform TEXT NOT NULL,
+                external_id TEXT NULL,
+                name TEXT NULL,
+                price_yuan TEXT NULL,
+                image_url TEXT NULL,
+                url TEXT NULL,
+                payload_json TEXT NOT NULL,
+                error_note TEXT NULL,
+                assigned_product_id INTEGER NULL,
+                assigned_at TEXT NULL,
+                created_at TEXT NOT NULL
             )',
         );
         $this->pdo->exec(

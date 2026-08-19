@@ -19,3 +19,18 @@
 ## Sınırlar
 - Bu maddede KOD YAZILMAZ; yalnız havuz satırı (docs/08 F40) + bu taslak.
 - K19 onaylı kütüphane listesi değişmez; grafikler önce CSS/SVG ile denenir.
+
+## PM önerileri (İE#11 A2 — Faz 5 emri yazılırken önceliklendirilecek)
+
+- Dashboard widget seti: aylık ¥/₺ hacim, durum halkası, 6 ay trend (grafik
+  kütüphanesi adayı: Tremor — K19 onayı Faz 5 emrinde istenir)
+- Kur geçmişi grafiği (rate_history hazır veri)
+- Kategori ve tekrar-sipariş analizi
+- Ctrl+K komut paleti önceliklendirme + universal arama
+- Satır içi düzenleme (tabloda ad/adet/fiyat) · sürükle-bırak sıralama + undo
+- Koyu tema (prefers-color-scheme hazırlığıyla)
+- Paylaşım sayfası vitrini (kapak görünümü)
+- PWA: manifest.json + yükleme iskeleti
+- Dönem kapanış raporu (K50 snapshot altyapısı yeniden kullanılır)
+- Adet-bazlı fiyat simülasyonu + birim fiyat gösterimi (v2-B motorunun lite'ı)
+- Tamlık skoru lite · veri tazeliği rozeti · sistem sağlığı kartı

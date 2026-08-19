@@ -54,7 +54,7 @@ final class ExportEndpointsTest extends AuthTestCase
     {
         ['list' => $listId] = $this->seedList();
 
-        $response = $this->call('GET', '/api/lists/' . $listId . '/export?format=csv');
+        $response = $this->write('POST', '/api/lists/' . $listId . '/export?format=csv');
 
         self::assertSame(200, $response->getStatusCode());
         self::assertStringContainsString('text/csv', $response->getHeaderLine('Content-Type'));
@@ -82,7 +82,7 @@ final class ExportEndpointsTest extends AuthTestCase
     public function testExportAnlikGoruntudur_ListeDegisinceEskiIndirmeAyniKalir(): void
     {
         ['list' => $listId] = $this->seedList();
-        $this->call('GET', '/api/lists/' . $listId . '/export?format=csv');
+        $this->write('POST', '/api/lists/' . $listId . '/export?format=csv');
         $exportId = (int) $this->json($this->call('GET', '/api/lists/' . $listId . '/exports'))['data'][0]['id'];
 
         // Liste DEĞİŞİR: yeni ürün + revizyon artar → rozet "güncel değil".
@@ -103,7 +103,7 @@ final class ExportEndpointsTest extends AuthTestCase
     {
         ['list' => $listId] = $this->seedList();
 
-        $response = $this->call('GET', '/api/lists/' . $listId . '/export?format=xlsx');
+        $response = $this->write('POST', '/api/lists/' . $listId . '/export?format=xlsx');
 
         self::assertSame(200, $response->getStatusCode());
         self::assertStringContainsString('spreadsheetml', $response->getHeaderLine('Content-Type'));
@@ -128,7 +128,7 @@ final class ExportEndpointsTest extends AuthTestCase
     {
         ['list' => $listId] = $this->seedList();
 
-        $response = $this->call('GET', '/api/lists/' . $listId . '/export?format=pdf');
+        $response = $this->write('POST', '/api/lists/' . $listId . '/export?format=pdf');
 
         self::assertSame(200, $response->getStatusCode());
         self::assertSame('application/pdf', $response->getHeaderLine('Content-Type'));
@@ -146,7 +146,7 @@ final class ExportEndpointsTest extends AuthTestCase
         $products = $this->json($this->call('GET', '/api/lists/' . $listId . '/products'))['data'];
         $this->write('DELETE', '/api/products/' . $products[1]['id']);
 
-        $body = (string) $this->call('GET', '/api/lists/' . $listId . '/export?format=csv')->getBody();
+        $body = (string) $this->write('POST', '/api/lists/' . $listId . '/export?format=csv')->getBody();
 
         $lines = array_values(array_filter(explode("\n", $body), static fn (string $l): bool => str_starts_with(ltrim($l, "\u{FEFF}\""), '1;') || str_starts_with($l, '1;') || str_starts_with($l, '2;') || str_starts_with($l, '3;')));
         self::assertStringContainsString("\n1;", "\n" . implode("\n", $lines) . "\n");
@@ -159,7 +159,7 @@ final class ExportEndpointsTest extends AuthTestCase
     {
         ['list' => $listId] = $this->seedList();
 
-        self::assertSame(422, $this->call('GET', '/api/lists/' . $listId . '/export?format=doc')->getStatusCode());
+        self::assertSame(422, $this->write('POST', '/api/lists/' . $listId . '/export?format=doc')->getStatusCode());
     }
 
     public function testOturumsuzExport401(): void
@@ -167,6 +167,6 @@ final class ExportEndpointsTest extends AuthTestCase
         ['list' => $listId] = $this->seedList();
         $this->call('POST', '/api/auth/logout', [], [Csrf::HEADER => $this->csrf]);
 
-        self::assertSame(401, $this->call('GET', '/api/lists/' . $listId . '/export?format=csv')->getStatusCode());
+        self::assertSame(401, $this->call('POST', '/api/lists/' . $listId . '/export?format=csv')->getStatusCode());
     }
 }

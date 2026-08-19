@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8" />
+    <title>Tedarikapp</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <main id="app">
+      <header class="baslik">
+        <strong>Tedarikapp</strong>
+        <span id="durum" class="durum">bağlantı denetleniyor…</span>
+      </header>
+
+      <!-- Ayar ekranı: panel adresi + token (yalnız chrome.storage'da yaşar) -->
+      <section id="ayarlar" hidden>
+        <label>Panel adresi
+          <input id="panel-url" type="url" placeholder="https://tedarikapp.ornek.com" />
+        </label>
+        <label>Eklenti token'ı
+          <input id="token" type="password" placeholder="tdk_…" />
+        </label>
+        <p class="ipucu">Token, panel &gt; Ayarlar &gt; Güvenlik'ten üretilir.</p>
+        <button id="kaydet" type="button">Kaydet ve bağlan</button>
+      </section>
+
+      <!-- Yakalama önizlemesi -->
+      <section id="yakala" hidden>
+        <div class="onizleme">
+          <img id="gorsel" alt="" hidden />
+          <div class="bilgi">
+            <p id="ad" class="ad"></p>
+            <p id="fiyat" class="fiyat"></p>
+            <p id="varyasyon" class="ek"></p>
+            <p id="eksik" class="uyari" hidden></p>
+            <p id="mukerrer" class="uyari" hidden></p>
+          </div>
+        </div>
+
+        <label>Hedef
+          <select id="hedef">
+            <option value="">Gelen Kutusu (varsayılan)</option>
+          </select>
+        </label>
+        <div id="yeni-liste-kutu" hidden>
+          <label>Yeni liste adı
+            <input id="yeni-liste-adi" type="text" placeholder="Örn. Eylül 2026" />
+          </label>
+        </div>
+        <div class="satir">
+          <label>Adet <input id="adet" type="number" min="1" value="1" /></label>
+          <label>Koli içi <input id="koli" type="number" min="1" placeholder="—" /></label>
+        </div>
+        <label>Not <input id="not" type="text" maxlength="500" placeholder="opsiyonel" /></label>
+
+        <button id="gonder" type="button">Panele Gönder</button>
+        <p id="sonuc" class="sonuc" hidden></p>
+        <button id="ayar-ac" type="button" class="baglanti">Bağlantı ayarları</button>
+      </section>
+
+      <section id="desteklenmiyor" hidden>
+        <p>Bu sayfa desteklenmiyor. Eklenti <code>detail.1688.com</code> ürün sayfalarında çalışır.</p>
+        <button id="ayar-ac-2" type="button" class="baglanti">Bağlantı ayarları</button>
+      </section>
+    </main>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>
