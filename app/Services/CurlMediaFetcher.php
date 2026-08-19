@@ -96,6 +96,43 @@ final class CurlMediaFetcher implements MediaFetcher
         throw new MediaException('Çok fazla yönlendirme.');
     }
 
+    /**
+     * cURL seçenek dizisi — SAF kurulum, ağ yok (İE#9.7 bekçisi: gerçek PHP 8.1'de
+     * CI bu metodu ÇALIŞTIRIR; tanımsız sabit lint'ten kaçsa da burada patlar).
+     *
+     * K45 taban 8.1 uyumu: `CURLOPT_PROTOCOLS_STR` PHP 8.3'te geldi (canlı vaka:
+     * 8.1.34'te "Undefined constant" ile arşive taşıma düştü). Sabit tanımlıysa o
+     * kullanılır; değilse eşdeğeri `CURLOPT_PROTOCOLS + CURLPROTO_HTTPS`. Kısıtın
+     * etkisi her iki yolda AYNIDIR: yalnız https. Yönlendirmeler için ek kısıt
+     * gerekmez — FOLLOWLOCATION kapalıdır, her sıçrama yeni bir istektir ve aynı
+     * kısıttan (+UrlGuard'dan) geçer.
+     *
+     * @return array<int, mixed>
+     */
+    public function requestOptions(string $url): array
+    {
+        $matched = $this->headersFor($url);
+
+        $options = [
+            CURLOPT_RETURNTRANSFER => false,
+            CURLOPT_FOLLOWLOCATION => false, // yönlendirme el ile denetlenir
+            CURLOPT_TIMEOUT => $this->timeoutSeconds,
+            CURLOPT_CONNECTTIMEOUT => 10,
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_SSL_VERIFYHOST => 2,
+            CURLOPT_USERAGENT => $matched['user_agent'] ?? 'tedarikapp/1.0',
+            CURLOPT_HTTPHEADER => $matched === null ? [] : ['Referer: ' . $matched['referer']],
+        ];
+
+        if (defined('CURLOPT_PROTOCOLS_STR')) {
+            $options[constant('CURLOPT_PROTOCOLS_STR')] = 'https';
+        } else {
+            $options[CURLOPT_PROTOCOLS] = CURLPROTO_HTTPS;
+        }
+
+        return $options;
+    }
+
     /** @return array{body: string, content_type: string, redirect: string|null} */
     private function request(string $url, int $maxBytes): array
     {
@@ -104,19 +141,8 @@ final class CurlMediaFetcher implements MediaFetcher
             throw new MediaException('İndirme başlatılamadı.');
         }
 
-        $matched = $this->headersFor($url);
-
         $body = '';
-        curl_setopt_array($handle, [
-            CURLOPT_RETURNTRANSFER => false,
-            CURLOPT_FOLLOWLOCATION => false, // yönlendirme el ile denetlenir
-            CURLOPT_TIMEOUT => $this->timeoutSeconds,
-            CURLOPT_CONNECTTIMEOUT => 10,
-            CURLOPT_SSL_VERIFYPEER => true,
-            CURLOPT_SSL_VERIFYHOST => 2,
-            CURLOPT_PROTOCOLS_STR => 'https',
-            CURLOPT_USERAGENT => $matched['user_agent'] ?? 'tedarikapp/1.0',
-            CURLOPT_HTTPHEADER => $matched === null ? [] : ['Referer: ' . $matched['referer']],
+        curl_setopt_array($handle, $this->requestOptions($url) + [
             CURLOPT_WRITEFUNCTION => static function ($_, string $chunk) use (&$body, $maxBytes): int {
                 $body .= $chunk;
                 if (strlen($body) > $maxBytes) {

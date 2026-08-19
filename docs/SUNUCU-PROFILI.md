@@ -11,7 +11,7 @@
 
 | Alan | Değer | Sonuç / kural |
 |---|---|---|
-| PHP | **DEĞİŞKEN 8.1–8.4** (canlı kanıt: MultiPHP seçimine göre 8.1.34 / 8.3.33 / 8.4.24 görüldü; **varsayılan 8.1.34** — zip yüklemesi cPanel'in .htaccess handler satırlarını ezince buna düşer) | K45: taban 8.1 — kod + vendor gerçek 8.1 ile lint'li, CI `php81-uyum` job'ı bekçi; RequirementChecker ≥ 8.1 |
+| PHP | **DEĞİŞKEN 8.1–8.4** (canlı kanıt: MultiPHP seçimine göre 8.1.34 / 8.3.33 / 8.4.24 görüldü; **varsayılan 8.1.34** — zip yüklemesi cPanel'in .htaccess handler satırlarını ezince buna düşer) | K45: taban 8.1 — kod + vendor gerçek 8.1 ile lint'li, CI `php81-uyum` job'ı bekçi; RequirementChecker ≥ 8.1. **İE#9.7 dersi:** lint TANIMSIZ SABİTİ görmez (`CURLOPT_PROTOCOLS_STR` 8.3+, canlıda çalışma anında patladı) — 8.3+/8.2+ sabit-fonksiyon kullanımı `defined()` korumasıyla yazılır ve kritik kurulum yolları 8.1'de ÇALIŞTIRILARAK denetlenir |
 | Handler | **cgi-fcgi** (canlı diagnostics kanıtı; DSO varsayımı YANLIŞTI) | Yazılamaz docroot gerçeği aynı kalır |
 | Veritabanı (canlı) | **MariaDB 11.4.12** (diagnostics kanıtı; "MySQL 8.4" varsayımı düzeltildi) | Şema/migration'lar MariaDB 11.4'te canlıda doğrulandı; CI MySQL 8.4 ile de koşar |
 | alicdn görselleri | **Referer ACL: hotlink 403** — üretimden panele hotlink edilen `cbu01.alicdn.com/img/ibank/…` görselleri 403 "denied by Referer ACL" alıyor (Ürün Sahibi ekran kanıtı; adres çubuğundan boş Referer'la bile). Not: ACL davranışı istemci IP/bölgeye göre DEĞİŞKEN — lokal Türkiye hattından Referer'sız istek 200 dönebildi (17 Ağu kanıt koşumu) | **K47 UYGULANDI:** varsayılan mod ARŞİV; indirme istemcisi alicdn/1688'e `Referer: https://detail.1688.com/` + tarayıcı UA gönderir; `public/media` yazılabilir (777, K33 dar istisna) |
