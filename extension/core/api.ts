@@ -56,6 +56,12 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 export const panelApi = {
   selectors: (platform: string) => request<SelectorSet>(`/api/extension/selectors?platform=${platform}`),
   lists: () => request<{ id: number; name: string; status: string }[]>('/api/extension/lists'),
+  /** İE#13 A4/C4: ZH→TR başlık ÖNERİSİ — K54, hiçbir alana kendiliğinden yazılmaz. */
+  translate: (text: string) =>
+    request<{ suggestion: string | null; cached: boolean; provider: string | null }>('/api/extension/translate-suggest', {
+      method: 'POST',
+      body: JSON.stringify({ text }),
+    }),
   capture: (payload: CapturePayload) =>
     request<{
       inbox_id: number;

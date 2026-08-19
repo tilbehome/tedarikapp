@@ -122,6 +122,7 @@
 | `GET /api/inbox` | İE#11 — Gelen Kutusu: 200 `[{id, status(pending\|error), name, price_yuan, image_url, url, platform, external_id, created_at}]` |
 | `POST /api/inbox/assign` | İE#11 — `{ids:[], list_id}` → seçilenleri listeye ürün olarak taşır (K25 mükerrer uyarısı ürün oluşturmada uygulanmaz — kullanıcı bilinçli taşıyor); 200 `{moved, failed:[{id, error}]}` |
 | `DELETE /api/inbox/{id}` | İE#11 — kaydı siler (çöp kutusuna girmez; ham yakalama verisidir) → 204 |
+| `POST /api/panel/translate-suggest` | İE#13 C4 (K54) — `{text}` (1..500 karakter) → 200 `{suggestion: string|null, cached: bool, provider: string|null, is_suggestion: true}`. **Öneri yoksa da 200 döner** (`suggestion: null`) — çeviri akışın zorunlu parçası değildir, istemci sessizce geçer. Boş/çok uzun metin → 422 `VALIDATION`. Yanıt hiçbir ürün alanını DEĞİŞTİRMEZ; yazma yalnız kullanıcı "Kullan" dedikten sonra normal ürün güncelleme ucuyla olur (K54) |
 | `GET/POST/PATCH/DELETE /api/categories` | CRUD; kullanımda olan kategori silinirken → 422 `VALIDATION` + `meta.product_count` (İE#9 düzeltmesi: 422 standardı — 409 yalnızca tekrar-ekleme ve geri alma bağımlılığında) |
 | `GET /api/activity` | Filtre: `entity_type`, `entity_id`, sayfalı (`page`, `per_page` — varsayılan 25, üst sınır 100) — E9 ekranının kaynağı. Yanıt `data: [{id, entity_type, entity_id, action, detail, ip, actor_type, created_at}]`, `meta: {page, per_page, total}`. Salt okunur |
 
@@ -129,6 +130,7 @@
 
 - `POST /api/capture` — istek şeması **docs/04 §2c v2'de sabit** (İE#11/K32: source+raw+normalized üç blok). Yanıt: 201 `{inbox_id}` veya `{product_id}` (hedef liste seçiliyse) + varsa `duplicate:{product_id, list_id, list_name}` (K25 uyarısı — engel değil); doğrulanamayan gövde → 201 `{inbox_id, status:"error"}` (raw saklanır, veri kaybolmaz); hız aşımı → 429. CORS: yalnız allowlist'teki extension origin'i (K30, wildcard YOK).
 - `GET /api/extension/selectors?platform=1688` — Bearer'lı; schema_version'lı seçici JSON'ı (K53: seçiciler KOD DEĞİL VERİ — site değişince eklenti güncellemesiz düzeltme).
+- `POST /api/extension/translate-suggest` — Bearer'lı; panel ucuyla AYNI gövde ve yanıt (K54). Eklentinin mevcut hız sınırına ve CORS allowlist'ine tabidir; önbellek paylaşılır (panelde çevrilen başlık eklentide tekrar sorulmaz).
   - **Zorunlu `capture_id` (UUIDv4, K25):** sistemde UNIQUE'tir. Aynı `capture_id` tekrar gelirse yeni kayıt AÇILMAZ, ilk isteğin sonucu döner (idempotans) — eklentinin kuyruk tekrar denemeleri çift ürün oluşturamaz.
   - Gövdede ayrıca `schema_version`, `extension_version`, `parser_version` ve `platform` zorunludur; parser bozulduğunda hangi sürümün ürettiği kayıttan anlaşılır.
 - `GET /p/{share_token}` — API değil, sunucu render sayfa (docs/09 P1, K51). Token SHA-256'lanıp aranır; biçimsiz/bilinmeyen/iptal/süresi dolmuş token ve hız sınırı aşımı AYNI sabit 404'ü döndürür (ayrım sızmaz). Enumeration: IP başına 10 dk'da 30 geçersiz deneme → blok (sayaç activity_log'da, token loglanmaz). `noindex` + robots `/p/` kapsamı + CSP (stil `/p-style.css`). Sayfa CANLI listeyi gösterir — export snapshot'ının aksine (fark K50/K51'de belgeli). İptal edilen ürünler gösterilmez.

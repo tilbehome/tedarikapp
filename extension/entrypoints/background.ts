@@ -72,6 +72,8 @@ export default defineBackground(() => {
         return respond(panelApi.selectors('1688'));
       case 'LISTS':
         return respond(panelApi.lists());
+      case 'TRANSLATE':
+        return respond(panelApi.translate(String((message.payload as { text?: unknown })?.text ?? '')));
       case 'CAPTURE':
         return respond(panelApi.capture(message.payload as CapturePayload));
       default:

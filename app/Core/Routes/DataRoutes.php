@@ -46,6 +46,7 @@ final class DataRoutes
         TrashController $trashController,
         ExportController $exportController,
         ShareController $shareController,
+        \App\Controllers\TranslationController $translationController,
         AuthServices $services,
         ResponseFactoryInterface $responseFactory,
         Connection $connection,
@@ -70,7 +71,7 @@ final class DataRoutes
             ->add(new Csrf($services->session, $responseFactory))
             ->add(new Auth($services, $responseFactory));
 
-        $app->group('/api', static function (RouteCollectorProxy $group) use ($listController, $productController, $trashController, $exportController, $shareController, $inboxController): void {
+        $app->group('/api', static function (RouteCollectorProxy $group) use ($listController, $productController, $trashController, $exportController, $shareController, $inboxController, $translationController): void {
             $group->get('/lists', [$listController, 'index']);
             $group->post('/lists', [$listController, 'store']);
             $group->get('/lists/{id}', [$listController, 'show']);
@@ -105,6 +106,9 @@ final class DataRoutes
             $group->get('/inbox', [$inboxController, 'index']);
             $group->post('/inbox/assign', [$inboxController, 'assign']);
             $group->delete('/inbox/{id}', [$inboxController, 'destroy']);
+
+            // İE#13 C4: ZH→TR başlık ÖNERİSİ (K54 — hiçbir alana kendiliğinden yazılmaz).
+            $group->post('/panel/translate-suggest', [$translationController, 'suggest']);
 
             $group->get('/trash', [$trashController, 'index']);
             $group->post('/trash/{type}/{id}/restore', [$trashController, 'restore']);

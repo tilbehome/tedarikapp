@@ -91,6 +91,15 @@ export function priceLabel(normalized: Pick<CaptureNormalized, 'price_tiers' | '
   return tek === '' ? '' : `¥${tek}`;
 }
 
+/**
+ * Metinde CJK (Çince/Japonca/Korece) karakter var mı? (İE#13 A4)
+ * Çeviri önerisi yalnız gerekiyorsa istenir — zaten Türkçe bir başlık için dış
+ * servise gidilmez (kota ve gereksiz gecikme).
+ */
+export function hasCjk(text: string): boolean {
+  return /[㐀-䶿一-鿿豈-﫿぀-ヿ가-힯]/.test(text);
+}
+
 /** Varyasyon özeti: "Gri · Mavi (2 seçenek)" — matris yoksa boş metin. */
 export function variationLabel(matrix: SkuEntry[] | null | undefined): string {
   if (!matrix || matrix.length === 0) return '';

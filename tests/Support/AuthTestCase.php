@@ -79,6 +79,9 @@ abstract class AuthTestCase extends TestCase
     /** Testin sahte indirici kullanması için (K47) — null ise gerçek cURL indiricisi. */
     protected ?\App\Services\MediaFetcher $mediaFetcher = null;
 
+    /** Testlerin sahte çevirmen kullanması için (İE#13 C1) — null ise gerçek cURL sağlayıcısı. */
+    protected ?\App\Services\Translation\TranslationClient $translationClient = null;
+
     /** @return \Slim\App<\Psr\Container\ContainerInterface|null> */
     protected function app(): \Slim\App
     {
@@ -92,6 +95,7 @@ abstract class AuthTestCase extends TestCase
             null,
             null,
             $this->mediaFetcher,
+            $this->translationClient,
         );
     }
 
@@ -336,6 +340,18 @@ abstract class AuthTestCase extends TestCase
                 error_note TEXT NULL,
                 assigned_product_id INTEGER NULL,
                 assigned_at TEXT NULL,
+                created_at TEXT NOT NULL
+            )',
+        );
+        $this->pdo->exec(
+            'CREATE TABLE translation_cache (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                source_hash TEXT NOT NULL UNIQUE,
+                source_lang TEXT NOT NULL DEFAULT \'zh\',
+                target_lang TEXT NOT NULL DEFAULT \'tr\',
+                source_text TEXT NOT NULL,
+                suggested_text TEXT NOT NULL,
+                provider TEXT NOT NULL,
                 created_at TEXT NOT NULL
             )',
         );

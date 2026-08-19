@@ -9,7 +9,7 @@
  */
 
 import { parse1688, PARSER_VERSION } from '../modules/m1688/parser';
-import { priceLabel, variationLabel } from '../modules/m1688/format';
+import { hasCjk, priceLabel, variationLabel } from '../modules/m1688/format';
 import type { CapturePayload, PageData, ParseResult, SelectorSet } from '../core/types';
 
 export interface PanelListesi {
@@ -64,6 +64,16 @@ export function mountCaptureForm(host: CaptureFormHost): CaptureFormHandle {
   gorsel.alt = '';
   gorsel.hidden = true;
   const ad = el('p', 'tdk-ad');
+
+  // A4 — ÇEVİRİ ÖNERİSİ (K54): metin yalnız GÖSTERİLİR; "Kullan" denmedikçe
+  // hiçbir alana yazılmaz ve orijinal (Çince) başlık her koşulda korunur.
+  const ceviriMetin = el('span', 'tdk-ceviri-metin');
+  const ceviriKullan = el('button', 'tdk-ceviri-kullan', 'Kullan');
+  ceviriKullan.type = 'button';
+  const ceviri = el('div', 'tdk-ceviri');
+  ceviri.hidden = true;
+  ceviri.append(el('span', 'tdk-ceviri-etiket', 'Türkçe öneri:'), ceviriMetin, ceviriKullan);
+
   const fiyat = el('p', 'tdk-fiyat');
   const varyasyon = el('p', 'tdk-ek');
   const eksik = el('p', 'tdk-uyari');
@@ -72,7 +82,7 @@ export function mountCaptureForm(host: CaptureFormHost): CaptureFormHandle {
   mukerrer.hidden = true;
 
   const bilgi = el('div', 'tdk-bilgi');
-  bilgi.append(ad, fiyat, varyasyon, eksik, mukerrer);
+  bilgi.append(ad, ceviri, fiyat, varyasyon, eksik, mukerrer);
   const onizleme = el('div', 'tdk-onizleme');
   onizleme.append(gorsel, bilgi);
 
@@ -113,6 +123,16 @@ export function mountCaptureForm(host: CaptureFormHost): CaptureFormHandle {
   kok.append(onizleme, etiketli('Hedef', hedef), yeniListeKutu, satir, etiketli('Not', not), gonderDugmesi, sonuc);
 
   let parseResult: ParseResult | null = null;
+  /** Kullanıcı öneriyi kabul ettiyse gönderilecek ad — aksi hâlde null (orijinal gider). */
+  let secilenAd: string | null = null;
+
+  ceviriKullan.addEventListener('click', () => {
+    const oneri = ceviriMetin.textContent ?? '';
+    if (oneri === '') return;
+    secilenAd = oneri;
+    ad.textContent = oneri;
+    ceviri.hidden = true;
+  });
 
   hedef.addEventListener('change', () => {
     yeniListeKutu.hidden = hedef.value !== 'YENI';
@@ -144,6 +164,23 @@ export function mountCaptureForm(host: CaptureFormHost): CaptureFormHandle {
     }
   }
 
+  /**
+   * Öneriyi arka planda ister; başarısızlık SESSİZDİR (K54: çeviri akışı bloklamaz).
+   * Zaten Türkçe/latin bir başlık için dış servise hiç gidilmez.
+   */
+  async function ceviriOner(baslik: string): Promise<void> {
+    if (baslik === '' || !hasCjk(baslik)) return;
+    try {
+      const yanit = await host.send<{ suggestion: string | null }>({ type: 'TRANSLATE', payload: { text: baslik } });
+      if (yanit.suggestion !== null && yanit.suggestion !== '') {
+        ceviriMetin.textContent = yanit.suggestion;
+        ceviri.hidden = false;
+      }
+    } catch {
+      /* öneri yok — kullanıcı orijinal adla devam eder */
+    }
+  }
+
   async function gonder(): Promise<void> {
     if (parseResult === null) return;
     gonderDugmesi.disabled = true;
@@ -172,7 +209,9 @@ export function mountCaptureForm(host: CaptureFormHost): CaptureFormHandle {
       note,
       source: parseResult.source,
       raw: parseResult.raw,
-      normalized: parseResult.normalized,
+      // K54: yalnız kullanıcı "Kullan" dediyse Türkçe ad gider; RAW başlık (Çince)
+      // parseResult.raw içinde AYNEN durur — orijinal asla değişmez.
+      normalized: secilenAd === null ? parseResult.normalized : { ...parseResult.normalized, name: secilenAd },
     };
 
     try {
@@ -240,6 +279,7 @@ export function mountCaptureForm(host: CaptureFormHost): CaptureFormHandle {
     parseResult = parse1688(sayfa.context, selectors, sayfa.url ?? '', sayfa.dom ?? {});
     onizlemeyiCiz(parseResult);
     gonderDugmesi.disabled = false;
+    void ceviriOner(parseResult.normalized.name);
   }
 
   return { element: kok, baslat };

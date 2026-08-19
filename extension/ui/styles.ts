@@ -18,6 +18,10 @@ export const CAPTURE_CSS = `
 .tdk-bilgi { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; }
 .tdk-ad { font-weight: 600; line-height: 1.3; max-height: 3.9em; overflow: hidden; }
 .tdk-fiyat { color: #1d4ed8; font-weight: 600; }
+.tdk-ceviri { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; font-size: 12px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 5px 7px; }
+.tdk-ceviri-etiket { color: #1e40af; font-size: 10px; text-transform: uppercase; letter-spacing: .04em; font-weight: 700; }
+.tdk-ceviri-metin { color: #0f172a; flex: 1; min-width: 0; }
+.tdk-ceviri-kullan { padding: 2px 8px; border-radius: 6px; background: #1d4ed8; color: #fff; font-size: 11px; font-weight: 600; }
 .tdk-ek { color: #64748b; font-size: 11px; }
 .tdk-uyari { color: #92400e; background: #fef3c7; border-radius: 8px; padding: 6px 8px; font-size: 11px; }
 .tdk label { display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: #475569; }
