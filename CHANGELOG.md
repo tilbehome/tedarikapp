@@ -4,6 +4,12 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/) · Sürümleme: SemVe
 Her release'te bu dosya güncellenir (docs/07 bölüm 4). Kategoriler: Eklendi / Değişti / Düzeltildi / Kaldırıldı / Güvenlik.
 
 ## [Yayınlanmadı]
+### Eklendi (İE#9.8 · K49 — defter eşitleme + sürüm damgası)
+- **Migration defteri eşitleme (baseline):** canlıda tablolar mevcutken defter boştu ("Uygulanan 0 / Bekleyen 17" — tablolar K45 yangını sırasında defter dışı gelmiş). `Migrator::baseline()` bekleyen her kayıt için hedef nesneyi şema sorgusuyla doğrular ve VARSA kaydı **koşmadan** deftere işler; yoksa/haritada değilse atlayıp raporlar — **hiçbir koşulda DDL çalıştırmaz**, idempotenttir. Panel: Ayarlar > Sistem durumu > "Defteri eşitle" (Auth+CSRF); CLI: `bin/migrate-baseline.php`; sonuç activity_log'da. Harita kapsamı testle zorlanır — yeni migration eklerken harita güncellenmezse süit kırmızı.
+- **Release sürüm damgası:** `bin/release.php --version=X` artık zip'e kopyalanan `AppVersion.php`'de `VALUE`'yu X ile yazar (repodaki dosya `0.1.0-dev` kalır); MANIFEST özeti damgalı içerikten alınır; zip doğrulaması + CI, açılan kopyanın gerçekten X sürümünü taşıdığını denetler — panel artık "0.1.0-dev" göstermez.
+
+### Düzeltildi (İE#9.8 · 3b — kur güncelleme davranışı, K48 ek)
+- **Aynı kurla basmak tarihçeyi şişirmez:** gönderilen değer kayıtlıyla aynıysa ayara ve `rate_history`'ye YAZILMAZ, panel "Kurlar zaten güncel (…)" der (canlı vaka: aynı 7,0400/41,5000 en az 8 kez kayıtlıydı — "çalışmıyor" algısının kaynağı buydu; zincirde kopukluk YOK). Değer değiştiyse tek satır yazılır ve bildirim eski→yeni gösterir; activity_log detayı da eski→yeni taşır.
 ### Düzeltildi (İE#9.7 — PHP 8.1'de arşive taşıma çöküşü)
 - **`CURLOPT_PROTOCOLS_STR` 8.1 uyumu:** sabit PHP 8.3'te geldi; canlı 8.1.34'te ilk gerçek indirme "Undefined constant" ile düştü (satır İE#9.6 öncesinden beri vardı — üretimde indirme hattına ilk kez K47 ile girildi). Protokol kısıtı artık sürüme göre kurulur: sabit tanımlıysa `CURLOPT_PROTOCOLS_STR='https'`, değilse `CURLOPT_PROTOCOLS=CURLPROTO_HTTPS` — etki iki yolda aynı (yalnız https; yönlendirmeler FOLLOWLOCATION kapalı olduğundan her sıçramada aynı kısıttan geçer).
 - **Bekçi onarıldı:** cURL seçenek kurulumu saf `requestOptions()` metoduna ayrıldı; `php81-uyum` CI job'ı bu metodu GERÇEK 8.1 ile ÇALIŞTIRIR — tanımsız sabit bir daha lint'ten kaçamaz. Repo genelinde 8.2+/8.3+ sabit-fonksiyon-sözdizimi taraması yapıldı: başka bulgu YOK.

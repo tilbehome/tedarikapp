@@ -51,3 +51,7 @@ Bu dosya Claude Code için bağlayıcıdır. Her oturumda geçerlidir, iş emirl
 ## 7. Teslim
 - Her iş emri: kendi dalı (`is-emri-N-slug`), standart commit (`tip(kapsam): açıklama`), PR, ve docs/00'daki şablonla ÇIKTI RAPORU.
 - İş emrinin kabul kriterleri madde madde ✓/✗ raporlanmadan iş bitmiş sayılmaz.
+- **Lokalde TAM SÜİT KOŞULMAZ (PM talimatı, 19 Ağu 2026).** Geliştirme sırasında yalnız
+  değişen alanın süitleri + PHPStan/CS-Fixer (+ frontend değiştiyse tsc/eslint) koşulur.
+  Tam süit doğrulaması CI'nın işidir: push → PR → 5 job. CI kırmızı çıkarsa düzeltme
+  commit'i atılır — bu kabul edilmiş bir risktir.

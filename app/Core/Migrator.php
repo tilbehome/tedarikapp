@@ -21,10 +21,153 @@ use Throwable;
  */
 final class Migrator
 {
+    /**
+     * K49 BASELINE haritası: migration adı → defterde "uygulanmış" sayılabilmesi için
+     * veritabanında GERÇEKTEN var olması gereken nesne(ler).
+     *  • ['table' => 'ad'] — tablo var olmalı
+     *  • ['column' => ['tablo', 'kolon']] — kolon var olmalı (ALTER migration'ları)
+     * Haritada OLMAYAN migration baseline'lanamaz (güvenli varsayılan): atlanır ve
+     * raporlanır — gelecekteki YENİ migration'lar böylece asla sahte "uygulanmış"
+     * işaretlenemez, normal `run()` ile koşarlar.
+     *
+     * @var array<string, list<array{table?: string, column?: array{string, string}}>>
+     */
+    private const BASELINE_OBJECTS = [
+        '0001_create_users' => [['table' => 'users']],
+        '0002_create_recovery_codes' => [['table' => 'recovery_codes']],
+        '0003_create_remember_tokens' => [['table' => 'remember_tokens']],
+        '0004_create_settings' => [['table' => 'settings']],
+        '0005_create_rate_history' => [['table' => 'rate_history']],
+        '0006_create_categories' => [['table' => 'categories']],
+        '0007_create_activity_log' => [['table' => 'activity_log']],
+        '0008_create_lists' => [['table' => 'lists']],
+        '0009_create_products' => [['table' => 'products']],
+        '0010_create_product_images' => [['table' => 'product_images']],
+        '0011_create_product_status_history' => [['table' => 'product_status_history']],
+        '0012_create_exports' => [['table' => 'exports']],
+        '0013_create_app_logs' => [['table' => 'app_logs']],
+        '0014_add_products_raw_attributes' => [['column' => ['products', 'raw_attributes']]],
+        '0015_add_products_country_fields' => [
+            ['column' => ['products', 'country_of_origin']],
+            ['column' => ['products', 'country_of_dispatch']],
+        ],
+        '0016_media_storage_columns' => [
+            ['column' => ['product_images', 'storage_mode']],
+            ['column' => ['product_images', 'source_url']],
+        ],
+        '0017_create_sessions' => [['table' => 'sessions']],
+    ];
+
+    /** @param array<string, list<array{table?: string, column?: array{string, string}}>>|null $baselineObjects test amaçlı harita (null = gerçek harita) */
     public function __construct(
         private readonly PDO $pdo,
         private readonly string $migrationsDir,
+        private readonly ?array $baselineObjects = null,
     ) {
+    }
+
+    /**
+     * K49 BASELINE: defteri gerçeğe eşitler — HİÇBİR DDL ÇALIŞTIRMAZ.
+     *
+     * Canlı vaka: uygulama tabloları var ama `migrations` defteri boş ("Uygulanan 0 /
+     * Bekleyen 17") — tablolar defter dışı bir yolla gelmiş. Bekleyen her migration
+     * için hedef nesnenin gerçekten var olduğu şema sorgusuyla (MySQL:
+     * information_schema, SQLite: pragma) doğrulanır; VARSA kayıt checksum'uyla
+     * deftere işlenir, YOKSA atlanır ve nedeniyle raporlanır. İdempotent: deftere
+     * işlenenler bir sonraki çağrıda "bekleyen" değildir.
+     *
+     * @return array{recorded: list<string>, skipped: list<array{name: string, reason: string}>}
+     */
+    public function baseline(): array
+    {
+        $this->ensureMigrationsTable();
+
+        $files = $this->migrationFiles();
+        $applied = $this->appliedChecksums();
+        $map = $this->baselineObjects ?? self::BASELINE_OBJECTS;
+
+        $recorded = [];
+        $skipped = [];
+        foreach ($files as $name => $file) {
+            if (array_key_exists($name, $applied)) {
+                continue;
+            }
+
+            if (!array_key_exists($name, $map)) {
+                $skipped[] = ['name' => $name, 'reason' => 'Baseline haritasında yok — yeni migration, normal koşumla uygulanmalı.'];
+
+                continue;
+            }
+
+            $missing = $this->missingObject($map[$name]);
+            if ($missing !== null) {
+                $skipped[] = ['name' => $name, 'reason' => 'Hedef nesne veritabanında yok: ' . $missing];
+
+                continue;
+            }
+
+            $statement = $this->pdo->prepare(
+                'INSERT INTO migrations (name, checksum, execution_ms, applied_at) VALUES (?, ?, ?, ?)',
+            );
+            $statement->execute([$name, $this->checksumOf($file), 0, date('Y-m-d H:i:s')]);
+            $recorded[] = $name;
+        }
+
+        return ['recorded' => $recorded, 'skipped' => $skipped];
+    }
+
+    /**
+     * @param list<array{table?: string, column?: array{string, string}}> $objects
+     *
+     * @return string|null eksik nesnenin tanımı; hepsi varsa null
+     */
+    private function missingObject(array $objects): ?string
+    {
+        foreach ($objects as $object) {
+            if (isset($object['table']) && !$this->tableExists($object['table'])) {
+                return 'tablo ' . $object['table'];
+            }
+            if (isset($object['column']) && !$this->columnExists($object['column'][0], $object['column'][1])) {
+                return 'kolon ' . $object['column'][0] . '.' . $object['column'][1];
+            }
+        }
+
+        return null;
+    }
+
+    private function tableExists(string $table): bool
+    {
+        if ($this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite') {
+            $statement = $this->pdo->prepare("SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = ?");
+            $statement->execute([$table]);
+
+            return (int) $statement->fetchColumn() > 0;
+        }
+
+        $statement = $this->pdo->prepare(
+            'SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = ?',
+        );
+        $statement->execute([$table]);
+
+        return (int) $statement->fetchColumn() > 0;
+    }
+
+    private function columnExists(string $table, string $column): bool
+    {
+        if ($this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite') {
+            $statement = $this->pdo->prepare('SELECT COUNT(*) FROM pragma_table_info(?) WHERE name = ?');
+            $statement->execute([$table, $column]);
+
+            return (int) $statement->fetchColumn() > 0;
+        }
+
+        $statement = $this->pdo->prepare(
+            'SELECT COUNT(*) FROM information_schema.columns '
+            . 'WHERE table_schema = DATABASE() AND table_name = ? AND column_name = ?',
+        );
+        $statement->execute([$table, $column]);
+
+        return (int) $statement->fetchColumn() > 0;
     }
 
     /**

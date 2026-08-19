@@ -64,60 +64,81 @@ final class SettingsController extends ApiController
             'usd_tl' => [SettingsRepository::KEY_USD_RATE, 'Dolar kuru', 'USD'],
         ];
 
+        $current = [
+            'yuan_tl' => $this->money->formatRate($this->settings->yuanRate()),
+            'usd_tl' => $this->money->formatRate($this->settings->usdRate()),
+        ];
+
         $errors = [];
         $changes = [];
+        $provided = 0;
         foreach ($map as $field => [$key, $label, $currency]) {
             if (!array_key_exists($field, $body)) {
                 continue;
             }
+            $provided++;
             $error = $this->validator->rate($body[$field], $label);
             if ($error !== null) {
                 $errors[$field] = $error;
 
                 continue;
             }
+            $value = $this->money->formatRate((string) $this->validator->toDecimalString($body[$field]));
+            // K48 ek (İE#9.8 3b): AYNI değer tarihçeye YAZILMAZ — canlı vaka: aynı
+            // 7,0400/41,5000 en az 8 kez kayıtlıydı ve "çalışmıyor" algısı yaratmıştı.
+            if ($value === $current[$field]) {
+                continue;
+            }
             $changes[$field] = [
                 'key' => $key,
                 'currency' => $currency,
-                'value' => $this->money->formatRate((string) $this->validator->toDecimalString($body[$field])),
+                'from' => $current[$field],
+                'value' => $value,
             ];
         }
 
         if ($errors !== []) {
             return Response::error($response, 'VALIDATION', 'Doğrulama hatası', 422, $errors);
         }
-        if ($changes === []) {
+        if ($provided === 0) {
             return Response::error($response, 'VALIDATION', 'Doğrulama hatası', 422, [
                 'body' => 'Güncellenecek kur verilmedi (yuan_tl ve/veya usd_tl).',
             ]);
         }
 
-        $now = $this->clock->now();
-        // K37 §B5: ayar + rate_history + aktivite tek transaction — geçmişsiz kur kalmaz.
-        $this->connection->transaction(function () use ($request, $changes, $now): void {
-            foreach ($changes as $change) {
-                $this->settings->set($change['key'], $change['value']);
-                $this->recordRate($change['currency'], $change['value'], $now);
-            }
+        if ($changes !== []) {
+            $now = $this->clock->now();
+            // K37 §B5: ayar + rate_history + aktivite tek transaction — geçmişsiz kur kalmaz.
+            $this->connection->transaction(function () use ($request, $changes, $now): void {
+                foreach ($changes as $change) {
+                    $this->settings->set($change['key'], $change['value']);
+                    $this->recordRate($change['currency'], $change['value'], $now);
+                }
 
-            $this->activity->record(
-                'settings',
-                null,
-                'rates_updated',
-                implode(', ', array_map(
-                    static fn (array $c): string => $c['currency'] . '=' . $c['value'],
-                    $changes,
-                )),
-                ClientIp::from($request),
-                $now,
-                ActivityLog::ACTOR_ADMIN,
-                $this->user($request)->id,
-            );
-        });
+                $this->activity->record(
+                    'settings',
+                    null,
+                    'rates_updated',
+                    implode(', ', array_map(
+                        static fn (array $c): string => $c['currency'] . '=' . $c['from'] . '→' . $c['value'],
+                        $changes,
+                    )),
+                    ClientIp::from($request),
+                    $now,
+                    ActivityLog::ACTOR_ADMIN,
+                    $this->user($request)->id,
+                );
+            });
+        }
 
         return Response::success($response, [
             'yuan_tl' => $this->money->formatRate($this->settings->yuanRate()),
             'usd_tl' => $this->money->formatRate($this->settings->usdRate()),
+            // 3b sözleşmesi: panel bildirimi buradan kurar — boş liste = "zaten güncel".
+            'changes' => array_values(array_map(
+                static fn (array $c): array => ['currency' => $c['currency'], 'from' => $c['from'], 'to' => $c['value']],
+                $changes,
+            )),
         ]);
     }
 

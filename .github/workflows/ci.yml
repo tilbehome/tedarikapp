@@ -267,6 +267,11 @@ jobs:
           curl -sf http://127.0.0.1:8080/api/setup/state | grep -q '"success":true' || { echo "HATA: setup state"; exit 1; }
           curl -sf http://127.0.0.1:8080/api/system/integrity | tee /tmp/integrity.json
           grep -q '"ok":true' /tmp/integrity.json || { echo "HATA: integrity eksik dosya bildirdi"; exit 1; }
+          # İE#9.8: açılan kopya release sürümünü taşımalı (/api/system/status bu sabiti döndürür;
+          # uç Auth+CSRF istediği için sabit doğrudan okunur — aynı kaynak).
+          surum=$(php -r "require '/tmp/rel/vendor/autoload.php'; echo App\\Core\\AppVersion::VALUE;")
+          echo "Paket sürümü: $surum"
+          [ "$surum" = "ci-denetim" ] || { echo "HATA: sürüm damgası yok (beklenen ci-denetim, gelen $surum)"; exit 1; }
           kill %1
           echo "Release açılış doğrulaması TAMAM"
 
