@@ -436,6 +436,14 @@ jobs:
           npm ci
           npm run typecheck
 
+      # Tarayıcı ikilisi önbelleğe alınır: anahtar KİLİT DOSYASININ özetidir, yani
+      # Playwright sürümü değişince (ve yalnız o zaman) yeni indirme yapılır.
+      - name: Playwright tarayıcı önbelleği
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('e2e/package-lock.json') }}
+
       # `--with-deps` apt çalıştırır ve kilit beklerken ASILABİLİR (canlı ders).
       # Sistem kütüphaneleri ayrı ve NONINTERACTIVE kurulur, kendi tavanıyla;
       # düşerse tarayıcı yine kurulur (runner imajında kütüphaneler çoğunlukla vardır).
@@ -447,10 +455,14 @@ jobs:
         continue-on-error: true
         run: npx playwright install-deps chromium
 
+      # Bu adım HATA TOLERANSLI DEĞİLDİR: tarayıcı yoksa süit sessizce "yeşil"
+      # görünemez — job burada hızlıca düşer (PM şartı).
       - name: Chromium indir
         working-directory: e2e
         timeout-minutes: 6
-        run: npx playwright install chromium
+        run: |
+          npx playwright install chromium
+          npx playwright --version
 
       - name: Uygulamayı başlat
         run: |

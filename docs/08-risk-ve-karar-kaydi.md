@@ -86,6 +86,11 @@
 
 Yeni kararlar bu tabloya eklenir; bir karar değişirse silinmez, üzeri çizilip yeni satır açılır (tarihçe korunur).
 
+> **V3 KANONU `docs/v3/` altındadır** (PM, 19 Ağu 2026): V3 kapsamı, modül kataloğu,
+> sektör araştırması ekleri ve liste yaşam döngüsü durumları tek dosyada —
+> `docs/v3/v3-yol-haritasi.md`. `docs/v2/` taslakları geçmiş kayıt olarak durur;
+> v2 vizyon belgesi `docs/archive/v2/` altına alınmıştır. Çelişkide docs/v3 kazanır.
+
 ## 3. Fikir Havuzu (Faz 4+)
 
 Kapsamı şişirmemek için yeni fikirler buraya park edilir; aktif iş emri kapsamı değişmez (R8).
