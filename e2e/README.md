@@ -25,6 +25,30 @@ kapsanır:
   uçtan uca sürer; yani eklenti ile panel arasındaki anlaşma her koşuda sınanır.
 - **Arayüz:** popup/mini panel kabulü manuel listeyle yapılır (K35: otomatik UI testi yok).
 
+## Seçici disiplini (F43 — zorunlu)
+
+Bir Playwright seçicisi yazmadan önce **gerçek arayüz kaynağına bakılır** (ilgili
+`.tsx` bileşeni ya da sunucu şablonu). Düğme ve etiket metni tahmin EDİLMEZ.
+
+Tercih sırası:
+
+1. **Kalıcı test id** (`data-testid`) — henüz yaygın değil; kritik akış öğelerine
+   eklenmesi V3-B arayüz turunda değerlendirilecek.
+2. **Tam metin** — `getByLabel('Şifre', { exact: true })`, `getByRole('button', { name: 'Ürünü ekle' })`.
+3. **Rol + ad** — yalnız yukarıdakiler mümkün değilse.
+
+Ek kurallar (hepsi CI'da canlı hatadan öğrenildi):
+
+- Panel aynı veriyi **masaüstü tablosu + mobil kart** olarak basar; `.first()` CSS ile
+  GİZLİ kopyayı seçebilir. `gorunen()` yardımcısı (`filter({ visible: true }).first()`)
+  kullanılır.
+- Gevşek etiket eşleşmesi komşu öğelere takılır: "Şifre" ↔ "Şifreyi göster",
+  "Adet" ↔ "Koli içi adet" → `exact: true`.
+- Kip'e göre değişen düğme adları (yeni/düzenleme) testte sabitlenmez; hangi kipte
+  koşulduğu belliyse o kipin adı yazılır.
+- Sayfa geçişi bekleniyorsa `expect(page).toHaveURL(...)` ile doğrulanır; bir sonraki
+  adım erken çalışıp yanıltmasın.
+
 ## CI
 
 `.github/workflows/ci.yml` → **E2E (Playwright)** job'ı: MySQL 8.4 servisi → composer +
