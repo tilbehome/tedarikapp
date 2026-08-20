@@ -2,7 +2,7 @@
     "name": "tedarikapp-eklenti",
     "description": "Tedarikapp — 1688'den tek tıkla ürün yakalama (Faz 3, K53)",
     "private": true,
-    "version": "1.0.0",
+    "version": "1.1.0",
     "type": "module",
     "scripts": {
         "dev": "wxt",
