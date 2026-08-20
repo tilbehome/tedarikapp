@@ -33,14 +33,20 @@ test.describe('Panel temel akışı', () => {
     await page.getByLabel('Ürün adı').fill('E2E Ürünü');
     await page.getByLabel('Adet', { exact: true }).fill('25');
     await page.getByLabel('Birim fiyat (¥)').fill('12,50');
-    await page.getByRole('button', { name: /Kaydet|Oluştur/ }).click();
+    // Düğme adı formun kipine göre değişir: yeni üründe "Ürünü ekle",
+    // düzenlemede "Değişiklikleri kaydet" (CI kanıtı: /Kaydet|Oluştur/ hiç eşleşmedi
+    // ve test 60 sn bekleyip düştü).
+    await page.getByRole('button', { name: 'Ürünü ekle' }).click();
 
+    // Kayıt sonrası liste detayına dönülür; ürün orada görünür.
+    await expect(page).toHaveURL(/\/panel\/listeler\/\d+$/);
     await expect(gorunen(page.getByText('E2E Ürünü'))).toBeVisible();
 
     // ── Liste durumunu ilerlet: Taslak → İletildi (K48: kur BU ANDA kilitlenir) ──
-    await expect(page.getByText('Liste durumunu ilerlet:')).toBeVisible();
-    await page.getByRole('button', { name: 'İletildi' }).click();
+    await expect(gorunen(page.getByText('Liste durumunu ilerlet:'))).toBeVisible();
+    await page.getByRole('button', { name: 'İletildi', exact: true }).click();
 
+    // Durum rozeti "İletildi"ye döner (ilerletme düğmesi artık listede yoktur).
     await expect(gorunen(page.getByText('İletildi'))).toBeVisible();
   });
 });
