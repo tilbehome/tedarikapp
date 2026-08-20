@@ -68,6 +68,33 @@ final class Logger
     }
 
     /**
+     * Gecelik koşu (bin/backup.php) için günlükleyici — İE#13 EK-A.
+     *
+     * Seviye DAİMA Info'dur: `LOG_LEVEL=warning` olsa bile "yedek alındı + bakım koştu"
+     * izi `app_logs`ta durmalı; aksi hâlde başarılı koşunun kanıtı hiç yazılmaz.
+     * DB yoksa (yerel geliştirme) dosya kayıtçısına düşer.
+     */
+    public static function createForMaintenance(Config $config, string $basePath, ?Connection $connection = null): MonologLogger
+    {
+        $logger = new MonologLogger('tedarikapp-bakim');
+
+        if ($connection !== null) {
+            $logger->pushHandler(new DatabaseLogHandler($connection, null, Level::Info));
+        } else {
+            $logDir = $basePath . '/' . trim($config->get('LOG_PATH', 'storage/logs'), '/');
+            if (!is_dir($logDir)) {
+                @mkdir($logDir, 0775, true);
+            }
+            $handler = new StreamHandler(sprintf('%s/bakim-%s.log', $logDir, date('Y-m-d')), Level::Info);
+            $handler->setFormatter(new JsonFormatter());
+            $logger->pushHandler($handler);
+        }
+        $logger->pushProcessor(new LogRedactor());
+
+        return $logger;
+    }
+
+    /**
      * Kurulum sihirbazı için günlükleyici: `.env` henüz yokken Config kurulamaz.
      *
      * `storage/` yazılabilir değilse (kurulumun düzeltmeye çalıştığı durumun ta kendisi)

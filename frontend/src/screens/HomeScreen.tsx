@@ -18,7 +18,8 @@ export default function HomeScreen() {
   const activityState = useAsync(() => activityApi.read({ page: 1 }), []);
   // İE#11: gelen kutusu sayacı — hata olursa kart gösterilmez, ekran çalışır.
   const inboxState = useAsync(() => inboxApi.queue(), []);
-  const inboxCount = (inboxState.data ?? []).length;
+  // İE#13 B5: kuyruk sayfalandı — rozet SAYFADAKİ değil TOPLAM kaydı göstermeli.
+  const inboxCount = Number(inboxState.data?.meta?.total ?? (inboxState.data?.data ?? []).length);
 
   const activeLists = listsState.data ?? [];
   const inTransit = activeLists.reduce((total, list) => total + (list.progress.in_transit ?? 0), 0);

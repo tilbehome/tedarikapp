@@ -41,6 +41,8 @@ export default function ProductFormScreen() {
     qty: '1',
     price_yuan: '',
     price_ddp_usd: '',
+    // İE#13 F5: hedef satış fiyatı — yalnız iç kopya çıktısında kullanılır.
+    price_target_try: '',
     units_per_carton: '',
     url: '',
     vendor_name: '',
@@ -56,6 +58,9 @@ export default function ProductFormScreen() {
   useEffect(() => {
     const product = existing.data;
     if (!product) return;
+    // Yüklenen ürün formu tohumlar — react-hooks 7 bu deseni uyarıyor; formun sunucu
+    // verisiyle ilklenmesi mevcut davranıştır ve F41 kapsamında ele alınacak.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setForm({
       name: product.name,
       name_original: product.name_original ?? '',
@@ -64,6 +69,7 @@ export default function ProductFormScreen() {
       qty: String(product.qty),
       price_yuan: product.price_yuan,
       price_ddp_usd: product.price_ddp_usd,
+      price_target_try: product.price_target_try ?? '',
       units_per_carton: product.units_per_carton === null ? '' : String(product.units_per_carton),
       url: product.url ?? '',
       vendor_name: product.vendor_name ?? '',
@@ -84,6 +90,8 @@ export default function ProductFormScreen() {
     qty: Number(form.qty),
     price_yuan: form.price_yuan.trim().replace(',', '.'),
     price_ddp_usd: form.price_ddp_usd.trim() === '' ? '0' : form.price_ddp_usd.trim().replace(',', '.'),
+    // Boş bırakılırsa hedef TEMİZLENİR (null) — kâr sütunları "—" basar.
+    price_target_try: form.price_target_try.trim() === '' ? null : form.price_target_try.trim().replace(',', '.'),
     units_per_carton: form.units_per_carton === '' ? null : Number(form.units_per_carton),
     url: form.url.trim() || null,
     vendor_name: form.vendor_name.trim() || null,
@@ -188,7 +196,21 @@ export default function ProductFormScreen() {
             />
           </Field>
 
-          <Field label="DDP birim fiyat ($)" hint="Bilinmiyorsa boş bırak" error={fields['price_ddp_usd']}>
+          <Field
+          label="Hedef satış fiyatı (₺)"
+          hint="Yalnız İÇ KOPYA çıktısında kâr hesabı için — firmaya giden belgede ve paylaşım sayfasında GÖRÜNMEZ"
+          error={fields['price_target_try']}
+        >
+          <input
+            className="field-input"
+            inputMode="decimal"
+            value={form.price_target_try}
+            onChange={(event) => set('price_target_try', event.target.value)}
+            placeholder="Örn. 150,00"
+          />
+        </Field>
+
+        <Field label="DDP birim fiyat ($)" hint="Bilinmiyorsa boş bırak" error={fields['price_ddp_usd']}>
             <input
               className="field-input"
               inputMode="decimal"

@@ -68,7 +68,17 @@ interface RequestOptions {
   silentUnauthorized?: boolean;
 }
 
+/** Zarfın `meta` alanını da isteyen çağrılar için (sayfalama, filtre menüleri). */
+export interface WithMeta<T> {
+  data: T;
+  meta: Record<string, unknown>;
+}
+
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  return (await requestWithMeta<T>(path, options)).data;
+}
+
+async function requestWithMeta<T>(path: string, options: RequestOptions = {}): Promise<WithMeta<T>> {
   const method = options.method ?? 'GET';
   const headers: Record<string, string> = { Accept: 'application/json' };
 
@@ -93,10 +103,10 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
 
   // 204: gövde yok (silme uçları).
   if (response.status === 204) {
-    return undefined as T;
+    return { data: undefined as T, meta: {} };
   }
 
-  let envelope: Envelope<T> | null = null;
+  let envelope: Envelope<T> | null;
   try {
     envelope = (await response.json()) as Envelope<T>;
   } catch {
@@ -104,7 +114,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   }
 
   if (response.ok && envelope?.success) {
-    return envelope.data;
+    return { data: envelope.data, meta: (envelope.meta as Record<string, unknown>) ?? {} };
   }
 
   const error: ApiErrorBody = envelope?.error ?? {
@@ -134,13 +144,19 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
  * İE#11 Görev E: POST ile dosya indirme — export üretimi CSRF'li POST'tur; yanıt
  * zarf değil DOSYA olduğundan ayrı yol: blob alınır ve tarayıcıya indirilir.
  */
-async function postBlob(path: string): Promise<void> {
+async function postBlob(path: string, body?: unknown): Promise<void> {
   const headers: Record<string, string> = {};
   if (csrfToken) headers['X-CSRF-Token'] = csrfToken;
+  if (body !== undefined) headers['Content-Type'] = 'application/json';
 
-  const response = await fetch(path, { method: 'POST', headers, credentials: 'same-origin' });
+  const response = await fetch(path, {
+    method: 'POST',
+    headers,
+    credentials: 'same-origin',
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
   if (!response.ok) {
-    let envelope: Envelope<unknown> | null = null;
+    let envelope: Envelope<unknown> | null;
     try {
       envelope = (await response.json()) as Envelope<unknown>;
     } catch {
@@ -168,6 +184,7 @@ async function postBlob(path: string): Promise<void> {
 export const api = {
   postBlob,
   get: <T>(path: string, options?: RequestOptions) => request<T>(path, { ...options, method: 'GET' }),
+  getWithMeta: <T>(path: string, options?: RequestOptions) => requestWithMeta<T>(path, { ...options, method: 'GET' }),
   post: <T>(path: string, body?: unknown, options?: RequestOptions) =>
     request<T>(path, { ...options, method: 'POST', body: body ?? {} }),
   patch: <T>(path: string, body?: unknown) => request<T>(path, { method: 'PATCH', body: body ?? {} }),

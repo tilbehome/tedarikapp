@@ -75,6 +75,15 @@ export interface SelectorSet {
   origin_attribute_keys?: string[];
 }
 
+/** Content script'in döndürdüğü ham sayfa verisi (MAIN world context + DOM yedekleri). */
+export interface PageData {
+  ok: boolean;
+  context?: unknown;
+  dom?: Record<string, string | null>;
+  url?: string;
+  error?: string;
+}
+
 export interface ParseResult {
   ok: boolean;
   missing: string[];

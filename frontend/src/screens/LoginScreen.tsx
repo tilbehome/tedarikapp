@@ -1,18 +1,28 @@
-import { useState, type FormEvent } from 'react';
-import { KeyRound, ShieldCheck } from 'lucide-react';
+import { useMemo, useState, type FormEvent } from 'react';
+import { ShieldCheck, Smartphone } from 'lucide-react';
 import { useSession } from '../store/session';
 import { ApiError } from '../api/client';
 import { messageOf } from '../lib/useAsync';
+import { girisVitriniOku } from '../lib/girisVitrini';
 import { Field } from '../components/ui';
+import MarkaPaneli from './login/MarkaPaneli';
+import { AnahtarDugmesi, GirisAlani, PaneleGirDugmesi, SifreAlani } from './login/GirisAlani';
 
 /**
- * E1 — Giriş.
+ * E1 — Giriş (İE#13 EK-B ile premium yenileme).
  *
- * Akış backend'inkiyle aynı: e-posta+şifre → TOTP kodu → (isteğe bağlı) kurtarma kodu.
- * Kilit/backoff (`LOCKED`, `RATE_LIMITED`) mesajları sunucudan geldiği gibi gösterilir.
+ * AKIŞ AYNEN KORUNDU: e-posta+şifre → (2FA açıksa) TOTP kodu → (isteğe bağlı)
+ * kurtarma kodu. Kilit/backoff mesajları sunucudan geldiği gibi gösterilir.
+ * EK-B yalnız GÖRÜNÜMÜ değiştirir — kimlik doğrulama, oturum ve 2FA mantığına
+ * tek satır dokunulmamıştır.
+ *
+ * Vitrin rakamları sunucudan meta etiketiyle gelir (girişsiz uç açılmaz);
+ * "Şifremi unuttum" bağlantısı YOKTUR: e-posta ile kurtarma kapalıdır (K8),
+ * telefon kaybında yol kurtarma kodudur ve o ikinci adımda sunulur.
  */
 export default function LoginScreen() {
   const { stage, login, submitTotp, submitRecovery } = useSession();
+  const vitrin = useMemo(() => girisVitriniOku(), []);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -56,21 +66,26 @@ export default function LoginScreen() {
     });
   };
 
-  return (
-    <div className="flex min-h-dvh items-center justify-center px-4 py-10">
-      <div className="w-full max-w-sm">
-        <div className="mb-6 text-center">
-          <h1 className="text-2xl font-bold tracking-tight">tedarikapp</h1>
-          <p className="mt-1 text-sm text-slate-500">Tilbe Home tedarik yönetimi</p>
-        </div>
+  const epostaGecerli = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 
-        <div className="card p-5">
+  return (
+    <div className="flex min-h-dvh items-center justify-center bg-slate-100 px-4 py-6 sm:py-10">
+      <div className="grid w-full max-w-4xl overflow-hidden rounded-3xl bg-white shadow-2xl shadow-slate-900/10 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
+        <MarkaPaneli vitrin={vitrin} />
+
+        <section className="px-6 py-8 sm:px-10 sm:py-10">
           {stage === 'awaiting-totp' ? (
-            <form onSubmit={onSecondFactor} className="space-y-4">
-              <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
-                <ShieldCheck className="h-5 w-5 text-brand-600" aria-hidden />
-                {useRecovery ? 'Kurtarma kodu' : 'İki adımlı doğrulama'}
-              </div>
+            <form onSubmit={onSecondFactor} className="space-y-5">
+              <header>
+                <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+                  {useRecovery ? 'Kurtarma kodu' : 'İki adımlı doğrulama'}
+                </h1>
+                <p className="mt-1 text-sm text-slate-500">
+                  {useRecovery
+                    ? 'Kaydettiğiniz kodlardan birini girin.'
+                    : 'Doğrulama uygulamanızdaki 6 haneli kodu girin.'}
+                </p>
+              </header>
 
               <Field
                 label={useRecovery ? 'Kurtarma kodunuz' : 'Uygulamadaki 6 haneli kod'}
@@ -90,9 +105,7 @@ export default function LoginScreen() {
 
               {error && !fields['code'] && <p className="text-sm font-medium text-rose-700">{error}</p>}
 
-              <button type="submit" className="btn-primary w-full" disabled={busy}>
-                {busy ? 'Doğrulanıyor…' : 'Doğrula'}
-              </button>
+              <PaneleGirDugmesi busy={busy} label={busy ? 'Doğrulanıyor…' : 'Doğrula'} />
 
               <button
                 type="button"
@@ -108,53 +121,57 @@ export default function LoginScreen() {
               </button>
             </form>
           ) : (
-            <form onSubmit={onPassword} className="space-y-4">
-              <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
-                <KeyRound className="h-5 w-5 text-brand-600" aria-hidden />
-                Giriş yap
-              </div>
+            <form onSubmit={onPassword} className="space-y-5">
+              <header>
+                <h1 className="text-2xl font-bold tracking-tight text-slate-900">Giriş yap</h1>
+                <p className="mt-1 text-sm text-slate-500">Yönetim paneline devam et.</p>
+              </header>
 
-              <Field label="E-posta" error={fields['email']}>
-                <input
-                  className="field-input"
-                  type="email"
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                  autoComplete="username"
-                  autoFocus
-                  required
-                />
-              </Field>
+              <GirisAlani
+                label="E-posta"
+                type="email"
+                value={email}
+                onChange={setEmail}
+                autoComplete="username"
+                autoFocus
+                gecerli={epostaGecerli}
+                hata={fields['email']}
+              />
 
-              <Field label="Şifre" error={fields['password']}>
-                <input
-                  className="field-input"
-                  type="password"
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  autoComplete="current-password"
-                  required
-                />
-              </Field>
+              <SifreAlani value={password} onChange={setPassword} hata={fields['password']} />
 
-              <label className="flex min-h-11 items-center gap-2 text-sm text-slate-600">
-                <input
-                  type="checkbox"
-                  className="h-5 w-5 rounded border-slate-300"
-                  checked={remember}
-                  onChange={(event) => setRemember(event.target.checked)}
-                />
+              <AnahtarDugmesi checked={remember} onChange={setRemember}>
                 Bu cihazda beni hatırla
-              </label>
+              </AnahtarDugmesi>
 
               {error && <p className="text-sm font-medium text-rose-700">{error}</p>}
 
-              <button type="submit" className="btn-primary w-full" disabled={busy}>
-                {busy ? 'Kontrol ediliyor…' : 'Devam et'}
-              </button>
+              <PaneleGirDugmesi busy={busy} label={busy ? 'Kontrol ediliyor…' : 'Panele gir'} />
+
+              {vitrin.twoFactor ? (
+                <>
+                  <p className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-300">
+                    <span className="h-px flex-1 bg-slate-200" aria-hidden />
+                    Güvenlik
+                    <span className="h-px flex-1 bg-slate-200" aria-hidden />
+                  </p>
+                  <div className="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3">
+                    <Smartphone className="mt-0.5 h-4 w-4 shrink-0 text-lacivert-900" aria-hidden />
+                    <p className="flex-1 text-xs leading-relaxed text-slate-600">
+                      İki adımlı doğrulama açık — girişten sonra kod sorulacak.
+                    </p>
+                    <span className="badge bg-emerald-50 text-emerald-700 ring-emerald-200">Aktif</span>
+                  </div>
+                </>
+              ) : null}
+
+              <p className="flex items-center justify-center gap-1.5 pt-1 text-[11px] text-slate-400 lg:hidden">
+                <ShieldCheck className="h-3.5 w-3.5" aria-hidden />
+                Uçtan uca şifreli{vitrin.version ? ` · v${vitrin.version}` : ''}
+              </p>
             </form>
           )}
-        </div>
+        </section>
       </div>
     </div>
   );

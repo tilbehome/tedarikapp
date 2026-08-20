@@ -77,4 +77,16 @@ final class ExportRepository
         /** @var list<array<string, mixed>> */
         return $statement->fetchAll() ?: [];
     }
+
+    /**
+     * Listenin şimdiye kadarki çıktı sayısı — İE#13 F7 revizyon harfi bundan türer
+     * (ilk çıktı Rev A, ikincisi Rev B…). Silinmiş kayıt yoktur; sayaç geri gitmez.
+     */
+    public function countForList(int $listId): int
+    {
+        $statement = $this->connection->pdo()->prepare('SELECT COUNT(*) FROM exports WHERE list_id = :list_id');
+        $statement->execute(['list_id' => $listId]);
+
+        return (int) $statement->fetchColumn();
+    }
 }

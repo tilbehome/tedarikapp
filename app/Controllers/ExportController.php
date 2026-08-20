@@ -38,6 +38,8 @@ final class ExportController extends ApiController
         private readonly array $renderers,
         private readonly ActivityLog $activity,
         private readonly Clock $clock,
+        // İE#13 F1: belge antedi ayarları (firma adı/web/e-posta/hazırlayan).
+        private readonly \App\Models\SettingsRepository $settings,
     ) {
     }
 
@@ -62,10 +64,43 @@ final class ExportController extends ApiController
             ]);
         }
 
+        $body = $this->body($request);
+
+        // F5 — kopya türü: firma kopyası VARSAYILANDIR. İç kopya kâr sütunlarını
+        // taşır ve dosya adında da işaretlenir; yanlışlıkla firmaya gitmesi zorlaşır.
+        $copy = $this->str($body, 'copy') === 'ic' ? 'ic' : 'firma';
+
+        // F2 — durum filtresi: verilmezse HEPSİ. Geçersiz durum kodu sessizce elenir;
+        // hiç geçerli kod kalmazsa filtre uygulanmaz (boş çıktı sürprizi olmaz).
+        $statuses = $this->statuses($body['statuses'] ?? null);
+
         $now = $this->clock->now();
         $productRows = $this->products->forList((int) $row['id']);
+        if ($statuses !== []) {
+            $productRows = array_values(array_filter(
+                $productRows,
+                static fn (array $product): bool => in_array((string) $product['status'], $statuses, true),
+            ));
+        }
         $categoryNames = array_column($this->categories->all(), 'name', 'id');
-        $snapshot = $this->snapshot->build($row, $productRows, $categoryNames, $now);
+
+        // F7 — revizyon: aynı listenin kaçıncı çıktısı (A, B, C…).
+        $revision = \App\Services\Export\TemplateV2::revisionLabel($this->exports->countForList((int) $row['id']) + 1);
+
+        $snapshot = $this->snapshot->build($row, $productRows, $categoryNames, $now, [
+            'copy' => $copy,
+            'statuses' => $statuses,
+            'revision_label' => $revision,
+            'document_code' => \App\Services\Export\TemplateV2::documentCode(
+                (int) $row['id'],
+                (int) $now->format('Y'),
+                $revision,
+            ),
+            // F6 — QR: paylaşım adresi YALNIZ istekle gelirse gömülür. Tam token
+            // sunucuda SAKLANMAZ (K51: yalnız hash) — bu yüzden yeniden üretilemez.
+            'share_url' => $this->shareUrl($body['share_url'] ?? null, $row),
+            'document_header' => $this->settings->documentHeader(),
+        ]);
 
         try {
             $bytes = $renderer->render($snapshot);
@@ -87,14 +122,70 @@ final class ExportController extends ApiController
             'export',
             $exportId,
             'export_created',
-            sprintf('liste:%d %s (%d ürün)', (int) $row['id'], $format, count($productRows)),
+            sprintf(
+                'liste:%d %s (%d ürün) · kopya:%s · rev:%s%s',
+                (int) $row['id'],
+                $format,
+                count($productRows),
+                $copy,
+                $revision,
+                $statuses === [] ? '' : ' · filtre:' . implode('/', $statuses),
+            ),
             ClientIp::from($request),
             $now,
             ActivityLog::ACTOR_ADMIN,
             $this->user($request)->id,
         );
 
-        return $this->stream($response, $bytes, $renderer, (string) $row['name'], $now);
+        return $this->stream(
+            $response,
+            $bytes,
+            $renderer,
+            (string) $row['name'] . ($copy === 'ic' ? ' (IC KOPYA)' : ''),
+            $now,
+        );
+    }
+
+    /**
+     * Geçerli ürün durum kodları — uydurma kod sorguya girmez.
+     *
+     * @return list<string>
+     */
+    private function statuses(mixed $raw): array
+    {
+        if (!is_array($raw)) {
+            return [];
+        }
+        $gecerli = array_keys(\App\Services\Export\TemplateV2::STATUS_BADGES);
+        $out = [];
+        foreach ($raw as $status) {
+            if (is_string($status) && in_array($status, $gecerli, true) && !in_array($status, $out, true)) {
+                $out[] = $status;
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * F6 — QR adresi doğrulaması: yalnız KENDİ paylaşım adresimiz kabul edilir ve
+     * listede AKTİF bir paylaşım linki olmalıdır. Böylece belgeye yabancı bir adres
+     * bastırılamaz (QR, tıklanan bir link kadar tehlikelidir).
+     *
+     * @param array<string, mixed> $listRow
+     */
+    private function shareUrl(mixed $raw, array $listRow): ?string
+    {
+        if (!is_string($raw) || $raw === '' || ($listRow['share_token_hash'] ?? null) === null) {
+            return null;
+        }
+        if (preg_match('#^https?://[^\s]+/p/([0-9a-f]{64})$#', $raw, $eslesme) !== 1) {
+            return null;
+        }
+        // Verilen token GERÇEKTEN bu listenin linki mi? Hash'i karşılaştırılır.
+        $hash = hash('sha256', $eslesme[1]);
+
+        return hash_equals((string) $listRow['share_token_hash'], $hash) ? $raw : null;
     }
 
     /**

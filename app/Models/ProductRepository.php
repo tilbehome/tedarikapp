@@ -18,7 +18,8 @@ final class ProductRepository
 {
     private const COLUMNS = 'id, list_id, sort_no, category_id, platform, external_id,
         name, name_original, detail, url, vendor_name, vendor_url, sku_selection, sku_matrix,
-        main_image, main_image_source, video_url, qty, price_yuan, price_ddp_usd, units_per_carton, tracking_no,
+        main_image, main_image_source, video_url, qty, price_yuan, price_ddp_usd, price_target_try,
+        units_per_carton, tracking_no,
         raw_attributes, country_of_origin, country_of_dispatch,
         status, note, created_at, updated_at, deleted_at';
 
@@ -27,6 +28,8 @@ final class ProductRepository
         'category_id', 'platform', 'external_id', 'name', 'name_original', 'detail', 'url',
         'vendor_name', 'vendor_url', 'sku_selection', 'sku_matrix', 'main_image', 'main_image_source', 'video_url',
         'qty', 'price_yuan', 'price_ddp_usd', 'units_per_carton', 'tracking_no', 'note',
+        // İE#13 F5: hedef satış fiyatı — yalnız iç kopya çıktısını besler.
+        'price_target_try',
         // İE#11 EK-3 (2): yakalamanın RAW bloğu + menşe (capture ile dolar; panelden de düzenlenebilir).
         'raw_attributes', 'country_of_origin', 'country_of_dispatch',
     ];
@@ -108,13 +111,13 @@ final class ProductRepository
         $statement = $pdo->prepare(
             'INSERT INTO products (list_id, sort_no, category_id, platform, external_id, name,
                 name_original, detail, url, vendor_name, vendor_url, sku_selection, sku_matrix,
-                main_image, main_image_source, video_url, qty, price_yuan, price_ddp_usd, units_per_carton,
-                raw_attributes, country_of_origin, country_of_dispatch,
+                main_image, main_image_source, video_url, qty, price_yuan, price_ddp_usd, price_target_try,
+                units_per_carton, raw_attributes, country_of_origin, country_of_dispatch,
                 tracking_no, status, note, created_at, updated_at)
              VALUES (:list_id, :sort_no, :category_id, :platform, :external_id, :name,
                 :name_original, :detail, :url, :vendor_name, :vendor_url, :sku_selection, :sku_matrix,
-                :main_image, :main_image_source, :video_url, :qty, :price_yuan, :price_ddp_usd, :units_per_carton,
-                :raw_attributes, :country_of_origin, :country_of_dispatch,
+                :main_image, :main_image_source, :video_url, :qty, :price_yuan, :price_ddp_usd, :price_target_try,
+                :units_per_carton, :raw_attributes, :country_of_origin, :country_of_dispatch,
                 :tracking_no, :status, :note, :created_at, :updated_at)',
         );
         $statement->execute([
@@ -137,6 +140,8 @@ final class ProductRepository
             'qty' => $data['qty'],
             'price_yuan' => $data['price_yuan'] ?? '0',
             'price_ddp_usd' => $data['price_ddp_usd'] ?? '0',
+            // İE#13 F5: hedef satış — boş bırakılabilir (NULL = hedef yok).
+            'price_target_try' => $data['price_target_try'] ?? null,
             'units_per_carton' => $data['units_per_carton'] ?? null,
             'raw_attributes' => $data['raw_attributes'] ?? null,
             'country_of_origin' => $data['country_of_origin'] ?? null,

@@ -46,6 +46,7 @@ final class DataRoutes
         TrashController $trashController,
         ExportController $exportController,
         ShareController $shareController,
+        \App\Controllers\TranslationController $translationController,
         AuthServices $services,
         ResponseFactoryInterface $responseFactory,
         Connection $connection,
@@ -55,6 +56,8 @@ final class DataRoutes
             $group->get('/settings', [$settingsController, 'show']);
             $group->put('/settings/rates', [$settingsController, 'updateRates']);
             $group->get('/settings/rates/history', [$settingsController, 'rateHistory']);
+            // İE#13 F1: belge antedi (çıktı üst bandı) — boş alan basılmaz.
+            $group->put('/settings/document-header', [$settingsController, 'updateDocumentHeader']);
 
             $group->get('/activity', [$activityController, 'index']);
 
@@ -70,7 +73,7 @@ final class DataRoutes
             ->add(new Csrf($services->session, $responseFactory))
             ->add(new Auth($services, $responseFactory));
 
-        $app->group('/api', static function (RouteCollectorProxy $group) use ($listController, $productController, $trashController, $exportController, $shareController, $inboxController): void {
+        $app->group('/api', static function (RouteCollectorProxy $group) use ($listController, $productController, $trashController, $exportController, $shareController, $inboxController, $translationController): void {
             $group->get('/lists', [$listController, 'index']);
             $group->post('/lists', [$listController, 'store']);
             $group->get('/lists/{id}', [$listController, 'show']);
@@ -104,7 +107,13 @@ final class DataRoutes
             // İE#11 Görev D: Gelen Kutusu.
             $group->get('/inbox', [$inboxController, 'index']);
             $group->post('/inbox/assign', [$inboxController, 'assign']);
+            // İE#13 B1: toplu silme — sabit yol, {id} deseninden ÖNCE tanımlanır.
+            $group->post('/inbox/delete', [$inboxController, 'bulkDelete']);
+            $group->get('/inbox/{id}', [$inboxController, 'show']);
             $group->delete('/inbox/{id}', [$inboxController, 'destroy']);
+
+            // İE#13 C4: ZH→TR başlık ÖNERİSİ (K54 — hiçbir alana kendiliğinden yazılmaz).
+            $group->post('/panel/translate-suggest', [$translationController, 'suggest']);
 
             $group->get('/trash', [$trashController, 'index']);
             $group->post('/trash/{type}/{id}/restore', [$trashController, 'restore']);

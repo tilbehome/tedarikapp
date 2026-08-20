@@ -7,6 +7,7 @@ import { count, dateTime, rate } from '../lib/format';
 import { mediaModeLabels } from '../locales/tr';
 import { ErrorNote, Field, PageHeader, Skeleton } from '../components/ui';
 import { useToast } from '../components/Toast';
+import BelgeAntedi from './ayarlar/BelgeAntedi';
 
 /**
  * E8 — Ayarlar: kurlar (tarihçeli), kategoriler, güvenlik, sistem durumu.
@@ -29,6 +30,9 @@ export default function SettingsScreen() {
   useEffect(() => {
     const data = settingsState.data;
     if (!data) return;
+    // Yüklenen ayarlar form alanlarını tohumlar — react-hooks 7 bu deseni uyarıyor; formun sunucu
+    // verisiyle ilklenmesi mevcut davranıştır ve F41 kapsamında ele alınacak.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setYuan(data.yuan_tl);
     setUsd(data.usd_tl);
   }, [settingsState.data]);
@@ -92,6 +96,10 @@ export default function SettingsScreen() {
           </form>
         )}
       </section>
+
+      {settingsState.data ? (
+        <BelgeAntedi mevcut={settingsState.data.document_header} onSaved={settingsState.reload} />
+      ) : null}
 
       <section className="card mb-4 p-4">
         <h2 className="mb-3 text-sm font-semibold text-slate-700">Kur tarihçesi</h2>

@@ -51,7 +51,62 @@ final class SettingsController extends ApiController
             // K33 çift modu: panel rozeti bunu okur (Faz 1D).
             'media_mode' => $this->media->mode(),
             'media_writable' => $this->media->isWritable(),
+            // İE#13 F1: belge antedi — çıktı ve paylaşım sayfası bandında görünür.
+            'document_header' => $this->settings->documentHeader(),
         ]);
+    }
+
+    /**
+     * PUT /api/settings/document-header — İE#13 F1 "Ayarlar > Belge Antedi".
+     *
+     * Dört alan da İSTEĞE BAĞLIDIR; boş gönderilen alan temizlenir ve çıktıda
+     * basılmaz. Serbest metindir ama uzunluk sınırlıdır — antet tek satırdır.
+     */
+    public function updateDocumentHeader(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        $body = $this->body($request);
+        $alanlar = [
+            'company' => SettingsRepository::KEY_DOC_COMPANY,
+            'web' => SettingsRepository::KEY_DOC_WEB,
+            'email' => SettingsRepository::KEY_DOC_EMAIL,
+            'prepared_by' => SettingsRepository::KEY_DOC_PREPARED_BY,
+        ];
+
+        $errors = [];
+        foreach ($alanlar as $alan => $key) {
+            if (!array_key_exists($alan, $body)) {
+                continue;
+            }
+            $deger = is_string($body[$alan]) ? trim($body[$alan]) : '';
+            if (mb_strlen($deger) > 120) {
+                $errors[$alan] = 'En fazla 120 karakter olabilir.';
+            }
+            if ($alan === 'email' && $deger !== '' && filter_var($deger, FILTER_VALIDATE_EMAIL) === false) {
+                $errors[$alan] = 'Geçerli bir e-posta adresi girin.';
+            }
+        }
+        if ($errors !== []) {
+            return Response::error($response, 'VALIDATION', 'Doğrulama hatası', 422, $errors);
+        }
+
+        foreach ($alanlar as $alan => $key) {
+            if (array_key_exists($alan, $body)) {
+                $this->settings->set($key, is_string($body[$alan]) ? trim($body[$alan]) : '');
+            }
+        }
+
+        $this->activity->record(
+            'settings',
+            null,
+            'document_header_updated',
+            null,
+            \App\Core\ClientIp::from($request),
+            $this->clock->now(),
+            \App\Services\ActivityLog::ACTOR_ADMIN,
+            $this->user($request)->id,
+        );
+
+        return Response::success($response, $this->settings->documentHeader());
     }
 
     /**

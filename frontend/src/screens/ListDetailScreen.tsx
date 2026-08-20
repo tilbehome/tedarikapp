@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, Download, FileSpreadsheet, ImageOff, Plus, Search, Share2, Trash2 } from 'lucide-react';
+import { ArrowLeft, Download, ImageOff, Plus, Search, Share2, Trash2 } from 'lucide-react';
 import { exports as exportsApi, lists as listsApi, products as productsApi, share as shareApi } from '../api/endpoints';
+import CiktiSecenekleri, { paylasimAdresiAnahtari } from './liste/CiktiSecenekleri';
 import type { ListStatus, Product, ProductStatus } from '../api/types';
 import { useAsync, messageOf } from '../lib/useAsync';
 import { count, dateTime, money, rate } from '../lib/format';
@@ -156,15 +157,8 @@ export default function ListDetailScreen() {
               <Plus className="h-4 w-4" aria-hidden />
               Ürün ekle
             </Link>
-            {/* İE#11 Görev E: üretim CSRF'li POST — dosya blob olarak iner, rozet tazelenir. */}
-            <button type="button" className="btn-ghost" onClick={() => void exportsApi.create(listId, 'xlsx').then(refresh).catch((c) => push(messageOf(c), 'error'))}>
-              <FileSpreadsheet className="h-4 w-4" aria-hidden />
-              Excel
-            </button>
-            <button type="button" className="btn-ghost" onClick={() => void exportsApi.create(listId, 'pdf').then(refresh).catch((c) => push(messageOf(c), 'error'))}>
-              <Download className="h-4 w-4" aria-hidden />
-              PDF
-            </button>
+            {/* İE#11 Görev E: üretim CSRF'li POST · İE#13 F2/F5/F6: kopya türü, durum filtresi, QR. */}
+            <CiktiSecenekleri listId={listId} onDone={refresh} />
             <button type="button" className="btn-ghost" onClick={() => setShareOpen((value) => !value)}>
               <Share2 className="h-4 w-4" aria-hidden />
               Paylaş
@@ -436,6 +430,9 @@ function SharePanel({ listId, tokenPrefix, onChanged }: { listId: number; tokenP
     try {
       const result = await shareApi.create(listId);
       setUrl(result.share_url);
+      // F6: QR için tam adres GEREKİR ama sunucuda saklanmaz (K51). Sekme ömrü kadar
+      // sessionStorage'da tutulur; sekme kapanınca silinir, kalıcı bir yere yazılmaz.
+      sessionStorage.setItem(paylasimAdresiAnahtari(listId), result.share_url);
       onChanged();
       push('Paylaşım linki hazır — bu link yalnız şimdi görünür, kopyalayın.');
     } catch (caught) {
@@ -451,6 +448,7 @@ function SharePanel({ listId, tokenPrefix, onChanged }: { listId: number; tokenP
       await shareApi.revoke(listId);
       setUrl(null);
       onChanged();
+      sessionStorage.removeItem(paylasimAdresiAnahtari(listId));
       push('Paylaşım linki iptal edildi — eski link artık açılmaz.');
     } catch (caught) {
       push(messageOf(caught), 'error');

@@ -28,7 +28,7 @@ jobs:
 
     steps:
       - name: Depoyu al
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: PHP 8.4 kur
         uses: shivammathur/setup-php@v2
@@ -94,7 +94,7 @@ jobs:
 
     steps:
       - name: Depoyu al
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: PHP 8.4 kur
         uses: shivammathur/setup-php@v2
@@ -132,7 +132,7 @@ jobs:
     # uygulama 8.1 üzerinde AYAĞA KALKAR (sihirbaz state ucu 200).
     steps:
       - name: Depoyu al
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: PHP 8.1 kur
         uses: shivammathur/setup-php@v2
@@ -219,7 +219,7 @@ jobs:
 
     steps:
       - name: Depoyu al
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: PHP 8.4 kur
         uses: shivammathur/setup-php@v2
@@ -250,7 +250,7 @@ jobs:
       # Zip'i CI ÜRETİR, AÇAR ve ÇALIŞTIRIR: /setup gerçekten text/html döner,
       # /api/setup/state 200, integrity ucu "eksik yok" der. Üçü yeşil olmadan release yok.
       - name: Node 22 kur (panel build release zip'e girer)
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: '22'
           cache: npm
@@ -317,9 +317,9 @@ jobs:
         working-directory: extension
     steps:
       - name: Depoyu al
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Node 22 kur
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: '22'
           cache: npm
@@ -341,6 +341,156 @@ jobs:
           path: extension/dist/*.zip
           retention-days: 30
 
+  e2e:
+    name: E2E (Playwright)
+    runs-on: ubuntu-latest
+    # CANLI DERS (İE#13): "Playwright kur" adımı apt kilidinde asılı kalıp GitHub'ın
+    # 6 SAATLİK tavanına dayandı ve turu yaktı. Job'a tavan konur — takılan koşum
+    # dakikalar içinde düşer, saatlerce sürünmez.
+    timeout-minutes: 20
+    # İE#13 Blok E (F22): uçtan uca akışlar GERÇEK MySQL + gerçek HTTP üzerinden koşar
+    # (SQLite yok — E1). Eklenti E2E kapsam DIŞIDIR (E3): Playwright'ın MV3 desteği
+    # kırılgandır; parser fixture testleri (eklenti job'ı) o boşluğu doldurur.
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: tedarikapp_e2e
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=5s
+          --health-timeout=3s
+          --health-retries=12
+
+    steps:
+      - name: Depoyu al
+        uses: actions/checkout@v7
+
+      - name: PHP 8.3 kur
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: bcmath, curl, fileinfo, gd, intl, mbstring, openssl, pdo_mysql, pdo_sqlite, zip
+          coverage: none
+          tools: none
+
+      - name: Composer önbelleği
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache
+          key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-
+
+      - name: Bağımlılıkları kur (dev araçları GEREKMEZ)
+        # --no-dev: E2E uygulamayı çalıştırır, kod kalitesi araçlarını değil. Kilit
+        # dosyasındaki dev paketleri (php-cs-fixer/symfony 8.x) PHP >= 8.4 ister;
+        # bu job üretim tabanına yakın 8.3'te koşar ve onlara ihtiyaç duymaz.
+        run: |
+          n=0; until composer install --no-dev --optimize-autoloader --no-interaction --no-progress; do
+            n=$((n+1)); [ $n -ge 3 ] && exit 1; echo "codeload hatası — 90 sn sonra deneme $((n+1))/3"; sleep 90
+          done
+
+      - name: Node 22 kur
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Panel derle (E2E gerçek panele bakar)
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+
+      - name: Ortam dosyası (yalnız CI — sır değil, tek kullanımlık)
+        run: |
+          cat > .env <<'ENV'
+          APP_ENV=local
+          APP_URL=http://127.0.0.1:8099
+          APP_KEY=e2e0e2e0e2e0e2e0e2e0e2e0e2e0e2e0e2e0e2e0e2e0e2e0e2e0e2e0e2e0e2e0
+          TZ=Europe/Istanbul
+          DB_HOST=127.0.0.1
+          DB_PORT=3306
+          DB_NAME=tedarikapp_e2e
+          DB_USER=root
+          DB_PASS=root
+          LOG_DRIVER=file
+          LOG_LEVEL=warning
+          EXTENSION_TOKEN_SALT=e2e-salt-e2e-salt-e2e-salt-e2e-s
+          TRANSLATE_ENABLED=0
+          ENV
+
+      - name: Şema + test kullanıcısı (2FA'sız — K45)
+        run: |
+          php bin/migrate.php
+          php bin/user-create.php --email=e2e@tedarikapp.test --password=e2e-cok-gizli-sifre --no-totp
+
+      - name: Bağımlılıklar + tip denetimi (e2e)
+        working-directory: e2e
+        timeout-minutes: 5
+        run: |
+          npm ci
+          npm run typecheck
+
+      # Tarayıcı ikilisi önbelleğe alınır: anahtar KİLİT DOSYASININ özetidir, yani
+      # Playwright sürümü değişince (ve yalnız o zaman) yeni indirme yapılır.
+      - name: Playwright tarayıcı önbelleği
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('e2e/package-lock.json') }}
+
+      # `--with-deps` apt çalıştırır ve kilit beklerken ASILABİLİR (canlı ders).
+      # Sistem kütüphaneleri ayrı ve NONINTERACTIVE kurulur, kendi tavanıyla;
+      # düşerse tarayıcı yine kurulur (runner imajında kütüphaneler çoğunlukla vardır).
+      - name: Chromium sistem kütüphaneleri (hata toleranslı)
+        working-directory: e2e
+        timeout-minutes: 6
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        continue-on-error: true
+        run: npx playwright install-deps chromium
+
+      # Bu adım HATA TOLERANSLI DEĞİLDİR: tarayıcı yoksa süit sessizce "yeşil"
+      # görünemez — job burada hızlıca düşer (PM şartı).
+      - name: Chromium indir
+        working-directory: e2e
+        timeout-minutes: 6
+        run: |
+          npx playwright install chromium
+          npx playwright --version
+
+      - name: Uygulamayı başlat
+        run: |
+          php -S 127.0.0.1:8099 -t public e2e/router.php > /tmp/e2e-server.log 2>&1 &
+          for i in $(seq 1 20); do
+            curl -sf http://127.0.0.1:8099/api/health > /dev/null && break
+            sleep 1
+          done
+          curl -sf http://127.0.0.1:8099/api/health | head -c 200
+
+      - name: E2E süiti
+        working-directory: e2e
+        env:
+          E2E_BASE_URL: http://127.0.0.1:8099
+        run: npm test
+
+      - name: Sunucu günlüğü (hata ayıklama)
+        if: failure()
+        run: tail -100 /tmp/e2e-server.log
+
+      - name: Playwright raporu
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-raporu
+          path: e2e/playwright-report
+          retention-days: 7
+
   gitleaks:
     name: Sır taraması (gitleaks)
     runs-on: ubuntu-latest
@@ -348,11 +498,11 @@ jobs:
     # otomatik bekçisi. Bulgu = job kırmızı; yanlış pozitifler .gitleaksignore ile yönetilir.
     steps:
       - name: Depoyu al
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: gitleaks
-        uses: gitleaks/gitleaks-action@v2
+        uses: gitleaks/gitleaks-action@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -367,10 +517,10 @@ jobs:
 
     steps:
       - name: Depoyu al
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Node 22 kur
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: '22'
           cache: npm

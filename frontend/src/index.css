@@ -10,6 +10,16 @@
   --color-brand-500: #2563eb;
   --color-brand-600: #1d4ed8;
   --color-brand-700: #1e40af;
+
+  /*
+   * Kurumsal palet (İE#13 EK-B + Blok F — ONAYLI): lacivert taban, altın vurgu.
+   * Giriş ekranı, şablon v2 çıktıları ve paylaşım sayfası AYNI değişkenleri kullanır;
+   * ton bir yerde değişirse üç yüzeyde birden değişsin diye tek kaynakta durur.
+   */
+  --color-lacivert-700: #16336e;
+  --color-lacivert-900: #0f2557;
+  --color-altin-400: #e0b640;
+  --color-altin-500: #d4a017;
 }
 
 @layer base {

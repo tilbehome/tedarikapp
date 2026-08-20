@@ -21,6 +21,16 @@ final class SettingsRepository
     public const KEY_USD_RATE = 'usd_tl';
 
     /**
+     * İE#13 F1 — Belge Antedi: çıktıların (Excel/PDF) ve paylaşım sayfasının üst
+     * bandında görünen firma kimliği. BOŞ ALAN BASILMAZ; hiçbiri girilmemişse antet
+     * yalnız liste bilgisini gösterir.
+     */
+    public const KEY_DOC_COMPANY = 'doc_company_name';
+    public const KEY_DOC_WEB = 'doc_company_web';
+    public const KEY_DOC_EMAIL = 'doc_company_email';
+    public const KEY_DOC_PREPARED_BY = 'doc_prepared_by';
+
+    /**
      * Ayar henüz girilmemişken kullanılan başlangıç değerleri.
      * Gerçek değerler `PUT /api/settings/rates` ile girilir (ayarlar iş emri);
      * o güne kadar liste oluşturulabilsin diye makul bir başlangıç verilir.
@@ -30,6 +40,28 @@ final class SettingsRepository
 
     public function __construct(private readonly Connection $connection)
     {
+    }
+
+    /**
+     * Belge antedi alanları (İE#13 F1) — boşlar null döner, çıktıda basılmaz.
+     *
+     * @return array{company: string|null, web: string|null, email: string|null, prepared_by: string|null}
+     */
+    public function documentHeader(): array
+    {
+        $oku = function (string $key): ?string {
+            $deger = $this->get($key);
+            $deger = is_string($deger) ? trim($deger) : '';
+
+            return $deger === '' ? null : $deger;
+        };
+
+        return [
+            'company' => $oku(self::KEY_DOC_COMPANY),
+            'web' => $oku(self::KEY_DOC_WEB),
+            'email' => $oku(self::KEY_DOC_EMAIL),
+            'prepared_by' => $oku(self::KEY_DOC_PREPARED_BY),
+        ];
     }
 
     public function get(string $key, ?string $default = null): ?string

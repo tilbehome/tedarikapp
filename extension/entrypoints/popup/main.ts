@@ -1,16 +1,19 @@
 /**
- * Popup akışı (İE#11 C2): sayfa verisi → önizleme → hedef/adet/not → Panele Gönder.
- * Parser popup'ta koşar (saf fonksiyon); ağ istekleri background üzerinden.
+ * Popup akışı (İE#11 C2, İE#13 A1'de sadeleşti): ayar ekranı + ORTAK yakalama formu.
+ *
+ * Formun kendisi `ui/captureForm`tedir ve sayfa içi mini panelle paylaşılır —
+ * burada yalnız popup'a özgü olan kalır: ayar (panel adresi/token) ekranı, bölüm
+ * geçişleri ve sayfa verisini AKTİF SEKMEDEN okuma.
  */
 
 import { getSettings, saveSettings } from '../../core/api';
-import { parse1688, PARSER_VERSION } from '../../modules/m1688/parser';
-import type { CapturePayload, ParseResult, SelectorSet } from '../../core/types';
+import { mountCaptureForm } from '../../ui/captureForm';
+import { CAPTURE_CSS } from '../../ui/styles';
+import type { PageData } from '../../core/types';
 
 const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
 
 const durum = $('durum');
-let parseResult: ParseResult | null = null;
 
 function send<T>(message: { type: string; payload?: unknown }): Promise<T> {
   return new Promise((resolve, reject) => {
@@ -34,159 +37,55 @@ async function ayarlariYukle(): Promise<void> {
   ($('token') as HTMLInputElement).value = settings.token;
 }
 
-async function baglantiyiDene(): Promise<boolean> {
-  try {
-    await send({ type: 'LISTS' });
-    durum.textContent = 'bağlı ✓';
-    durum.className = 'durum ok';
-    $('baglanti-hata').hidden = true;
-    return true;
-  } catch (error) {
-    const mesaj = error instanceof Error ? error.message : String(error);
-    durum.textContent = mesaj === 'AYAR_EKSIK' ? 'ayar gerekli' : 'bağlantı yok';
-    durum.className = 'durum hata';
-    // Sebebi GÖSTER: "bağlantı yok" tek başına teşhis ettirmiyordu (canlı vaka).
-    const kutu = $('baglanti-hata');
-    kutu.textContent =
-      mesaj === 'AYAR_EKSIK'
-        ? 'Panel adresi ve token girilmeli.'
-        : /token/i.test(mesaj) || /geçersiz|iptal/i.test(mesaj)
-          ? 'Token geçersiz veya iptal edilmiş — panelden yeni token üretip buraya yapıştırın.'
-          : 'Sebep: ' + mesaj;
-    kutu.hidden = false;
-    return false;
-  }
-}
-
-async function listeleriDoldur(): Promise<void> {
-  const hedef = $('hedef') as HTMLSelectElement;
-  try {
-    const lists = await send<{ id: number; name: string; status: string }[]>({ type: 'LISTS' });
-    for (const list of lists) {
-      const option = document.createElement('option');
-      option.value = String(list.id);
-      option.textContent = list.name + (list.status === 'draft' ? '' : ` (${list.status})`);
-      hedef.appendChild(option);
-    }
-    const yeni = document.createElement('option');
-    yeni.value = 'YENI';
-    yeni.textContent = '+ Hızlı yeni liste…';
-    hedef.appendChild(yeni);
-  } catch {
-    /* liste seçici dolmasa da Gelen Kutusu yolu çalışır */
-  }
-}
-
-async function sayfayiOku(): Promise<void> {
+/** Aktif sekmeden sayfa verisi: adres uygun değilse ya da content script yoksa ok:false. */
+async function aktifSekmeyiOku(): Promise<PageData> {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab?.id || !tab.url || !/^https:\/\/detail\.1688\.com\//.test(tab.url)) {
-    goster('desteklenmiyor');
-    return;
+    return { ok: false, error: 'Bu sayfa desteklenmiyor. Eklenti detail.1688.com ürün sayfalarında çalışır.' };
   }
 
-  const page = await new Promise<{ ok: boolean; context?: unknown; dom?: Record<string, string | null>; url?: string; error?: string } | undefined>(
-    (resolve) =>
-      chrome.tabs.sendMessage(tab.id as number, { type: 'PAGE_DATA' }, (yanit) => {
-        // lastError okunmazsa konsola "Unchecked runtime.lastError" düşer.
-        void chrome.runtime.lastError;
-        resolve(yanit);
-      }),
+  const yanit = await new Promise<PageData | undefined>((resolve) =>
+    chrome.tabs.sendMessage(tab.id as number, { type: 'PAGE_DATA' }, (cevap: PageData | undefined) => {
+      // lastError okunmazsa konsola "Unchecked runtime.lastError" düşer.
+      void chrome.runtime.lastError;
+      resolve(cevap);
+    }),
   );
-  if (!page?.ok) {
-    // Eklenti AÇIK sekmeye sonradan kurulduysa content script enjekte EDİLMEMİŞTİR —
-    // adres doğru olduğu hâlde yanıt gelmez. Kullanıcıya doğru talimat: sayfayı yenile.
-    $('yenile-uyari').hidden = false;
-    $('desteklenmiyor-metin').textContent =
-      'Sayfa verisi okunamadı. Eklentiyi bu sekme açıkken kurduysanız sayfayı yenileyin (F5) ve tekrar deneyin.';
+  if (yanit?.ok !== true) {
+    // İE#13 A2 ile kurulum anında enjeksiyon yapılıyor; yine de eski bir sekmede
+    // (ör. eklenti devre dışı bırakılıp açılmışsa) yanıt gelmeyebilir.
+    return { ok: false, error: 'Sayfa verisi okunamadı. Sayfayı yenileyin (F5) ve tekrar deneyin.' };
+  }
+
+  return yanit;
+}
+
+const form = mountCaptureForm({
+  send,
+  readPage: aktifSekmeyiOku,
+  onStatus: (metin, tur) => {
+    durum.textContent = metin;
+    durum.className = 'durum' + (tur === 'bilgi' ? '' : ' ' + tur);
+  },
+  onNeedSettings: (sebep) => {
+    const kutu = $('baglanti-hata');
+    kutu.textContent = sebep;
+    kutu.hidden = false;
+    goster('ayarlar');
+  },
+  onPageUnavailable: (sebep) => {
+    $('desteklenmiyor-metin').textContent = sebep;
     goster('desteklenmiyor');
-    return;
-  }
-
-  const selectors = await send<SelectorSet>({ type: 'SELECTORS' });
-  parseResult = parse1688(page.context, selectors, page.url ?? tab.url, page.dom ?? {});
-
-  const { normalized } = parseResult;
-  $('ad').textContent = normalized.name || '(ad çıkarılamadı)';
-  $('fiyat').textContent =
-    normalized.price_tiers.length > 1
-      ? normalized.price_tiers.map((t) => `${t.min_qty}+ → ¥${t.price_yuan}`).join(' · ')
-      : normalized.price_yuan
-        ? `¥${normalized.price_yuan}`
-        : '(fiyat çıkarılamadı)';
-  $('varyasyon').textContent = normalized.sku_matrix ? `${normalized.sku_matrix.length} varyasyon` : '';
-  const gorsel = $('gorsel') as HTMLImageElement;
-  if (normalized.images[0]) {
-    gorsel.src = normalized.images[0];
-    gorsel.hidden = false;
-  }
-  if (!parseResult.ok) {
-    $('eksik').textContent = 'Eksik alanlar: ' + parseResult.missing.join(', ') + ' — yine de gönderilebilir (kuyruğa düşer).';
-    $('eksik').hidden = false;
-  }
-  goster('yakala');
-}
-
-async function gonder(): Promise<void> {
-  if (!parseResult) return;
-  const buton = $('gonder') as HTMLButtonElement;
-  buton.disabled = true;
-  $('sonuc').hidden = true;
-
-  const hedefSecim = ($('hedef') as HTMLSelectElement).value;
-  let targetListId: number | null = null;
-  // "Hızlı yeni liste" backend'de tek çağrıyla yok — v1: panel liste ucu Bearer'a açık değil.
-  // Çözüm: yeni liste adı NOT alanına işlenir ve kayıt Gelen Kutusu'na düşer (rapor: sapma).
-  let note = (($('not') as HTMLInputElement).value || '').trim() || null;
-  if (hedefSecim === 'YENI') {
-    const yeniAd = (($('yeni-liste-adi') as HTMLInputElement).value || '').trim();
-    note = ((note ?? '') + (yeniAd !== '' ? ` [yeni liste: ${yeniAd}]` : '')).trim() || null;
-  } else if (hedefSecim !== '') {
-    targetListId = Number.parseInt(hedefSecim, 10);
-  }
-
-  const payload: CapturePayload = {
-    capture_id: crypto.randomUUID(),
-    schema_version: 2,
-    extension_version: chrome.runtime.getManifest().version,
-    parser_version: PARSER_VERSION,
-    target_list_id: targetListId,
-    qty: Math.max(1, Number.parseInt(($('adet') as HTMLInputElement).value, 10) || 1),
-    units_per_carton: Number.parseInt(($('koli') as HTMLInputElement).value, 10) || null,
-    note,
-    source: parseResult.source,
-    raw: parseResult.raw,
-    normalized: parseResult.normalized,
-  };
-
-  try {
-    const result = await send<{ status: string; product_id: number | null; duplicate: { list_name: string } | null }>({
-      type: 'CAPTURE',
-      payload,
-    });
-    const sonuc = $('sonuc');
-    sonuc.textContent =
-      result.status === 'assigned'
-        ? 'Ürün listeye eklendi ✓'
-        : result.status === 'error'
-          ? 'Gönderildi — eksik alanlar panelde tamamlanacak (Gelen Kutusu).'
-          : "Gelen Kutusu'na gönderildi ✓";
-    sonuc.className = 'sonuc ok';
-    sonuc.hidden = false;
-    if (result.duplicate) {
-      $('mukerrer').textContent = `Bu ürün "${result.duplicate.list_name}" listesinde zaten var — yine de eklendi (K25).`;
-      $('mukerrer').hidden = false;
-    }
-  } catch (error) {
-    const sonuc = $('sonuc');
-    sonuc.textContent = 'Gönderilemedi: ' + (error instanceof Error ? error.message : String(error));
-    sonuc.className = 'sonuc hata';
-    sonuc.hidden = false;
-  } finally {
-    buton.disabled = false;
-  }
-}
+  },
+});
 
 async function init(): Promise<void> {
+  // Form stili mini panelle ORTAK kaynaktan gelir (iki yüzey ayrışmasın).
+  const style = document.createElement('style');
+  style.textContent = CAPTURE_CSS;
+  document.head.append(style);
+
+  $('yakala').append(form.element);
   await ayarlariYukle();
 
   $('kaydet').addEventListener('click', () => {
@@ -195,26 +94,17 @@ async function init(): Promise<void> {
         panelUrl: ($('panel-url') as HTMLInputElement).value.trim(),
         token: ($('token') as HTMLInputElement).value.trim(),
       });
-      if (await baglantiyiDene()) {
-        await listeleriDoldur();
-        await sayfayiOku();
-      }
+      $('baglanti-hata').hidden = true;
+      goster('yakala');
+      await form.baslat();
     })();
   });
   for (const id of ['ayar-ac', 'ayar-ac-2']) {
     $(id).addEventListener('click', () => goster('ayarlar'));
   }
-  ($('hedef') as HTMLSelectElement).addEventListener('change', (event) => {
-    $('yeni-liste-kutu').hidden = (event.target as HTMLSelectElement).value !== 'YENI';
-  });
-  $('gonder').addEventListener('click', () => void gonder());
 
-  if (!(await baglantiyiDene())) {
-    goster('ayarlar');
-    return;
-  }
-  await listeleriDoldur();
-  await sayfayiOku();
+  goster('yakala');
+  await form.baslat();
 }
 
 void init();

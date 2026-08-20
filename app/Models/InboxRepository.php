@@ -69,19 +69,96 @@ final class InboxRepository
     }
 
     /**
-     * Bekleyen kuyruk (pending + error) — yeniden eskiye.
+     * Bekleyen kuyruk (pending + error) — yeniden eskiye, filtreli ve SAYFALI (İE#13 B5).
+     *
+     * Filtreler istemciden gelir ama sorguya PARAMETRE olarak girer (birleştirme yok).
+     * Tarih aralığı gün bazlıdır: `to` günün SONUNU kapsar (kullanıcı "19 Ağu" derken
+     * o günü dışarıda bırakmayı beklemez).
+     *
+     * @param array{q?: string, platform?: string, from?: string, to?: string} $filters
      *
      * @return list<array<string, mixed>>
      */
-    public function queue(): array
+    public function queue(array $filters = [], int $limit = 20, int $offset = 0): array
     {
-        $statement = $this->connection->pdo()->query(
+        [$where, $params] = $this->queryFor($filters);
+        $statement = $this->connection->pdo()->prepare(
             "SELECT id, capture_id, status, platform, external_id, name, price_yuan, image_url, url, error_note, created_at
-             FROM inbox_items WHERE status IN ('pending', 'error') ORDER BY created_at DESC, id DESC",
+             FROM inbox_items WHERE {$where} ORDER BY created_at DESC, id DESC LIMIT :limit OFFSET :offset",
         );
+        foreach ($params as $key => $value) {
+            $statement->bindValue($key, $value);
+        }
+        $statement->bindValue('limit', $limit, \PDO::PARAM_INT);
+        $statement->bindValue('offset', $offset, \PDO::PARAM_INT);
+        $statement->execute();
 
         /** @var list<array<string, mixed>> */
-        return $statement === false ? [] : ($statement->fetchAll() ?: []);
+        return $statement->fetchAll() ?: [];
+    }
+
+    /** @param array{q?: string, platform?: string, from?: string, to?: string} $filters */
+    public function countQueue(array $filters = []): int
+    {
+        [$where, $params] = $this->queryFor($filters);
+        $statement = $this->connection->pdo()->prepare("SELECT COUNT(*) FROM inbox_items WHERE {$where}");
+        $statement->execute($params);
+
+        return (int) $statement->fetchColumn();
+    }
+
+    /** Kuyrukta görünen platformlar — filtre menüsü uydurma değil, VERİDEN doldurulur. */
+    /** @return list<string> */
+    public function platforms(): array
+    {
+        $statement = $this->connection->pdo()->query(
+            "SELECT DISTINCT platform FROM inbox_items WHERE status IN ('pending', 'error') ORDER BY platform",
+        );
+        if ($statement === false) {
+            return [];
+        }
+
+        /** @var list<string> */
+        return array_map(static fn (array $row): string => (string) $row['platform'], $statement->fetchAll() ?: []);
+    }
+
+    /**
+     * @param array{q?: string, platform?: string, from?: string, to?: string} $filters
+     *
+     * @return array{0: string, 1: array<string, string>}
+     */
+    private function queryFor(array $filters): array
+    {
+        $where = "status IN ('pending', 'error')";
+        $params = [];
+
+        $q = trim($filters['q'] ?? '');
+        if ($q !== '') {
+            // LIKE joker karakterleri kaçırılır: "%" arayan kullanıcı tüm kuyruğu görmemeli.
+            // Kaçış karakteri '!' — ters bölü MySQL ve SQLite'ta FARKLI yorumlanır, '!' ikisinde de düz karakterdir.
+            $where .= " AND name LIKE :q ESCAPE '!'";
+            $params['q'] = '%' . str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $q) . '%';
+        }
+
+        $platform = trim($filters['platform'] ?? '');
+        if ($platform !== '') {
+            $where .= ' AND platform = :platform';
+            $params['platform'] = $platform;
+        }
+
+        $from = trim($filters['from'] ?? '');
+        if ($from !== '') {
+            $where .= ' AND created_at >= :from';
+            $params['from'] = $from . ' 00:00:00';
+        }
+
+        $to = trim($filters['to'] ?? '');
+        if ($to !== '') {
+            $where .= ' AND created_at <= :to';
+            $params['to'] = $to . ' 23:59:59';
+        }
+
+        return [$where, $params];
     }
 
     public function pendingCount(): int
@@ -105,5 +182,27 @@ final class InboxRepository
     {
         $statement = $this->connection->pdo()->prepare('DELETE FROM inbox_items WHERE id = :id');
         $statement->execute(['id' => $id]);
+    }
+
+    /**
+     * Toplu silme (İE#13 B1) — yalnız kuyruktaki (pending/error) kayıtlar silinir;
+     * `assigned` kayıt zaten üründür ve buradan silinemez (ürün silme çöp kutusudur).
+     *
+     * @param list<int> $ids
+     *
+     * @return int silinen kayıt sayısı
+     */
+    public function deleteMany(array $ids): int
+    {
+        if ($ids === []) {
+            return 0;
+        }
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $statement = $this->connection->pdo()->prepare(
+            "DELETE FROM inbox_items WHERE status IN ('pending', 'error') AND id IN ({$placeholders})",
+        );
+        $statement->execute($ids);
+
+        return $statement->rowCount();
     }
 }

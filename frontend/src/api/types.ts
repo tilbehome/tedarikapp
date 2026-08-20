@@ -89,6 +89,10 @@ export interface Product {
   qty: number;
   price_yuan: string;
   price_ddp_usd: string;
+  /** İE#13 F5: hedef satış fiyatı (₺) — yalnız iç kopya çıktısında kâr hesabı için. */
+  price_target_try: string | null;
+  unit_profit_try: string | null;
+  line_profit_try: string | null;
   price_yuan_tl: string;
   price_ddp_tl: string;
   line_total_yuan: string;
@@ -117,6 +121,13 @@ export interface Settings {
   extension_token_preview: string | null;
   media_mode: 'download' | 'hotlink' | null;
   media_writable: boolean | null;
+  /** İE#13 F1: çıktı ve paylaşım sayfası üst bandındaki firma kimliği. */
+  document_header: {
+    company: string | null;
+    web: string | null;
+    email: string | null;
+    prepared_by: string | null;
+  };
 }
 
 export interface RateHistoryEntry {

@@ -50,3 +50,8 @@ Desktop.ini
 extension/node_modules/
 extension/dist/
 extension/.wxt/
+
+# E2E (İE#13 Blok E) — Playwright çıktıları depoya girmez
+e2e/node_modules/
+e2e/playwright-report/
+e2e/test-results/

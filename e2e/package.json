@@ -1,0 +1,16 @@
+{
+  "name": "tedarikapp-e2e",
+  "private": true,
+  "type": "module",
+  "description": "tedarikapp uçtan uca testleri — Playwright (İE#13 Blok E, F22)",
+  "scripts": {
+    "test": "playwright test",
+    "report": "playwright show-report",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.0",
+    "@types/node": "^22.10.0",
+    "typescript": "^5.9.0"
+  }
+}

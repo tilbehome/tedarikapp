@@ -12,7 +12,7 @@
         <span id="durum" class="durum">bağlantı denetleniyor…</span>
       </header>
 
-      <p id="baglanti-hata" class="uyari" hidden></p>
+      <p id="baglanti-hata" class="tdk-uyari" hidden></p>
 
       <!-- Ayar ekranı: panel adresi + token (yalnız chrome.storage'da yaşar) -->
       <section id="ayarlar" hidden>
@@ -26,45 +26,15 @@
         <button id="kaydet" type="button">Kaydet ve bağlan</button>
       </section>
 
-      <!-- Yakalama önizlemesi -->
-      <section id="yakala" hidden>
-        <div class="onizleme">
-          <img id="gorsel" alt="" hidden />
-          <div class="bilgi">
-            <p id="ad" class="ad"></p>
-            <p id="fiyat" class="fiyat"></p>
-            <p id="varyasyon" class="ek"></p>
-            <p id="eksik" class="uyari" hidden></p>
-            <p id="mukerrer" class="uyari" hidden></p>
-          </div>
-        </div>
-
-        <label>Hedef
-          <select id="hedef">
-            <option value="">Gelen Kutusu (varsayılan)</option>
-          </select>
-        </label>
-        <div id="yeni-liste-kutu" hidden>
-          <label>Yeni liste adı
-            <input id="yeni-liste-adi" type="text" placeholder="Örn. Eylül 2026" />
-          </label>
-        </div>
-        <div class="satir">
-          <label>Adet <input id="adet" type="number" min="1" value="1" /></label>
-          <label>Koli içi <input id="koli" type="number" min="1" placeholder="—" /></label>
-        </div>
-        <label>Not <input id="not" type="text" maxlength="500" placeholder="opsiyonel" /></label>
-
-        <button id="gonder" type="button">Panele Gönder</button>
-        <p id="sonuc" class="sonuc" hidden></p>
-        <button id="ayar-ac" type="button" class="baglanti">Bağlantı ayarları</button>
-      </section>
+      <!-- Yakalama formu buraya monte edilir (ui/captureForm — mini panelle ORTAK). -->
+      <section id="yakala" hidden></section>
 
       <section id="desteklenmiyor" hidden>
         <p id="desteklenmiyor-metin">Bu sayfa desteklenmiyor. Eklenti <code>detail.1688.com</code> ürün sayfalarında çalışır.</p>
-        <p id="yenile-uyari" class="uyari" hidden>İpucu: eklentiyi yeni kurduysanız açık sekmelerde çalışmaz — sayfayı yenileyin.</p>
         <button id="ayar-ac-2" type="button" class="baglanti">Bağlantı ayarları</button>
       </section>
+
+      <button id="ayar-ac" type="button" class="baglanti">Bağlantı ayarları</button>
     </main>
     <script type="module" src="./main.ts"></script>
   </body>

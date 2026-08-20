@@ -74,3 +74,15 @@ bu yolla bulundu).
 ## 3. Regresyon Kontrol Listesi
 
 Her fazın sonunda önceki fazların kabul testleri hızlıca yeniden koşulur (özellikle export ve kur hesabı — para söz konusu, hata affetmez).
+
+## Uçtan uca testler (İE#13 Blok E — F22)
+
+Playwright süiti `e2e/` altındadır ve CI'da **E2E (Playwright)** job'ı olarak koşar:
+gerçek MySQL + gerçek HTTP + derlenmiş panel (SQLite değil). Senaryolar: 2FA'sız giriş,
+liste→ürün→durum ilerletme, Excel/PDF indirme, paylaşım linkinin girişsiz açılması ve
+iptal sonrası sabit 404, Gelen Kutusu'na sahte yakalama → listeye taşıma.
+
+**SINIR (E3):** Chrome eklentisinin kendisi E2E'de sürülmez — Playwright'ın MV3 desteği
+kırılgandır ve testin kendisi hata kaynağına dönüşür. Eklenti tarafı parser fixture
+testleriyle (`extension/tests`) ve eklentinin kullandığı uçların E2E'de sürülmesiyle
+kapsanır; arayüz kabulü manuel listeyle yapılır (K35). Ayrıntı: `e2e/README.md`.

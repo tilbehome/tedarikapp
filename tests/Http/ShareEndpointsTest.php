@@ -70,7 +70,8 @@ final class ShareEndpointsTest extends AuthTestCase
         $html = (string) $response->getBody();
         self::assertStringContainsString('Paylaşım listesi', $html);
         self::assertStringContainsString('Termos', $html);
-        self::assertStringContainsString('₺84.48', str_replace('&#8378;', '₺', $html)); // K4: satır TL = 12×7,04... birim; kart "Birim ¥12.00 · ₺84.48" — bkz. line_total
+        // İE#13 F4: sayfa yeni düzende — birim TL hücresi "₺ 84.48" (ayraçlı) biçimindedir.
+        self::assertStringContainsString('₺ 84.48', str_replace('&#8378;', '₺', $html));
     }
 
     public function testGecersizTokenSabit404(): void

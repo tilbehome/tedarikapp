@@ -4,46 +4,70 @@ declare(strict_types=1);
 
 namespace App\Services\Share;
 
+use App\Services\Export\TemplateV2;
+
 /**
- * Paylaşım sayfası HTML'i (İE#10 Blok 4 — K31 iki katmanlı detay, docs/09 P1).
+ * Paylaşım sayfası HTML'i (İE#10 Blok 4 · İE#13 F4 TAM YENİLEME).
+ *
+ * ŞARTNAME: docs/sablon/paylasim-v4-premium.html — bu sınıf o düzeni üretir:
+ * koyu kurumsal üst bant (logo + antet + belge/kur/güncelleme), araç çubuğu
+ * (Yazdır · Excel · PDF · WhatsApp · Linki kopyala), 5'li KPI şeridi, ayraçlı
+ * sütun tablosu (mobilde etiketli kart), satır altı detay paneli (16 alanlık
+ * bilgi ızgarası + varyasyonlar + not + galeri), GENEL TOPLAM bandı, künye.
  *
  * DIŞA AÇIK TEK YÜZEY: her değer istisnasız escape edilir (XSS — CLAUDE.md §5).
- * Sayfa CANLI listeyi gösterir (export snapshot'ının aksine): firma güncel durumu
- * görür. JS YOKTUR; genişleyen detay <details> ile, stil ayrı /p/style.css ucundan
- * gelir (CSP `default-src 'self'` — satır içi stil/script kullanılamaz).
+ * Sayfa CANLI listeyi gösterir (export snapshot'ının aksine): firma güncel durumu görür.
+ * CSP (K51): stil `/p-style.css`, davranış `/p-share.js`, fontlar `/fonts/…` —
+ * satır içi stil/script ve dış istek YOK.
+ *
+ * TEDARİK PUANI bölümü şimdilik GİZLİDİR: skor verisi V3-A ile gelecek; hesaplanmamış
+ * bir puanı uydurmak yerine bölüm hiç basılmaz (şartname notu).
+ *
+ * İÇ KOPYA VERİSİ BURAYA GİRMEZ (F5): hedef satış/kâr alanları hiçbir koşulda görünmez.
  */
 final class SharePage
 {
-    private const STATUS_LABELS = [
-        'to_order' => 'Verilecek',
-        'ordered' => 'Verildi',
-        'in_transit' => 'Yolda',
-        'received' => 'Geldi',
-        'cancelled' => 'İptal',
-    ];
-
     /**
      * @param array<string, mixed> $list ListPresenter::list çıktısı
      * @param list<array<string, mixed>> $products ListPresenter::productsOf çıktısı
      * @param array<int, string> $categoryNames
+     * @param array{company?: string|null, web?: string|null, email?: string|null, prepared_by?: string|null} $documentHeader
+     * @param bool $showExports Excel/PDF düğmeleri — YALNIZ panel oturumu olan görüntüleyende
      */
-    public function render(array $list, array $products, array $categoryNames, string $canonicalUrl = ''): string
-    {
+    public function render(
+        array $list,
+        array $products,
+        array $categoryNames,
+        string $canonicalUrl = '',
+        array $documentHeader = [],
+        bool $showExports = false,
+    ): string {
         $e = static fn (mixed $value): string => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
 
-        $cards = '';
+        $satirlar = '';
+        $galeriler = [];
+        $sira = 0;
         foreach ($products as $product) {
             if ((string) $product['status'] === 'cancelled') {
-                continue; // iptal edilen ürün firmaya gösterilmez (toplamlara da girmiyor — K24)
+                continue; // iptal edilen ürün firmaya gösterilmez (toplamlara da girmez — K24)
             }
-            $cards .= $this->card($product, $categoryNames, $e);
+            $sira++;
+            $galeri = $this->galeriAdresleri($product);
+            $galeriler[] = $galeri;
+            $satirlar .= $this->satir($product, $categoryNames, $sira, count($galeriler) - 1, $galeri, $e);
         }
 
-        // og:image mutlak adres ister (önizleme botları göreliyi çözmez).
         $origin = $canonicalUrl !== '' ? (string) preg_replace('#(^https?://[^/]+).*#', '$1', $canonicalUrl) : '';
-
         $totals = $list['totals'];
-        $period = is_string($list['period'] ?? null) && $list['period'] !== '' ? ' · ' . $e($list['period']) : '';
+        $antetSatiri = TemplateV2::headerLine($documentHeader, $list) . " · Çin'den DDP Sipariş Listesi";
+        $kurEtiketi = ($list['rate_locked_at'] ?? null) !== null ? 'KUR · KİLİTLİ' : 'KUR · GÜNCEL';
+
+        $araclar = $this->araclar($list, $showExports, $e);
+        $lightboxVerisi = htmlspecialchars(
+            json_encode($galeriler, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '[]',
+            ENT_QUOTES,
+            'UTF-8',
+        );
 
         return '<!DOCTYPE html>
 <html lang="tr">
@@ -64,134 +88,353 @@ final class SharePage
 <meta property="og:image" content="' . $e($origin) . '/panel/og-image.png">
 <link rel="stylesheet" href="/p-style.css">
 </head>
+<body data-galeriler="' . $lightboxVerisi . '" data-liste="' . $e($list['id']) . '">
+<div class="page">
+  <div class="shell">
+
+    <div class="hero">
+      <div class="hb">
+        <img src="/panel/apple-touch-icon.png" alt="" width="46" height="46">
+        <div>
+          <div class="ht">' . $e($list['name']) . '</div>
+          <div class="hs">' . $e($antetSatiri) . '</div>
+        </div>
+      </div>
+      <div class="hm">
+        <div><b>BELGE</b><span>' . $e($this->belgeKodu($list)) . '</span></div>
+        <div><b>' . $e($kurEtiketi) . '</b><span>¥ ' . $e($list['yuan_rate']) . ' · $ ' . $e($list['usd_rate']) . '</span></div>
+        <div><b>GÜNCELLEME</b><span>' . $e($this->tarih((string) $list['updated_at'])) . '</span></div>
+      </div>
+    </div>
+
+    <div class="tools">' . $araclar . '</div>
+
+    <div class="kpis">
+      <div class="kpi"><b>ÜRÜN</b><span>' . $e($sira) . '</span></div>
+      <div class="kpi"><b>TOPLAM MİKTAR</b><span>' . $e($totals['qty']) . '</span></div>
+      <div class="kpi"><b>MAL BEDELİ</b><span><span class="u">¥</span> ' . $e($totals['yuan']) . '</span></div>
+      <div class="kpi"><b>MAL BEDELİ</b><span><span class="u">₺</span> ' . $e($totals['yuan_tl']) . '</span></div>
+      <div class="kpi"><b>DDP · KDV DAHİL</b><span><span class="u">₺</span> ' . $e($totals['ddp_tl']) . '</span></div>
+    </div>
+
+    <div class="twrap"><table>
+      <thead><tr>
+        <th style="text-align:center">No<span class="z2 zh">序号</span><span class="z3">No</span></th>
+        <th style="text-align:left">ÜRÜN ADI<span class="z2 zh">产品名称</span><span class="z3">Product name</span></th>
+        <th style="text-align:left">ÜRÜN DETAYLARI<span class="z2 zh">产品详情</span><span class="z3">Details</span></th>
+        <th>VARYASYON<span class="z2 zh">规格</span><span class="z3">Variant</span></th>
+        <th>KATEGORİ<span class="z2 zh">类目</span><span class="z3">Category</span></th>
+        <th>KAYNAK<span class="z2 zh">来源</span><span class="z3">Source</span></th>
+        <th>DURUM<span class="z2 zh">状态</span><span class="z3">Status</span></th>
+        <th>NOT<span class="z2 zh">备注</span><span class="z3">Notes</span></th>
+        <th>MİKTAR<span class="z2 zh">数量</span><span class="z3">Qty</span></th>
+        <th>VİTRİN FİYATI<span class="z2 zh">市场价</span><span class="z3">Market</span></th>
+        <th>₺ KARŞILIĞI<span class="z2 zh">里拉</span><span class="z3">TRY</span></th>
+        <th>DDP $<span class="z2 zh">含税</span><span class="z3">Incl. VAT</span></th>
+        <th>DDP ₺<span class="z2 zh">含税</span><span class="z3">Incl. VAT</span></th>
+        <th></th>
+      </tr></thead>
+      <tbody>' . ($satirlar === ''
+                ? '<tr class="r"><td colspan="14">Bu listede gösterilecek ürün yok.</td></tr>'
+                : $satirlar) . '</tbody>
+    </table></div>
+
+    <div class="tot"><span>GENEL TOPLAM — ' . $e($totals['qty']) . ' adet</span>
+      <small>Parasal toplamlar üstteki özet şerididir</small></div>
+  </div>
+
+  <div class="legal">
+    Sipariş şartları: Teslim DDP · Kur, liste iletildiğinde kilitlenir · Fiyatlar DDP teslim, KDV DAHİLDİR<br>
+    Tedarikapp — Ürün Tedarik Asistanı · Görsele tıkla: galeri · Boş alan — ile gösterilir
+  </div>
+</div>
+<div class="lbx" id="lbx">
+  <img id="lbi" alt=""><video id="lbv" controls playsinline hidden></video>
+  <div><span id="lbs"></span> · kapat: tıkla / ESC</div>
+</div>
+<script src="/p-share.js" defer></script>
+</body>
+</html>';
+    }
+
+    /**
+     * Araç çubuğu. Excel/PDF YALNIZ panel oturumu olan görüntüleyende basılır:
+     * export uçları oturum + CSRF ister (K51 girişsiz sayfayı yetkilendirmez), bu
+     * yüzden firmaya çalışmayan düğme GÖSTERİLMEZ.
+     *
+     * @param array<string, mixed> $list
+     * @param callable(mixed): string $e
+     */
+    private function araclar(array $list, bool $showExports, callable $e): string
+    {
+        $mesaj = 'Sipariş listemiz hazır: ' . (string) $list['name'];
+
+        $html = '<button type="button" class="tb" data-yazdir>' . ShareIcons::yazdir() . '<span>Yazdır</span></button>';
+
+        if ($showExports) {
+            $html .= '<button type="button" class="tb" data-export="xlsx">' . ShareIcons::indir() . '<span>Excel</span></button>'
+                . '<button type="button" class="tb" data-export="pdf">' . ShareIcons::indir() . '<span>PDF</span></button>';
+        }
+
+        $html .= '<button type="button" class="tb wa" data-whatsapp="' . $e($mesaj) . '">'
+            . ShareIcons::whatsapp() . '<span>WhatsApp</span></button>'
+            . '<button type="button" class="tb pri" data-kopyala>' . ShareIcons::link() . '<span>Linki kopyala</span></button>';
+
+        return $html;
+    }
+
+    /**
+     * Geçersiz/iptal/süresi dolmuş link sayfası (İE#10.5 ek — Ürün Sahibi talebi).
+     * SABİT YANIT ilkesi (K51): neden ne olursa olsun AYNI sayfa döner.
+     */
+    public function renderNotFound(): string
+    {
+        return '<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Bağlantı geçerli değil — Tedarikapp</title>
+<link rel="icon" type="image/svg+xml" href="/panel/favicon.svg">
+<link rel="stylesheet" href="/p-style.css">
+</head>
 <body>
-<main>
-    <header class="baslik">
-        <h1>' . $e($list['name']) . '</h1>
-        <p class="kunye">' . $e(mb_strtoupper('Çinden DDP sipariş listesi', 'UTF-8')) . $period
-            . ' · Kur: ¥ ' . $e($list['yuan_rate']) . ' / $ ' . $e($list['usd_rate']) . '</p>
-    </header>
-
-    <section class="toplam-kart">
-        <div><span>Ürün</span><strong>' . $e($list['product_count']) . '</strong></div>
-        <div><span>Toplam adet</span><strong>' . $e($totals['qty']) . '</strong></div>
-        <div><span>Toplam ¥</span><strong>¥' . $e($totals['yuan']) . '</strong></div>
-        <div><span>Toplam ₺</span><strong>₺' . $e($totals['yuan_tl']) . '</strong></div>
+<main class="hata-sayfasi">
+    <section class="hata-karti">
+        <img class="hata-marka" src="/panel/favicon.svg" alt="Tedarikapp" width="64" height="64">
+        <h1>Bu bağlantı artık geçerli değil</h1>
+        <p>Paylaşım bağlantısı kaldırılmış, yenilenmiş veya süresi dolmuş olabilir.
+        Listeyi sizinle paylaşan kişiden <strong>güncel bağlantıyı</strong> isteyebilirsiniz.</p>
+        <p class="hata-ipucu">Bağlantıyı elle yazdıysanız eksiksiz kopyaladığınızdan emin olun.</p>
     </section>
-
-    <section class="urunler">' . $cards . '</section>
-
-    <footer class="alt">Bu sayfa tedarikapp ile paylaşıldı · liste güncel durumu yansıtır</footer>
+    <footer class="alt">Tedarikapp — Ürün Tedarik Asistanı</footer>
 </main>
 </body>
 </html>';
     }
 
     /**
+     * Ürün satırı + altındaki detay paneli.
+     *
      * @param array<string, mixed> $product
      * @param array<int, string> $categoryNames
+     * @param list<string> $galeri
      * @param callable(mixed): string $e
      */
-    private function card(array $product, array $categoryNames, callable $e): string
+    private function satir(array $product, array $categoryNames, int $sira, int $galeriIndex, array $galeri, callable $e): string
     {
         $statusKey = (string) $product['status'];
-        $status = self::STATUS_LABELS[$statusKey] ?? $statusKey;
+        [$rozetMetni] = TemplateV2::badge($statusKey);
+        $rozet = str_replace("\n", ' ', $rozetMetni);
+        $rozet = ltrim($rozet, '● ');
+        $pill = $statusKey === 'cancelled' ? 'p-no' : ($statusKey === 'to_order' ? 'p-wt' : 'p-ok');
 
-        $image = '';
-        if (is_string($product['main_image'] ?? null) && $product['main_image'] !== '') {
-            $image = '<img src="' . $e($product['main_image']) . '" alt="" loading="lazy">';
-        }
-
-        $category = 'Kategorisiz';
+        $kategori = 'Kategorisiz';
         if ($product['category_id'] !== null) {
-            $category = $categoryNames[(int) $product['category_id']] ?? 'Kategorisiz';
+            $kategori = $categoryNames[(int) $product['category_id']] ?? 'Kategorisiz';
         }
 
-        // ── İkinci katman: galeri + video + varyasyon + Çince başlık (K31) ──
-        $detailParts = '';
-        if (is_string($product['name_original'] ?? null) && $product['name_original'] !== '') {
-            $detailParts .= '<p class="zh">' . $e($product['name_original']) . '</p>';
-        }
-        if (is_string($product['detail'] ?? null) && $product['detail'] !== '') {
-            $detailParts .= '<p>' . nl2br($e($product['detail'])) . '</p>';
-        }
+        $gorsel = $galeri === []
+            ? '<span class="pi"><span class="yok-gorsel">görsel<br>yok</span></span>'
+            : '<span class="pi" data-galeri="' . $galeriIndex . '" data-sira="0" tabindex="0" role="button" aria-label="Galeriyi aç">'
+                . '<img src="' . $e($galeri[0]) . '" alt="" loading="lazy">'
+                . $this->videoRozeti($product, $e)
+                . '</span>';
 
-        $gallery = '';
-        foreach (is_array($product['images'] ?? null) ? $product['images'] : [] as $extra) {
-            if (is_array($extra) && is_string($extra['url'] ?? null) && $extra['url'] !== '') {
-                $gallery .= '<img src="' . $e($extra['url']) . '" alt="" loading="lazy">';
-            }
-        }
-        if ($gallery !== '') {
-            $detailParts .= '<div class="galeri">' . $gallery . '</div>';
-        }
+        $ad = (string) $product['name'];
+        $adHtml = is_string($product['url'] ?? null) && $product['url'] !== ''
+            ? '<a class="pn" href="' . $e($product['url']) . '" target="_blank" rel="noreferrer">' . $e($ad) . '</a>'
+            : '<span class="pn">' . $e($ad) . '</span>';
+        $orijinal = is_string($product['name_original'] ?? null) && $product['name_original'] !== ''
+            ? '<div class="pz zh">' . $e($product['name_original']) . '</div>'
+            : '';
 
-        if (is_string($product['video_url'] ?? null) && $product['video_url'] !== '') {
-            $detailParts .= '<video controls preload="none" src="' . $e($product['video_url']) . '"></video>';
-        }
+        $git = is_string($product['url'] ?? null) && $product['url'] !== ''
+            ? '<a class="op-git" href="' . $e($product['url']) . '" target="_blank" rel="noreferrer">'
+                . ShareIcons::disLink() . 'Ürüne git</a>'
+            : '';
 
-        $sku = $this->skuTable($product['sku_matrix'] ?? null, $product['sku_selection'] ?? null, $e);
-        if ($sku !== '') {
-            $detailParts .= $sku;
-        }
+        $satir = '<tr class="r" id="urun-' . $sira . '">
+            <td class="c" style="font-weight:700;color:var(--t3)">' . $sira . '</td>
+            <td><div class="prod">' . $gorsel . '<div><div class="pno">№ ' . $sira . '</div>'
+                . $adHtml . $orijinal . '</div></div></td>
+            <td class="mut"><span class="lab">DETAYLAR</span><span class="val">' . $e($product['detail'] ?? '—') . '</span></td>
+            <td class="mut c"><span class="lab">VARYASYON</span><span class="val">' . $e($this->varyasyonMetni($product) ?? '—') . '</span></td>
+            <td class="mut c"><span class="lab">KATEGORİ</span><span class="val">' . $e($kategori) . '</span></td>
+            <td class="c"><span class="lab">KAYNAK</span><span class="val"><span class="src">'
+                . $e(TemplateV2::platformLabel($product['platform'] ?? null)) . '</span></span></td>
+            <td class="c"><span class="lab">DURUM</span><span class="val"><span class="pill ' . $pill . '">'
+                . '<span class="d"></span>' . $e($rozet) . '</span></span></td>
+            <td class="mut c not-hucre"><span class="lab">NOT</span><span class="val">' . $e($product['note'] ?? '—') . '</span></td>
+            <td class="c"><span class="lab">MİKTAR</span><span class="val"><b>' . $e($product['qty']) . '</b></span></td>
+            <td class="n"><span class="lab">VİTRİN FİYATI</span><span class="val">¥ ' . $e($product['price_yuan']) . '</span></td>
+            <td class="n"><span class="lab">₺ KARŞILIĞI</span><span class="val">₺ ' . $e($product['price_yuan_tl']) . '</span></td>
+            <td class="n mut"><span class="lab">DDP $</span><span class="val">$ ' . $e($product['price_ddp_usd']) . '</span></td>
+            <td class="n mut"><span class="lab">DDP ₺</span><span class="val">₺ ' . $e($product['price_ddp_tl']) . '</span></td>
+            <td><div class="ops">' . $git
+                . '<button type="button" class="op-det" data-detay>Detaylar ' . ShareIcons::asagiOk() . '</button>'
+                . '</div></td>
+        </tr>';
 
-        $expander = $detailParts === '' ? '' :
-            '<details><summary>Detayları göster</summary><div class="detay">' . $detailParts . '</div></details>';
-
-        return '<article class="kart">
-            <div class="gorsel">' . ($image !== '' ? $image : '<span class="yok">görsel yok</span>') . '</div>
-            <div class="bilgi">
-                <h2>' . $e($product['name']) . '</h2>
-                <p class="meta">' . $e($category) . ' · <span class="rozet rozet-' . $e($statusKey) . '">' . $e($status) . '</span></p>
-                <dl class="fiyat">
-                    <div><dt>Adet</dt><dd>' . $e($product['qty']) . '</dd></div>
-                    <div><dt>Birim</dt><dd>¥' . $e($product['price_yuan']) . ' · ₺' . $e($product['price_yuan_tl']) . '</dd></div>
-                    <div><dt>Satır</dt><dd>¥' . $e($product['line_total_yuan']) . ' · ₺' . $e($product['line_total_yuan_tl']) . '</dd></div>
-                </dl>
-                ' . $expander . '
-            </div>
-        </article>';
+        return $satir . $this->detaySatiri($product, $galeriIndex, $galeri, $e);
     }
 
     /**
-     * Varyasyon dökümü — sku_matrix serbest JSON'dur (eklenti şeması docs/04 §2c);
-     * anahtar-değer düzleştirilerek tablo yapılır, her hücre escape edilir.
+     * Detay paneli: 16 alanlık bilgi ızgarası + varyasyonlar + not + galeri.
+     * TEDARİK PUANI bölümü skor verisi gelene dek BASILMAZ (V3-A).
      *
+     * @param array<string, mixed> $product
+     * @param list<string> $galeri
      * @param callable(mixed): string $e
      */
-    private function skuTable(mixed $matrix, mixed $selection, callable $e): string
+    private function detaySatiri(array $product, int $galeriIndex, array $galeri, callable $e): string
     {
-        $rows = '';
-        if (is_array($selection) && $selection !== []) {
-            foreach ($selection as $key => $value) {
-                if (is_scalar($value)) {
-                    $rows .= '<tr><th>' . $e(is_string($key) ? $key : 'Seçim') . '</th><td>' . $e($value) . '</td></tr>';
-                }
+        $izgara = '';
+        foreach (ProductFacts::build($product) as [$tr, $cjk, $deger]) {
+            $izgara .= '<div><b>' . $e($tr) . ' <span class="zh">' . $e($cjk) . '</span></b>'
+                . ($deger === null
+                    ? '<span class="yok">—</span>'
+                    : '<span>' . $e($deger) . '</span>')
+                . '</div>';
+        }
+
+        $varyasyonlar = $this->varyasyonListesi($product);
+        $sag = '';
+        if ($varyasyonlar !== []) {
+            $sag .= '<div class="dh">VARYASYONLAR <span class="zh">规格</span></div><div class="vr">';
+            foreach (array_slice($varyasyonlar, 0, 12) as $varyasyon) {
+                $sag .= '<div><span>' . $e($varyasyon) . '</span><b></b></div>';
+            }
+            $sag .= '</div>';
+        }
+        if (is_string($product['note'] ?? null) && $product['note'] !== '') {
+            $sag .= '<div class="nt">Not: ' . $e($product['note']) . '</div>';
+        }
+
+        $galeriHtml = '';
+        if (count($galeri) > 1) {
+            $kucukler = '';
+            foreach ($galeri as $index => $url) {
+                $kucukler .= '<img src="' . $e($url) . '" alt="" loading="lazy" data-galeri="' . $galeriIndex
+                    . '" data-sira="' . $index . '">';
+            }
+            $galeriHtml = '<div class="gl"><div class="dh">GALERİ <span class="zh">图库</span></div>'
+                . '<div class="gr">' . $kucukler . '</div></div>';
+        }
+
+        return '<tr class="dt"><td colspan="14"><div class="din">
+            <div>
+                <div class="dh">ÜRÜN BİLGİLERİ <span class="zh">商品属性</span></div>
+                <div class="sg">' . $izgara . '</div>
+            </div>
+            <div class="sag">' . $sag . '</div>
+            ' . $galeriHtml . '
+        </div></td></tr>';
+    }
+
+    /**
+     * @param array<string, mixed> $product
+     * @param callable(mixed): string $e
+     */
+    private function videoRozeti(array $product, callable $e): string
+    {
+        $video = $product['video_url'] ?? null;
+        if (!is_string($video) || $video === '') {
+            return '';
+        }
+
+        return '<span class="vb" data-video="' . $e($video) . '" role="button" tabindex="0" aria-label="Videoyu oynat">'
+            . ShareIcons::oynat() . '</span>';
+    }
+
+    /** @param array<string, mixed> $list */
+    private function belgeKodu(array $list): string
+    {
+        return TemplateV2::documentCode((int) $list['id'], (int) date('Y'), 'A');
+    }
+
+    private function tarih(string $iso): string
+    {
+        try {
+            return (new \DateTimeImmutable($iso))->format('d.m.Y H:i');
+        } catch (\Throwable) {
+            return $iso;
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $product
+     *
+     * @return list<string>
+     */
+    private function galeriAdresleri(array $product): array
+    {
+        $adresler = [];
+        if (is_string($product['main_image'] ?? null) && $product['main_image'] !== '') {
+            $adresler[] = (string) $product['main_image'];
+        }
+        foreach (is_array($product['images'] ?? null) ? $product['images'] : [] as $image) {
+            $url = is_array($image) ? ($image['url'] ?? null) : null;
+            if (is_string($url) && $url !== '' && !in_array($url, $adresler, true)) {
+                $adresler[] = $url;
             }
         }
-        if (is_array($matrix)) {
-            foreach ($matrix as $entry) {
-                if (!is_array($entry)) {
-                    continue;
-                }
-                $label = [];
-                $qtyOrPrice = [];
-                foreach ($entry as $key => $value) {
-                    if (!is_scalar($value)) {
-                        continue;
-                    }
-                    if (in_array($key, ['qty', 'adet', 'price', 'fiyat', 'price_yuan'], true)) {
-                        $qtyOrPrice[] = $e($key) . ': ' . $e($value);
-                    } else {
-                        $label[] = $e($value);
-                    }
-                }
-                if ($label !== [] || $qtyOrPrice !== []) {
-                    $rows .= '<tr><th>' . implode(' / ', $label) . '</th><td>' . implode(' · ', $qtyOrPrice) . '</td></tr>';
+
+        return $adresler;
+    }
+
+    /**
+     * @param array<string, mixed> $product
+     *
+     * @return list<string>
+     */
+    private function varyasyonListesi(array $product): array
+    {
+        $out = [];
+        $secim = $product['sku_selection'] ?? null;
+        if (is_array($secim)) {
+            foreach ($secim as $anahtar => $deger) {
+                if (is_scalar($deger)) {
+                    $out[] = (is_string($anahtar) && !is_numeric($anahtar) ? $anahtar . ': ' : '') . (string) $deger;
                 }
             }
         }
 
-        return $rows === '' ? '' : '<table class="sku"><caption>Varyasyonlar</caption>' . $rows . '</table>';
+        $matris = $product['sku_matrix'] ?? null;
+        if (is_array($matris)) {
+            foreach ($matris as $entry) {
+                if (!is_array($entry)) {
+                    continue;
+                }
+                $props = is_array($entry['props'] ?? null) ? $entry['props'] : $entry;
+                $parcalar = [];
+                foreach ($props as $deger) {
+                    if (is_scalar($deger)) {
+                        $parcalar[] = (string) $deger;
+                    }
+                }
+                if ($parcalar !== []) {
+                    $out[] = implode(' / ', $parcalar);
+                }
+                if (count($out) >= 40) {
+                    break;
+                }
+            }
+        }
+
+        return $out;
+    }
+
+    /** @param array<string, mixed> $product */
+    private function varyasyonMetni(array $product): ?string
+    {
+        $liste = $this->varyasyonListesi($product);
+        if ($liste === []) {
+            return null;
+        }
+        $ilk = implode(' · ', array_slice($liste, 0, 2));
+
+        return count($liste) > 2 ? $ilk . ' … (' . count($liste) . ')' : $ilk;
     }
 }

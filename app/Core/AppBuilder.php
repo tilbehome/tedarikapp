@@ -64,6 +64,7 @@ final class AppBuilder
      * @param Clock|null $clock Testlerde zaman sabitlenir (giriş kilidi, token ömrü).
      * @param SetupLock|null $setupLock Kurulum kilidi — `GET /api/system/status` kurulum tarihini buradan okur.
      * @param RequestContext|null $requestContext Logger ile PAYLAŞILAN bağlam; verilmezse yenisi kurulur.
+     * @param \App\Services\Translation\TranslationClient|null $translationClient Testlerde sahte çevirmen (ağa çıkılmaz).
      *
      * @return App<\Psr\Container\ContainerInterface|null>
      */
@@ -77,6 +78,7 @@ final class AppBuilder
         ?RequestContext $requestContext = null,
         ?string $basePath = null,
         ?\App\Services\MediaFetcher $mediaFetcher = null,
+        ?\App\Services\Translation\TranslationClient $translationClient = null,
     ): App {
         $requestContext ??= new RequestContext();
         $basePath ??= dirname(__DIR__, 2);
@@ -214,6 +216,7 @@ final class AppBuilder
             $exportRenderers,
             $services->activity,
             $services->clock,
+            $settingsRepository,
         );
 
         $shareController = new ShareController($lists, $services->activity, $services->clock);
@@ -229,10 +232,26 @@ final class AppBuilder
             $config->getPositiveInt('CAPTURE_RATE_PER_MIN', 30),
             $services->timezone,
         );
-        $app->group('', static function (\Slim\Routing\RouteCollectorProxy $group) use ($extensionController): void {
+        // İE#13 Blok C: çeviri ÖNERİSİ (K54) — kendi SSRF beyaz listesi vardır;
+        // medya allowlist'i (alicdn/1688) GENİŞLETİLMEZ.
+        $translationController = new \App\Controllers\TranslationController(
+            new \App\Services\Translation\TranslationService(
+                new \App\Models\TranslationCacheRepository($connection),
+                $translationClient ?? new \App\Services\Translation\MyMemoryTranslator(
+                    new UrlGuard(array_map('trim', explode(',', $config->get('TRANSLATE_ALLOWED_HOSTS', 'api.mymemory.translated.net')))),
+                    $config->getPositiveInt('TRANSLATE_TIMEOUT', 5),
+                ),
+                $services->clock,
+                $logger,
+                $config->get('TRANSLATE_ENABLED', '1') !== '0',
+            ),
+        );
+
+        $app->group('', static function (\Slim\Routing\RouteCollectorProxy $group) use ($extensionController, $translationController): void {
             $group->map(['POST', 'OPTIONS'], '/api/capture', [$extensionController, 'capture']);
             $group->map(['GET', 'OPTIONS'], '/api/extension/selectors', [$extensionController, 'selectors']);
             $group->map(['GET', 'OPTIONS'], '/api/extension/lists', [$extensionController, 'lists']);
+            $group->map(['POST', 'OPTIONS'], '/api/extension/translate-suggest', [$translationController, 'suggest']);
         })->add($extensionAuth);
 
         $inboxController = new \App\Controllers\InboxController(
@@ -257,6 +276,7 @@ final class AppBuilder
             $trashController,
             $exportController,
             $shareController,
+            $translationController,
             $services,
             $responseFactory,
             $connection,
@@ -266,7 +286,7 @@ final class AppBuilder
         // Panel (İE#8 §5): Vite çıktısı public/panel/ altındadır. Var olan dosyaları
         // Apache doğrudan sunar; /panel/listeler/5 gibi istemci tarafı rotalar buraya
         // düşer ve index.html'e verilir ki sayfa yenilendiğinde 404 alınmasın.
-        $app->get('/panel[/{path:.*}]', self::panelAction($basePath));
+        $app->get('/panel[/{path:.*}]', self::panelAction($basePath, $connection));
 
         $app->addErrorMiddleware(
             displayErrorDetails: !$config->isProduction(),
@@ -292,10 +312,14 @@ final class AppBuilder
     /**
      * Panelin tek sayfa uygulaması. Build alınmamışsa teknik detay değil,
      * ne yapılacağını söyleyen düz bir sayfa gösterilir (docs/07 build adımı).
+     *
+     * İE#13 EK-B: giriş ekranının vitrin rakamları ve 2FA durumu BURADA gömülür —
+     * girişsiz bir API ucu açılmaz (PM şartı). Taşıyıcı bir META etiketidir, satır içi
+     * script DEĞİL: K45 CSP kararı (satır içi script yok) korunur.
      */
-    private static function panelAction(string $basePath): Closure
+    private static function panelAction(string $basePath, Connection $connection): Closure
     {
-        return static function (ServerRequestInterface $request, ResponseInterface $response) use ($basePath): ResponseInterface {
+        return static function (ServerRequestInterface $request, ResponseInterface $response) use ($basePath, $connection): ResponseInterface {
             $index = $basePath . '/public/panel/index.html';
             $html = is_file($index) ? file_get_contents($index) : false;
 
@@ -312,13 +336,38 @@ final class AppBuilder
                 return $response->withHeader('Content-Type', 'text/html; charset=utf-8')->withStatus(503);
             }
 
-            $response->getBody()->write($html);
+            $response->getBody()->write(self::withLoginMeta($html, $connection));
 
             return $response
                 ->withHeader('Content-Type', 'text/html; charset=utf-8')
                 // index.html önbelleğe alınmaz; varlık dosyaları zaten hash'li adlarla gelir.
                 ->withHeader('Cache-Control', 'no-store');
         };
+    }
+
+    /**
+     * Giriş ekranı meta etiketini `<head>`e ekler (İE#13 EK-B).
+     *
+     * Değerler yuvarlanmış metinlerdir; ham ciro/kesin sayı taşınmaz. Kaçış
+     * `htmlspecialchars` ile yapılır — içerik tümüyle sunucu üretimi olsa da meta
+     * içeriğine kaçışsız veri yazma alışkanlığı bırakılmaz (K20).
+     */
+    private static function withLoginMeta(string $html, Connection $connection): string
+    {
+        $stats = new \App\Services\LoginStats($connection);
+        $ozet = $stats->summary();
+        $payload = json_encode([
+            'products' => $ozet['products'],
+            'volume' => $ozet['volume'],
+            'two_factor' => $stats->twoFactorEnabled(),
+            'version' => AppVersion::VALUE,
+        ], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+
+        $meta = '<meta name="tedarikapp-giris" content="' . htmlspecialchars($payload, ENT_QUOTES, 'UTF-8') . '">';
+
+        return str_contains($html, '</head>')
+            ? str_replace('</head>', $meta . '</head>', $html)
+            : $meta . $html;
     }
 
     private static function healthAction(Config $config, Connection $connection, LoggerInterface $logger): Closure
