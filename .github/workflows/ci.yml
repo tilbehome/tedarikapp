@@ -344,6 +344,10 @@ jobs:
   e2e:
     name: E2E (Playwright)
     runs-on: ubuntu-latest
+    # CANLI DERS (İE#13): "Playwright kur" adımı apt kilidinde asılı kalıp GitHub'ın
+    # 6 SAATLİK tavanına dayandı ve turu yaktı. Job'a tavan konur — takılan koşum
+    # dakikalar içinde düşer, saatlerce sürünmez.
+    timeout-minutes: 20
     # İE#13 Blok E (F22): uçtan uca akışlar GERÇEK MySQL + gerçek HTTP üzerinden koşar
     # (SQLite yok — E1). Eklenti E2E kapsam DIŞIDIR (E3): Playwright'ın MV3 desteği
     # kırılgandır; parser fixture testleri (eklenti job'ı) o boşluğu doldurur.
@@ -425,12 +429,28 @@ jobs:
           php bin/migrate.php
           php bin/user-create.php --email=e2e@tedarikapp.test --password=e2e-cok-gizli-sifre --no-totp
 
-      - name: Playwright kur
+      - name: Bağımlılıklar + tip denetimi (e2e)
         working-directory: e2e
+        timeout-minutes: 5
         run: |
           npm ci
           npm run typecheck
-          npx playwright install --with-deps chromium
+
+      # `--with-deps` apt çalıştırır ve kilit beklerken ASILABİLİR (canlı ders).
+      # Sistem kütüphaneleri ayrı ve NONINTERACTIVE kurulur, kendi tavanıyla;
+      # düşerse tarayıcı yine kurulur (runner imajında kütüphaneler çoğunlukla vardır).
+      - name: Chromium sistem kütüphaneleri (hata toleranslı)
+        working-directory: e2e
+        timeout-minutes: 6
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        continue-on-error: true
+        run: npx playwright install-deps chromium
+
+      - name: Chromium indir
+        working-directory: e2e
+        timeout-minutes: 6
+        run: npx playwright install chromium
 
       - name: Uygulamayı başlat
         run: |
