@@ -80,7 +80,7 @@ export default function Kabuk() {
   const gelenKutusuSayisi = useGelenKutusuSayisi();
 
   return (
-    <div className="flex min-h-dvh bg-app">
+    <div className="flex min-h-dvh bg-app" data-testid="kabuk">
       <YanMenu gelenKutusuSayisi={gelenKutusuSayisi} onKomut={() => setPaletAcik(true)} onCikis={() => void cikis()} />
 
       <div className="flex min-w-0 flex-1 flex-col">

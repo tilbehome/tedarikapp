@@ -33,6 +33,8 @@ export default function YanMenu({
 
   return (
     <aside
+      data-testid="yan-menu"
+      data-daraltilmis={daraltilmis ? 'evet' : 'hayir'}
       className={`hidden shrink-0 flex-col border-r border-line bg-surface md:flex ${
         daraltilmis ? 'w-[68px]' : 'w-[264px]'
       }`}

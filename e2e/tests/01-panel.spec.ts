@@ -19,7 +19,8 @@ test.describe('Panel temel akışı', () => {
     await girisYap(page);
 
     // ── Liste oluştur (arayüzden) ──
-    await page.getByRole('link', { name: 'Listeler' }).click();
+    // F43: V3 kabuğunda "Listeler" hem yan menüde hem alt sekme çubuğunda var — .first() şart.
+    await page.getByRole('link', { name: 'Listeler' }).first().click();
     await page.getByRole('button', { name: 'Yeni liste' }).click();
     await page.getByLabel('Liste adı').fill('E2E Listesi');
     await page.getByLabel('Dönem').fill('2026 Sonbahar');

@@ -79,17 +79,18 @@ test.describe('V3 kabuğu', () => {
   test('Ctrl+B menüyü daraltır ve tercih hatırlanır', async ({ page }) => {
     await girisYap(page);
 
-    const menu = page.locator('aside').first();
-    await expect(menu).toHaveClass(/w-\[264px\]/);
+    const menu = page.getByTestId('yan-menu');
+    await expect(menu).toHaveAttribute('data-daraltilmis', 'hayir');
 
     await page.keyboard.press('Control+b');
-    await expect(menu).toHaveClass(/w-\[68px\]/);
+    await expect(menu).toHaveAttribute('data-daraltilmis', 'evet');
 
+    // Tercih localStorage'da: yenilemeden sonra da daraltılmış kalmalı (D1.4).
     await page.reload();
-    await expect(page.locator('aside').first()).toHaveClass(/w-\[68px\]/);
+    await expect(page.getByTestId('yan-menu')).toHaveAttribute('data-daraltilmis', 'evet');
 
     await page.keyboard.press('Control+b');
-    await expect(page.locator('aside').first()).toHaveClass(/w-\[264px\]/);
+    await expect(page.getByTestId('yan-menu')).toHaveAttribute('data-daraltilmis', 'hayir');
   });
 
   test('bileşen örnek sayfası açılır ve parçaları gösterir', async ({ page }) => {
