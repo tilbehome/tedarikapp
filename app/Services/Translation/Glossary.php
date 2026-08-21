@@ -20,7 +20,12 @@ namespace App\Services\Translation;
  * ÇEVRİLMEYENLER (K56 ortak kuralı): marka adı, model/stok kodu, ölçü-sayı-birim
  * içeren değerler, ilan numarası — `translatable()` bunları eler.
  *
- * Yazma: Ayarlar > Terminoloji ekranı ilgili dosyayı günceller (migration YOK).
+ * YAZMA YERİ (K44 / CLAUDE.md §2 — uygulama YALNIZ storage/ altına yazar):
+ * `config/sozluk-<dil>-tr.php` depoyla gelen SALT OKUNUR varsayılandır; panelden
+ * yapılan değişiklikler `storage/sozluk-<dil>-tr.php` dosyasına yazılır ve okuma
+ * sırasında varsayılanın ÜZERİNE biner. Bunun ikinci bir faydası daha var: sürüm
+ * güncellemesi `config/` içeriğini tazelese bile kullanıcının terimleri SİLİNMEZ.
+ * Migration yoktur; sözlük veri değil yapılandırmadır.
  */
 final class Glossary
 {
@@ -29,8 +34,15 @@ final class Glossary
     /** @var array<string, array<string, string>> dil → (terim → karşılık) */
     private array $onbellek = [];
 
-    public function __construct(private readonly string $configDir)
-    {
+    /**
+     * @param string      $configDir  depoyla gelen varsayılan sözlükler (SALT OKUNUR)
+     * @param string|null $storageDir panelden yazılan üstyazım dosyaları; null ise
+     *                                yazma kapalıdır (yalnız varsayılan okunur)
+     */
+    public function __construct(
+        private readonly string $configDir,
+        private readonly ?string $storageDir = null,
+    ) {
     }
 
     /** Metnin kaynak dili: CJK varsa zh, yoksa en. */
@@ -39,9 +51,16 @@ final class Glossary
         return preg_match('/[\x{4E00}-\x{9FFF}\x{3400}-\x{4DBF}]/u', $metin) === 1 ? 'zh' : 'en';
     }
 
+    /** Depoyla gelen varsayılan sözlük (salt okunur). */
     public function path(string $dil): string
     {
         return $this->configDir . '/sozluk-' . $dil . '-tr.php';
+    }
+
+    /** Panelden yazılan üstyazım dosyası (storage/ altında — K44). */
+    public function overridePath(string $dil): ?string
+    {
+        return $this->storageDir === null ? null : $this->storageDir . '/sozluk-' . $dil . '-tr.php';
     }
 
     /**
@@ -58,18 +77,38 @@ final class Glossary
             return $this->onbellek[$dil];
         }
 
-        $path = $this->path($dil);
-        $veri = is_file($path) ? require $path : [];
-        $temiz = [];
-        if (is_array($veri)) {
-            foreach ($veri as $kaynak => $tr) {
-                if (is_string($kaynak) && is_string($tr) && trim($kaynak) !== '' && trim($tr) !== '') {
-                    $temiz[trim($kaynak)] = trim($tr);
-                }
-            }
+        // Varsayılan + üstyazım: aynı terim iki dosyada da varsa PANELDEKİ kazanır.
+        $temiz = self::oku($this->path($dil));
+        foreach (self::oku($this->overridePath($dil)) as $kaynak => $tr) {
+            $temiz[$kaynak] = $tr;
         }
 
         return $this->onbellek[$dil] = $temiz;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private static function oku(?string $path): array
+    {
+        if ($path === null || !is_file($path)) {
+            return [];
+        }
+
+        /** @var mixed $veri */
+        $veri = require $path;
+        if (!is_array($veri)) {
+            return [];
+        }
+
+        $temiz = [];
+        foreach ($veri as $kaynak => $tr) {
+            if (is_string($kaynak) && is_string($tr) && trim($kaynak) !== '' && trim($tr) !== '') {
+                $temiz[trim($kaynak)] = trim($tr);
+            }
+        }
+
+        return $temiz;
     }
 
     /**
@@ -132,12 +171,16 @@ final class Glossary
      *
      * @param array<string, string> $terimler
      *
-     * @throws \RuntimeException yazılamazsa (üretimde config/ yazılabilir olmalı)
+     * @throws \RuntimeException yazılamazsa (storage/ yazılabilir olmalı)
      */
     public function save(array $terimler, string $dil = 'zh'): void
     {
         if (!in_array($dil, self::DILLER, true)) {
             throw new \RuntimeException('Bilinmeyen sözlük dili: ' . $dil);
+        }
+        $path = $this->overridePath($dil);
+        if ($path === null) {
+            throw new \RuntimeException('Sözlük yazma yeri tanımlı değil (storage dizini verilmedi).');
         }
 
         $temiz = [];
@@ -158,7 +201,9 @@ final class Glossary
             '<?php', '', 'declare(strict_types=1);', '', '/**',
             ' * ' . $baslik . ' YEREL SÖZLÜK (İE#14 A2 · K56 Katman 1).',
             ' *',
-            ' * Panelden (Ayarlar > Terminoloji) güncellenir; elle de düzenlenebilir.',
+            ' * PANELDEN ÜRETİLDİ (Ayarlar > Terminoloji) — elle de düzenlenebilir.',
+            ' * Bu dosya depodaki config/sozluk-*.php varsayılanının ÜZERİNE biner;',
+            ' * sürüm güncellemesi varsayılanı tazelese bile buradaki terimler korunur.',
             ' * Kapalı küme terimleri içindir — marka, model kodu, ölçü ve ilan no ÇEVRİLMEZ.',
             ' */', 'return [',
         ];
@@ -167,7 +212,11 @@ final class Glossary
         }
         $satirlar[] = '];';
 
-        $path = $this->path($dil);
+        $dizin = dirname($path);
+        if (!is_dir($dizin) && !@mkdir($dizin, 0775, true) && !is_dir($dizin)) {
+            throw new \RuntimeException('Sözlük dizini oluşturulamadı: ' . $dizin);
+        }
+
         $gecici = $path . '.tmp';
         if (@file_put_contents($gecici, implode("\n", $satirlar) . "\n", LOCK_EX) === false || !@rename($gecici, $path)) {
             @unlink($gecici);
@@ -180,8 +229,16 @@ final class Glossary
 
     public function writable(string $dil = 'zh'): bool
     {
-        $path = $this->path($dil);
+        $path = $this->overridePath($dil);
+        if ($path === null) {
+            return false;
+        }
+        if (is_file($path)) {
+            return is_writable($path);
+        }
 
-        return is_file($path) ? is_writable($path) : is_writable(dirname($path));
+        $dizin = dirname($path);
+
+        return is_dir($dizin) ? is_writable($dizin) : is_writable(dirname($dizin));
     }
 }

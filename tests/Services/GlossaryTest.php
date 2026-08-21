@@ -60,20 +60,58 @@ final class GlossaryTest extends AuthTestCase
         self::assertTrue($g->translatable('waterproof'));
     }
 
-    public function testSozlukKAYDEDILIR_veKodEnjeksiyonuOLMAZ(): void
+    /**
+     * Yazma STORAGE altına yapılır (K44 · CLAUDE.md §2): `config/` depoyla gelen
+     * SALT OKUNUR varsayılandır, panelden gelen terimler onun ÜZERİNE biner.
+     * İkinci kazanç: sürüm güncellemesi config/ dosyasını tazelese bile kullanıcının
+     * terimleri silinmez. Ayrıca panelden gelen metin PHP kaynağına KOD olarak sızmaz.
+     */
+    public function testSozlukSTORAGE_altinaKAYDEDILIR_veKodEnjeksiyonuOLMAZ(): void
     {
-        $gecici = sys_get_temp_dir() . '/tdk-sozluk-' . bin2hex(random_bytes(4));
-        mkdir($gecici);
-        $g = new Glossary($gecici);
+        $kok = sys_get_temp_dir() . '/tdk-sozluk-' . bin2hex(random_bytes(4));
+        mkdir($kok . '/config', 0775, true);
+        mkdir($kok . '/storage', 0775, true);
+        file_put_contents(
+            $kok . '/config/sozluk-zh-tr.php',
+            "<?php\n\nreturn ['不锈钢' => 'Paslanmaz çelik'];\n",
+        );
 
+        $g = new Glossary($kok . '/config', $kok . '/storage');
         $g->save(['测试' => "Deneme'; echo 'kod", 'x' => 'Y'], 'zh');
 
-        $yeniden = new Glossary($gecici);
-        self::assertSame("Deneme'; echo 'kod", $yeniden->lookup('测试'));
-        self::assertStringNotContainsString('echo \'kod\';', (string) file_get_contents($yeniden->path('zh')));
+        $yazilan = (string) $g->overridePath('zh');
+        self::assertStringContainsString('/storage/', str_replace('\\', '/', $yazilan), 'Yazma storage altına.');
+        self::assertFileExists($yazilan);
+        self::assertStringNotContainsString(
+            'Deneme',
+            (string) file_get_contents($kok . '/config/sozluk-zh-tr.php'),
+            'Depoyla gelen varsayılan dosyaya DOKUNULMAZ.',
+        );
 
-        @unlink($yeniden->path('zh'));
-        @rmdir($gecici);
+        $yeniden = new Glossary($kok . '/config', $kok . '/storage');
+        self::assertSame("Deneme'; echo 'kod", $yeniden->lookup('测试'), 'Üstyazım okunur.');
+        self::assertSame('Paslanmaz çelik', $yeniden->lookup('不锈钢'), 'Varsayılan terim korunur.');
+        self::assertStringNotContainsString(
+            "echo 'kod';",
+            (string) file_get_contents($yazilan),
+            'Panelden gelen metin KOD olarak yazılamaz.',
+        );
+
+        @unlink($yazilan);
+        @unlink($kok . '/config/sozluk-zh-tr.php');
+        @rmdir($kok . '/storage');
+        @rmdir($kok . '/config');
+        @rmdir($kok);
+    }
+
+    /** Storage dizini verilmezse yazma KAPALIDIR — sessizce config'e düşmez. */
+    public function testStorageYoksaYAZMA_KAPALI(): void
+    {
+        $g = new Glossary(dirname(__DIR__, 2) . '/config');
+
+        self::assertFalse($g->writable('zh'));
+        $this->expectException(\RuntimeException::class);
+        $g->save(['x' => 'Y'], 'zh');
     }
 
     /** A2: sözlük katmanı ağa ÇIKMADAN yanıt verir — makine çevirmeni hiç çağrılmaz. */

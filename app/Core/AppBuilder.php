@@ -204,7 +204,7 @@ final class AppBuilder
         // İE#10 Blok 1-3: export motoru — dosya diske YAZILMAZ, snapshot'tan akıtılır (K25/K33/K44).
         // İE#14 A2/A3: sözlük (K56 Katman 1) export ve paylaşım hattında da kullanılır —
         // varyasyon/öznitelik DEĞERLERİ belirlenimci biçimde Türkçeleşir (ağa çıkmadan).
-        $glossary = new \App\Services\Translation\Glossary($basePath . '/config');
+        $glossary = new \App\Services\Translation\Glossary($basePath . '/config', $basePath . '/storage');
         $valueSet = new \App\Services\Translation\ValueSet($glossary);
 
         $exportRenderers = [

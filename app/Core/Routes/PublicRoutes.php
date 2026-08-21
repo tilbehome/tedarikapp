@@ -78,7 +78,7 @@ final class PublicRoutes
         $shareDownload = new \App\Services\Share\ShareDownload((string) $config->get('APP_KEY', ''));
         $sharePage = new SharePage(
             new \App\Services\Translation\ValueSet(
-                new \App\Services\Translation\Glossary($basePath . '/config'),
+                new \App\Services\Translation\Glossary($basePath . '/config', $basePath . '/storage'),
             ),
             $shareDownload,
         );
