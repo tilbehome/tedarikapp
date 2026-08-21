@@ -79,8 +79,7 @@ final class ExportRepository
     }
 
     /**
-     * Listenin şimdiye kadarki çıktı sayısı — İE#13 F7 revizyon harfi bundan türer
-     * (ilk çıktı Rev A, ikincisi Rev B…). Silinmiş kayıt yoktur; sayaç geri gitmez.
+     * Listenin şimdiye kadarki çıktı sayısı (geçmiş rozetleri için).
      */
     public function countForList(int $listId): int
     {
@@ -88,5 +87,35 @@ final class ExportRepository
         $statement->execute(['list_id' => $listId]);
 
         return (int) $statement->fetchColumn();
+    }
+
+    /**
+     * REVİZYON SIRASI (İE#14 B1 — mantık düzeltmesi).
+     *
+     * ESKİ HATA: sıra çıktı SAYISINDAN türüyordu; aynı listeden Excel ve PDF almak
+     * "Rev D" ve "Rev E" üretiyordu — indirme revizyon tüketiyordu.
+     *
+     * YENİ KURAL: revizyon LİSTE SÜRÜMÜNE bağlıdır. Aynı sürümden kaç çıktı alınırsa
+     * alınsın harf DEĞİŞMEZ; içerik değişip `lists.revision` ilerlediğinde bir artar.
+     * Sıra, bu liste için daha önce çıktı alınmış FARKLI sürümlerin kronolojik
+     * dizisindeki yerdir (ilk çıktı alınan sürüm 1 = Rev A).
+     */
+    public function revisionSequence(int $listId, int $listRevision): int
+    {
+        $statement = $this->connection->pdo()->prepare(
+            'SELECT list_revision, MIN(id) AS ilk FROM exports WHERE list_id = :list_id
+             GROUP BY list_revision ORDER BY ilk ASC',
+        );
+        $statement->execute(['list_id' => $listId]);
+
+        $sira = 0;
+        foreach ($statement->fetchAll() ?: [] as $row) {
+            $sira++;
+            if ((int) $row['list_revision'] === $listRevision) {
+                return $sira; // bu sürümden daha önce çıktı alınmış — AYNI harf
+            }
+        }
+
+        return $sira + 1; // yeni sürüm — sıradaki harf
     }
 }

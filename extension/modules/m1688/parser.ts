@@ -24,6 +24,61 @@ interface DomFallback {
   ogImage?: string | null;
   domTitle?: string | null;
   domPrice?: string | null;
+  /** İE#14 A4: sayfadaki kırıntı yolu adımları (面包屑) — kategori buradan türer. */
+  breadcrumb?: string[] | null;
+  /** İE#15 E2: sayfadaki <video> öğesinin oynatılabilir adresi (varsa). */
+  videoSrc?: string | null;
+}
+
+/**
+ * Oynatılabilir video adresi (İE#15 E2).
+ *
+ * YALNIZ https ve tanıdık bir video uzantısı/servisi kabul edilir: sayfadaki
+ * rastgele bir blob:/data: adresi paylaşım sayfasına taşınırsa orada çalışmaz;
+ * çalışmayacak bir adresi taşımak, "video yok" demekten daha kötüdür (boş modal).
+ */
+export function playableVideoUrl(aday: unknown): string | null {
+  if (typeof aday !== 'string') return null;
+  const temiz = aday.trim();
+  if (!/^https:\/\//i.test(temiz)) return null;
+  if (!/\.(mp4|m3u8|webm)(\?|$)/i.test(temiz)) return null;
+
+  return temiz;
+}
+
+/**
+ * Kırıntı yolunu tek biçime indirir (İE#14 A4).
+ *
+ * 1688 bu bilgiyi üç ayrı biçimde verebilir: düz metin dizisi, `{name}`/`{categoryName}`
+ * nesneleri ya da " > " ile ayrılmış tek metin. Üçü de aynı listeye çevrilir; ayıklama
+ * (kök adım atma) BACKEND'DE yapılır ki kural tek yerde dursun.
+ */
+export function extractBreadcrumb(value: unknown, domYolu?: string[] | null): string[] {
+  const out: string[] = [];
+  const ekle = (metin: unknown): void => {
+    if (typeof metin !== 'string') return;
+    const temiz = metin.trim();
+    if (temiz !== '' && !out.includes(temiz)) out.push(temiz);
+  };
+
+  if (typeof value === 'string') {
+    for (const parca of value.split(/[>›»\/|]/)) ekle(parca);
+  } else if (Array.isArray(value)) {
+    for (const entry of value) {
+      if (typeof entry === 'string') {
+        ekle(entry);
+      } else if (entry !== null && typeof entry === 'object') {
+        const record = entry as Record<string, unknown>;
+        ekle(record.name ?? record.categoryName ?? record.text ?? record.title);
+      }
+    }
+  }
+
+  if (out.length === 0 && Array.isArray(domYolu)) {
+    for (const entry of domYolu) ekle(entry);
+  }
+
+  return out.slice(0, 8);
 }
 
 export function cleanImageUrl(url: string, stripSuffixes: string[]): string {
@@ -230,6 +285,8 @@ export function parse1688(
     min_order: firstPath(ctx, paths.min_order ?? []) ?? null,
     unit: firstPath(ctx, paths.unit ?? []) ?? null,
     category_name: firstPath(ctx, paths.category_name ?? []) ?? null,
+    // İE#14 A4: kategori artık "Kategorisiz" basılmasın diye kırıntı yolu da taşınır.
+    breadcrumb: extractBreadcrumb(firstPath(ctx, paths.breadcrumb ?? []), dom.breadcrumb),
     origin_text: originText,
   };
 
@@ -239,7 +296,9 @@ export function parse1688(
     price_tiers: tiers,
     images,
     sku_matrix: extractSkuMatrix(firstPath(ctx, paths.sku_props ?? []), skuRangePrices),
-    video_url: null, // oynatılabilir mp4 adresi MTOP ister; v1'de id+poster raw'da taşınır (İE#11 C3)
+    // İE#15 E2: DOM'da oynatılabilir bir adres varsa taşınır; yoksa null KALIR ve
+    // "video var" bilgisi raw.video (id/poster) üzerinden okunur — sahte adres üretilmez.
+    video_url: playableVideoUrl(dom.videoSrc),
     // İE#11 EK-3 (2): menşe — 1688 Çin tedarik platformudur; menşe özniteliği VARSA
     // ülke CN'dir (il/şehir metni raw'da durur, uydurma yapılmaz).
     country_of_origin: originText === null ? null : 'CN',

@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Download, FileSpreadsheet, Settings2 } from 'lucide-react';
 import { exports as exportsApi, type ExportOptions } from '../../api/endpoints';
-import { messageOf } from '../../lib/useAsync';
-import { useToast } from '../../components/Toast';
+import IslemDurumu from '../../components/IslemDurumu';
+import { useUzunIslem } from '../../lib/useUzunIslem';
 import { productStatusLabels } from '../../locales/tr';
 import type { ProductStatus } from '../../api/types';
 
@@ -23,31 +23,28 @@ export function paylasimAdresiAnahtari(listId: number): string {
 }
 
 export default function CiktiSecenekleri({ listId, onDone }: { listId: number; onDone: () => void }) {
-  const push = useToast((state) => state.push);
   const [acik, setAcik] = useState(false);
   const [kopya, setKopya] = useState<'firma' | 'ic'>('firma');
   const [durumlar, setDurumlar] = useState<ProductStatus[]>([]);
   const [qrEkle, setQrEkle] = useState(true);
-  const [busy, setBusy] = useState(false);
+  // İE#14 C2: belge üretimi büyük listelerde uzun sürer; çift tıklama iki kayıt açardı.
+  const uretim = useUzunIslem();
+  const busy = uretim.calisiyor;
 
   const paylasimAdresi = sessionStorage.getItem(paylasimAdresiAnahtari(listId));
   const otomatikCalisti = useRef(false);
 
-  const uret = async (format: 'xlsx' | 'pdf') => {
-    setBusy(true);
-    try {
+  const uret = (format: 'xlsx' | 'pdf') =>
+    uretim.baslat(async () => {
       const options: ExportOptions = { copy: kopya };
       if (durumlar.length > 0) options.statuses = durumlar;
       if (qrEkle && paylasimAdresi) options.share_url = paylasimAdresi;
 
       await exportsApi.create(listId, format, options);
       onDone();
-    } catch (caught) {
-      push(messageOf(caught), 'error');
-    } finally {
-      setBusy(false);
-    }
-  };
+
+      return `${format === 'xlsx' ? 'Excel' : 'PDF'} belgesi üretildi ve indirildi.`;
+    });
 
   /**
    * Paylaşım sayfasındaki Excel/PDF düğmeleri buraya yönlendirir
@@ -59,10 +56,9 @@ export default function CiktiSecenekleri({ listId, onDone }: { listId: number; o
     if (istenen !== 'xlsx' && istenen !== 'pdf') return;
     otomatikCalisti.current = true;
     window.history.replaceState({}, '', window.location.pathname);
-    // Efekt içindeki setState kaçınılmaz: dış sistemden (URL parametresi) gelen
-    // komut yürütülüyor. Tek atımlık koşum `otomatikCalisti` bayrağıyla korunur;
-    // kalıcı düzenleme F41 kapsamındadır.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    // Dış sistemden (URL parametresi) gelen komut yürütülüyor; tek atımlık koşum
+    // `otomatikCalisti` bayrağıyla korunur. İE#14 C2 sonrası state güncellemesi
+    // `useUzunIslem` içinde olduğundan efekt artık doğrudan setState çağırmıyor.
     void uret(istenen);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -76,7 +72,7 @@ export default function CiktiSecenekleri({ listId, onDone }: { listId: number; o
     <>
       <button type="button" className="btn-ghost" disabled={busy} onClick={() => void uret('xlsx')}>
         <FileSpreadsheet className="h-4 w-4" aria-hidden />
-        Excel
+        {busy ? 'Üretiliyor…' : 'Excel'}
       </button>
       <button type="button" className="btn-ghost" disabled={busy} onClick={() => void uret('pdf')}>
         <Download className="h-4 w-4" aria-hidden />
@@ -139,6 +135,12 @@ export default function CiktiSecenekleri({ listId, onDone }: { listId: number; o
           ) : null}
         </div>
       ) : null}
+
+      {/* İE#14 C2: üretim uzun sürerse şerit, bitince sonuç kartı — araç çubuğunun
+          altında tam genişlikte durur ki düğmelerin yerini oynatmasın. */}
+      <div className="w-full">
+        <IslemDurumu islem={uretim} fiil="Belge üretiliyor" />
+      </div>
     </>
   );
 }

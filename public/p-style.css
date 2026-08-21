@@ -239,3 +239,135 @@ td.not-hucre .val { font-style: italic; }
 .hata-karti p { margin: 0 0 8px; color: #334155; font-size: 14px; }
 .hata-ipucu { color: var(--t3); font-size: 12px; }
 .alt { margin-top: 18px; text-align: center; color: var(--t3); font-size: 12px; }
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * İE#14 B2 — YAZDIRMA TAŞMASI DÜZELTMESİ (canlı kusur: sağdaki DDP $ / DDP ₺
+ * sütunları kâğıt dışında kalıyordu). Şartnamenin @media print bloğu YUKARIDA
+ * aynen durur; burası yalnız TAŞMAYI kapatan katmandır ve ondan SONRA gelir.
+ * ──────────────────────────────────────────────────────────────────────────── */
+/* ─────────────────────────────────────────────────────────────────────────────
+ * İE#15 — ÇIKTI GRUBU, PAYLAŞ MENÜSÜ, QR MODALI, YAZDIRMA UYARISI, VİDEO NOTU
+ * Tümü satır içi stil/script OLMADAN çalışır (K51 CSP).
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+/* Çıktılar grubu: Excel · PDF · CSV · Yazdır — firma tarafında da görünür (F1). */
+.tgrp { display:inline-flex; gap:7px; flex-wrap:wrap; align-items:center;
+  padding-right:10px; margin-right:3px; border-right:1px solid var(--ln); }
+.tgrp .tb { text-decoration:none; }
+.tb.bekliyor { opacity:.7; pointer-events:none; }
+
+/* Paylaş menüsü (C1) */
+.pmenu { position:relative; margin-left:auto; }
+.pmenu-liste { position:absolute; right:0; top:calc(100% + 6px); z-index:40; min-width:230px;
+  background:#fff; border:1px solid var(--ln); border-radius:12px; padding:6px;
+  box-shadow:0 18px 40px rgba(15,37,87,.16); display:flex; flex-direction:column; gap:2px; }
+.pmenu-liste[hidden] { display:none; }
+.pmenu-liste button { display:flex; align-items:center; gap:9px; width:100%; font:inherit;
+  font-size:13px; font-weight:600; color:var(--t2); background:none; border:0; border-radius:8px;
+  padding:9px 10px; text-align:left; cursor:pointer; }
+.pmenu-liste button:hover { background:#F3F6FC; color:var(--navy); }
+.pmenu-liste button svg { width:15px; height:15px; flex:none; }
+.pmenu-dil { display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+  border-top:1px solid var(--ln2); margin-top:4px; padding:8px 10px 4px; }
+.pmenu-dil span { font-size:10.5px; font-weight:700; letter-spacing:.06em; color:var(--t3);
+  text-transform:uppercase; width:100%; }
+.pmenu-dil a { font-size:12px; font-weight:600; color:var(--t2); text-decoration:none;
+  border:1px solid var(--ln); border-radius:7px; padding:4px 9px; }
+.pmenu-dil a:hover { border-color:#C9D3E8; color:var(--navy); }
+.pmenu-dil a.secili { background:var(--navy); border-color:var(--navy); color:#fff; }
+
+/* QR modalı (C3) */
+.qrm { position:fixed; inset:0; z-index:60; background:rgba(9,18,40,.72);
+  display:flex; align-items:center; justify-content:center; padding:20px; }
+.qrm[hidden] { display:none; }
+.qrk { background:#fff; border-radius:18px; padding:22px; max-width:340px; width:100%; text-align:center; }
+.qrk h2 { font-size:15px; font-weight:800; color:var(--navy); margin:0 0 2px; }
+.qra { font-size:12.5px; font-weight:600; color:var(--t3); margin:0 0 14px; }
+.qrk img { width:260px; height:260px; max-width:100%; border:1px solid var(--ln); border-radius:12px; }
+.qrn { font-size:11.5px; line-height:1.5; color:var(--t3); margin:12px 0 0; }
+.qrd { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-top:14px; }
+.qrd button, .qrd a { font:inherit; font-size:12.5px; font-weight:600; color:var(--t2);
+  background:#fff; border:1px solid var(--ln); border-radius:9px; padding:8px 12px;
+  cursor:pointer; text-decoration:none; }
+.qrd button:hover, .qrd a:hover { border-color:#C9D3E8; color:var(--navy); }
+
+/* Yazdırma hatırlatması (B2) */
+.ynot { position:fixed; inset:0; z-index:60; background:rgba(9,18,40,.72);
+  display:flex; align-items:center; justify-content:center; padding:20px; }
+.ynot[hidden] { display:none; }
+.ynk { background:#fff; border-radius:18px; padding:22px; max-width:420px; }
+.ynk h2 { font-size:15px; font-weight:800; color:var(--navy); margin:0 0 8px; }
+.ynk p { font-size:13px; line-height:1.6; color:var(--t2); margin:0; }
+.ynl { display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--t3); margin-top:14px; }
+.ynd { display:flex; gap:8px; justify-content:flex-end; margin-top:16px; }
+.ynd button { font:inherit; font-size:12.5px; font-weight:600; color:var(--t2); background:#fff;
+  border:1px solid var(--ln); border-radius:9px; padding:9px 14px; cursor:pointer; }
+.ynd button.pri { background:var(--navy); border-color:var(--navy); color:#fff; }
+
+/* Video oynatılamıyor notu (E4) */
+.lbnot { color:#fff; font-size:14px; text-align:center; line-height:1.7; max-width:420px; }
+.lbnot[hidden] { display:none; }
+.lbnot a { color:#fff; text-decoration:underline; }
+
+@media print {
+  /* Sabit yerleşim + genişlik kilidi: tarayıcı sütunları içeriğe göre şişiremez. */
+  .twrap { overflow: visible !important; }
+  table { table-layout: fixed !important; width: 100% !important; min-width: 0 !important; }
+
+  /* Yüzde sütun genişlikleri — TOPLAM 100 (İE#14 B2 kuralı).
+     SAPMA NOTU: emirdeki liste 105 ediyordu (3+22+13+11+7+6+7+7+5+7+7+5+5);
+     "toplam 100" kuralı bağlayıcı olduğu için fazlalık, kırpmaya en dayanıklı
+     METİN sütunlarından düşüldü: Ürün Adı 22→20, Detaylar 13→12,
+     Varyasyon 11→10, Kategori 7→6. Sayısal/para sütunlarına DOKUNULMADI. */
+  table.veri col, table col { width: auto; }
+  thead th:nth-child(1),  tr.r td:nth-child(1)  { width: 3%; }   /* No */
+  thead th:nth-child(2),  tr.r td:nth-child(2)  { width: 20%; }  /* Ürün Adı */
+  thead th:nth-child(3),  tr.r td:nth-child(3)  { width: 12%; }  /* Ürün Detayları */
+  thead th:nth-child(4),  tr.r td:nth-child(4)  { width: 10%; }  /* Varyasyon */
+  thead th:nth-child(5),  tr.r td:nth-child(5)  { width: 6%; }   /* Kategori */
+  thead th:nth-child(6),  tr.r td:nth-child(6)  { width: 6%; }   /* Kaynak */
+  thead th:nth-child(7),  tr.r td:nth-child(7)  { width: 7%; }   /* Durum */
+  thead th:nth-child(8),  tr.r td:nth-child(8)  { width: 7%; }   /* Not */
+  thead th:nth-child(9),  tr.r td:nth-child(9)  { width: 5%; }   /* Miktar */
+  thead th:nth-child(10), tr.r td:nth-child(10) { width: 7%; }   /* Vitrin Fiyatı */
+  thead th:nth-child(11), tr.r td:nth-child(11) { width: 7%; }   /* ₺ Karşılığı */
+  thead th:nth-child(12), tr.r td:nth-child(12) { width: 5%; }   /* DDP $ */
+  thead th:nth-child(13), tr.r td:nth-child(13) { width: 5%; }   /* DDP ₺ */
+
+  /* Uzun kelime/URL satırı taşıramaz. */
+  th, td { overflow-wrap: anywhere; word-break: break-word; }
+
+  /* Varyasyon ve Detay hücreleri baskıda ~3 satırla sınırlı (sayfa şişmesin). */
+  tr.r td:nth-child(3) .val, tr.r td:nth-child(4) .val {
+    display: block; max-height: 3.4em; overflow: hidden;
+  }
+
+  /* Baskıda ölçekleme UYGULANMAZ — tarayıcı "sığdır" ayarı bozulmasın. */
+  body { zoom: 1 !important; transform: none !important; }
+}
+
+/*
+ * İE#14 A6 — EKSİK BİLGİ KATLAMASI ve A3 varyasyon "+N seçenek".
+ * <details> öğesi kullanılır: açılıp kapanmayı tarayıcı yapar, satır içi script
+ * gerekmez (K51 CSP korunur). Yazdırmada katlama AÇIK basılır — kâğıtta tıklanacak
+ * bir şey yoktur, bilgi görünsün.
+ */
+.eks { margin-top:10px; }
+.eks > summary { cursor:pointer; list-style:none; display:inline-flex; align-items:center; gap:6px;
+  font-size:11.5px; font-weight:600; letter-spacing:.02em; color:var(--t3);
+  border:1px solid var(--ln2); border-radius:8px; padding:5px 10px; background:#FBFCFE; }
+.eks > summary::-webkit-details-marker { display:none; }
+.eks > summary::after { content:'⌄'; font-size:13px; line-height:1; transform:translateY(-1px); }
+.eks[open] > summary::after { content:'⌃'; transform:translateY(1px); }
+.eks > summary:hover { color:var(--t2); border-color:var(--ln); }
+.eks > summary:focus-visible { outline:2px solid var(--blue); outline-offset:2px; }
+.eks > .sg, .eks > .vr { margin-top:10px; 
+  /* İE#14 A6: kâğıtta katlama diye bir şey yoktur — eksik alan ızgarası ve
+     "+N seçenek" listesi baskıda AÇIK basılır, düğme gizlenir. */
+  .eks > summary { display: none !important; }
+  .eks > .sg { display: grid !important; margin-top: 0 !important; }
+  .eks > .vr { display: block !important; margin-top: 0 !important; }
+
+  /* İE#15: paylaş menüsü, QR modalı, yazdırma uyarısı ve lightbox KÂĞIDA BASILMAZ. */
+  .pmenu, .qrm, .ynot, .lbx, .tools { display: none !important; }
+}

@@ -103,6 +103,10 @@ final class SystemController
             'writable' => $service->isWritable(),
             'last_age_seconds' => $age,
             'stale' => $age === null || $age > 86400,
+            // İE#14 D1: 30 saat = "gecelik koşu bir kez atlandı" eşiği (24 saatlik
+            // döngüye 6 saat pay bırakır; saat kayması yüzünden boş yere kızarmaz).
+            'gecikti' => $age === null || $age > 108000,
+            'cron' => (new \App\Services\CronLog($this->basePath))->last($this->clock->now()),
             'offsite_configured' => (new \App\Services\BackupOffsite($this->appConfig))->configured(),
         ]);
     }

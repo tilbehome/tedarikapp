@@ -368,6 +368,9 @@ final class ProductController extends ApiController
         $now = $this->clock->now();
         $this->connection->transaction(function () use ($request, $product, $from, $to, $now): void {
             $this->applyStatus((int) $product['id'], $from, $to, $request, $now);
+            // İE#14 B1: durum belgede BASILAN bir alandır — değişince liste sürümü
+            // ilerler; hem "çıktı güncel değil" rozeti (K25) hem revizyon harfi doğru olur.
+            $this->lists->bumpRevision((int) $product['list_id'], $now);
         });
 
         $fresh = $this->products->find((int) $product['id']);

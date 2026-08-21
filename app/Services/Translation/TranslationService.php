@@ -15,8 +15,10 @@ use Psr\Log\LoggerInterface;
  * metin döndürür. Yazma kararı kullanıcınındır ("Kullan" düğmesi) ve orijinal
  * (Çince) başlık her koşulda korunur.
  *
- * Akış: metni normalize et → önbelleğe bak → yoksa sağlayıcıya sor → başarılıysa
- * önbelleğe yaz. HER hata yolu `null` döner ve akışı bloklamaz: kota bitmiş, servis
+ * Akış (İE#14 A2 · K56): metni normalize et → YEREL SÖZLÜĞE bak (Katman 1) →
+ * yoksa önbelleğe bak → yoksa makine çevirisine sor (Katman 3) → başarılıysa
+ * önbelleğe yaz. Yanıttaki `source` alanı hangi katmandan geldiğini söyler
+ * ('sozluk' | 'makine'); arayüz makine çevirisini etiketleyerek gösterir. HER hata yolu `null` döner ve akışı bloklamaz: kota bitmiş, servis
  * yavaş, ağ kapalı — kullanıcı sadece öneri görmez, işi durmaz.
  */
 final class TranslationService
@@ -31,6 +33,8 @@ final class TranslationService
         private readonly bool $enabled = true,
         private readonly string $sourceLang = 'zh',
         private readonly string $targetLang = 'tr',
+        // İE#14 A2 (K56 Katman 1): sözlük ÖNCE bakılır — ağa çıkmadan, belirlenimci.
+        private readonly ?Glossary $glossary = null,
     ) {
     }
 
@@ -41,13 +45,25 @@ final class TranslationService
     }
 
     /**
-     * @return array{suggestion: string|null, cached: bool, provider: string|null}
+     * @return array{suggestion: string|null, cached: bool, provider: string|null, source: string|null}
      */
     public function suggest(string $text): array
     {
-        $bos = ['suggestion' => null, 'cached' => false, 'provider' => null];
+        $bos = ['suggestion' => null, 'cached' => false, 'provider' => null, 'source' => null];
         $normalized = self::normalize($text);
-        if (!$this->enabled || $normalized === '' || mb_strlen($normalized) > self::MAX_LENGTH) {
+        if ($normalized === '' || mb_strlen($normalized) > self::MAX_LENGTH) {
+            return $bos;
+        }
+
+        // ── K56 KATMAN 1: yerel sözlük. Kapalı küme terimi ise iş burada biter;
+        // ağa çıkılmaz, kota harcanmaz ve sonuç her çağrıda AYNIDIR. Bu katman
+        // TRANSLATE_ENABLED=0 olsa bile çalışır: dış istek içermez.
+        $sozlukten = $this->glossary?->lookup($normalized);
+        if ($sozlukten !== null) {
+            return ['suggestion' => $sozlukten, 'cached' => true, 'provider' => 'sozluk', 'source' => 'sozluk'];
+        }
+
+        if (!$this->enabled) {
             return $bos;
         }
 
@@ -56,7 +72,12 @@ final class TranslationService
         try {
             $cached = $this->cache->find($hash);
             if ($cached !== null) {
-                return ['suggestion' => $cached['suggested_text'], 'cached' => true, 'provider' => $cached['provider']];
+                return [
+                    'suggestion' => $cached['suggested_text'],
+                    'cached' => true,
+                    'provider' => $cached['provider'],
+                    'source' => 'makine',
+                ];
             }
         } catch (\Throwable $exception) {
             // Önbellek okunamıyorsa (ör. migration bekliyor) sağlayıcıya gitmeyi dene.
@@ -90,6 +111,7 @@ final class TranslationService
             $this->logger->warning('Çeviri önbelleğine yazılamadı.', ['hata' => $exception->getMessage()]);
         }
 
-        return ['suggestion' => $suggestion, 'cached' => false, 'provider' => $this->client->name()];
+        // Katman 3 çıktısı MAKİNE çevirisidir; arayüz bunu etiketleyerek gösterir.
+        return ['suggestion' => $suggestion, 'cached' => false, 'provider' => $this->client->name(), 'source' => 'makine'];
     }
 }

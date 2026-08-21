@@ -32,6 +32,21 @@ export default defineContentScript({
             ogImage: og('og:image'),
             domTitle: document.querySelector('h1, .title-content .title-text')?.textContent?.trim() ?? null,
             domPrice: document.querySelector('.price-content .price-text, .price-column .price')?.textContent?.trim() ?? null,
+            // İE#14 A4: kırıntı yolu (面包屑) — kategori bilgisinin en güvenilir kaynağı.
+            // JSON'da bulunamazsa bu liste kullanılır; kök adımlar backend'de elenir.
+            breadcrumb: Array.from(
+              document.querySelectorAll('.breadcrumb a, .detail-path a, [class*="breadcrumb"] a, .crumbs a'),
+            )
+              .map((node) => node.textContent?.trim() ?? '')
+              .filter((text) => text !== '')
+              .slice(0, 8),
+            // İE#15 E2: sayfada gerçekten oynatılabilir bir <video> varsa adresi alınır.
+            // 1688'in ana videosu imzalı MTOP isteği ister; DOM'da bulunursa bedava kazanç,
+            // bulunamazsa raw.video (id+poster) yine "video var" bilgisini taşır.
+            videoSrc:
+              document.querySelector<HTMLVideoElement>('video[src]')?.src ??
+              document.querySelector<HTMLSourceElement>('video source[src]')?.src ??
+              null,
           },
           url: location.href,
         },

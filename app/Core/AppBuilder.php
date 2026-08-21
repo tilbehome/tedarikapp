@@ -202,6 +202,11 @@ final class AppBuilder
         $activityController = new ActivityController($connection, $services->timezone);
 
         // İE#10 Blok 1-3: export motoru — dosya diske YAZILMAZ, snapshot'tan akıtılır (K25/K33/K44).
+        // İE#14 A2/A3: sözlük (K56 Katman 1) export ve paylaşım hattında da kullanılır —
+        // varyasyon/öznitelik DEĞERLERİ belirlenimci biçimde Türkçeleşir (ağa çıkmadan).
+        $glossary = new \App\Services\Translation\Glossary($basePath . '/config', $basePath . '/storage');
+        $valueSet = new \App\Services\Translation\ValueSet($glossary);
+
         $exportRenderers = [
             'csv' => new \App\Services\Export\CsvRenderer(),
             'xlsx' => new \App\Services\Export\XlsxRenderer($basePath),
@@ -212,7 +217,7 @@ final class AppBuilder
             $products,
             new CategoryRepository($connection),
             new \App\Models\ExportRepository($connection),
-            new \App\Services\Export\ExportSnapshot($presenter),
+            new \App\Services\Export\ExportSnapshot($presenter, $valueSet),
             $exportRenderers,
             $services->activity,
             $services->clock,
@@ -234,17 +239,34 @@ final class AppBuilder
         );
         // İE#13 Blok C: çeviri ÖNERİSİ (K54) — kendi SSRF beyaz listesi vardır;
         // medya allowlist'i (alicdn/1688) GENİŞLETİLMEZ.
-        $translationController = new \App\Controllers\TranslationController(
-            new \App\Services\Translation\TranslationService(
-                new \App\Models\TranslationCacheRepository($connection),
-                $translationClient ?? new \App\Services\Translation\MyMemoryTranslator(
-                    new UrlGuard(array_map('trim', explode(',', $config->get('TRANSLATE_ALLOWED_HOSTS', 'api.mymemory.translated.net')))),
-                    $config->getPositiveInt('TRANSLATE_TIMEOUT', 5),
-                ),
-                $services->clock,
-                $logger,
-                $config->get('TRANSLATE_ENABLED', '1') !== '0',
+        // İE#14 A2 (K56): üç katmanlı çeviri. Katman 1 sözlük DOSYA tabanlıdır
+        // (config/sozluk-<dil>-tr.php; zh ve en), Katman 3 mevcut MyMemory'dir.
+        // Katman 2 (LLM) V3-A'da gelecek — TranslatorInterface o gün hazır olsun diye
+        // bugünden çağrı noktasıdır (LayeredTranslator tek uygulamadır).
+        $translationService = new \App\Services\Translation\TranslationService(
+            new \App\Models\TranslationCacheRepository($connection),
+            $translationClient ?? new \App\Services\Translation\MyMemoryTranslator(
+                new UrlGuard(array_map('trim', explode(',', $config->get('TRANSLATE_ALLOWED_HOSTS', 'api.mymemory.translated.net')))),
+                $config->getPositiveInt('TRANSLATE_TIMEOUT', 5),
             ),
+            $services->clock,
+            $logger,
+            $config->get('TRANSLATE_ENABLED', '1') !== '0',
+            'zh',
+            'tr',
+            $glossary,
+        );
+        $translator = \App\Services\Translation\TranslatorRegistry::make(
+            $config->get('TRANSLATOR_PROVIDER', 'katmanli'),
+            $glossary,
+            $translationService,
+        );
+        $translationController = new \App\Controllers\TranslationController(
+            $translationService,
+            $glossary,
+            $translator,
+            $services->activity,
+            $services->clock,
         );
 
         $app->group('', static function (\Slim\Routing\RouteCollectorProxy $group) use ($extensionController, $translationController): void {
@@ -264,7 +286,19 @@ final class AppBuilder
         );
 
         // İE#10.5 Blok 6: rota kayıtları modül dosyalarında — AppBuilder yalnız kompozisyon kökü.
-        Routes\PublicRoutes::register($app, $mediaService, $lists, $products, $presenter, $connection, $services);
+        Routes\PublicRoutes::register(
+            $app,
+            $mediaService,
+            $lists,
+            $products,
+            $presenter,
+            $connection,
+            $services,
+            $config,
+            new \App\Services\Export\ExportSnapshot($presenter, $valueSet),
+            $exportRenderers,
+            $basePath,
+        );
         Routes\DataRoutes::register(
             $app,
             $settingsController,

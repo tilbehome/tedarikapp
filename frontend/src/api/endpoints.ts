@@ -166,11 +166,25 @@ export const documentHeader = {
 };
 
 export const translate = {
+  // İE#14 A2 (K56): `source` önerinin hangi katmandan geldiğini söyler —
+  // 'sozluk' (belirlenimci) ya da 'makine' (gözden geçirilmeli).
   suggest: (text: string) =>
-    api.post<{ suggestion: string | null; cached: boolean; provider: string | null }>(
-      '/api/panel/translate-suggest',
-      { text },
-    ),
+    api.post<{
+      suggestion: string | null;
+      cached: boolean;
+      provider: string | null;
+      source: 'sozluk' | 'makine' | null;
+    }>('/api/panel/translate-suggest', { text }),
+
+  /** Ürünün TAMAMI tek çağrıda (K56 Katman 2 arayüzü) — yanıt yalnız ÖNERİDİR. */
+  product: (urun: { name?: string; category?: string; attributes?: Record<string, string>; variants?: string[] }) =>
+    api.post<{
+      name?: string;
+      category?: string;
+      attributes?: Record<string, string>;
+      variants?: string[];
+      meta: { provider: string; sources: Record<string, string> };
+    }>('/api/panel/translate-product', urun),
 };
 
 export const share = {
@@ -232,6 +246,10 @@ export const system = {
       writable: boolean;
       last_age_seconds: number | null;
       stale: boolean;
+      /** İE#14 D1: 30 saati aşan gecikme — gecelik koşu bir kez atlanmış demektir. */
+      gecikti: boolean;
+      /** Son cron koşusunun izi (storage/logs/cron.log); hiç koşmadıysa null. */
+      cron: { line: string; ok: boolean; at: string; age_seconds: number } | null;
       offsite_configured: boolean;
     }>('/api/system/backups'),
   backupFileUrl: (name: string) => `/api/system/backups/${encodeURIComponent(name)}/file`,

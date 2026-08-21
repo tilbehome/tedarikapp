@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { AlertTriangle, ArrowLeft } from 'lucide-react';
-import { products as productsApi } from '../api/endpoints';
+import { AlertTriangle, ArrowLeft, Languages, Loader2 } from 'lucide-react';
+import { products as productsApi, translate as translateApi } from '../api/endpoints';
 import { ApiError } from '../api/client';
 import type { Product } from '../api/types';
 import { useAsync, messageOf } from '../lib/useAsync';
@@ -32,6 +32,13 @@ export default function ProductFormScreen() {
     const items = await productsApi.forList(listId);
     return items.find((item) => item.id === Number(productId)) ?? null;
   }, [editing, listId, productId]);
+
+  // İE#14 C1: "Türkçe öneri" — kaynak ORİJİNAL BAŞLIK, yoksa ürün adı. Öneri
+  // KULLANICI ONAYIYLA yalnız "Ürün adı" alanına yazılır; orijinal başlığa ve
+  // başka hiçbir alana dokunulmaz (K54).
+  const [oneri, setOneri] = useState<string | null>(null);
+  const [oneriKaynagi, setOneriKaynagi] = useState<string | null>(null);
+  const [oneriYukleniyor, setOneriYukleniyor] = useState(false);
 
   const [form, setForm] = useState({
     name: '',
@@ -133,6 +140,40 @@ export default function ProductFormScreen() {
     }
   };
 
+  // Çeviri yalnız CJK (Çince/Japonca/Korece) kaynakta anlamlıdır; Latin harfli
+  // başlıkta düğme PASİFTİR — boşuna istek atıp kota harcamayız.
+  const cjkVar = (metin: string): boolean => /[\u4E00-\u9FFF\u3400-\u4DBF\u3040-\u30FF\uAC00-\uD7AF]/.test(metin);
+  const oneriKaynakMetni = (form.name_original.trim() || form.name.trim()).slice(0, 500);
+  const oneriMumkun = oneriKaynakMetni !== '' && cjkVar(oneriKaynakMetni);
+
+  const oneriIste = async () => {
+    if (!oneriMumkun || oneriYukleniyor) return; // çift tıklama koruması
+    setOneriYukleniyor(true);
+    setOneri(null);
+    try {
+      const sonuc = await translateApi.suggest(oneriKaynakMetni);
+      // Öneri yoksa SESSİZ geçilir (İE#13 K54 ilkesi): çeviri akışın zorunlu
+      // parçası değildir, hata baloncuğu çıkarmak kullanıcıyı boşuna telaşlandırır.
+      if (sonuc.suggestion !== null && sonuc.suggestion !== '') {
+        setOneri(sonuc.suggestion);
+        setOneriKaynagi(sonuc.source ?? sonuc.provider);
+      } else {
+        setOneri('');
+      }
+    } catch {
+      setOneri('');
+    } finally {
+      setOneriYukleniyor(false);
+    }
+  };
+
+  const oneriyiKullan = () => {
+    if (oneri === null || oneri === '') return;
+    set('name', oneri);
+    setOneri(null);
+    push('Türkçe öneri ürün adına yazıldı. Orijinal başlık değişmedi.');
+  };
+
   if (editing && existing.loading) return <Skeleton rows={4} />;
   if (editing && existing.error) return <ErrorNote message={existing.error} onRetry={existing.reload} />;
   if (editing && existing.data === null) return <ErrorNote message="Ürün bulunamadı." />;
@@ -148,7 +189,59 @@ export default function ProductFormScreen() {
 
       <form onSubmit={(event) => void submit(event)} className="card space-y-4 p-4">
         <Field label="Ürün adı" error={fields['name']}>
-          <input className="field-input" value={form.name} onChange={(event) => set('name', event.target.value)} required autoFocus />
+          <div className="flex gap-2">
+            <input
+              className="field-input flex-1"
+              value={form.name}
+              onChange={(event) => set('name', event.target.value)}
+              required
+              autoFocus
+            />
+            {/* İE#14 C1: öneri düğmesi — kaynak Latin harfliyse pasif, çünkü
+                çevrilecek bir şey yoktur. */}
+            <button
+              type="button"
+              className="btn-ghost shrink-0"
+              disabled={!oneriMumkun || oneriYukleniyor}
+              title={
+                oneriMumkun
+                  ? 'Orijinal başlıktan Türkçe ad önerisi al'
+                  : 'Öneri için Çince bir orijinal başlık gerekir'
+              }
+              onClick={() => void oneriIste()}
+            >
+              {oneriYukleniyor ? (
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+              ) : (
+                <Languages className="h-4 w-4" aria-hidden />
+              )}
+              <span className="ml-1">Türkçe öneri</span>
+            </button>
+          </div>
+          {oneri ? (
+            <div className="mt-2 rounded-xl border border-brand-200 bg-brand-50/60 p-2 text-sm">
+              <p className="text-slate-700">
+                <span className="font-medium">Öneri:</span> {oneri}
+                {oneriKaynagi === 'sozluk' ? (
+                  <span className="ml-2 text-xs text-slate-500">(sözlükten)</span>
+                ) : oneriKaynagi !== null ? (
+                  <span className="ml-2 text-xs text-slate-500">(makine çevirisi — gözden geçirin)</span>
+                ) : null}
+              </p>
+              <div className="mt-2 flex gap-2">
+                <button type="button" className="btn-primary !min-h-8 !px-3 !text-xs" onClick={oneriyiKullan}>
+                  Kullan
+                </button>
+                <button
+                  type="button"
+                  className="btn-ghost !min-h-8 !px-3 !text-xs"
+                  onClick={() => setOneri(null)}
+                >
+                  Kapat
+                </button>
+              </div>
+            </div>
+          ) : null}
         </Field>
 
         <Field label="Orijinal başlık" hint="1688'deki Çince başlık (opsiyonel)" error={fields['name_original']}>

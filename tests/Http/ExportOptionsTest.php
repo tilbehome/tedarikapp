@@ -116,14 +116,28 @@ final class ExportOptionsTest extends AuthTestCase
         self::assertIsFloat($sheet->getCell('Q11')->getValue());
     }
 
-    public function testRevizyonHarfiHerCiktidaIlerler(): void
+    /**
+     * İE#14 B1 — REVİZYON İÇERİKLE İLERLER, indirmeyle DEĞİL.
+     *
+     * ESKİ (yanlış) davranış bu testin kendisiyle sabitlenmişti: her çıktı harfi
+     * bir ilerletiyordu; aynı listeden Excel ve PDF almak "Rev D / Rev E" üretiyor,
+     * firma iki farklı revizyon sanıyordu. Yeni kural: harf `lists.revision`e bağlı.
+     */
+    public function testRevizyonHarfiICERIKdegisinceIlerler(): void
     {
         $ilk = $this->xlsx($this->write('POST', '/api/lists/' . $this->listId . '/export?format=xlsx'));
         self::assertStringEndsWith('Rev A', (string) $ilk->getCell('I3')->getValue());
 
+        // Aynı içerikten ikinci indirme: harf DEĞİŞMEZ, "geçersiz kılar" notu da çıkmaz.
         $ikinci = $this->xlsx($this->write('POST', '/api/lists/' . $this->listId . '/export?format=xlsx'));
-        self::assertStringEndsWith('Rev B', (string) $ikinci->getCell('I3')->getValue());
-        self::assertStringContainsString('GEÇERSİZ KILAR', (string) $ikinci->getCell('B16')->getValue());
+        self::assertStringEndsWith('Rev A', (string) $ikinci->getCell('I3')->getValue());
+
+        // İçerik değişti (ürün durumu ilerledi) → sıradaki harf ve "geçersiz kılar" notu.
+        // Satır SAYISI bilerek değiştirilmiyor: belge yerleşimi (B16) sabit kalsın.
+        $this->write('PATCH', '/api/lists/' . $this->listId, ['yuan_rate' => '4.9000']);
+        $ucuncu = $this->xlsx($this->write('POST', '/api/lists/' . $this->listId . '/export?format=xlsx'));
+        self::assertStringEndsWith('Rev B', (string) $ucuncu->getCell('I3')->getValue());
+        self::assertStringContainsString('GEÇERSİZ KILAR', (string) $ucuncu->getCell('B16')->getValue());
     }
 
     public function testBelgeAntediCiktiyaGirer_bosAlanBASILMAZ(): void

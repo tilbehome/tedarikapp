@@ -245,6 +245,12 @@ final class ListController extends ApiController
         }
 
         $this->lists->update((int) $row['id'], $updates, $now);
+        // İE#14 B1: kur kilidi ve liste durumu belgeye BASILIR — değiştiklerinde
+        // liste sürümü ilerler (revizyon harfi ve K25 rozeti bunu izler).
+        if (array_key_exists('rate_locked_at', $updates) || array_key_exists('status', $updates)
+            || array_key_exists('yuan_rate', $updates) || array_key_exists('usd_rate', $updates)) {
+            $this->lists->bumpRevision((int) $row['id'], $now);
+        }
         $this->log($request, 'list_updated', (int) $row['id'], implode(',', array_keys($updates)));
 
         $fresh = $this->lists->find((int) $row['id']);

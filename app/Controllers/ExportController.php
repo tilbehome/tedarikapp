@@ -84,8 +84,11 @@ final class ExportController extends ApiController
         }
         $categoryNames = array_column($this->categories->all(), 'name', 'id');
 
-        // F7 — revizyon: aynı listenin kaçıncı çıktısı (A, B, C…).
-        $revision = \App\Services\Export\TemplateV2::revisionLabel($this->exports->countForList((int) $row['id']) + 1);
+        // F7 + İE#14 B1 — revizyon LİSTE SÜRÜMÜNE bağlıdır: aynı içerikten alınan
+        // Excel ve PDF AYNI harfi taşır; harf ancak liste değişince ilerler.
+        $revision = \App\Services\Export\TemplateV2::revisionLabel(
+            $this->exports->revisionSequence((int) $row['id'], (int) $row['revision']),
+        );
 
         $snapshot = $this->snapshot->build($row, $productRows, $categoryNames, $now, [
             'copy' => $copy,

@@ -145,9 +145,9 @@ final class PdfRenderer implements ExportRenderer
             if (is_string($product['url'] ?? null) && $product['url'] !== '') {
                 $ad = '<a href="' . $e($product['url']) . '">' . $ad . '</a>';
             }
-            $orijinal = is_string($product['name_original'] ?? null) && $product['name_original'] !== ''
-                ? '<br><span class="zh">' . $e($product['name_original']) . '</span>'
-                : '';
+            // İE#14 A1: ad ile orijinal AYNIYSA ikinci satır BASILMAZ (ortak kural).
+            $orijinalMetin = \App\Services\Translation\ProductNaming::originalOf($product);
+            $orijinal = $orijinalMetin === null ? '' : '<br><span class="zh">' . $e($orijinalMetin) . '</span>';
 
             $kar = '';
             if ($icKopya) {
@@ -162,8 +162,8 @@ final class PdfRenderer implements ExportRenderer
                 . '<td class="c">' . $gorsel . '</td>'
                 . '<td class="ad">' . $ad . $orijinal . '</td>'
                 . '<td class="kucuk">' . $e($product['detail'] ?? '') . '</td>'
-                . '<td class="kucuk">' . $e($product['variant'] ?? '—') . '</td>'
-                . '<td class="kucuk soluk">' . $e($product['category']) . '</td>'
+                . '<td class="kucuk">' . $e($product['variant'] ?? '') . '</td>'
+                . '<td class="kucuk soluk">' . $e($product['category'] ?? '') . '</td>'
                 . '<td class="c kucuk soluk">' . $e(TemplateV2::platformLabel($product['platform'] ?? null)) . '</td>'
                 . '<td class="c"><span class="rozet" style="background:#' . $zemin . ';color:#' . $yazi . '">'
                 . nl2br($e($rozet)) . '</span></td>'

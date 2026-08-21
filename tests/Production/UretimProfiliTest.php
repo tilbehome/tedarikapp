@@ -108,6 +108,14 @@ final class UretimProfiliTest extends AuthTestCase
             'app/Services/BackupService.php',
             // BackupOffsite: fwrite hedefi php://temp BELLEK akışıdır (SMTP gövdesi) — diske yazmaz.
             'app/Services/BackupOffsite.php',
+            // İE#14 D1: gecelik koşunun izi storage/logs/cron.log'a yazılır. Gerekçe:
+            // "cron hiç tetiklendi mi?" sorusu veritabanından yanıtlanamaz — uygulama
+            // hiç çalışmadıysa oraya da satır düşmez. Dosya storage/ altındadır
+            // (web'den erişilemez) ve 500 satırda sabitlenir.
+            'app/Services/CronLog.php',
+            // İE#14 A2: sözlük üstyazımı storage/sozluk-*.php'ye yazılır; config/ SALT
+            // OKUNUR kalır (K44 + sürüm güncellemesi kullanıcı terimlerini silmesin).
+            'app/Services/Translation/Glossary.php',
         ];
         $pattern = '/(?<![>\w$:])(?<!function )(file_put_contents|fwrite|mkdir|tempnam|touch)\s*\(|(?<![>\w$:])fopen\s*\([^)]*,\s*[\'"][waxc]/';
 

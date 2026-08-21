@@ -29,6 +29,7 @@ final class PublicRoutes
      * @template T of \Psr\Container\ContainerInterface|null
      *
      * @param App<T> $app kompozisyon kökünden gelir
+     * @param array<string, \App\Services\Export\ExportRenderer> $exportRenderers biçim → render'cı
      */
     public static function register(
         App $app,
@@ -38,6 +39,11 @@ final class PublicRoutes
         ListPresenter $presenter,
         Connection $connection,
         AuthServices $services,
+        // İE#15 A1: oturumsuz imzalı indirme — imza APP_KEY'den, render'cılar panelle AYNI.
+        \App\Core\Config $config,
+        \App\Services\Export\ExportSnapshot $snapshot,
+        array $exportRenderers,
+        string $basePath,
     ): void {
         // İE#10 5c YEDEK HAT: /media normalde Apache'nin statik işidir (.htaccess [END]
         // kuralları); rewrite zinciri hangi yerleşimde şaşarsa şaşsın görsel yine açılsın
@@ -67,7 +73,15 @@ final class PublicRoutes
 
         // İE#10 Blok 4: GİRİŞSİZ paylaşım sayfası — /p/{token}. Sabit yanıt ilkesi:
         // geçersiz/iptal/süresi dolmuş token ve hız sınırı aşımı AYNI 404'ü döndürür.
-        $sharePage = new SharePage();
+        // İE#14 A3: paylaşım sayfası da sözlükten geçen değerleri gösterir.
+        // İE#15 A1: indirme bağlantılarını sayfa üretilirken İMZALAR.
+        $shareDownload = new \App\Services\Share\ShareDownload((string) $config->get('APP_KEY', ''));
+        $sharePage = new SharePage(
+            new \App\Services\Translation\ValueSet(
+                new \App\Services\Translation\Glossary($basePath . '/config', $basePath . '/storage'),
+            ),
+            $shareDownload,
+        );
         $shareGate = new ShareGate($connection);
         $app->get('/p/{token}', static function (ServerRequestInterface $request, ResponseInterface $response, array $args) use ($lists, $products, $presenter, $connection, $sharePage, $shareGate, $services): ResponseInterface {
             $now = $services->clock->now();
@@ -98,6 +112,8 @@ final class PublicRoutes
 
             $categoryNames = array_column((new CategoryRepository($connection))->all(), 'name', 'id');
             $uri = $request->getUri();
+            // İE#15 C4: paylaşım metinlerinin dili bağlantıdaki ?lang ile gelir.
+            $dil = \App\Services\Share\ShareTexts::dil($request->getQueryParams()['lang'] ?? null);
             $html = $sharePage->render(
                 $presenter->list($row),
                 $presenter->productsOf($products->forList((int) $row['id']), $row),
@@ -105,6 +121,10 @@ final class PublicRoutes
                 $uri->getScheme() . '://' . $uri->getAuthority() . '/p/' . $token,
                 // İE#13 F4: paylaşım sayfası da belge antedini taşır (aynı kurumsal dil).
                 (new \App\Models\SettingsRepository($connection))->documentHeader(),
+                false,
+                $token,
+                $dil,
+                $now,
             );
             $response->getBody()->write($html);
 
@@ -112,6 +132,59 @@ final class PublicRoutes
                 ->withHeader('Content-Type', 'text/html; charset=utf-8')
                 ->withHeader('X-Robots-Tag', 'noindex, nofollow')
                 ->withHeader('Cache-Control', 'no-store');
+        });
+
+        // İE#15 A1/A2/A3/A4 — OTURUMSUZ İNDİRME: /p/{token}/export?format&lang&exp&sig
+        $publicExport = new \App\Controllers\PublicExportController(
+            $lists,
+            $products,
+            new CategoryRepository($connection),
+            new \App\Models\SettingsRepository($connection),
+            $snapshot,
+            $exportRenderers,
+            $shareDownload,
+            $shareGate,
+            $sharePage,
+            $services->clock,
+            $services->timezone,
+        );
+        $app->get('/p/{token}/export', [$publicExport, 'download']);
+
+        // İE#15 C3 — PAYLAŞIM QR'ı: sunucuda üretilir (dış servis YOK, K45).
+        // İçeriği YALNIZ paylaşım adresidir; imzalı indirme adresi QR'a KONMAZ.
+        $app->get('/p/{token}/qr.png', static function (ServerRequestInterface $request, ResponseInterface $response, array $args) use ($lists, $shareGate, $services): ResponseInterface {
+            $now = $services->clock->now();
+            $token = (string) ($args['token'] ?? '');
+            $bos404 = static fn (): ResponseInterface => $response->withStatus(404)
+                ->withHeader('Content-Type', 'text/plain; charset=utf-8');
+
+            if (preg_match('/^[0-9a-f]{64}$/', $token) !== 1 || $shareGate->blocked(ClientIp::from($request), $now)) {
+                return $bos404();
+            }
+            $row = $lists->findByShareHash(hash('sha256', $token));
+            if ($row === null) {
+                return $bos404();
+            }
+            if ($row['share_expires_at'] !== null
+                && Dates::fromStorage((string) $row['share_expires_at'], $services->timezone) <= $now) {
+                return $bos404();
+            }
+
+            $dil = \App\Services\Share\ShareTexts::dil($request->getQueryParams()['lang'] ?? null);
+            $uri = $request->getUri();
+            $adres = $uri->getScheme() . '://' . $uri->getAuthority() . '/p/' . $token
+                . ($dil === 'tr' ? '' : '?lang=' . $dil);
+
+            $png = \App\Services\Export\QrImage::png($adres);
+            if ($png === null) {
+                return $bos404();
+            }
+            $response->getBody()->write($png);
+
+            return $response
+                ->withHeader('Content-Type', 'image/png')
+                ->withHeader('Cache-Control', 'no-store')
+                ->withHeader('X-Robots-Tag', 'noindex, nofollow');
         });
     }
 }

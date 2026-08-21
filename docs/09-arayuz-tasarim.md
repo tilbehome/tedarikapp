@@ -110,3 +110,79 @@ Veritabanı ve API **yalnızca** sol sütundaki İngilizce kodları taşır. Tü
 | `assigned` | Atandı |
 
 > Not: `ordered` hem ürün hem liste durumunda geçer ama farklı tablolarda ve farklı anlamlarda (ürün: sipariş verildi · liste: sipariş verildi). Karışıklık olmaması için kod içinde durumlar daima kendi enum/sabit setleriyle kullanılır.
+
+## Uzun süren işlemler (İE#14 C2 — ortak desen)
+
+Görsel arşivi taşıma, yedekleme, veritabanı güncellemesi, belge üretimi ve çeviri
+saniyelerce sürer. Hepsi AYNI deseni kullanır (`useUzunIslem` + `IslemDurumu`):
+
+1. **Düğme işlem boyunca kapalı** ve üzerinde fiil yazar ("Taşınıyor…", "Yedek alınıyor…").
+   Çift tıklama koruması state ile değil `ref` ile yapılır — state güncellemesi asenkron
+   olduğu için hızlı iki tık aynı değeri görebilir ve iş iki kez başlayabilirdi.
+2. **Bilgi şeridi**: ne yapıldığı + geçen süre.
+3. **Gerçek ilerleme**, sayılabiliyorsa: "12 taşındı · 0 başarısız · 28 kaldı". Sahte
+   yüzde çubuğu YOKTUR — bilmediğimiz şeyi biliyormuş gibi göstermeyiz.
+4. **60 saniyeden uzun sürerse**: "Beklenenden uzun sürüyor" uyarısı + İptal.
+   İptal, parti parti çalışan işlerde sıradaki partiden önce denetlenir; tamamlanmış
+   parti geri alınmaz. Tek atımlık işlerde (migration/yedek) sunucudaki iş yarıda
+   BIRAKILMAZ — yarım migration tehlikelidir — yalnız sonuç "iptal edildi" işaretlenir.
+5. **Sonuç kartı** kalıcıdır (bildirim baloncuğu kaçırılabilir): ne olduğu yazar,
+   başarısızsa "Tekrar dene" düğmesi taşır.
+
+## Yükleme durumları (İE#14 C3)
+
+Ayarlar kartlarında (Güvenlik · Görsel arşivi · Yedekler · Sistem durumu) veri
+okunurken **"okunuyor…"** yazar. **"—" yalnız gerçekten boş alanın işaretidir** —
+yükleniyor olmak boş olmak değildir. Hata durumunda ilgili kart kendi içinde
+"Tekrar dene" gösterir; tüm sayfanın yenilenmesi gerekmez.
+
+## Paylaşım sayfasını yazdırma (İE#14 B2)
+
+Tarayıcı yazdırma penceresinde: **Düzen: Yatay** ve **Arka plan grafikleri: açık**.
+Sayfa A4 yatay için tasarlanmıştır; sütun genişlikleri yüzdeyle sabitlenmiştir
+(toplam 100) ve tablo `table-layout: fixed` ile basılır — sağdaki DDP sütunları
+kâğıt dışında kalmaz. Detay panelindeki katlamalar ("Eksik bilgileri göster",
+"+N seçenek") baskıda AÇIK basılır; kâğıtta tıklanacak bir şey yoktur.
+
+Sunucu PDF'i (Belge çıktısı > PDF) ile tarayıcı yazdırması AYRI şeylerdir: PDF
+belge şablonudur (mPDF, K55), yazdırma ise sayfanın kâğıt görünümüdür.
+
+## Paylaşım sayfası: link disiplini (İE#15 D1/D2 — K59)
+
+Sayfadan dış siteye çıkan **tek öğe "Ürüne git ↗" düğmesidir**:
+
+- Ürün adı **köprü değildir** (düz metin),
+- görsele tıklamak yalnız **lightbox galeriyi** açar,
+- detay panelindeki alanlar (ilan no, satıcı) düz metindir,
+- tek çıkış `target="_blank" rel="noopener noreferrer nofollow"` taşır.
+
+Amaç: firma listeyi incelerken yanlışlıkla kaynak siteye düşmesin; çıkış bilinçli
+ve tek noktadan olsun. Kural testle zorlanır (`SharePageLinksTest`): sayfadaki tüm
+`href` değerleri taranır, `op-git` dışında dış bağlantı bulunursa test kırılır.
+**Belge çıktılarında (Excel/PDF) köprü davranışı korunur** — kural yalnız /p/ içindir.
+
+## Paylaşım kanalları (İE#15 C1 — K60)
+
+Araç çubuğunda iki grup vardır: **Çıktılar** (Excel · PDF · CSV · Yazdır — firma
+tarafında da çalışır, K58) ve **Paylaş** menüsü:
+
+| Kanal | Yol |
+|---|---|
+| Linki kopyala | Pano |
+| WhatsApp | `wa.me/?text=` |
+| WeChat 微信 | **QR modalı** — link şemasıyla açılmaz |
+| QQ | `connect.qq.com/widget/shareqq` |
+| DingTalk 钉钉 | **QR modalı** |
+| Telegram | `t.me/share/url` |
+| E-posta | `mailto:` (konu + özet + link) |
+
+Mobilde önce `navigator.share` denenir, yoksa menü açılır. Menüdeki **dil seçici**
+bağlantıya `?lang=` ekler: paylaşım metni ve indirme çıktısı o dile göre gelir.
+QR modalında büyük kare, "özet metnini kopyala" ve PNG indirme vardır.
+
+## Video (İE#15 E)
+
+Videosu olan üründe görselin köşesinde ▶ rozeti vardır; tıklanınca modal açılır.
+Oynatılabilir adres alınamamışsa (1688 videoları imzalı istek ister) modal **boş
+açılmaz**: "Video şu an oynatılamıyor" ve varsa "Kaynak sayfada aç" gösterilir.
+Hiç video verisi yoksa **rozet basılmaz** — sahte rozet kullanıcıyı boş modala götürür.

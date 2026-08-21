@@ -40,6 +40,10 @@ final class SharePageV4Test extends AuthTestCase
             'price_target_try' => '999.00',
             'note' => 'Kutu logolu olacak',
             'url' => 'https://detail.1688.com/offer/833438962156.html',
+            // İE#14 A6: iki alan DOLU, kalanı boş — katlama davranışı böyle sınanır.
+            'platform' => '1688',
+            'external_id' => '833438962156',
+            'units_per_carton' => 20,
         ]);
         $iptal = (int) $this->json($this->write('POST', '/api/lists/' . $listId . '/products', [
             'name' => 'İptal edilen ürün',
@@ -76,7 +80,9 @@ final class SharePageV4Test extends AuthTestCase
             self::assertStringContainsString($parca, $html, $parca . ' bölümü şartnamede var.');
         }
         self::assertStringContainsString('data-yazdir', $html);
-        self::assertStringContainsString('data-whatsapp', $html);
+        // İE#15 C1: tek WhatsApp düğmesi yerine ÇOK KANALLI paylaş menüsü.
+        self::assertStringContainsString('data-paylas-menu', $html);
+        self::assertStringContainsString('data-kanal="whatsapp"', $html);
         self::assertStringContainsString('data-kopyala', $html);
     }
 
@@ -125,10 +131,72 @@ final class SharePageV4Test extends AuthTestCase
 
         self::assertStringContainsString('ÜRÜN BİLGİLERİ', $html);
         self::assertStringContainsString('双层不锈钢保温饭盒500ml', $html, 'Orijinal Çince başlık görünür.');
-        self::assertStringContainsString('class="yok">—<', $html, 'Veri olmayan alan — ile basılır.');
         self::assertStringContainsString('Not: Kutu logolu olacak', $html);
         // TEDARİK PUANI verisi yok → bölüm hiç basılmaz (V3-A'ya kadar).
         self::assertStringNotContainsString('TEDARİK PUANI', $html);
+    }
+
+    /**
+     * İE#14 A6 — DOLU ALANLAR ÜSTTE, boşlar katlamanın içinde.
+     *
+     * Eski davranış: 17 alan sırayla basılıyor, yarısı "—" oluyordu; göz dolu
+     * bilgiyi bulamıyordu. Yeni kural: dolu alanlar ızgarada, boşlar
+     * "Eksik bilgileri göster (N)" katlamasında — ve katlama SATIR İÇİ SCRIPT
+     * kullanmadan (<details>) açılır, CSP korunur (K51).
+     */
+    public function testEksikAlanlarKatlamaninIcinde(): void
+    {
+        $html = $this->sayfa();
+
+        self::assertMatchesRegularExpression(
+            '/Eksik bilgileri göster \((\d+)\)/u',
+            $html,
+            'Boş alanlar sayıyla katlanmalı.',
+        );
+        self::assertStringContainsString('<details class="eks">', $html);
+        self::assertStringNotContainsString('onclick', $html, 'Katlama satır içi script kullanmaz (K51).');
+
+        // Dolu alan ızgarada, boş alan katlamanın İÇİNDE olmalı.
+        $katlamaBasi = strpos($html, 'Eksik bilgileri göster');
+        $koliIci = strpos($html, 'Koli içi');
+        self::assertIsInt($katlamaBasi);
+        self::assertIsInt($koliIci);
+        self::assertLessThan($katlamaBasi, $koliIci, 'Dolu alan katlamadan ÖNCE basılmalı.');
+        self::assertGreaterThan($katlamaBasi, (int) strpos($html, 'Garanti'), 'Boş alan katlamanın içinde.');
+    }
+
+    /**
+     * İE#14 A4 — veri yoksa alan HİÇ BASILMAZ: "Kategorisiz" damgası kalktı.
+     */
+    public function testKategorisizYazisiBasilmaz(): void
+    {
+        self::assertStringNotContainsString('Kategorisiz', $this->sayfa());
+    }
+
+    /**
+     * İE#14 B2 — YAZDIRMA REGRESYONU: canlıda sağdaki DDP sütunları kâğıt dışında
+     * kalıyordu. Baskı bloğunda sabit yerleşim ve yüzde genişlikler DURMALI.
+     */
+    public function testYazdirmaBloguTasmayiOnleyenKurallariIcerir(): void
+    {
+        $css = (string) file_get_contents(dirname(__DIR__, 2) . '/public/p-style.css');
+
+        self::assertStringContainsString('@page { size: A4 landscape', $css, 'Yatay A4 korunmalı.');
+        self::assertStringContainsString('table-layout: fixed !important', $css);
+        self::assertStringContainsString('min-width: 0 !important', $css, 'min-width baskıda iptal edilmeli.');
+        self::assertStringContainsString('overflow-wrap: anywhere', $css);
+        self::assertStringContainsString('zoom: 1 !important', $css, 'Baskıda ölçekleme uygulanmamalı.');
+
+        // Sütun yüzdeleri: toplam 100 (şartnamedeki sütun sırası).
+        $baskiBlogu = substr($css, (int) strrpos($css, '@media print'));
+        preg_match_all('/nth-child\((\d+)\)\s*{\s*width:\s*(\d+)%/', $baskiBlogu, $eslesmeler);
+        $yuzdeler = array_map('intval', $eslesmeler[2]);
+        self::assertCount(13, $yuzdeler, '13 veri sütununun her biri genişlik almalı.');
+        self::assertSame(100, array_sum($yuzdeler), 'Yüzdeler toplamı 100 olmalı.');
+
+        // Ekran düzeni baskıda TETİKLENMEZ: mobil sorgular "screen and" kilitli.
+        self::assertStringNotContainsString('@media (max-width:940px)', $css);
+        self::assertStringContainsString('@media screen and (max-width:940px)', $css);
     }
 
     public function testGirissizGoruntuleyendeExcelPdfDugmesiYOK(): void

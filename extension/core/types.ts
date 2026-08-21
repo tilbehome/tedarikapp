@@ -35,6 +35,8 @@ export interface CaptureRaw {
   min_order?: unknown;
   unit?: unknown;
   category_name?: unknown;
+  /** İE#14 A4: kırıntı yolu adımları — panel kategoriyi buradan türetir. */
+  breadcrumb?: string[];
   origin_text?: string | null;
 }
 
