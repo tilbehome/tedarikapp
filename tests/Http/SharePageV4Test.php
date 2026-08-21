@@ -80,7 +80,9 @@ final class SharePageV4Test extends AuthTestCase
             self::assertStringContainsString($parca, $html, $parca . ' bölümü şartnamede var.');
         }
         self::assertStringContainsString('data-yazdir', $html);
-        self::assertStringContainsString('data-whatsapp', $html);
+        // İE#15 C1: tek WhatsApp düğmesi yerine ÇOK KANALLI paylaş menüsü.
+        self::assertStringContainsString('data-paylas-menu', $html);
+        self::assertStringContainsString('data-kanal="whatsapp"', $html);
         self::assertStringContainsString('data-kopyala', $html);
     }
 

@@ -146,6 +146,15 @@ Belge kodu ve revizyon (F7 · **İE#14 B1 / K57 ile düzeltildi**): kod `TDK-<y�
 
 ## 8. Yakalama ve Dışa Açık Sayfa
 
+### Oturumsuz paylaşım uçları (İE#15 — K58/K60)
+
+| Uç | Açıklama |
+|---|---|
+| `GET /p/{token}` | Paylaşım sayfası. `?lang=tr\|zh\|en` paylaşım metinlerini ve indirme bağlantılarının dilini belirler (varsayılan `tr`); tanınmayan değer TR'ye düşer |
+| `GET /p/{token}/export` | **İmzalı, oturumsuz belge indirme.** Sorgu: `format=xlsx\|pdf\|csv`, `lang=tr\|zh\|en`, `exp` (unix zaman), `sig` (HMAC-SHA256, APP_KEY; kapsam token+format+lang+exp). Bağlantıyı SUNUCU üretir (sayfa açılırken, 15 dk ömür) — elle kurulamaz. Kopya türü **DAİMA `firma`**: iç kopya verisi hiçbir biçimde çıkmaz. Hız sınırı token başına saatte 20 → aşımda `429` + `Retry-After: 3600`. Geçersiz imza/süre/iptal → **sabit 404** (K51). Erişim `activity_log`'a `share_download` olarak yazılır: token ÖNEKİ + biçim + dil + kırpılmış IP. `exports` tablosuna kayıt AÇILMAZ (revizyon harfi tüketilmez — K57) |
+| `GET /p/{token}/qr.png` | Paylaşım adresinin kare kodu (PNG, sunucuda üretilir; dış QR servisi yok — K45). `?lang=` kareye gömülen adrese eklenir. İçerik YALNIZ paylaşım adresidir — imzalı indirme adresi QR'a konmaz. Geçersiz/iptal token → 404 |
+
+
 - `POST /api/capture` — istek şeması **docs/04 §2c v2'de sabit** (İE#11/K32: source+raw+normalized üç blok). Yanıt: 201 `{inbox_id}` veya `{product_id}` (hedef liste seçiliyse) + varsa `duplicate:{product_id, list_id, list_name}` (K25 uyarısı — engel değil); doğrulanamayan gövde → 201 `{inbox_id, status:"error"}` (raw saklanır, veri kaybolmaz); hız aşımı → 429. CORS: yalnız allowlist'teki extension origin'i (K30, wildcard YOK).
 - `GET /api/extension/selectors?platform=1688` — Bearer'lı; schema_version'lı seçici JSON'ı (K53: seçiciler KOD DEĞİL VERİ — site değişince eklenti güncellemesiz düzeltme).
 - `POST /api/extension/translate-suggest` — Bearer'lı; panel ucuyla AYNI gövde ve yanıt (K54). Eklentinin mevcut hız sınırına ve CORS allowlist'ine tabidir; önbellek paylaşılır (panelde çevrilen başlık eklentide tekrar sorulmaz).

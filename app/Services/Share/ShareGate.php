@@ -21,8 +21,12 @@ use DateTimeImmutable;
 final class ShareGate
 {
     public const ACTION_INVALID = 'share_invalid_token';
+    /** İE#15 A1: oturumsuz indirme erişim kaydı (aynı zamanda hız sayacı). */
+    public const ACTION_DOWNLOAD = 'share_download';
     private const MAX_INVALID = 30;
     private const WINDOW_MINUTES = 10;
+    /** Token başına saatte en çok indirme (İE#15 A1). */
+    private const MAX_DOWNLOAD = 20;
 
     public function __construct(private readonly Connection $connection)
     {
@@ -57,6 +61,50 @@ final class ShareGate
             'action' => self::ACTION_INVALID,
             'detail' => 'önek:' . substr($tokenPrefix, 0, 8),
             'ip' => $ip,
+            'actor_type' => 'visitor',
+            'created_at' => Dates::toStorage($now),
+        ]);
+    }
+
+    /**
+     * İE#15 A1 — indirme hız sınırı TOKEN başınadır, IP başına değil: firma
+     * ofisinden birden çok kişi aynı bağlantıyı açabilir (tek NAT arkasında aynı
+     * IP), ama tek bir liste saatte 20 kereden fazla indirilmez.
+     */
+    public function downloadBlocked(string $tokenPrefix, DateTimeImmutable $now): bool
+    {
+        $statement = $this->connection->pdo()->prepare(
+            'SELECT COUNT(*) FROM activity_log
+             WHERE action = :action AND detail LIKE :prefix AND created_at >= :window_start',
+        );
+        $statement->execute([
+            'action' => self::ACTION_DOWNLOAD,
+            'prefix' => 'önek:' . substr($tokenPrefix, 0, 8) . '%',
+            'window_start' => Dates::toStorage($now->modify('-1 hour')),
+        ]);
+
+        return (int) $statement->fetchColumn() >= self::MAX_DOWNLOAD;
+    }
+
+    /**
+     * Erişim kaydı: token ÖNEKİ (tam token asla), biçim, dil, zaman ve KIRPILMIŞ IP.
+     */
+    public function recordDownload(
+        string $tokenPrefix,
+        string $format,
+        string $dil,
+        string $kirpilmisIp,
+        DateTimeImmutable $now,
+    ): void {
+        $statement = $this->connection->pdo()->prepare(
+            'INSERT INTO activity_log (entity_type, entity_id, action, detail, ip, actor_type, actor_id, created_at)
+             VALUES (:entity_type, NULL, :action, :detail, :ip, :actor_type, NULL, :created_at)',
+        );
+        $statement->execute([
+            'entity_type' => 'share',
+            'action' => self::ACTION_DOWNLOAD,
+            'detail' => 'önek:' . substr($tokenPrefix, 0, 8) . ' · ' . $format . ' · ' . $dil,
+            'ip' => $kirpilmisIp,
             'actor_type' => 'visitor',
             'created_at' => Dates::toStorage($now),
         ]);

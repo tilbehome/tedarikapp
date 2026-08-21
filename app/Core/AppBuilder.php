@@ -286,7 +286,19 @@ final class AppBuilder
         );
 
         // İE#10.5 Blok 6: rota kayıtları modül dosyalarında — AppBuilder yalnız kompozisyon kökü.
-        Routes\PublicRoutes::register($app, $mediaService, $lists, $products, $presenter, $connection, $services);
+        Routes\PublicRoutes::register(
+            $app,
+            $mediaService,
+            $lists,
+            $products,
+            $presenter,
+            $connection,
+            $services,
+            $config,
+            new \App\Services\Export\ExportSnapshot($presenter, $valueSet),
+            $exportRenderers,
+            $basePath,
+        );
         Routes\DataRoutes::register(
             $app,
             $settingsController,

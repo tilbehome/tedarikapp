@@ -23,9 +23,33 @@ final class QrImage
     private const BOYUT = 220;
     private const SESSIZ_ALAN = 2; // modül cinsinden kenar boşluğu (QR standardı ≥4, kare küçük olduğu için 2)
 
-    /** @return \GdImage|null üretilemezse null — belge QR'sız yine üretilir */
-    public static function olustur(string $url): ?\GdImage
+    /**
+     * İE#15 C3 — PNG baytları (paylaşım QR modalı ve indirilebilir kare için).
+     * Dış QR servisi KULLANILMAZ (K45: dış istek yok); üretilemezse null döner.
+     */
+    public static function png(string $url, int $boyut = 640): ?string
     {
+        $image = self::olustur($url, $boyut);
+        if ($image === null) {
+            return null;
+        }
+
+        ob_start();
+        imagepng($image);
+        $bytes = (string) ob_get_clean();
+        imagedestroy($image);
+
+        return $bytes === '' ? null : $bytes;
+    }
+
+    /**
+     * @param int|null $boyut kenar uzunluğu (piksel); null ise belge içi varsayılan
+     *
+     * @return \GdImage|null üretilemezse null — belge QR'sız yine üretilir
+     */
+    public static function olustur(string $url, ?int $boyut = null): ?\GdImage
+    {
+        $kenar = $boyut !== null && $boyut >= 120 && $boyut <= 1200 ? $boyut : self::BOYUT;
         try {
             $matris = Encoder::encode($url, ErrorCorrectionLevel::M())->getMatrix();
         } catch (\Throwable) {
@@ -37,22 +61,22 @@ final class QrImage
             return null;
         }
 
-        $image = imagecreatetruecolor(self::BOYUT, self::BOYUT);
+        $image = imagecreatetruecolor($kenar, $kenar);
         if ($image === false) {
             return null;
         }
         $beyaz = (int) imagecolorallocate($image, 255, 255, 255);
         $lacivert = (int) imagecolorallocate($image, 15, 37, 87);
-        imagefilledrectangle($image, 0, 0, self::BOYUT, self::BOYUT, $beyaz);
+        imagefilledrectangle($image, 0, 0, $kenar, $kenar, $beyaz);
 
         $toplam = $modul + self::SESSIZ_ALAN * 2;
-        $olcek = (int) floor(self::BOYUT / $toplam);
+        $olcek = (int) floor($kenar / $toplam);
         if ($olcek < 1) {
             imagedestroy($image);
 
             return null;
         }
-        $kayma = (int) floor((self::BOYUT - $olcek * $toplam) / 2) + $olcek * self::SESSIZ_ALAN;
+        $kayma = (int) floor(($kenar - $olcek * $toplam) / 2) + $olcek * self::SESSIZ_ALAN;
 
         for ($y = 0; $y < $modul; $y++) {
             for ($x = 0; $x < $modul; $x++) {

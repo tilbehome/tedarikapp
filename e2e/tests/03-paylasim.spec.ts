@@ -30,6 +30,20 @@ test.describe('Paylaşım sayfası', () => {
     await expect(gorunen(misafirSayfa.getByText('E2E Paylaşım Listesi'))).toBeVisible();
     await expect(gorunen(misafirSayfa.getByText('Paylaşılan ürün'))).toBeVisible();
 
+    // ── İE#15 A1/F1: ÇIKTILAR firma tarafında (oturumsuz) çalışır ──
+    const excelBaglantisi = misafirSayfa.locator('a[href*="/export?format=xlsx"]').first();
+    await expect(excelBaglantisi).toBeVisible();
+    const imzaliAdres = (await excelBaglantisi.getAttribute('href')) ?? '';
+    expect(imzaliAdres, 'Bağlantı sunucuda imzalanmış olmalı').toMatch(/exp=\d+&sig=[A-Za-z0-9_-]{32}/);
+
+    const indirme = await misafirSayfa.request.get(imzaliAdres);
+    expect(indirme.status(), 'Oturumsuz Excel indirme 200 dönmeli').toBe(200);
+    expect(indirme.headers()['content-disposition'] ?? '').toContain('attachment');
+
+    // İmzasız aynı uç: SABİT 404 (K51)
+    const imzasiz = await misafirSayfa.request.get(url + '/export?format=xlsx');
+    expect(imzasiz.status(), 'İmzasız indirme 404 olmalı').toBe(404);
+
     // ── İptal: eski link ANINDA ölür (K51) ──
     await page.getByRole('button', { name: 'Linki iptal et' }).click();
     await expect(gorunen(page.getByText(/iptal edildi/i))).toBeVisible();

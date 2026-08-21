@@ -146,3 +146,43 @@ kâğıt dışında kalmaz. Detay panelindeki katlamalar ("Eksik bilgileri göst
 
 Sunucu PDF'i (Belge çıktısı > PDF) ile tarayıcı yazdırması AYRI şeylerdir: PDF
 belge şablonudur (mPDF, K55), yazdırma ise sayfanın kâğıt görünümüdür.
+
+## Paylaşım sayfası: link disiplini (İE#15 D1/D2 — K59)
+
+Sayfadan dış siteye çıkan **tek öğe "Ürüne git ↗" düğmesidir**:
+
+- Ürün adı **köprü değildir** (düz metin),
+- görsele tıklamak yalnız **lightbox galeriyi** açar,
+- detay panelindeki alanlar (ilan no, satıcı) düz metindir,
+- tek çıkış `target="_blank" rel="noopener noreferrer nofollow"` taşır.
+
+Amaç: firma listeyi incelerken yanlışlıkla kaynak siteye düşmesin; çıkış bilinçli
+ve tek noktadan olsun. Kural testle zorlanır (`SharePageLinksTest`): sayfadaki tüm
+`href` değerleri taranır, `op-git` dışında dış bağlantı bulunursa test kırılır.
+**Belge çıktılarında (Excel/PDF) köprü davranışı korunur** — kural yalnız /p/ içindir.
+
+## Paylaşım kanalları (İE#15 C1 — K60)
+
+Araç çubuğunda iki grup vardır: **Çıktılar** (Excel · PDF · CSV · Yazdır — firma
+tarafında da çalışır, K58) ve **Paylaş** menüsü:
+
+| Kanal | Yol |
+|---|---|
+| Linki kopyala | Pano |
+| WhatsApp | `wa.me/?text=` |
+| WeChat 微信 | **QR modalı** — link şemasıyla açılmaz |
+| QQ | `connect.qq.com/widget/shareqq` |
+| DingTalk 钉钉 | **QR modalı** |
+| Telegram | `t.me/share/url` |
+| E-posta | `mailto:` (konu + özet + link) |
+
+Mobilde önce `navigator.share` denenir, yoksa menü açılır. Menüdeki **dil seçici**
+bağlantıya `?lang=` ekler: paylaşım metni ve indirme çıktısı o dile göre gelir.
+QR modalında büyük kare, "özet metnini kopyala" ve PNG indirme vardır.
+
+## Video (İE#15 E)
+
+Videosu olan üründe görselin köşesinde ▶ rozeti vardır; tıklanınca modal açılır.
+Oynatılabilir adres alınamamışsa (1688 videoları imzalı istek ister) modal **boş
+açılmaz**: "Video şu an oynatılamıyor" ve varsa "Kaynak sayfada aç" gösterilir.
+Hiç video verisi yoksa **rozet basılmaz** — sahte rozet kullanıcıyı boş modala götürür.

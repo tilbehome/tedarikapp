@@ -245,6 +245,70 @@ td.not-hucre .val { font-style: italic; }
  * sütunları kâğıt dışında kalıyordu). Şartnamenin @media print bloğu YUKARIDA
  * aynen durur; burası yalnız TAŞMAYI kapatan katmandır ve ondan SONRA gelir.
  * ──────────────────────────────────────────────────────────────────────────── */
+/* ─────────────────────────────────────────────────────────────────────────────
+ * İE#15 — ÇIKTI GRUBU, PAYLAŞ MENÜSÜ, QR MODALI, YAZDIRMA UYARISI, VİDEO NOTU
+ * Tümü satır içi stil/script OLMADAN çalışır (K51 CSP).
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+/* Çıktılar grubu: Excel · PDF · CSV · Yazdır — firma tarafında da görünür (F1). */
+.tgrp { display:inline-flex; gap:7px; flex-wrap:wrap; align-items:center;
+  padding-right:10px; margin-right:3px; border-right:1px solid var(--ln); }
+.tgrp .tb { text-decoration:none; }
+.tb.bekliyor { opacity:.7; pointer-events:none; }
+
+/* Paylaş menüsü (C1) */
+.pmenu { position:relative; margin-left:auto; }
+.pmenu-liste { position:absolute; right:0; top:calc(100% + 6px); z-index:40; min-width:230px;
+  background:#fff; border:1px solid var(--ln); border-radius:12px; padding:6px;
+  box-shadow:0 18px 40px rgba(15,37,87,.16); display:flex; flex-direction:column; gap:2px; }
+.pmenu-liste[hidden] { display:none; }
+.pmenu-liste button { display:flex; align-items:center; gap:9px; width:100%; font:inherit;
+  font-size:13px; font-weight:600; color:var(--t2); background:none; border:0; border-radius:8px;
+  padding:9px 10px; text-align:left; cursor:pointer; }
+.pmenu-liste button:hover { background:#F3F6FC; color:var(--navy); }
+.pmenu-liste button svg { width:15px; height:15px; flex:none; }
+.pmenu-dil { display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+  border-top:1px solid var(--ln2); margin-top:4px; padding:8px 10px 4px; }
+.pmenu-dil span { font-size:10.5px; font-weight:700; letter-spacing:.06em; color:var(--t3);
+  text-transform:uppercase; width:100%; }
+.pmenu-dil a { font-size:12px; font-weight:600; color:var(--t2); text-decoration:none;
+  border:1px solid var(--ln); border-radius:7px; padding:4px 9px; }
+.pmenu-dil a:hover { border-color:#C9D3E8; color:var(--navy); }
+.pmenu-dil a.secili { background:var(--navy); border-color:var(--navy); color:#fff; }
+
+/* QR modalı (C3) */
+.qrm { position:fixed; inset:0; z-index:60; background:rgba(9,18,40,.72);
+  display:flex; align-items:center; justify-content:center; padding:20px; }
+.qrm[hidden] { display:none; }
+.qrk { background:#fff; border-radius:18px; padding:22px; max-width:340px; width:100%; text-align:center; }
+.qrk h2 { font-size:15px; font-weight:800; color:var(--navy); margin:0 0 2px; }
+.qra { font-size:12.5px; font-weight:600; color:var(--t3); margin:0 0 14px; }
+.qrk img { width:260px; height:260px; max-width:100%; border:1px solid var(--ln); border-radius:12px; }
+.qrn { font-size:11.5px; line-height:1.5; color:var(--t3); margin:12px 0 0; }
+.qrd { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-top:14px; }
+.qrd button, .qrd a { font:inherit; font-size:12.5px; font-weight:600; color:var(--t2);
+  background:#fff; border:1px solid var(--ln); border-radius:9px; padding:8px 12px;
+  cursor:pointer; text-decoration:none; }
+.qrd button:hover, .qrd a:hover { border-color:#C9D3E8; color:var(--navy); }
+
+/* Yazdırma hatırlatması (B2) */
+.ynot { position:fixed; inset:0; z-index:60; background:rgba(9,18,40,.72);
+  display:flex; align-items:center; justify-content:center; padding:20px; }
+.ynot[hidden] { display:none; }
+.ynk { background:#fff; border-radius:18px; padding:22px; max-width:420px; }
+.ynk h2 { font-size:15px; font-weight:800; color:var(--navy); margin:0 0 8px; }
+.ynk p { font-size:13px; line-height:1.6; color:var(--t2); margin:0; }
+.ynl { display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--t3); margin-top:14px; }
+.ynd { display:flex; gap:8px; justify-content:flex-end; margin-top:16px; }
+.ynd button { font:inherit; font-size:12.5px; font-weight:600; color:var(--t2); background:#fff;
+  border:1px solid var(--ln); border-radius:9px; padding:9px 14px; cursor:pointer; }
+.ynd button.pri { background:var(--navy); border-color:var(--navy); color:#fff; }
+
+/* Video oynatılamıyor notu (E4) */
+.lbnot { color:#fff; font-size:14px; text-align:center; line-height:1.7; max-width:420px; }
+.lbnot[hidden] { display:none; }
+.lbnot a { color:#fff; text-decoration:underline; }
+
 @media print {
   /* Sabit yerleşim + genişlik kilidi: tarayıcı sütunları içeriğe göre şişiremez. */
   .twrap { overflow: visible !important; }
@@ -296,11 +360,14 @@ td.not-hucre .val { font-style: italic; }
 .eks > summary::after { content:'⌄'; font-size:13px; line-height:1; transform:translateY(-1px); }
 .eks[open] > summary::after { content:'⌃'; transform:translateY(1px); }
 .eks > summary:hover { color:var(--t2); border-color:var(--ln); }
-.eks > summary:focus-visible { outline:2px solid var(--ac); outline-offset:2px; }
+.eks > summary:focus-visible { outline:2px solid var(--blue); outline-offset:2px; }
 .eks > .sg, .eks > .vr { margin-top:10px; 
   /* İE#14 A6: kâğıtta katlama diye bir şey yoktur — eksik alan ızgarası ve
      "+N seçenek" listesi baskıda AÇIK basılır, düğme gizlenir. */
   .eks > summary { display: none !important; }
   .eks > .sg { display: grid !important; margin-top: 0 !important; }
   .eks > .vr { display: block !important; margin-top: 0 !important; }
+
+  /* İE#15: paylaş menüsü, QR modalı, yazdırma uyarısı ve lightbox KÂĞIDA BASILMAZ. */
+  .pmenu, .qrm, .ynot, .lbx, .tools { display: none !important; }
 }

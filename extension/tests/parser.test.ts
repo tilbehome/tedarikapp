@@ -5,7 +5,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { cleanImageUrl, extractBreadcrumb, extractTiers, parse1688 } from '../modules/m1688/parser';
+import { cleanImageUrl, extractBreadcrumb, extractTiers, parse1688, playableVideoUrl } from '../modules/m1688/parser';
 import { extractContext, resolveRefs } from '../core/jsonpath';
 import selectorsJson from './fixtures/selectors-1688.json';
 import type { SelectorSet } from '../core/types';
@@ -285,5 +285,39 @@ describe('extractBreadcrumb — kategori kırıntı yolu (İE#14 A4)', () => {
     });
 
     expect(sonuc.raw.breadcrumb).toEqual(['首页', '家居', '保温杯']);
+  });
+});
+
+/**
+ * İE#15 E2 — VİDEO ADRESİ: yalnız GERÇEKTEN oynatılabilecek adres taşınır.
+ *
+ * Çalışmayacak bir adresi taşımak "video yok" demekten kötüdür: paylaşım
+ * sayfasında rozet çıkar, modal açılır ve boş kalır.
+ */
+describe('playableVideoUrl — oynatılabilir video adresi (İE#15 E2)', () => {
+  it('https mp4/m3u8/webm kabul eder', () => {
+    expect(playableVideoUrl('https://cloud.video.taobao.com/play/x.mp4')).toBe(
+      'https://cloud.video.taobao.com/play/x.mp4',
+    );
+    expect(playableVideoUrl('https://x/y.m3u8?auth=1')).toBe('https://x/y.m3u8?auth=1');
+  });
+
+  it('blob/data/http ve uzantısız adresleri REDDEDER', () => {
+    expect(playableVideoUrl('blob:https://detail.1688.com/abc')).toBeNull();
+    expect(playableVideoUrl('data:video/mp4;base64,AAAA')).toBeNull();
+    expect(playableVideoUrl('http://x/y.mp4')).toBeNull();
+    expect(playableVideoUrl('https://detail.1688.com/offer/1.html')).toBeNull();
+    expect(playableVideoUrl(null)).toBeNull();
+  });
+
+  it('DOM video adresi parse çıktısına taşınır', () => {
+    const sonuc = parse1688(
+      { result: { global: { globalData: { model: { offerDetail: { offerId: 1, subject: 'x' } } } } } },
+      selectors,
+      'https://detail.1688.com/offer/1.html',
+      { domPrice: '9.90', videoSrc: 'https://cloud.video.taobao.com/play/x.mp4' },
+    );
+
+    expect(sonuc.normalized.video_url).toBe('https://cloud.video.taobao.com/play/x.mp4');
   });
 });

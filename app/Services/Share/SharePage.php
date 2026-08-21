@@ -33,8 +33,12 @@ final class SharePage
      * İE#14 A3: varyasyon ve öznitelik DEĞERLERİ sözlükten geçirilir; sözlük
      * verilmezse (eski çağrılar, testler) ham değerler basılır — davranış bozulmaz.
      */
-    public function __construct(private readonly ?ValueSet $values = null)
-    {
+    public function __construct(
+        private readonly ?ValueSet $values = null,
+        // İE#15 A1: indirme bağlantıları sayfa ÜRETİLİRKEN imzalanır; imzalayıcı
+        // verilmezse (eski çağrılar, testler) çıktı düğmeleri oturumlu davranışa döner.
+        private readonly ?ShareDownload $downloads = null,
+    ) {
     }
 
     /**
@@ -51,6 +55,10 @@ final class SharePage
         string $canonicalUrl = '',
         array $documentHeader = [],
         bool $showExports = false,
+        // İE#15: imzalı indirme bağlantısı token ister; dil paylaşım metinlerini seçer.
+        string $token = '',
+        string $dil = 'tr',
+        ?\DateTimeImmutable $now = null,
     ): string {
         $e = static fn (mixed $value): string => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
 
@@ -72,7 +80,7 @@ final class SharePage
         $antetSatiri = TemplateV2::headerLine($documentHeader, $list) . " · Çin'den DDP Sipariş Listesi";
         $kurEtiketi = ($list['rate_locked_at'] ?? null) !== null ? 'KUR · KİLİTLİ' : 'KUR · GÜNCEL';
 
-        $araclar = $this->araclar($list, $showExports, $e);
+        $araclar = $this->araclar($list, $sira, $canonicalUrl, $token, $dil, $now, $e);
         $lightboxVerisi = htmlspecialchars(
             json_encode($galeriler, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '[]',
             ENT_QUOTES,
@@ -93,7 +101,12 @@ final class SharePage
 <meta property="og:site_name" content="Tedarikapp">
 <meta property="og:locale" content="tr_TR">
 <meta property="og:title" content="' . $e($list['name']) . ' — Tedarikapp">
-<meta property="og:description" content="Paylaşılan sipariş listesi — güncel durum ve toplamlar.">' . ($canonicalUrl !== '' ? '
+<!-- İE#15 F2: önizlemede liste adı, ürün sayısı ve dönem görünür; FİYAT/TUTAR ASLA.
+     Link önizlemesi sohbet uygulamalarında herkese açılır — özel veri oraya sızmaz. -->
+<meta property="og:description" content="' . $e($this->onizlemeMetni($list, $sira)) . '">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="' . $e($list['name']) . ' — Tedarikapp">
+<meta name="twitter:description" content="' . $e($this->onizlemeMetni($list, $sira)) . '">' . ($canonicalUrl !== '' ? '
 <meta property="og:url" content="' . $e($canonicalUrl) . '">' : '') . '
 <meta property="og:image" content="' . $e($origin) . '/panel/og-image.png">
 <link rel="stylesheet" href="/p-style.css">
@@ -160,7 +173,41 @@ final class SharePage
 </div>
 <div class="lbx" id="lbx">
   <img id="lbi" alt=""><video id="lbv" controls playsinline hidden></video>
+  <p id="lbnot" class="lbnot" hidden></p>
   <div><span id="lbs"></span> · kapat: tıkla / ESC</div>
+</div>
+
+<!-- İE#15 C1/C3: WeChat ve DingTalk dış link şemasıyla açılmaz; doğru yol KAREDİR.
+     QR sunucuda üretilir (/p/<token>/qr.png), dış QR servisi kullanılmaz (K45).
+     Karenin içeriği YALNIZ paylaşım adresidir — imzalı indirme adresi konmaz. -->
+<div class="qrm" id="qrm" hidden>
+  <div class="qrk" role="dialog" aria-modal="true" aria-labelledby="qrb">
+    <h2 id="qrb">Kare kodu okutun</h2>
+    <p class="qra" id="qra">WeChat 微信</p>
+    <img id="qri" alt="Paylaşım bağlantısının kare kodu" width="260" height="260">
+    <p class="qrn" id="qrn"></p>
+    <div class="qrd">
+      <button type="button" data-qr-metin>Özet metnini kopyala</button>
+      <a id="qrp" download="tedarik-listesi-qr.png">Kareyi indir (PNG)</a>
+      <button type="button" data-qr-kapat>Kapat</button>
+    </div>
+  </div>
+</div>
+
+<!-- İE#15 B2: yazdırma öncesi TEK SEFERLİK hatırlatma; "bir daha gösterme" seçilirse
+     tarayıcıda saklanır (localStorage) ve bir daha çıkmaz. -->
+<div class="ynot" id="ynot" hidden>
+  <div class="ynk" role="dialog" aria-modal="true" aria-labelledby="ynb">
+    <h2 id="ynb">Yazdırma ayarları</h2>
+    <p>Tarayıcı penceresinde <strong>Düzen: Yatay</strong> ve
+       <strong>Arka plan grafikleri: açık</strong> seçin — aksi hâlde sağdaki
+       fiyat sütunları kâğıda sığmayabilir ve renkler basılmaz.</p>
+    <label class="ynl"><input type="checkbox" id="ynh"> Bir daha gösterme</label>
+    <div class="ynd">
+      <button type="button" class="pri" data-yazdir-devam>Yazdır</button>
+      <button type="button" data-yazdir-iptal>Vazgeç</button>
+    </div>
+  </div>
 </div>
 <script src="/p-share.js" defer></script>
 </body>
@@ -175,22 +222,131 @@ final class SharePage
      * @param array<string, mixed> $list
      * @param callable(mixed): string $e
      */
-    private function araclar(array $list, bool $showExports, callable $e): string
-    {
-        $mesaj = 'Sipariş listemiz hazır: ' . (string) $list['name'];
+    /**
+     * Araç çubuğu (İE#15 C1/C4/F1).
+     *
+     * ÇIKTILAR GRUBU firma tarafında da GÖRÜNÜR ve ÇALIŞIR: bağlantılar burada
+     * imzalanır (A1), oturum istemez. İmzalayıcı yoksa (eski çağrı) yalnız Yazdır
+     * kalır — çalışmayan düğme göstermeyiz.
+     *
+     * PAYLAŞ menüsü Çin tarafını da kapsar: WhatsApp ve Telegram doğrudan bağlantı,
+     * WeChat ve DingTalk QR modalı (bu uygulamalar dış link şemasıyla açılmaz —
+     * doğru yol karedir), QQ web paylaşım aracı, e-posta mailto.
+     *
+     * @param array<string, mixed> $list
+     * @param callable(mixed): string $e
+     */
+    private function araclar(
+        array $list,
+        int $urunSayisi,
+        string $canonicalUrl,
+        string $token,
+        string $dil,
+        ?\DateTimeImmutable $now,
+        callable $e,
+    ): string {
+        $html = '<div class="tgrp" role="group" aria-label="Çıktılar">';
 
-        $html = '<button type="button" class="tb" data-yazdir>' . ShareIcons::yazdir() . '<span>Yazdır</span></button>';
-
-        if ($showExports) {
-            $html .= '<button type="button" class="tb" data-export="xlsx">' . ShareIcons::indir() . '<span>Excel</span></button>'
-                . '<button type="button" class="tb" data-export="pdf">' . ShareIcons::indir() . '<span>PDF</span></button>';
+        if ($this->downloads !== null && $token !== '' && $now !== null) {
+            foreach ([['xlsx', 'Excel'], ['pdf', 'PDF'], ['csv', 'CSV']] as [$bicim, $etiket]) {
+                $html .= '<a class="tb" href="' . $e($this->downloads->adres($token, $bicim, $dil, $now))
+                    . '" data-indir="' . $e($etiket) . '" download>' . ShareIcons::indir()
+                    . '<span>' . $e($etiket) . '</span></a>';
+            }
         }
+        $html .= '<button type="button" class="tb" data-yazdir>' . ShareIcons::yazdir() . '<span>Yazdır</span></button>'
+            . '</div>';
 
-        $html .= '<button type="button" class="tb wa" data-whatsapp="' . $e($mesaj) . '">'
-            . ShareIcons::whatsapp() . '<span>WhatsApp</span></button>'
-            . '<button type="button" class="tb pri" data-kopyala>' . ShareIcons::link() . '<span>Linki kopyala</span></button>';
+        $link = $canonicalUrl !== '' ? $canonicalUrl : '';
+        $mesaj = ShareTexts::mesaj($dil, [
+            'liste' => (string) $list['name'],
+            'adet' => $urunSayisi,
+            'link' => $link,
+            'tarih' => $this->gecerlilik($list),
+        ]);
+        $konu = ShareTexts::metin($dil, 'eposta_konu', [
+            'liste' => (string) $list['name'],
+            'adet' => $urunSayisi,
+        ]);
+
+        $html .= '<div class="pmenu">'
+            . '<button type="button" class="tb pri" data-paylas-ac aria-expanded="false" aria-haspopup="true">'
+            . ShareIcons::link() . '<span>Paylaş</span></button>'
+            . '<div class="pmenu-liste" data-paylas-menu hidden'
+            . ' data-link="' . $e($link) . '"'
+            . ' data-mesaj="' . $e($mesaj) . '"'
+            . ' data-konu="' . $e($konu) . '"'
+            . ' data-dil="' . $e($dil) . '">'
+            . '<button type="button" data-kopyala>' . ShareIcons::link() . 'Linki kopyala</button>'
+            . '<button type="button" data-kanal="whatsapp">' . ShareIcons::whatsapp() . 'WhatsApp</button>'
+            . '<button type="button" data-kanal="wechat" data-qr="1">' . ShareIcons::kare() . 'WeChat 微信</button>'
+            . '<button type="button" data-kanal="qq">' . ShareIcons::disLink() . 'QQ</button>'
+            . '<button type="button" data-kanal="dingtalk" data-qr="1">' . ShareIcons::kare() . 'DingTalk 钉钉</button>'
+            . '<button type="button" data-kanal="telegram">' . ShareIcons::disLink() . 'Telegram</button>'
+            . '<button type="button" data-kanal="eposta">' . ShareIcons::disLink() . 'E-posta</button>'
+            . '<div class="pmenu-dil"><span>Gönderim dili</span>'
+            . $this->dilSecici($token, $dil, $e)
+            . '</div>'
+            . '</div></div>';
 
         return $html;
+    }
+
+    /**
+     * İE#15 C4 — "dile ayarlı gönder": seçilen dil bağlantıya `?lang=` olarak eklenir;
+     * sayfa o dille açılır, paylaşım metni ve indirme çıktısı o dile göre gelir.
+     *
+     * @param callable(mixed): string $e
+     */
+    private function dilSecici(string $token, string $aktif, callable $e): string
+    {
+        $html = '';
+        foreach (ShareTexts::DILLER as $secenek) {
+            $adres = $token === ''
+                ? '#'
+                : '/p/' . $token . ($secenek === 'tr' ? '' : '?lang=' . $secenek);
+            $html .= '<a href="' . $e($adres) . '"' . ($secenek === $aktif ? ' class="secili" aria-current="true"' : '')
+                . '>' . $e(ShareTexts::dilAdi($secenek)) . '</a>';
+        }
+
+        return $html;
+    }
+
+    /**
+     * Paylaşım metnindeki geçerlilik tarihi — YOKSA satır hiç yazılmaz (uydurma yok).
+     *
+     * @param array<string, mixed> $list
+     */
+    private function gecerlilik(array $list): ?string
+    {
+        $tarih = $list['share_expires_at'] ?? null;
+        if (!is_string($tarih) || $tarih === '') {
+            return null;
+        }
+
+        try {
+            return (new \DateTimeImmutable($tarih))->format('d.m.Y');
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    /**
+     * İE#15 F2 — link önizleme metni: liste adı + ürün sayısı + dönem.
+     * PARA GEÇMEZ: önizleme sohbet uygulamasında herkese görünür.
+     *
+     * @param array<string, mixed> $list
+     */
+    private function onizlemeMetni(array $list, int $urunSayisi): string
+    {
+        $parcalar = [$urunSayisi . ' ürün'];
+        $donem = $list['period'] ?? null;
+        if (is_string($donem) && trim($donem) !== '') {
+            $parcalar[] = trim($donem);
+        }
+        $parcalar[] = 'DDP teklif için paylaşılan tedarik listesi';
+
+        return implode(' · ', $parcalar);
     }
 
     /**
@@ -252,16 +408,18 @@ final class SharePage
                 . $this->videoRozeti($product, $e)
                 . '</span>';
 
+        // İE#15 D1 — LİNK DİSİPLİNİ: ürün adı DÜZ METİNDİR. Sayfadan dış siteye
+        // çıkan TEK öğe "Ürüne git" düğmesidir; firma yanlışlıkla kaynak siteye
+        // düşmesin, çıkış bilinçli ve tek noktadan olsun.
         $ad = (string) $product['name'];
-        $adHtml = is_string($product['url'] ?? null) && $product['url'] !== ''
-            ? '<a class="pn" href="' . $e($product['url']) . '" target="_blank" rel="noreferrer">' . $e($ad) . '</a>'
-            : '<span class="pn">' . $e($ad) . '</span>';
+        $adHtml = '<span class="pn">' . $e($ad) . '</span>';
         // İE#14 A1: ad ile orijinal AYNIYSA ikinci satır BASILMAZ (ortak kural).
         $orijinalMetin = \App\Services\Translation\ProductNaming::originalOf($product);
         $orijinal = $orijinalMetin === null ? '' : '<div class="pz zh">' . $e($orijinalMetin) . '</div>';
 
+        // İE#15 D2: tek dış çıkış — yeni sekme, noopener/noreferrer/nofollow.
         $git = is_string($product['url'] ?? null) && $product['url'] !== ''
-            ? '<a class="op-git" href="' . $e($product['url']) . '" target="_blank" rel="noreferrer">'
+            ? '<a class="op-git" href="' . $e($product['url']) . '" target="_blank" rel="noopener noreferrer nofollow">'
                 . ShareIcons::disLink() . 'Ürüne git</a>'
             : '';
 
@@ -389,15 +547,64 @@ final class SharePage
      * @param array<string, mixed> $product
      * @param callable(mixed): string $e
      */
+    /**
+     * İE#15 E3/E4 — VİDEO ROZETİ.
+     *
+     * Rozet iki durumda basılır: (1) oynatılabilir adres var, (2) yakalama "video
+     * var" diyor ama oynatılabilir adres alınamamış (1688 videoları imzalı MTOP
+     * isteği ister). İKİNCİ durumda modal boş açılmaz: nazik bir açıklama ve
+     * varsa kaynak sayfa bağlantısı gösterilir. Veri hiç yoksa rozet BASILMAZ —
+     * sahte rozet kullanıcıyı boş modala götürürdü.
+     *
+     * @param array<string, mixed> $product
+     * @param callable(mixed): string $e
+     */
     private function videoRozeti(array $product, callable $e): string
     {
         $video = $product['video_url'] ?? null;
-        if (!is_string($video) || $video === '') {
+        if (is_string($video) && $video !== '') {
+            return '<span class="vb" data-video="' . $e($video) . '" role="button" tabindex="0" aria-label="Videoyu oynat">'
+                . ShareIcons::oynat() . '</span>';
+        }
+
+        if (!self::videoVar($product)) {
             return '';
         }
 
-        return '<span class="vb" data-video="' . $e($video) . '" role="button" tabindex="0" aria-label="Videoyu oynat">'
-            . ShareIcons::oynat() . '</span>';
+        $kaynak = is_string($product['url'] ?? null) && $product['url'] !== '' ? (string) $product['url'] : '';
+
+        return '<span class="vb" data-video-yok="1" data-video-kaynak="' . $e($kaynak) . '"'
+            . ' role="button" tabindex="0" aria-label="Video bilgisi">' . ShareIcons::oynat() . '</span>';
+    }
+
+    /**
+     * Yakalama "bu üründe video var" dedi mi? (raw.video bloğu — İE#11 C3'ten beri
+     * id/poster orada taşınıyor; oynatılabilir adres v1'de alınamıyordu.)
+     *
+     * @param array<string, mixed> $product
+     */
+    public static function videoVar(array $product): bool
+    {
+        /** @var mixed $raw */
+        $raw = $product['raw_attributes'] ?? null;
+        if (is_string($raw)) {
+            /** @var mixed $decoded */
+            $decoded = json_decode($raw, true);
+            $raw = is_array($decoded) ? $decoded : null;
+        }
+        if (!is_array($raw)) {
+            return false;
+        }
+
+        $video = $raw['video'] ?? ($raw['raw']['video'] ?? null);
+        if (!is_array($video)) {
+            return false;
+        }
+
+        $id = $video['id'] ?? null;
+        $poster = $video['poster'] ?? null;
+
+        return (is_string($id) && $id !== '' && $id !== '0') || (is_string($poster) && $poster !== '');
     }
 
     /** @param array<string, mixed> $list */

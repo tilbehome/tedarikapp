@@ -40,6 +40,13 @@ export default defineContentScript({
               .map((node) => node.textContent?.trim() ?? '')
               .filter((text) => text !== '')
               .slice(0, 8),
+            // İE#15 E2: sayfada gerçekten oynatılabilir bir <video> varsa adresi alınır.
+            // 1688'in ana videosu imzalı MTOP isteği ister; DOM'da bulunursa bedava kazanç,
+            // bulunamazsa raw.video (id+poster) yine "video var" bilgisini taşır.
+            videoSrc:
+              document.querySelector<HTMLVideoElement>('video[src]')?.src ??
+              document.querySelector<HTMLSourceElement>('video source[src]')?.src ??
+              null,
           },
           url: location.href,
         },

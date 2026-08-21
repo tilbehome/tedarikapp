@@ -26,6 +26,24 @@ interface DomFallback {
   domPrice?: string | null;
   /** İE#14 A4: sayfadaki kırıntı yolu adımları (面包屑) — kategori buradan türer. */
   breadcrumb?: string[] | null;
+  /** İE#15 E2: sayfadaki <video> öğesinin oynatılabilir adresi (varsa). */
+  videoSrc?: string | null;
+}
+
+/**
+ * Oynatılabilir video adresi (İE#15 E2).
+ *
+ * YALNIZ https ve tanıdık bir video uzantısı/servisi kabul edilir: sayfadaki
+ * rastgele bir blob:/data: adresi paylaşım sayfasına taşınırsa orada çalışmaz;
+ * çalışmayacak bir adresi taşımak, "video yok" demekten daha kötüdür (boş modal).
+ */
+export function playableVideoUrl(aday: unknown): string | null {
+  if (typeof aday !== 'string') return null;
+  const temiz = aday.trim();
+  if (!/^https:\/\//i.test(temiz)) return null;
+  if (!/\.(mp4|m3u8|webm)(\?|$)/i.test(temiz)) return null;
+
+  return temiz;
 }
 
 /**
@@ -278,7 +296,9 @@ export function parse1688(
     price_tiers: tiers,
     images,
     sku_matrix: extractSkuMatrix(firstPath(ctx, paths.sku_props ?? []), skuRangePrices),
-    video_url: null, // oynatılabilir mp4 adresi MTOP ister; v1'de id+poster raw'da taşınır (İE#11 C3)
+    // İE#15 E2: DOM'da oynatılabilir bir adres varsa taşınır; yoksa null KALIR ve
+    // "video var" bilgisi raw.video (id/poster) üzerinden okunur — sahte adres üretilmez.
+    video_url: playableVideoUrl(dom.videoSrc),
     // İE#11 EK-3 (2): menşe — 1688 Çin tedarik platformudur; menşe özniteliği VARSA
     // ülke CN'dir (il/şehir metni raw'da durur, uydurma yapılmaz).
     country_of_origin: originText === null ? null : 'CN',

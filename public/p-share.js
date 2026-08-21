@@ -3,8 +3,11 @@
  * satır içi script'e izin vermez (K45/K51). Şartname: paylasim-v4-premium.html.
  *
  * İşler: detay panelini aç/kapa · lightbox galeri (ok/kaydırma/ESC) · video modalı ·
- * yazdır · WhatsApp · linki kopyala · Excel/PDF (yalnız panel oturumu olan görüntüleyende
- * basılan düğmeler; uçlar CSRF ister).
+ * yazdırma hatırlatması · paylaş menüsü (WhatsApp · WeChat/DingTalk QR · QQ · Telegram ·
+ * e-posta · link) · indirme geri bildirimi.
+ *
+ * İE#15: Excel/PDF/CSV artık OTURUMSUZ çalışır — bağlantılar sunucuda imzalanmış
+ * olarak sayfaya gömülür (A1), bu dosya yalnız "hazırlanıyor…" geri bildirimini verir.
  *
  * JavaScript OLMASA DA sayfa okunur: tablo, fiyatlar ve "Ürüne git" bağlantıları
  * saf HTML'dir. Bu dosya yalnız etkileşimi ekler.
@@ -16,6 +19,26 @@
   var gorsel = document.getElementById('lbi');
   var video = document.getElementById('lbv');
   var sayac = document.getElementById('lbs');
+  var lbNot = document.getElementById('lbnot');
+  var qrModal = document.getElementById('qrm');
+  var qrGorsel = document.getElementById('qri');
+  var qrBaslik = document.getElementById('qra');
+  var qrNot = document.getElementById('qrn');
+  var qrIndir = document.getElementById('qrp');
+  var yazdirNotu = document.getElementById('ynot');
+  var menu = document.querySelector('[data-paylas-menu]');
+
+  // Paylaşım metinleri SUNUCUDAN gelir (İE#15 C2 — dil dosyası PHP tarafında);
+  // burada yalnız kanala göre nereye gönderileceği bilinir.
+  function paylasimVerisi() {
+    if (menu === null) return { link: location.href, mesaj: location.href, konu: '' };
+    return {
+      link: menu.dataset.link || location.href,
+      mesaj: menu.dataset.mesaj || location.href,
+      konu: menu.dataset.konu || '',
+      dil: menu.dataset.dil || 'tr',
+    };
+  }
 
   var galeriler = [];
   try {
@@ -47,6 +70,10 @@
     video.load();
     video.hidden = true;
     gorsel.hidden = false;
+    if (lbNot !== null) {
+      lbNot.hidden = true;
+      lbNot.textContent = '';
+    }
   }
 
   function galeriAc(hedef) {
@@ -55,23 +82,128 @@
     sira = Number(hedef.dataset.sira || 0);
     video.hidden = true;
     gorsel.hidden = false;
+    if (lbNot !== null) lbNot.hidden = true;
     goster();
     ac('gorsel');
   }
 
+  /**
+   * İE#15 E3/E4 — video modalı.
+   *
+   * Oynatılabilir adres varsa oynatılır. Yakalama "video var" dediği hâlde adres
+   * alınamamışsa (1688 videoları imzalı MTOP isteği ister) modal BOŞ AÇILMAZ:
+   * nazik bir açıklama ve varsa kaynak sayfa bağlantısı gösterilir.
+   */
   function videoAc(hedef) {
     gorsel.hidden = true;
-    video.hidden = false;
-    video.src = hedef.dataset.video;
     sayac.textContent = '';
+
+    var adres = hedef.dataset.video;
+    if (!adres) {
+      video.hidden = true;
+      if (lbNot !== null) {
+        lbNot.hidden = false;
+        lbNot.textContent = 'Video şu an oynatılamıyor.';
+        var kaynak = hedef.dataset.videoKaynak;
+        if (kaynak) {
+          var bag = document.createElement('a');
+          bag.href = kaynak;
+          bag.target = '_blank';
+          bag.rel = 'noopener noreferrer nofollow';
+          bag.textContent = 'Kaynak sayfada aç';
+          lbNot.appendChild(document.createElement('br'));
+          lbNot.appendChild(bag);
+        }
+      }
+      ac('video');
+      return;
+    }
+
+    if (lbNot !== null) lbNot.hidden = true;
+    video.hidden = false;
+    video.src = adres;
     ac('video');
     video.play().catch(function () {
       /* otomatik oynatma engellenebilir — kullanıcı kendi başlatır */
     });
+    video.onerror = function () {
+      video.hidden = true;
+      if (lbNot !== null) {
+        lbNot.hidden = false;
+        lbNot.textContent = 'Video şu an oynatılamıyor.';
+      }
+    };
+  }
+
+  /** İE#15 C3 — QR modalı: kare sunucudan gelir, dış servis yok. */
+  function qrAc(kanal, baslik) {
+    if (qrModal === null) return;
+    var veri = paylasimVerisi();
+    var adres = location.pathname.replace(/\/$/, '') + '/qr.png'
+      + (veri.dil && veri.dil !== 'tr' ? '?lang=' + encodeURIComponent(veri.dil) : '');
+    qrGorsel.src = adres;
+    qrIndir.href = adres;
+    qrBaslik.textContent = baslik;
+    qrNot.textContent = kanal === 'wechat'
+      ? 'WeChat > + > Taramak (扫一扫) ile okutun. Özet metnini kopyalayıp sohbete yapıştırabilirsiniz.'
+      : 'DingTalk uygulamasında tarayıcı ile okutun. Özet metnini kopyalayıp sohbete yapıştırabilirsiniz.';
+    qrModal.hidden = false;
+  }
+
+  function qrKapat() {
+    if (qrModal !== null) qrModal.hidden = true;
+  }
+
+  function panoyaYaz(metin, dugme, basariliEtiket) {
+    var yaz = navigator.clipboard
+      ? navigator.clipboard.writeText(metin)
+      : Promise.reject(new Error('pano yok'));
+    yaz.then(
+      function () {
+        if (dugme === null || dugme === undefined) return;
+        var etiket = dugme.querySelector('span') || dugme;
+        var eski = etiket.textContent;
+        dugme.classList.add('kopyalandi');
+        etiket.textContent = basariliEtiket || 'Kopyalandı';
+        setTimeout(function () {
+          etiket.textContent = eski;
+          dugme.classList.remove('kopyalandi');
+        }, 1800);
+      },
+      function () {
+        window.prompt('Kopyalayın:', metin);
+      },
+    );
+  }
+
+  function menuKapat() {
+    if (menu === null) return;
+    menu.hidden = true;
+    var dugme = document.querySelector('[data-paylas-ac]');
+    if (dugme !== null) dugme.setAttribute('aria-expanded', 'false');
+  }
+
+  /** Kanal → hedef adres. WeChat ve DingTalk burada YOKTUR: onlar QR ile paylaşılır. */
+  function kanalAdresi(kanal, veri) {
+    var link = encodeURIComponent(veri.link);
+    var mesaj = encodeURIComponent(veri.mesaj);
+    switch (kanal) {
+      case 'whatsapp':
+        return 'https://wa.me/?text=' + mesaj;
+      case 'telegram':
+        return 'https://t.me/share/url?url=' + link + '&text=' + encodeURIComponent(veri.mesaj);
+      case 'qq':
+        return 'https://connect.qq.com/widget/shareqq/index.html?url=' + link
+          + '&title=' + encodeURIComponent(veri.konu) + '&desc=' + mesaj;
+      case 'eposta':
+        return 'mailto:?subject=' + encodeURIComponent(veri.konu) + '&body=' + mesaj;
+      default:
+        return null;
+    }
   }
 
   document.addEventListener('click', function (olay) {
-    var videoDugmesi = olay.target.closest('[data-video]');
+    var videoDugmesi = olay.target.closest('[data-video], [data-video-yok]');
     if (videoDugmesi !== null) {
       olay.preventDefault();
       olay.stopPropagation();
@@ -99,52 +231,113 @@
       return;
     }
 
+    // ── İE#15 B2: yazdırma öncesi tek seferlik hatırlatma
     if (olay.target.closest('[data-yazdir]') !== null) {
+      if (yazdirNotu !== null && localStorage.getItem('tdk-yazdir-notu') !== 'gizli') {
+        yazdirNotu.hidden = false;
+      } else {
+        window.print();
+      }
+      return;
+    }
+    if (olay.target.closest('[data-yazdir-devam]') !== null) {
+      var kutu = document.getElementById('ynh');
+      if (kutu !== null && kutu.checked) localStorage.setItem('tdk-yazdir-notu', 'gizli');
+      yazdirNotu.hidden = true;
       window.print();
       return;
     }
+    if (olay.target.closest('[data-yazdir-iptal]') !== null) {
+      yazdirNotu.hidden = true;
+      return;
+    }
 
-    var whatsapp = olay.target.closest('[data-whatsapp]');
-    if (whatsapp !== null) {
-      var metin = whatsapp.dataset.whatsapp + ' — ' + location.href;
-      window.open('https://wa.me/?text=' + encodeURIComponent(metin), '_blank', 'noopener');
+    // ── İE#15 F3: indirme geri bildirimi. Bağlantı imzalıdır ve tarayıcı indirmeyi
+    // kendi yürütür; "bitti" olayı yoktur, bu yüzden etiket süreyle geri döner.
+    var indirme = olay.target.closest('[data-indir]');
+    if (indirme !== null) {
+      var etiketAlani = indirme.querySelector('span');
+      if (etiketAlani !== null && !indirme.classList.contains('bekliyor')) {
+        var eskiEtiket = etiketAlani.textContent;
+        indirme.classList.add('bekliyor');
+        etiketAlani.textContent = 'hazırlanıyor…';
+        var uyariZamani = setTimeout(function () {
+          etiketAlani.textContent = 'hâlâ hazırlanıyor…';
+        }, 60000);
+        setTimeout(function () {
+          clearTimeout(uyariZamani);
+          etiketAlani.textContent = eskiEtiket;
+          indirme.classList.remove('bekliyor');
+        }, 75000);
+      }
+      return; // bağlantının kendi davranışı sürsün (download)
+    }
+
+    // ── İE#15 C1: paylaş menüsü
+    var paylasAc = olay.target.closest('[data-paylas-ac]');
+    if (paylasAc !== null && menu !== null) {
+      var veriler = paylasimVerisi();
+      // Mobilde önce yerel paylaşım sayfası denenir (navigator.share).
+      if (navigator.share && window.matchMedia('(max-width: 940px)').matches) {
+        navigator.share({ title: veriler.konu, text: veriler.mesaj, url: veriler.link }).catch(function () {
+          menu.hidden = false;
+          paylasAc.setAttribute('aria-expanded', 'true');
+        });
+        return;
+      }
+      var acik = menu.hidden;
+      menu.hidden = !acik;
+      paylasAc.setAttribute('aria-expanded', acik ? 'true' : 'false');
       return;
     }
 
     var kopyala = olay.target.closest('[data-kopyala]');
     if (kopyala !== null) {
-      var yaz = navigator.clipboard
-        ? navigator.clipboard.writeText(location.href)
-        : Promise.reject(new Error('pano yok'));
-      yaz.then(
-        function () {
-          kopyala.classList.add('kopyalandi');
-          var etiket = kopyala.querySelector('span');
-          if (etiket !== null) {
-            var eski = etiket.textContent;
-            etiket.textContent = 'Kopyalandı';
-            setTimeout(function () {
-              etiket.textContent = eski;
-              kopyala.classList.remove('kopyalandi');
-            }, 1800);
-          }
-        },
-        function () {
-          window.prompt('Bağlantıyı kopyalayın:', location.href);
-        },
-      );
+      panoyaYaz(paylasimVerisi().link, kopyala, 'Kopyalandı');
+      menuKapat();
       return;
     }
 
-    var disaAktar = olay.target.closest('[data-export]');
-    if (disaAktar !== null) {
-      // Uç oturum + CSRF ister; düğme zaten yalnız panel oturumu olan görüntüleyende basılır.
-      var liste = document.body.dataset.liste;
-      window.open('/panel/listeler/' + liste + '?cikti=' + disaAktar.dataset.export, '_blank', 'noopener');
+    var kanalDugmesi = olay.target.closest('[data-kanal]');
+    if (kanalDugmesi !== null) {
+      var kanal = kanalDugmesi.dataset.kanal;
+      var veri = paylasimVerisi();
+      if (kanalDugmesi.dataset.qr === '1') {
+        qrAc(kanal, kanalDugmesi.textContent.trim());
+        menuKapat();
+        return;
+      }
+      var hedef = kanalAdresi(kanal, veri);
+      if (hedef !== null) {
+        if (kanal === 'eposta') window.location.href = hedef;
+        else window.open(hedef, '_blank', 'noopener,noreferrer');
+      }
+      menuKapat();
+      return;
+    }
+
+    if (olay.target.closest('[data-qr-metin]') !== null) {
+      panoyaYaz(paylasimVerisi().mesaj, olay.target.closest('[data-qr-metin]'), 'Metin kopyalandı');
+      return;
+    }
+    if (olay.target.closest('[data-qr-kapat]') !== null
+      || (qrModal !== null && !qrModal.hidden && olay.target === qrModal)) {
+      qrKapat();
+      return;
+    }
+
+    // Menü dışına tıklayınca kapanır.
+    if (menu !== null && !menu.hidden && olay.target.closest('.pmenu') === null) {
+      menuKapat();
     }
   });
 
   document.addEventListener('keydown', function (olay) {
+    if (olay.key === 'Escape') {
+      qrKapat();
+      menuKapat();
+      if (yazdirNotu !== null) yazdirNotu.hidden = true;
+    }
     if (!katman.classList.contains('on')) return;
     if (olay.key === 'Escape') kapat();
     if (katman.dataset.mod !== 'gorsel') return;
@@ -161,10 +354,10 @@
   // Klavye erişilebilirliği: görsel/video rozetleri Enter/Space ile de açılır.
   document.addEventListener('keydown', function (olay) {
     if (olay.key !== 'Enter' && olay.key !== ' ') return;
-    var hedef = olay.target.closest('[data-galeri], [data-video]');
+    var hedef = olay.target.closest('[data-galeri], [data-video], [data-video-yok]');
     if (hedef === null) return;
     olay.preventDefault();
-    if (hedef.dataset.video) videoAc(hedef);
+    if (hedef.dataset.video || hedef.dataset.videoYok) videoAc(hedef);
     else galeriAc(hedef);
   });
 

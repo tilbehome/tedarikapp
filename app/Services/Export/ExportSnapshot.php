@@ -39,7 +39,7 @@ final class ExportSnapshot
      * @param list<array<string, mixed>> $productRows ham ürün satırları (sort_no sıralı)
      * @param array<int, string> $categoryNames id → ad (kategori adı snapshot'ta DONAR —
      *                                          sonradan yeniden adlandırma eski çıktıyı değiştirmez)
-     * @param array{copy?: string, statuses?: list<string>, document_code?: string|null, revision_label?: string, share_url?: string|null, document_header?: array{company: string|null, web: string|null, email: string|null, prepared_by: string|null}} $options
+     * @param array{copy?: string, statuses?: list<string>, lang?: string, document_code?: string|null, revision_label?: string, share_url?: string|null, document_header?: array{company: string|null, web: string|null, email: string|null, prepared_by: string|null}} $options
      *
      * @return array<string, mixed>
      */
@@ -62,6 +62,10 @@ final class ExportSnapshot
                 'copy' => $options['copy'] ?? 'firma',
                 'statuses' => $options['statuses'] ?? [],
                 'document_code' => $options['document_code'] ?? null,
+                // İE#15 A3: çıktı dili. Panel çıktısı TR'dir; /p/ üzerinden alınan
+                // çıktıda firma dili seçebilir. 'zh' seçilirse ürün adı ORİJİNAL
+                // başlıktır (Çinli muhatap kendi başlığını görsün — çeviri değil).
+                'lang' => self::dil($options),
                 'revision_label' => $options['revision_label'] ?? 'A',
                 'share_url' => $options['share_url'] ?? null,
             ],
@@ -89,7 +93,7 @@ final class ExportSnapshot
                 // İE#14 A4: kategori panelden ya da yakalamanın kırıntı yolundan gelir;
                 // yoksa null DONAR ve belgede hücre BOŞ basılır — "Kategorisiz" yazılmaz.
                 'category' => ProductDetails::kategori($product, $categoryNames, $this->values),
-                'name' => $product['name'],
+                'name' => self::ad($product, self::dil($options)),
                 'name_original' => $product['name_original'],
                 // İE#14 A4: detay yoksa en dolu 3-4 öznitelikten türetilir; o da yoksa null.
                 'detail' => ProductDetails::detay($product, $this->values),
@@ -118,6 +122,37 @@ final class ExportSnapshot
                 'line_profit_try' => $product['line_profit_try'],
             ], $products, array_keys($products)),
         ];
+    }
+
+    /**
+     * Geçerli çıktı dili; tanınmayan değer TR'ye düşer.
+     *
+     * @param array<string, mixed> $options
+     */
+    private static function dil(array $options): string
+    {
+        $dil = is_string($options['lang'] ?? null) ? strtolower((string) $options['lang']) : 'tr';
+
+        return in_array($dil, ['tr', 'zh', 'en'], true) ? $dil : 'tr';
+    }
+
+    /**
+     * İE#15 A3 — ÇIKTI DİLİ ürün adını belirler: `zh` istendiğinde ORİJİNAL başlık
+     * basılır (varsa). Bu bir ÇEVİRİ DEĞİLDİR; kaynaktaki başlığın kendisidir —
+     * Çinli tedarikçi ilanı kendi metniyle tanır. Orijinal yoksa mevcut ad kalır.
+     *
+     * @param array<string, mixed> $product
+     */
+    private static function ad(array $product, string $dil): string
+    {
+        if ($dil === 'zh') {
+            $orijinal = $product['name_original'] ?? null;
+            if (is_string($orijinal) && trim($orijinal) !== '') {
+                return trim($orijinal);
+            }
+        }
+
+        return (string) $product['name'];
     }
 
     /**
