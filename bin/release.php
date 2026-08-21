@@ -104,7 +104,11 @@ $collect = function (string $relativeDir) use ($basePath, &$files, $excludedBase
     }
 };
 
-foreach (['app', 'bin', 'bootstrap', 'migrations', 'public', 'setup', 'vendor'] as $directory) {
+// İE#14 A2 sonrası EK: `config/` de pakete girer — yerel sözlükler (K56 Katman 1)
+// orada durur ve pakette gelmezse çeviri katmanı canlıda BOŞ çalışır. Dosyalar
+// SALT OKUNUR varsayılandır; kullanıcının kendi terimleri storage/ altındadır (K44),
+// yani güncelleme kullanıcı sözlüğünü EZMEZ.
+foreach (['app', 'bin', 'bootstrap', 'config', 'migrations', 'public', 'setup', 'vendor'] as $directory) {
     $collect($directory);
 }
 foreach (['.env.example', '.htaccess', 'composer.json', 'composer.lock'] as $rootFile) {
@@ -225,6 +229,12 @@ foreach ($requiredEntries as $entry) {
 }
 if ($verify->locateName('storage/logs/') === false) {
     $missing[] = 'storage/logs/ (klasör)';
+}
+// Sözlükler pakette olmalı: yoksa canlıda Katman 1 sessizce boş çalışır (İE#14 A2).
+foreach (['config/sozluk-zh-tr.php', 'config/sozluk-en-tr.php'] as $sozluk) {
+    if ($verify->locateName($sozluk) === false) {
+        $missing[] = $sozluk . ' (yerel sözlük — K56 Katman 1)';
+    }
 }
 if ($verify->locateName('.env') !== false) {
     $missing[] = 'İHLAL: .env zip\'e girmiş!';
