@@ -40,10 +40,11 @@ test.describe('V3 kabuğu', () => {
 
     // Koyu tema TOKEN değişimiyle çalışır: kökte data-theme="dark" durmalı.
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+    // Tarayıcı hex değerini küçük harfe çevirir; karşılaştırma büyük/küçük duyarsız.
     const koyuZemin = await page.evaluate(() =>
-      getComputedStyle(document.documentElement).getPropertyValue('--bg').trim(),
+      getComputedStyle(document.documentElement).getPropertyValue('--bg').trim().toLowerCase(),
     );
-    expect(koyuZemin).toBe('#0B1220');
+    expect(koyuZemin).toBe('#0b1220');
 
     await page.reload();
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
