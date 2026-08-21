@@ -16,3 +16,19 @@ RewriteRule ^media/ - [L]
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^ index.php [QSA,L]
+
+# ── İE#17 G7: PAYLAŞIM SAYFASI VARLIKLARI HER İSTEKTE DOĞRULANIR ──────────────
+# Canlı kusur: zip açılımı dosya tarihlerini (mtime) koruduğu için tarayıcının
+# sezgisel önbelleği v0.11.0'ın p-style.css'ini "taze" sayıyor, yeni kurallar
+# hiç yüklenmiyordu. SharePage artık ?v=<sürüm> ekliyor; bu blok ÇİFTE EMNİYET:
+# no-cache "önbelleğe alma" demek DEĞİLDİR — "kullanmadan önce sunucuya sor"
+# demektir; değişmediyse 304 döner, maliyeti yok denecek kadar azdır.
+#
+# Panel varlıklarına DOKUNULMAZ: onların adlarında içerik hash'i var (index-*.js).
+# IfModule sarmalayıcı ZORUNLU: mod_headers olmayan bir sunucuda .htaccess
+# hatası tüm siteyi düşürür (cgi-fcgi dersi — canlıda .htaccess hassastır).
+<IfModule mod_headers.c>
+  <FilesMatch "^(p-style\.css|p-share\.js)$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+</IfModule>

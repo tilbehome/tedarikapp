@@ -88,6 +88,32 @@ final class TemplateV2
         'O' => [11.5, 'DDP ₺', '含税', 'Incl. VAT'],
     ];
 
+    /**
+     * GİRİLMEMİŞ FİYAT AYRIMI (İE#17 G3) — tek kural, dört yüzey.
+     *
+     * Yerleşik sözleşme: tutar POZİTİF DEĞİLSE girilmemiştir. Canlı kusur şuydu:
+     * DDP fiyatı hiç girilmemiş ürünlerde belgeye ve paylaşım sayfasına
+     * "$ 0.00 / ₺ 0.00" basılıyordu — firma bunu "bedeli sıfır" diye okuyabilir.
+     * YOKLUĞU SIFIR GÖSTERMEK yanlış bilgidir; boş bırakmak doğrudur.
+     *
+     * Karar sunum katmanındadır: DB şeması ve ListPresenter alan sözleşmesi
+     * değişmez, snapshot içeriği aynen kalır (K50 determinizmi korunur).
+     */
+    public static function girilmis(mixed $tutar): bool
+    {
+        if (!is_scalar($tutar)) {
+            return false;
+        }
+        $metin = trim((string) $tutar);
+        if ($metin === '') {
+            return false;
+        }
+        // Sunum biçimi binlik ayracı taşıyabilir ("1.234,56"); sayıya indirgenir.
+        $sade = str_replace([' ', "\u{00A0}", ','], ['', '', '.'], $metin);
+
+        return is_numeric($sade) && (float) $sade > 0.0;
+    }
+
     /** F5 — yalnız İÇ KOPYADA eklenen sütunlar. */
     public const INTERNAL_COLUMNS = [
         'P' => [12.0, 'Hedef Satış (₺)', '目标售价', 'Target'],

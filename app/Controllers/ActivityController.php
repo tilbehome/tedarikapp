@@ -54,6 +54,10 @@ final class ActivityController extends ApiController
         // activity_log'da kalır (ayrı tablo = yeni migration + K49 haritası + ikinci
         // sayaç deseni; kazanç yok). Eskiler bin/bakim.php'de temizlenir.
         $where[] = "action <> 'capture_request'";
+        // İE#17 G4: taze imza üretimi de SAYAÇ satırıdır (insan aktivitesi değil) —
+        // her indirme tıklamasında bir satır düşer, akışı boğardı. Gerçek indirme
+        // (share_download) akışta KALIR: o firmanın yaptığı bir iştir.
+        $where[] = "action <> '" . \App\Services\Share\ShareGate::ACTION_LINK . "'";
 
         // $where hep dolu (capture_request filtresi eklendi) — koşul kaldırıldı.
         $clause = ' WHERE ' . implode(' AND ', $where);

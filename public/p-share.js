@@ -252,25 +252,73 @@
       return;
     }
 
-    // ── İE#15 F3: indirme geri bildirimi. Bağlantı imzalıdır ve tarayıcı indirmeyi
-    // kendi yürütür; "bitti" olayı yoktur, bu yüzden etiket süreyle geri döner.
+    // ── İE#17 G5: İNDİRME — bağlantı TIKLAMA ANINDA tazelenir.
+    //
+    // Eski davranış: bağlantılar sayfa açılırken imzalanıyordu (15 dk ömür).
+    // Sayfa daha uzun açık kalınca imza ölüyor, sunucu sabit 404 dönüyor ve
+    // etiket "hazırlanıyor…"da kalıyordu. Artık önce /export-link çağrılır,
+    // dönen TAZE adrese gidilir. JS yoksa HTML'deki imzalı href yine iş görür.
     var indirme = olay.target.closest('[data-indir]');
     if (indirme !== null) {
+      olay.preventDefault();
+      if (indirme.classList.contains('bekliyor')) return;
+
       var etiketAlani = indirme.querySelector('span');
-      if (etiketAlani !== null && !indirme.classList.contains('bekliyor')) {
-        var eskiEtiket = etiketAlani.textContent;
-        indirme.classList.add('bekliyor');
-        etiketAlani.textContent = 'hazırlanıyor…';
-        var uyariZamani = setTimeout(function () {
-          etiketAlani.textContent = 'hâlâ hazırlanıyor…';
-        }, 60000);
+      var eskiEtiket = etiketAlani === null ? '' : etiketAlani.textContent;
+      var yaz = function (metin) {
+        if (etiketAlani !== null) etiketAlani.textContent = metin;
+      };
+      var bitir = function (metin, sure) {
+        yaz(metin);
         setTimeout(function () {
-          clearTimeout(uyariZamani);
-          etiketAlani.textContent = eskiEtiket;
+          yaz(eskiEtiket);
           indirme.classList.remove('bekliyor');
-        }, 75000);
-      }
-      return; // bağlantının kendi davranışı sürsün (download)
+        }, sure);
+      };
+
+      indirme.classList.add('bekliyor');
+      yaz('hazırlanıyor…');
+
+      var bicim = indirme.dataset.format || '';
+      var dil = indirme.dataset.lang || 'tr';
+      var kok = location.pathname.replace(/\/$/, '');
+      var adres = kok + '/export-link?format=' + encodeURIComponent(bicim) + '&lang=' + encodeURIComponent(dil);
+
+      fetch(adres, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
+        .then(function (yanit) {
+          if (yanit.status === 429) {
+            var bekle = parseInt(yanit.headers.get('Retry-After') || '', 10);
+            var sure = isNaN(bekle) ? '' : ' (' + Math.max(1, Math.round(bekle / 60)) + ' dk)';
+            bitir('indirme sınırına ulaşıldı — bir süre sonra deneyin' + sure, 6000);
+
+            return null;
+          }
+          if (!yanit.ok) {
+            bitir('indirilemedi — sayfayı yenileyip tekrar deneyin', 6000);
+
+            return null;
+          }
+
+          return yanit.json();
+        })
+        .then(function (veri) {
+          if (veri === null) return;
+          var hedef = veri && veri.data ? veri.data.url : null;
+          if (!hedef) {
+            bitir('indirilemedi — sayfayı yenileyip tekrar deneyin', 6000);
+
+            return;
+          }
+          // Yanıt "attachment" olduğu için sayfa DEĞİŞMEZ, indirme başlar.
+          window.location.assign(hedef);
+          bitir(eskiEtiket, 3000);
+        })
+        .catch(function () {
+          // Konsola hata dökülmez, alert açılmaz — kullanıcıya tek satır yeter.
+          bitir('indirilemedi — sayfayı yenileyip tekrar deneyin', 6000);
+        });
+
+      return;
     }
 
     // ── İE#15 C1: paylaş menüsü

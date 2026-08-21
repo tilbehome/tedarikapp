@@ -330,12 +330,23 @@ final class XlsxRenderer implements ExportRenderer
             $sheet->getStyle('K' . $row)->getNumberFormat()->setFormatCode('#,##0');
 
             // Birim fiyatlar; TL karşılıkları FORMÜLLE (kur bandıyla tutarlı kalsın).
+            // TL karşılıkları FORMÜLLE (kur bandıyla tutarlı kalsın); kaynak hücre
+            // girilmemişse formül #VALUE! verirdi — o hücre de "—" basılır (G3).
             $this->para($sheet, 'L' . $row, (string) $product['price_yuan'], '¥');
-            $sheet->setCellValue('M' . $row, '=L' . $row . '*' . $yuanRate);
-            $sheet->getStyle('M' . $row)->getNumberFormat()->setFormatCode('\₺#,##0.00');
+            if (TemplateV2::girilmis($product['price_yuan'] ?? null)) {
+                $sheet->setCellValue('M' . $row, '=L' . $row . '*' . $yuanRate);
+                $sheet->getStyle('M' . $row)->getNumberFormat()->setFormatCode('\₺#,##0.00');
+            } else {
+                $this->para($sheet, 'M' . $row, '', '₺');
+            }
+
             $this->para($sheet, 'N' . $row, (string) $product['price_ddp_usd'], '$');
-            $sheet->setCellValue('O' . $row, '=N' . $row . '*' . $usdRate);
-            $sheet->getStyle('O' . $row)->getNumberFormat()->setFormatCode('\₺#,##0.00');
+            if (TemplateV2::girilmis($product['price_ddp_usd'] ?? null)) {
+                $sheet->setCellValue('O' . $row, '=N' . $row . '*' . $usdRate);
+                $sheet->getStyle('O' . $row)->getNumberFormat()->setFormatCode('\₺#,##0.00');
+            } else {
+                $this->para($sheet, 'O' . $row, '', '₺');
+            }
 
             if ($icKopya) {
                 $this->para($sheet, 'P' . $row, (string) ($product['price_target_try'] ?? ''), '₺');
@@ -522,7 +533,8 @@ final class XlsxRenderer implements ExportRenderer
     /** Para hücresi: string değer GÖSTERİM için sayıya çevrilir; hesap bcmath'teydi (K14). */
     private function para(Worksheet $sheet, string $cell, string $amount, string $symbol): void
     {
-        if ($amount === '' || !is_numeric($amount)) {
+        // İE#17 G3: girilmemiş fiyat (boş, sayı değil ya da POZİTİF DEĞİL) "—" basılır.
+        if (!TemplateV2::girilmis($amount)) {
             $sheet->setCellValueExplicit($cell, '—', DataType::TYPE_STRING);
             $this->font($sheet, $cell, 9.5, TemplateV2::SOLUK);
 

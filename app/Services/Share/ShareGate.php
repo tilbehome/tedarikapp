@@ -27,6 +27,9 @@ final class ShareGate
     private const WINDOW_MINUTES = 10;
     /** Token başına saatte en çok indirme (İE#15 A1). */
     private const MAX_DOWNLOAD = 20;
+    /** İE#17 G4: taze imza ucu — token başına DAKİKADA en çok bağlantı. */
+    public const ACTION_LINK = 'share_link';
+    private const MAX_LINK_PER_MINUTE = 12;
 
     public function __construct(private readonly Connection $connection)
     {
@@ -84,6 +87,44 @@ final class ShareGate
         ]);
 
         return (int) $statement->fetchColumn() >= self::MAX_DOWNLOAD;
+    }
+
+    /**
+     * İE#17 G4 — TAZE İMZA ucunun dakikalık sınırı.
+     *
+     * Uç, imza üretim otomasyonuna dönüşmesin diye sınırlıdır; ama SAATLİK
+     * İNDİRME SAYACINI (20) TÜKETMEZ — o yalnız gerçek indirmede işler. Aksi
+     * hâlde sayfayı birkaç kez tıklamak firmanın indirme hakkını yerdi.
+     */
+    public function linkBlocked(string $tokenPrefix, DateTimeImmutable $now): bool
+    {
+        $statement = $this->connection->pdo()->prepare(
+            'SELECT COUNT(*) FROM activity_log
+             WHERE action = :action AND detail LIKE :prefix AND created_at >= :window_start',
+        );
+        $statement->execute([
+            'action' => self::ACTION_LINK,
+            'prefix' => 'önek:' . substr($tokenPrefix, 0, 8) . '%',
+            'window_start' => Dates::toStorage($now->modify('-1 minute')),
+        ]);
+
+        return (int) $statement->fetchColumn() >= self::MAX_LINK_PER_MINUTE;
+    }
+
+    /** Üretilen taze imzayı sayaca işler (panel akışında GÖRÜNMEZ — ActivityController süzer). */
+    public function recordLink(string $tokenPrefix, string $format, string $dil, DateTimeImmutable $now): void
+    {
+        $statement = $this->connection->pdo()->prepare(
+            'INSERT INTO activity_log (entity_type, entity_id, action, detail, ip, actor_type, actor_id, created_at)
+             VALUES (:entity_type, NULL, :action, :detail, NULL, :actor_type, NULL, :created_at)',
+        );
+        $statement->execute([
+            'entity_type' => 'share',
+            'action' => self::ACTION_LINK,
+            'detail' => 'önek:' . substr($tokenPrefix, 0, 8) . ' · ' . $format . ' · ' . $dil,
+            'actor_type' => 'visitor',
+            'created_at' => Dates::toStorage($now),
+        ]);
     }
 
     /**

@@ -298,6 +298,7 @@ final class AppBuilder
             new \App\Services\Export\ExportSnapshot($presenter, $valueSet),
             $exportRenderers,
             $basePath,
+            $logger,
         );
         Routes\DataRoutes::register(
             $app,

@@ -103,6 +103,19 @@ Yeni kararlar bu tabloya eklenir; bir karar değişirse silinmez, üzeri çizili
 
 ## 3. Fikir Havuzu (Faz 4+)
 
+- **OTOMATİK KUR (TCMB) — Ürün Sahibi talebi, 21 Ağu 2026** _(İE#17 sırasında geldi;
+  o tur "yeni özellik yok, onarım" olduğu için kapsama ALINMADI)_: kurlar elle
+  girilmek yerine TCMB günlük döviz XML'inden otomatik güncellensin.
+  **K4 İLE ÇELİŞİR** ("kur elle girilir") — uygulanması K4'ün revizyonunu gerektirir,
+  PM kararıdır. Teknik taslak: `bin/backup.php` gecelik koşusuna bir adım
+  (`KurGuncelleyici`), TCMB `today.xml` **yalnız cURL** ile çekilir (K8; zaman aşımı
+  kısa, hata "kur güncellenmedi"dir ve akışı bloklamaz), CNY ve USD *satış* kuru
+  alınır, `rate_history`'ye normal kur değişikliği olarak yazılır (K48 3b: aynı
+  değerse satır yazılmaz). **K48 KİLİDİ AYNEN KORUNUR:** otomatik kur yalnız
+  TASLAK listeleri etkiler; iletilmiş listenin kilitli kuru DEĞİŞMEZ. Ayarlarda
+  aç/kapa + "son güncelleme" satırı; kapalıyken bugünkü elle giriş aynen çalışır.
+  Hafta sonu/tatilde TCMB yayın yapmaz — son yayın korunur, uydurma yapılmaz.
+
 - **TAM ÇOK DİLLİLİK — V3 Faz 3 (Firma Portalı)** _(PM, 21 Ağu 2026 · İE#15 A3 sapmasından)_:
   bugün `?lang=tr|zh|en` yalnız **paylaşım metinlerini** (`ShareTexts`) ve **çıktı ürün adını**
   (zh → orijinal başlık) belirler; sayfa ve panel arayüzü Türkçedir (belge başlıkları K55 gereği

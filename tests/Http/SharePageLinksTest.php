@@ -183,6 +183,7 @@ final class SharePageLinksTest extends AuthTestCase
         self::assertStringNotContainsString('onclick=', $html);
         self::assertStringNotContainsString('<style', $html);
         self::assertStringNotContainsString('<script>', $html);
-        self::assertStringContainsString('<script src="/p-share.js" defer></script>', $html);
+        // İE#17 G1: varlık adresleri artık ?v=<sürüm> taşır (bayat önbellek kusuru).
+        self::assertMatchesRegularExpression('#<script src="/p-share\.js\?v=[^"]+" defer></script>#', $html);
     }
 }

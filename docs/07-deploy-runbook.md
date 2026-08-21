@@ -119,6 +119,17 @@ Sonraki sürümler: sihirbaz YOK — zip yüklenir, admin girişinde "veritaban�
 - Sihirbaz adım hatası: dostane Türkçe mesaj + teknik detay bölümü + **"Tanılama raporunu kopyala"** düğmesi (ortam + eklenti VAR/YOK + hata + işlem günlüğü; sır İÇERMEZ).
 - Kurulu (kilitli) sistemde çalışma zamanı hatası: kullanıcıya zarif genel mesaj + Request-ID; tam detay `app_logs`a yazılır ve aynı Request-ID ile bulunur.
 
+### Güncelleme sonrası iki denetim (İE#17 G7)
+
+1. **Dosya bütünlüğü:** panelde `/api/system/integrity` çağrılır (ya da Ayarlar >
+   Sistem durumu). MANIFEST ile diskteki dosyalar karşılaştırılır; eksik/bozuk
+   dosya varsa zip yeniden açılır. Yarım FTP aktarımı en sık görülen kusurdur.
+2. **Paylaşım sayfası tuhaf görünüyorsa ÖNCE `Ctrl+F5`.** Sayfanın stil ve script
+   dosyaları artık `?v=<sürüm>` ile sürümlenir ve `no-cache` başlığı taşır
+   (İE#17 G1/G7), ama kullanıcının tarayıcısındaki ESKİ kopya bir kez daha
+   sunulmuş olabilir. Menü akışa dökülmüş, yazdırma penceresi açılmıyorsa
+   neredeyse her zaman sebep budur — koda bakmadan önce sert yenileme denenir.
+
 ## 5. Geri Alma
 
 - Kod: `app_onceki/` geri adlandırılır (5 dk).
