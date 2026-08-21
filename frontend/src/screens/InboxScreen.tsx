@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { inbox as inboxApi, lists as listsApi } from '../api/endpoints';
 import { useAsync, messageOf } from '../lib/useAsync';
+import { useUrlDurumu } from '../lib/useUrlDurumu';
 import { count } from '../lib/format';
 import { EmptyState, ErrorNote, PageHeader, Skeleton } from '../components/ui';
 import { useToast } from '../components/Toast';
@@ -19,12 +20,16 @@ import InboxDetailDrawer from './inbox/InboxDetailDrawer';
 export default function InboxScreen() {
   const push = useToast((state) => state.push);
 
-  const [q, setQ] = useState('');
-  const [aramaMetni, setAramaMetni] = useState('');
-  const [platform, setPlatform] = useState('');
-  const [from, setFrom] = useState('');
-  const [to, setTo] = useState('');
-  const [page, setPage] = useState(1);
+  // İE#16 D1.4: süzgeçler ADRESTE. `aramaMetni` yalnız yazarken tutulan ARA
+  // durumdur (her harfte istek atılmasın diye); "Ara" denince URL'e yazılır.
+  const [durum, setDurum] = useUrlDurumu({ q: '', platform: '', from: '', to: '', page: 1 });
+  const { q, platform, from, to, page } = durum;
+  const [aramaMetni, setAramaMetni] = useState(durum.q);
+  const setQ = (deger: string) => setDurum({ q: deger });
+  const setPlatform = (deger: string) => setDurum({ platform: deger });
+  const setFrom = (deger: string) => setDurum({ from: deger });
+  const setTo = (deger: string) => setDurum({ to: deger });
+  const setPage = (deger: number) => setDurum({ page: deger });
 
   const state = useAsync(() => inboxApi.queue({ q, platform, from, to, page }), [q, platform, from, to, page]);
   const listsState = useAsync(() => listsApi.all({ visibility: 'active' }), []);
@@ -145,7 +150,7 @@ export default function InboxScreen() {
       <div className="card mb-4 space-y-3 p-3">
         <div className="flex flex-wrap items-end gap-2">
           <form className="flex items-end gap-2" onSubmit={araNoktala}>
-            <label className="text-xs text-slate-500">
+            <label className="text-xs text-ink-3">
               Ara (başlıkta)
               <input
                 type="search"
@@ -160,7 +165,7 @@ export default function InboxScreen() {
             </button>
           </form>
 
-          <label className="text-xs text-slate-500">
+          <label className="text-xs text-ink-3">
             Platform
             <select
               className="field-input mt-1 w-36"
@@ -179,7 +184,7 @@ export default function InboxScreen() {
             </select>
           </label>
 
-          <label className="text-xs text-slate-500">
+          <label className="text-xs text-ink-3">
             Başlangıç
             <input
               type="date"
@@ -191,7 +196,7 @@ export default function InboxScreen() {
               }}
             />
           </label>
-          <label className="text-xs text-slate-500">
+          <label className="text-xs text-ink-3">
             Bitiş
             <input
               type="date"
@@ -211,8 +216,8 @@ export default function InboxScreen() {
           ) : null}
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3 text-sm">
-          <label className="flex items-center gap-2 text-slate-600">
+        <div className="flex flex-wrap items-center gap-2 border-t border-line-soft pt-3 text-sm">
+          <label className="flex items-center gap-2 text-ink-2">
             <input
               type="checkbox"
               checked={items.length > 0 && selected.length === items.length}
@@ -222,7 +227,7 @@ export default function InboxScreen() {
             Tümünü seç
           </label>
 
-          <span className="text-slate-600">Hedef liste:</span>
+          <span className="text-ink-2">Hedef liste:</span>
           <select
             aria-label="Hedef liste"
             className="field-input max-w-56"
@@ -261,7 +266,7 @@ export default function InboxScreen() {
           </button>
           <button
             type="button"
-            className="btn-ghost text-red-600"
+            className="btn-ghost text-err"
             disabled={busy || selected.length === 0}
             onClick={() => void remove(selected)}
           >
@@ -302,15 +307,15 @@ export default function InboxScreen() {
             ))}
           </ul>
 
-          <div className="mt-4 flex items-center justify-between text-sm text-slate-500">
+          <div className="mt-4 flex items-center justify-between text-sm text-ink-3">
             <span>
               {count(total)} kayıt · sayfa {page}/{sonSayfa}
             </span>
             <div className="flex gap-2">
-              <button type="button" className="btn-ghost" disabled={page === 1} onClick={() => setPage((v) => v - 1)}>
+              <button type="button" className="btn-ghost" disabled={page === 1} onClick={() => setPage(page - 1)}>
                 Önceki
               </button>
-              <button type="button" className="btn-ghost" disabled={page >= sonSayfa} onClick={() => setPage((v) => v + 1)}>
+              <button type="button" className="btn-ghost" disabled={page >= sonSayfa} onClick={() => setPage(page + 1)}>
                 Sonraki
               </button>
             </div>

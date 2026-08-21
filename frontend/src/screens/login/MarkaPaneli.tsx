@@ -14,20 +14,20 @@ export default function MarkaPaneli({ vitrin }: { vitrin: GirisVitrini }) {
   const rakamlarVar = vitrin.products !== '' && vitrin.volume !== '';
 
   return (
-    <section className="relative isolate overflow-hidden bg-lacivert-900 px-6 py-6 text-white sm:px-10 lg:py-12">
+    <section className="relative isolate overflow-hidden bg-navy px-6 py-6 text-white sm:px-10 lg:py-12">
       {/* Geometrik derinlik: iki daire, içerik akışını etkilemez. */}
       <span
         aria-hidden
-        className="pointer-events-none absolute -right-24 -top-28 hidden h-64 w-64 rounded-full bg-lacivert-700 lg:block"
+        className="pointer-events-none absolute -right-24 -top-28 hidden h-64 w-64 rounded-full bg-navy-2 lg:block"
       />
       <span
         aria-hidden
-        className="pointer-events-none absolute -bottom-16 -left-20 hidden h-44 w-44 rounded-full bg-lacivert-700/70 lg:block"
+        className="pointer-events-none absolute -bottom-16 -left-20 hidden h-44 w-44 rounded-full bg-navy-2/70 lg:block"
       />
 
       <div className="relative flex h-full flex-col">
         <div className="flex items-center gap-3">
-          <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-altin-500 text-lacivert-900 shadow-lg shadow-black/20">
+          <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-gold text-navy shadow-lg shadow-black/20">
             <Package className="h-6 w-6" aria-hidden />
           </span>
           <span>
@@ -43,7 +43,7 @@ export default function MarkaPaneli({ vitrin }: { vitrin: GirisVitrini }) {
             <br />
             tek panelden.
           </p>
-          <span className="mt-5 block h-px w-16 bg-altin-500" aria-hidden />
+          <span className="mt-5 block h-px w-16 bg-gold" aria-hidden />
           <p className="mt-5 max-w-xs text-sm leading-relaxed text-white/70">
             Yakala, listele, fiyatla, paylaş — tedarik sürecinin tamamı tek çatıda.
           </p>
@@ -51,11 +51,11 @@ export default function MarkaPaneli({ vitrin }: { vitrin: GirisVitrini }) {
 
         {rakamlarVar ? (
           <dl className="mt-8 hidden gap-3 lg:grid lg:grid-cols-2">
-            <div className="rounded-xl bg-lacivert-700 px-4 py-3">
+            <div className="rounded-xl bg-navy-2 px-4 py-3">
               <dt className="text-[11px] uppercase tracking-wide text-white/60">Yakalanan ürün</dt>
               <dd className="mt-0.5 text-2xl font-bold">{vitrin.products}</dd>
             </div>
-            <div className="rounded-xl bg-lacivert-700 px-4 py-3">
+            <div className="rounded-xl bg-navy-2 px-4 py-3">
               <dt className="text-[11px] uppercase tracking-wide text-white/60">Yönetilen sipariş</dt>
               <dd className="mt-0.5 text-2xl font-bold">{vitrin.volume}</dd>
             </div>

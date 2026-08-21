@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useUrlDurumu } from '../lib/useUrlDurumu';
 import { Link } from 'react-router-dom';
 import {
   AlertTriangle,
@@ -49,8 +49,10 @@ const icons: Record<ActivityIcon, typeof ListChecks> = {
 const PAGE_SIZE = 25;
 
 export default function ActivityScreen() {
-  const [entityType, setEntityType] = useState('');
-  const [page, setPage] = useState(1);
+  // İE#16 D1.4: süzgeç ve sayfa ADRESTE durur — link paylaşılabilir, geri tuşu çalışır.
+  const [durum, setDurum] = useUrlDurumu({ tur: '', page: 1 });
+  const entityType = durum.tur;
+  const page = durum.page;
 
   const state = useAsync(() => activityApi.read({ entity_type: entityType || undefined, page }), [entityType, page]);
   const items = state.data ?? [];
@@ -65,12 +67,9 @@ export default function ActivityScreen() {
             key={filter.value}
             type="button"
             className={`min-h-11 rounded-xl px-3 text-sm font-semibold ${
-              entityType === filter.value ? 'bg-brand-600 text-white' : 'border border-slate-200 bg-white text-slate-600'
+              entityType === filter.value ? 'bg-navy text-white' : 'border border-line bg-surface text-ink-2'
             }`}
-            onClick={() => {
-              setEntityType(filter.value);
-              setPage(1);
-            }}
+            onClick={() => setDurum({ tur: filter.value, page: 1 })}
           >
             {filter.label}
           </button>
@@ -85,7 +84,7 @@ export default function ActivityScreen() {
         <EmptyState title="Kayıt yok" description="Bu süzgeçle eşleşen bir işlem bulunamadı." />
       ) : (
         <>
-          <ul className="card divide-y divide-slate-100">
+          <ul className="card divide-y divide-line-soft">
             {items.map((entry) => {
               const tur = actionIcon(entry.action, entry.entity_type);
               const Simge = icons[tur];
@@ -94,7 +93,7 @@ export default function ActivityScreen() {
                 <>
                   <span
                     className={`flex size-9 shrink-0 items-center justify-center rounded-xl ${
-                      tur === 'uyari' ? 'bg-rose-50 text-rose-600' : 'bg-slate-100 text-slate-500'
+                      tur === 'uyari' ? 'bg-err-soft text-err' : 'bg-g100 text-ink-3'
                     }`}
                     aria-hidden="true"
                   >
@@ -102,7 +101,7 @@ export default function ActivityScreen() {
                   </span>
                   <span className="min-w-0">
                     <span className="block font-medium">{actionLabel(entry.action)}</span>
-                    <span className="block truncate text-xs text-slate-500">
+                    <span className="block truncate text-xs text-ink-3">
                       {entityLabel(entry.entity_type)}
                       {entry.detail ? ` · ${entry.detail}` : ''}
                     </span>
@@ -122,22 +121,22 @@ export default function ActivityScreen() {
                   ) : (
                     <span className="flex min-w-0 items-center gap-3">{govde}</span>
                   )}
-                  <span className="shrink-0 text-xs text-slate-500">{dateTime(entry.created_at)}</span>
+                  <span className="shrink-0 text-xs text-ink-3">{dateTime(entry.created_at)}</span>
                 </li>
               );
             })}
           </ul>
 
           <div className="mt-4 flex items-center justify-between">
-            <button type="button" className="btn-ghost" disabled={page === 1} onClick={() => setPage((value) => value - 1)}>
+            <button type="button" className="btn-ghost" disabled={page === 1} onClick={() => setDurum({ page: page - 1 })}>
               Önceki
             </button>
-            <span className="text-sm text-slate-500">Sayfa {page}</span>
+            <span className="text-sm text-ink-3">Sayfa {page}</span>
             <button
               type="button"
               className="btn-ghost"
               disabled={items.length < PAGE_SIZE}
-              onClick={() => setPage((value) => value + 1)}
+              onClick={() => setDurum({ page: page + 1 })}
             >
               Sonraki
             </button>

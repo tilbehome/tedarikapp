@@ -23,18 +23,18 @@ export default function IslemDurumu({
   if (islem.calisiyor) {
     return (
       <div
-        className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm"
+        className="mt-3 rounded-xl border border-line bg-g50 p-3 text-sm"
         role="status"
         aria-live="polite"
       >
-        <p className="flex items-center gap-2 font-medium text-slate-700">
-          <Loader2 className="h-4 w-4 animate-spin text-brand-600" aria-hidden />
-          {fiil}… <span className="font-normal text-slate-500">({sure(islem.gecenSaniye)})</span>
+        <p className="flex items-center gap-2 font-medium text-ink-2">
+          <Loader2 className="h-4 w-4 animate-spin text-navy" aria-hidden />
+          {fiil}… <span className="font-normal text-ink-3">({sure(islem.gecenSaniye)})</span>
         </p>
-        {islem.ilerleme ? <p className="mt-1 pl-6 text-xs text-slate-600">{islem.ilerleme}</p> : null}
+        {islem.ilerleme ? <p className="mt-1 pl-6 text-xs text-ink-2">{islem.ilerleme}</p> : null}
         {islem.uzunSuruyor ? (
           <div className="mt-2 flex flex-wrap items-center gap-2 pl-6">
-            <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-700">
+            <span className="inline-flex items-center gap-1 text-xs font-medium text-warn">
               <AlertTriangle className="h-3.5 w-3.5" aria-hidden />
               Beklenenden uzun sürüyor. Sayfayı kapatmayın; işlem sunucuda devam ediyor.
             </span>
@@ -54,7 +54,7 @@ export default function IslemDurumu({
   return (
     <div
       className={`mt-3 rounded-xl border p-3 text-sm ${
-        basarili ? 'border-emerald-200 bg-emerald-50 text-emerald-900' : 'border-rose-200 bg-rose-50 text-rose-900'
+        basarili ? 'border-ok/30 bg-ok-soft text-ok' : 'border-err/30 bg-err-soft text-err'
       }`}
       role="status"
       aria-live="polite"

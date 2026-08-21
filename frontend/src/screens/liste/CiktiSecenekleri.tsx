@@ -92,36 +92,36 @@ export default function CiktiSecenekleri({ listId, onDone }: { listId: number; o
       {acik ? (
         <div className="card mt-2 w-full space-y-3 p-3 text-sm">
           <div className="flex flex-wrap items-center gap-4">
-            <span className="text-slate-600">Kopya:</span>
+            <span className="text-ink-2">Kopya:</span>
             <label className="flex items-center gap-2">
               <input type="radio" name="kopya" checked={kopya === 'firma'} onChange={() => setKopya('firma')} />
               Firma kopyası
             </label>
             <label className="flex items-center gap-2">
               <input type="radio" name="kopya" checked={kopya === 'ic'} onChange={() => setKopya('ic')} />
-              İç kopya <span className="text-xs text-amber-700">(hedef satış + kâr sütunları)</span>
+              İç kopya <span className="text-xs text-warn">(hedef satış + kâr sütunları)</span>
             </label>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 border-t border-slate-100 pt-3">
-            <span className="text-slate-600">Durum filtresi:</span>
+          <div className="flex flex-wrap items-center gap-3 border-t border-line-soft pt-3">
+            <span className="text-ink-2">Durum filtresi:</span>
             {DURUMLAR.map((status) => (
               <label key={status} className="flex items-center gap-1.5 text-xs">
                 <input type="checkbox" checked={durumlar.includes(status)} onChange={() => durumDegistir(status)} />
                 {productStatusLabels[status]}
               </label>
             ))}
-            {durumlar.length === 0 ? <span className="text-xs text-slate-400">seçilmezse tümü basılır</span> : null}
+            {durumlar.length === 0 ? <span className="text-xs text-ink-3">seçilmezse tümü basılır</span> : null}
           </div>
 
-          <div className="border-t border-slate-100 pt-3">
+          <div className="border-t border-line-soft pt-3">
             {paylasimAdresi ? (
-              <label className="flex items-center gap-2 text-xs text-slate-600">
+              <label className="flex items-center gap-2 text-xs text-ink-2">
                 <input type="checkbox" checked={qrEkle} onChange={(event) => setQrEkle(event.target.checked)} />
                 Paylaşım linkini QR olarak belgeye ekle
               </label>
             ) : (
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-ink-3">
                 QR için paylaşım linki gerekir. Link güvenlik gereği sunucuda saklanmaz (K51) — "Paylaş" ile
                 bu oturumda üretirseniz belgeye QR eklenebilir.
               </p>
@@ -129,7 +129,7 @@ export default function CiktiSecenekleri({ listId, onDone }: { listId: number; o
           </div>
 
           {kopya === 'ic' ? (
-            <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
+            <p className="rounded-lg bg-warn-soft px-3 py-2 text-xs text-warn">
               İç kopya kâr bilgisi taşır — firmaya GÖNDERMEYİN. Dosya adında ve alt bilgisinde "İÇ KOPYA" yazar.
             </p>
           ) : null}

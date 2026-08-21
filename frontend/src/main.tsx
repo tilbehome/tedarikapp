@@ -2,7 +2,12 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
+import { temayiBaslat } from './lib/tema';
 import './index.css';
+
+// Tema İLK BOYAMADAN ÖNCE uygulanır: kayıtlı tercih koyuysa açık temanın bir
+// kare boyunca görünüp kararması ("beyaz flaş") engellenir (İE#16 D1.1/D1.4).
+temayiBaslat();
 
 const container = document.getElementById('root');
 if (!container) {

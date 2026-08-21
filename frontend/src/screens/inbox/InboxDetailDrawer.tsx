@@ -27,12 +27,12 @@ export default function InboxDetailDrawer({ id, onClose }: { id: number; onClose
 
   return (
     <div className="fixed inset-0 z-40 flex justify-end" role="dialog" aria-modal="true" aria-label="Yakalama detayı">
-      <button type="button" className="absolute inset-0 bg-slate-900/40" aria-label="Kapat" onClick={onClose} />
+      <button type="button" className="absolute inset-0 bg-g900/40" aria-label="Kapat" onClick={onClose} />
 
-      <aside className="relative z-10 flex h-full w-full max-w-lg flex-col overflow-y-auto bg-white shadow-2xl">
-        <header className="sticky top-0 flex items-start justify-between gap-3 border-b border-slate-100 bg-white p-4">
+      <aside className="relative z-10 flex h-full w-full max-w-lg flex-col overflow-y-auto bg-surface shadow-2xl">
+        <header className="sticky top-0 flex items-start justify-between gap-3 border-b border-line-soft bg-surface p-4">
           <div className="min-w-0">
-            <p className="text-xs uppercase tracking-wide text-slate-400">Yakalama detayı</p>
+            <p className="text-xs uppercase tracking-wide text-ink-3">Yakalama detayı</p>
             <h2 className="truncate text-base font-semibold">{detail?.name ?? '…'}</h2>
           </div>
           <button type="button" className="btn-ghost" onClick={onClose} aria-label="Kapat">
@@ -56,31 +56,31 @@ export default function InboxDetailDrawer({ id, onClose }: { id: number; onClose
               ) : null}
 
               <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                <dt className="text-slate-500">Platform</dt>
+                <dt className="text-ink-3">Platform</dt>
                 <dd>{detail.platform}</dd>
-                <dt className="text-slate-500">Ürün no</dt>
+                <dt className="text-ink-3">Ürün no</dt>
                 <dd className="truncate">{detail.external_id ?? '—'}</dd>
-                <dt className="text-slate-500">Satıcı</dt>
+                <dt className="text-ink-3">Satıcı</dt>
                 <dd className="truncate">{detail.seller_name ?? '—'}</dd>
-                <dt className="text-slate-500">Yakalanma</dt>
+                <dt className="text-ink-3">Yakalanma</dt>
                 <dd>{dateTime(detail.created_at)}</dd>
               </dl>
 
               {detail.raw_title ? (
                 <section>
-                  <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">Orijinal başlık</h3>
+                  <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-ink-3">Orijinal başlık</h3>
                   {/* K54: orijinal (Çince) başlık her koşulda korunur ve burada görünür. */}
-                  <p className="text-sm text-slate-700">{detail.raw_title}</p>
+                  <p className="text-sm text-ink-2">{detail.raw_title}</p>
                 </section>
               ) : null}
 
               {detail.price_tiers.length > 0 ? (
                 <section>
-                  <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">Fiyat kademeleri</h3>
+                  <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-ink-3">Fiyat kademeleri</h3>
                   <ul className="text-sm">
                     {detail.price_tiers.map((tier) => (
-                      <li key={`${tier.min_qty}-${tier.price_yuan}`} className="flex justify-between border-b border-slate-100 py-1">
-                        <span className="text-slate-600">{tier.min_qty}+ adet</span>
+                      <li key={`${tier.min_qty}-${tier.price_yuan}`} className="flex justify-between border-b border-line-soft py-1">
+                        <span className="text-ink-2">{tier.min_qty}+ adet</span>
                         <span className="font-medium">¥{tier.price_yuan}</span>
                       </li>
                     ))}
@@ -90,13 +90,13 @@ export default function InboxDetailDrawer({ id, onClose }: { id: number; onClose
 
               {detail.sku_matrix.length > 0 ? (
                 <section>
-                  <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                  <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-ink-3">
                     Varyasyonlar ({detail.sku_matrix.length})
                   </h3>
                   <ul className="text-sm">
                     {detail.sku_matrix.map((sku, index) => (
-                      <li key={`${sku.label}-${index}`} className="flex justify-between gap-3 border-b border-slate-100 py-1">
-                        <span className="min-w-0 truncate text-slate-600">{sku.label}</span>
+                      <li key={`${sku.label}-${index}`} className="flex justify-between gap-3 border-b border-line-soft py-1">
+                        <span className="min-w-0 truncate text-ink-2">{sku.label}</span>
                         <span className="shrink-0 font-medium">{sku.price_yuan ? `¥${sku.price_yuan}` : '—'}</span>
                       </li>
                     ))}
@@ -106,11 +106,11 @@ export default function InboxDetailDrawer({ id, onClose }: { id: number; onClose
 
               {Object.keys(detail.attributes).length > 0 ? (
                 <section>
-                  <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">Yakalanan özellikler</h3>
+                  <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-ink-3">Yakalanan özellikler</h3>
                   <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
                     {Object.entries(detail.attributes).map(([key, value]) => (
                       <div key={key} className="contents">
-                        <dt className="truncate text-slate-500">{key}</dt>
+                        <dt className="truncate text-ink-3">{key}</dt>
                         <dd className="truncate">{value}</dd>
                       </div>
                     ))}

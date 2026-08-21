@@ -130,7 +130,7 @@ export default function ListDetailScreen() {
 
   return (
     <>
-      <Link to="/listeler" className="mb-3 inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-800">
+      <Link to="/listeler" className="mb-3 inline-flex items-center gap-1 text-sm text-ink-3 hover:text-ink">
         <ArrowLeft className="h-4 w-4" aria-hidden />
         Listeler
       </Link>
@@ -147,7 +147,7 @@ export default function ListDetailScreen() {
               {list.rate_locked_at ? ` (kilitli — ${dateTime(list.rate_locked_at)})` : ' (taslak, güncel kuru izliyor)'}
             </span>
             {list.is_export_stale && list.last_export && (
-              <span className="badge bg-amber-50 text-amber-800 ring-amber-200">Çıktı güncel değil</span>
+              <span className="badge bg-warn-soft text-warn ring-warn/20">Çıktı güncel değil</span>
             )}
           </span>
         }
@@ -171,21 +171,21 @@ export default function ListDetailScreen() {
 
       {allowedListStatuses.length > 0 && (
         <div className="card mb-4 flex flex-wrap items-center gap-2 p-3 text-sm">
-          <span className="text-slate-600">Liste durumunu ilerlet:</span>
+          <span className="text-ink-2">Liste durumunu ilerlet:</span>
           {allowedListStatuses.map((next) => (
             <button key={next} type="button" className="btn-ghost" onClick={() => void changeListStatus(next)}>
               {listStatusLabels[next]}
             </button>
           ))}
           {list.status === 'draft' && (
-            <span className="text-xs text-slate-500">"İletildi" seçildiğinde kur bu listeye kilitlenir.</span>
+            <span className="text-xs text-ink-3">"İletildi" seçildiğinde kur bu listeye kilitlenir.</span>
           )}
         </div>
       )}
 
       <div className="mb-4 flex flex-col gap-3 sm:flex-row">
         <label className="relative flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-3" aria-hidden />
           <input
             className="field-input pl-9"
             placeholder="Ürün ara"
@@ -210,8 +210,8 @@ export default function ListDetailScreen() {
       </div>
 
       {selected.length > 0 && (
-        <div className="card mb-3 flex flex-wrap items-center gap-2 border-brand-200 bg-brand-50 p-3 text-sm">
-          <span className="font-semibold text-brand-800">{count(selected.length)} ürün seçildi</span>
+        <div className="card mb-3 flex flex-wrap items-center gap-2 border-blue/30 bg-blue-soft p-3 text-sm">
+          <span className="font-semibold text-navy">{count(selected.length)} ürün seçildi</span>
           {(['ordered', 'in_transit', 'received', 'cancelled'] as ProductStatus[]).map((next) => (
             <button key={next} type="button" className="btn-ghost" onClick={() => void bulkStatus(next)}>
               {productStatusLabels[next]} yap
@@ -253,7 +253,7 @@ export default function ListDetailScreen() {
                     <Link to={`/listeler/${listId}/urun/${product.id}`} className="block truncate font-semibold">
                       {product.name}
                     </Link>
-                    <div className="text-xs text-slate-500">{categoryName(product.category_id)}</div>
+                    <div className="text-xs text-ink-3">{categoryName(product.category_id)}</div>
                     <div className="mt-1 text-sm">
                       {count(product.qty)} adet × ¥{money(product.price_yuan)}
                     </div>
@@ -267,7 +267,7 @@ export default function ListDetailScreen() {
                     />
                     <button
                       type="button"
-                      className="mt-2 inline-flex h-11 w-11 items-center justify-center rounded-xl text-rose-600"
+                      className="mt-2 inline-flex h-11 w-11 items-center justify-center rounded-xl text-err"
                       aria-label="Ürünü sil"
                       onClick={() => void removeProduct(product)}
                     >
@@ -283,7 +283,7 @@ export default function ListDetailScreen() {
           <div className="card hidden md:block">
             <div className="table-scroll">
               <table className="w-full text-sm">
-                <thead className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
+                <thead className="border-b border-line text-left text-xs uppercase tracking-wide text-ink-3">
                   <tr>
                     <th className="w-10 px-3 py-3">
                       <input
@@ -307,9 +307,9 @@ export default function ListDetailScreen() {
                     <th className="w-12 px-3 py-3" />
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-line-soft">
                   {items.map((product) => (
-                    <tr key={product.id} className="hover:bg-slate-50">
+                    <tr key={product.id} className="hover:bg-g50">
                       <td className="px-3 py-2">
                         <input
                           type="checkbox"
@@ -332,9 +332,9 @@ export default function ListDetailScreen() {
                         <Link to={`/listeler/${listId}/urun/${product.id}`} className="block truncate font-medium">
                           {product.name}
                         </Link>
-                        {product.detail && <span className="block truncate text-xs text-slate-500">{product.detail}</span>}
+                        {product.detail && <span className="block truncate text-xs text-ink-3">{product.detail}</span>}
                       </td>
-                      <td className="px-3 py-2 text-slate-600">{categoryName(product.category_id)}</td>
+                      <td className="px-3 py-2 text-ink-2">{categoryName(product.category_id)}</td>
                       <td className="px-3 py-2 text-right">{count(product.qty)}</td>
                       <td className="px-3 py-2 text-right">¥{money(product.price_yuan)}</td>
                       <td className="px-3 py-2 text-right">¥{money(product.line_total_yuan)}</td>
@@ -351,7 +351,7 @@ export default function ListDetailScreen() {
                       <td className="px-3 py-2">
                         <button
                           type="button"
-                          className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-rose-600"
+                          className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-err"
                           aria-label="Ürünü sil"
                           onClick={() => void removeProduct(product)}
                         >
@@ -362,7 +362,7 @@ export default function ListDetailScreen() {
                   ))}
                 </tbody>
                 {/* TOPLAM satırı: değerler backend'in MoneyService'inden gelir. */}
-                <tfoot className="border-t-2 border-slate-200 bg-slate-50 font-semibold">
+                <tfoot className="border-t-2 border-line bg-g50 font-semibold">
                   <tr>
                     <td className="px-3 py-3" colSpan={4}>
                       TOPLAM
@@ -383,7 +383,7 @@ export default function ListDetailScreen() {
 
           {/* Telefonda toplam ayrı kartta durur — tablo dayatılmaz. */}
           <div className="card mt-3 p-4 md:hidden">
-            <div className="text-xs uppercase tracking-wide text-slate-500">Toplam</div>
+            <div className="text-xs uppercase tracking-wide text-ink-3">Toplam</div>
             <dl className="mt-2 space-y-1 text-sm">
               <Row label="Adet" value={count(list.totals.qty)} />
               <Row label="Yuan" value={`¥${money(list.totals.yuan)}`} />
@@ -467,11 +467,11 @@ function SharePanel({ listId, tokenPrefix, onChanged }: { listId: number; tokenP
 
   return (
     <section className="card mb-4 p-4">
-      <h2 className="mb-2 text-sm font-semibold text-slate-700">Paylaşım linki</h2>
+      <h2 className="mb-2 text-sm font-semibold text-ink-2">Paylaşım linki</h2>
       {url ? (
         <>
-          <p className="break-all rounded-lg bg-slate-50 p-2 font-mono text-xs">{url}</p>
-          <p className="mt-1 text-xs text-amber-700">
+          <p className="break-all rounded-lg bg-g50 p-2 font-mono text-xs">{url}</p>
+          <p className="mt-1 text-xs text-warn">
             Bu link yalnız şimdi görünür (güvenlik gereği kaydedilmez) — kopyalamadan sayfadan ayrılmayın.
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
@@ -487,7 +487,7 @@ function SharePanel({ listId, tokenPrefix, onChanged }: { listId: number; tokenP
         </>
       ) : (
         <>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-ink-3">
             {tokenPrefix
               ? `Aktif bir paylaşım linki var (${tokenPrefix}…). Yenilemek eski linki öldürür; iptal etmek sayfayı kapatır.`
               : 'Firma için girişsiz, salt-okunur bir sayfa linki üretilir. Liste güncellendikçe sayfa da güncel kalır.'}
@@ -514,12 +514,12 @@ function ExportHistory({ listId, refreshKey }: { listId: number; refreshKey: str
 
   return (
     <section className="card mt-4 p-4">
-      <h2 className="mb-2 text-sm font-semibold text-slate-700">Export geçmişi</h2>
-      <ul className="divide-y divide-slate-100 text-sm">
+      <h2 className="mb-2 text-sm font-semibold text-ink-2">Export geçmişi</h2>
+      <ul className="divide-y divide-line-soft text-sm">
         {(state.data ?? []).map((entry) => (
           <li key={entry.id} className="flex items-center justify-between gap-3 py-2">
-            <span className="uppercase text-slate-500">{entry.format}</span>
-            <span className="flex-1 text-slate-600">{dateTime(entry.created_at)}</span>
+            <span className="uppercase text-ink-3">{entry.format}</span>
+            <span className="flex-1 text-ink-2">{dateTime(entry.created_at)}</span>
             <a className="btn-ghost" href={exportsApi.fileUrl(entry.id)}>
               <Download className="h-4 w-4" aria-hidden />
               İndir
@@ -527,7 +527,7 @@ function ExportHistory({ listId, refreshKey }: { listId: number; refreshKey: str
           </li>
         ))}
       </ul>
-      <p className="mt-2 text-xs text-slate-500">
+      <p className="mt-2 text-xs text-ink-3">
         Her indirme, kaydın üretildiği ANDAKİ anlık görüntüyü verir — liste sonradan değiştiyse yeni export alın.
       </p>
     </section>
@@ -537,7 +537,7 @@ function ExportHistory({ listId, refreshKey }: { listId: number; refreshKey: str
 function Row({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
   return (
     <div className="flex justify-between">
-      <dt className="text-slate-500">{label}</dt>
+      <dt className="text-ink-3">{label}</dt>
       <dd className={strong ? 'font-bold' : 'font-medium'}>{value}</dd>
     </div>
   );
@@ -554,16 +554,16 @@ function Thumb({ product, onChanged }: { product: Product; onChanged?: () => voi
   const [retrying, setRetrying] = useState(false);
   const source = product.main_image ?? product.images[0]?.url ?? null;
   if (!source) {
-    return <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-xs text-slate-400">—</span>;
+    return <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-g100 text-xs text-ink-3">—</span>;
   }
 
   if (broken) {
     return (
-      <span className="flex h-14 w-14 shrink-0 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-slate-300 bg-slate-50 text-center">
-        <ImageOff className="h-4 w-4 text-slate-400" aria-hidden />
+      <span className="flex h-14 w-14 shrink-0 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-g300 bg-g50 text-center">
+        <ImageOff className="h-4 w-4 text-ink-3" aria-hidden />
         <button
           type="button"
-          className="text-[10px] font-medium text-brand-600 disabled:opacity-50"
+          className="text-[10px] font-medium text-navy disabled:opacity-50"
           disabled={retrying}
           onClick={() => {
             setRetrying(true);
@@ -593,7 +593,7 @@ function Thumb({ product, onChanged }: { product: Product; onChanged?: () => voi
       alt=""
       loading="lazy"
       onError={() => setBroken(true)}
-      className="h-14 w-14 shrink-0 rounded-xl border border-slate-200 object-cover"
+      className="h-14 w-14 shrink-0 rounded-xl border border-line object-cover"
     />
   );
 }

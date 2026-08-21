@@ -180,7 +180,7 @@ export default function ProductFormScreen() {
 
   return (
     <>
-      <Link to={`/listeler/${listId}`} className="mb-3 inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-800">
+      <Link to={`/listeler/${listId}`} className="mb-3 inline-flex items-center gap-1 text-sm text-ink-3 hover:text-ink">
         <ArrowLeft className="h-4 w-4" aria-hidden />
         Liste detayı
       </Link>
@@ -219,13 +219,13 @@ export default function ProductFormScreen() {
             </button>
           </div>
           {oneri ? (
-            <div className="mt-2 rounded-xl border border-brand-200 bg-brand-50/60 p-2 text-sm">
-              <p className="text-slate-700">
+            <div className="mt-2 rounded-xl border border-blue/30 bg-blue-soft/60 p-2 text-sm">
+              <p className="text-ink-2">
                 <span className="font-medium">Öneri:</span> {oneri}
                 {oneriKaynagi === 'sozluk' ? (
-                  <span className="ml-2 text-xs text-slate-500">(sözlükten)</span>
+                  <span className="ml-2 text-xs text-ink-3">(sözlükten)</span>
                 ) : oneriKaynagi !== null ? (
-                  <span className="ml-2 text-xs text-slate-500">(makine çevirisi — gözden geçirin)</span>
+                  <span className="ml-2 text-xs text-ink-3">(makine çevirisi — gözden geçirin)</span>
                 ) : null}
               </p>
               <div className="mt-2 flex gap-2">
@@ -313,7 +313,7 @@ export default function ProductFormScreen() {
           </Field>
         </div>
 
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-ink-3">
           TL karşılıkları listenin kuruyla sunucuda hesaplanır; kaydettikten sonra liste detayında görünür.
         </p>
 
@@ -347,7 +347,7 @@ export default function ProductFormScreen() {
               alana panel adresi girilmişti). Eklenti yakalamalarında bu form hiç
               kullanılmadığı için uyarı orada görünmez. */}
           {form.url.trim() !== '' && !isSupportedSourceUrl(form.url.trim()) ? (
-            <p className="mt-1 text-xs text-amber-700">
+            <p className="mt-1 text-xs text-warn">
               Bu bir 1688 ürün linki gibi görünmüyor — firmanın ürünü bulacağı adres bu alana girilmelidir.
             </p>
           ) : null}
@@ -372,7 +372,7 @@ export default function ProductFormScreen() {
         </Field>
 
         {media.mode === 'hotlink' && (
-          <p className="badge bg-amber-50 text-amber-800 ring-amber-200">
+          <p className="badge bg-warn-soft text-warn ring-warn/20">
             Arşivleme kapalı — görsel sunucuya indirilmez, 1688 bağlantısından gösterilir
           </p>
         )}
@@ -389,10 +389,10 @@ export default function ProductFormScreen() {
           <textarea className="field-input min-h-20 py-2" value={form.note} onChange={(event) => set('note', event.target.value)} />
         </Field>
 
-        {error && <p className="text-sm font-medium text-rose-700">{error}</p>}
+        {error && <p className="text-sm font-medium text-err">{error}</p>}
 
         {duplicate && (
-          <div className="card flex flex-col gap-3 border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 sm:flex-row sm:items-center sm:justify-between">
+          <div className="card flex flex-col gap-3 border-warn/30 bg-warn-soft p-4 text-sm text-warn sm:flex-row sm:items-center sm:justify-between">
             <span className="flex items-start gap-2">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
               {duplicate}

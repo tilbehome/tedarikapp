@@ -56,14 +56,14 @@ export default function TrashScreen() {
         <div className="space-y-6">
           {data.lists.length > 0 && (
             <section>
-              <h2 className="mb-2 text-sm font-semibold text-slate-700">Listeler</h2>
-              <ul className="card divide-y divide-slate-100">
+              <h2 className="mb-2 text-sm font-semibold text-ink-2">Listeler</h2>
+              <ul className="card divide-y divide-line-soft">
                 {data.lists.map((entry) => (
                   <li key={`list-${entry.id}`} className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       <span className="min-w-0 flex-1">
                         <span className="block truncate font-medium">{entry.name}</span>
-                        <span className="block text-xs text-slate-500">
+                        <span className="block text-xs text-ink-3">
                           {dateTime(entry.deleted_at)} · {count(entry.days_left)} gün kaldı
                         </span>
                       </span>
@@ -83,14 +83,14 @@ export default function TrashScreen() {
 
           {data.products.length > 0 && (
             <section>
-              <h2 className="mb-2 text-sm font-semibold text-slate-700">Ürünler</h2>
-              <ul className="card divide-y divide-slate-100">
+              <h2 className="mb-2 text-sm font-semibold text-ink-2">Ürünler</h2>
+              <ul className="card divide-y divide-line-soft">
                 {data.products.map((entry) => (
                   <li key={`product-${entry.id}`} className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       <span className="min-w-0 flex-1">
                         <span className="block truncate font-medium">{entry.name}</span>
-                        <span className="block text-xs text-slate-500">
+                        <span className="block text-xs text-ink-3">
                           {entry.list_name}
                           {entry.list_deleted ? ' (listesi de silinmiş)' : ''} · {count(entry.days_left)} gün kaldı
                         </span>
@@ -101,7 +101,7 @@ export default function TrashScreen() {
                       />
                     </div>
                     {entry.list_deleted && (
-                      <p className="mt-2 text-xs text-amber-700">
+                      <p className="mt-2 text-xs text-warn">
                         Bu ürünü geri almak için önce listesini geri alman gerekir.
                       </p>
                     )}
@@ -124,7 +124,7 @@ function Actions({ onRestore, onPurge }: { onRestore: () => void; onPurge: () =>
     <span className="flex shrink-0 gap-1">
       <button
         type="button"
-        className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-brand-700"
+        className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-navy"
         aria-label="Geri al"
         onClick={onRestore}
       >
@@ -132,7 +132,7 @@ function Actions({ onRestore, onPurge }: { onRestore: () => void; onPurge: () =>
       </button>
       <button
         type="button"
-        className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-rose-600"
+        className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-err"
         aria-label="Kalıcı sil"
         onClick={onPurge}
       >
@@ -144,7 +144,7 @@ function Actions({ onRestore, onPurge }: { onRestore: () => void; onPurge: () =>
 
 function Confirm({ onCancel, onConfirm }: { onCancel: () => void; onConfirm: () => void }) {
   return (
-    <div className="mt-2 flex flex-col gap-2 rounded-xl bg-rose-50 p-3 text-sm text-rose-900 sm:flex-row sm:items-center sm:justify-between">
+    <div className="mt-2 flex flex-col gap-2 rounded-xl bg-err-soft p-3 text-sm text-err sm:flex-row sm:items-center sm:justify-between">
       <span>Kalıcı olarak silinecek, bu işlem geri alınamaz.</span>
       <span className="flex gap-2">
         <button type="button" className="btn-ghost" onClick={onCancel}>

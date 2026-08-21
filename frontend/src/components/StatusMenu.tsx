@@ -52,12 +52,12 @@ export default function StatusMenu({
         onClick={() => setOpen((value) => !value)}
       >
         <StatusBadge status={status} />
-        <ChevronDown className="h-4 w-4 text-slate-400" aria-hidden />
+        <ChevronDown className="h-4 w-4 text-ink-3" aria-hidden />
       </button>
 
       {open && (
         <ul
-          className="absolute right-0 z-20 mt-1 min-w-44 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg"
+          className="absolute right-0 z-20 mt-1 min-w-44 overflow-hidden rounded-xl border border-line bg-surface py-1 shadow-lg"
           role="listbox"
         >
           {allowed.map((next) => (
@@ -66,7 +66,7 @@ export default function StatusMenu({
                 type="button"
                 role="option"
                 aria-selected={false}
-                className="flex min-h-11 w-full items-center px-3 text-left text-sm hover:bg-slate-50"
+                className="flex min-h-11 w-full items-center px-3 text-left text-sm hover:bg-g50"
                 onClick={() => {
                   setOpen(false);
                   onChange(next);

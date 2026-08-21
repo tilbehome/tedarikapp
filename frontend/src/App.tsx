@@ -5,7 +5,7 @@ import { system as systemApi } from './api/endpoints';
 import { messageOf } from './lib/useAsync';
 import { useSession } from './store/session';
 import { useReference } from './store/reference';
-import Layout from './components/Layout';
+import Kabuk from './components/kabuk/Kabuk';
 import { Spinner } from './components/ui';
 import LoginScreen from './screens/LoginScreen';
 import HomeScreen from './screens/HomeScreen';
@@ -17,6 +17,8 @@ import CategoriesScreen from './screens/CategoriesScreen';
 import InboxScreen from './screens/InboxScreen';
 import TrashScreen from './screens/TrashScreen';
 import ActivityScreen from './screens/ActivityScreen';
+import ArsivScreen from './screens/ArsivScreen';
+import BilesenlerScreen from './screens/BilesenlerScreen';
 
 /**
  * Rota haritası ve oturum koruması.
@@ -77,7 +79,7 @@ export default function App() {
 
   return (
     <Routes>
-      <Route element={<Layout />}>
+      <Route element={<Kabuk />}>
         <Route path="/" element={<HomeScreen />} />
         <Route path="/listeler" element={<ListsScreen />} />
         <Route path="/listeler/:id" element={<ListDetailScreen />} />
@@ -88,6 +90,10 @@ export default function App() {
         <Route path="/gelen-kutusu" element={<InboxScreen />} />
         <Route path="/cop-kutusu" element={<TrashScreen />} />
         <Route path="/aktivite" element={<ActivityScreen />} />
+        {/* İE#16 D1.3: bileşen kitaplığı örnek sayfası — menüde yok, komut paletinden açılır. */}
+        <Route path="/bilesenler" element={<BilesenlerScreen />} />
+        {/* Arşiv, çöp kutusu ve aktiviteyi toplayan kapı ekranı (kanon §3). */}
+        <Route path="/arsiv" element={<ArsivScreen />} />
         <Route path="/giris" element={<Navigate to="/" replace />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
@@ -120,15 +126,15 @@ function MigrationPendingScreen({ onDone }: { onDone: () => void }) {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-50 p-6">
+    <main className="flex min-h-screen items-center justify-center bg-g50 p-6">
       <div className="card max-w-md p-6 text-center">
         <h1 className="text-lg font-semibold">Güncelleme tamamlanmalı</h1>
-        <p className="mt-2 text-sm text-slate-600">
+        <p className="mt-2 text-sm text-ink-2">
           Yeni sürüm veritabanı güncellemesi bekliyor. Veri ekranları, güncelleme
           tamamlanana kadar güvenlik için kapalı tutulur — bu, verinizi yarım şemayla
           çalışmaktan korur.
         </p>
-        {error ? <p className="mt-3 text-sm text-red-600">{error}</p> : null}
+        {error ? <p className="mt-3 text-sm text-err">{error}</p> : null}
         <button type="button" className="btn-primary mt-4" disabled={busy} onClick={() => void run()}>
           {busy ? 'Güncelleniyor…' : 'Güncellemeyi tamamla'}
         </button>

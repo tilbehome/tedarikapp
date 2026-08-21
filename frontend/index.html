@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="color-scheme" content="light" />
-    <meta name="theme-color" content="#1d4ed8" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#0F2557" />
     <!-- Panel oturum arkasındadır; arama motorlarına açılmaz. -->
     <meta name="robots" content="noindex, nofollow" />
 
@@ -15,6 +15,13 @@
     <meta name="apple-mobile-web-app-title" content="Tedarikapp" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+
+    <!-- İE#16 D1.2 — FONTLAR SELF-HOST: Inter (Latin) + Noto Sans SC (CJK dilimli).
+         Google'a DIŞ İSTEK YOK (K45). Dosyalar /public/fonts altındadır ve
+         paylaşım sayfasıyla AYNI kaynağı kullanır — tek font seti, tek indirme. -->
+    <link rel="stylesheet" href="/fonts/inter.css" />
+    <link rel="stylesheet" href="/fonts/noto-sans-sc.css" />
+    <link rel="preload" as="font" type="font/woff2" href="/fonts/inter-400-latin-ext.woff2" crossorigin />
 
     <link rel="icon" type="image/svg+xml" href="/panel/favicon.svg" />
     <link rel="apple-touch-icon" sizes="180x180" href="/panel/apple-touch-icon.png" />

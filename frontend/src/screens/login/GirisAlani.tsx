@@ -34,29 +34,29 @@ export function GirisAlani({
   return (
     <div>
       <div
-        className={`group rounded-xl border bg-white px-3.5 py-2 transition-colors focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/25 ${
-          hata ? 'border-rose-300' : 'border-slate-200'
+        className={`group rounded-xl border bg-surface px-3.5 py-2 transition-colors focus-within:border-blue focus-within:ring-2 focus-within:ring-blue/25 ${
+          hata ? 'border-err/40' : 'border-line'
         }`}
       >
-        <label htmlFor={id} className="block text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
+        <label htmlFor={id} className="block text-[10px] font-bold uppercase tracking-[0.14em] text-ink-3">
           {label}
         </label>
         <div className="flex items-center gap-2">
           <input
             id={id}
             type={type}
-            className="min-h-8 w-full bg-transparent text-[15px] text-slate-900 outline-none placeholder:text-slate-300"
+            className="min-h-8 w-full bg-transparent text-[15px] text-ink outline-none placeholder:text-g300"
             value={value}
             onChange={(event) => onChange(event.target.value)}
             autoComplete={autoComplete}
             autoFocus={autoFocus}
             required
           />
-          {gecerli ? <Check className="h-4 w-4 shrink-0 text-emerald-500" aria-label="Geçerli" /> : null}
+          {gecerli ? <Check className="h-4 w-4 shrink-0 text-ok" aria-label="Geçerli" /> : null}
           {sag}
         </div>
       </div>
-      {hata ? <p className="mt-1 text-xs font-medium text-rose-700">{hata}</p> : null}
+      {hata ? <p className="mt-1 text-xs font-medium text-err">{hata}</p> : null}
     </div>
   );
 }
@@ -84,7 +84,7 @@ export function SifreAlani({
       sag={
         <button
           type="button"
-          className="shrink-0 text-slate-400 transition-colors hover:text-slate-600"
+          className="shrink-0 text-ink-3 transition-colors hover:text-ink-2"
           onClick={() => setAcik((value) => !value)}
           aria-label={acik ? 'Şifreyi gizle' : 'Şifreyi göster'}
         >
@@ -106,15 +106,15 @@ export function AnahtarDugmesi({
   children: ReactNode;
 }) {
   return (
-    <label className="flex min-h-11 cursor-pointer items-center gap-2.5 text-sm text-slate-600">
+    <label className="flex min-h-11 cursor-pointer items-center gap-2.5 text-sm text-ink-2">
       <input type="checkbox" className="sr-only" checked={checked} onChange={(event) => onChange(event.target.checked)} />
       <span
         aria-hidden
-        className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${checked ? 'bg-lacivert-900' : 'bg-slate-300'}`}
+        className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${checked ? 'bg-navy' : 'bg-g300'}`}
       >
         <span
           className={`absolute top-0.5 h-4 w-4 rounded-full transition-all ${
-            checked ? 'left-4.5 bg-altin-500' : 'left-0.5 bg-white'
+            checked ? 'left-4.5 bg-gold' : 'left-0.5 bg-surface'
           }`}
         />
       </span>
@@ -129,10 +129,10 @@ export function PaneleGirDugmesi({ busy, label }: { busy: boolean; label: string
     <button
       type="submit"
       disabled={busy}
-      className="btn w-full bg-lacivert-900 text-white hover:bg-lacivert-700 disabled:opacity-60"
+      className="btn w-full bg-navy text-white hover:bg-navy-2 disabled:opacity-60"
     >
       {label}
-      {!busy ? <ArrowRight className="h-4 w-4 text-altin-400" aria-hidden /> : null}
+      {!busy ? <ArrowRight className="h-4 w-4 text-gold" aria-hidden /> : null}
     </button>
   );
 }

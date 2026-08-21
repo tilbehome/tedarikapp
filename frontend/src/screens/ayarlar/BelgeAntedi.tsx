@@ -47,8 +47,8 @@ export default function BelgeAntedi({ mevcut, onSaved }: { mevcut: DocumentHeade
 
   return (
     <section className="card mb-4 p-4">
-      <h2 className="mb-1 text-sm font-semibold text-slate-700">Belge antedi</h2>
-      <p className="mb-3 text-xs text-slate-500">
+      <h2 className="mb-1 text-sm font-semibold text-ink-2">Belge antedi</h2>
+      <p className="mb-3 text-xs text-ink-3">
         Excel/PDF çıktılarının ve paylaşım sayfasının üst bandında görünür. Boş bıraktığınız alan basılmaz.
       </p>
 
@@ -72,7 +72,7 @@ export default function BelgeAntedi({ mevcut, onSaved }: { mevcut: DocumentHeade
         </Field>
 
         <div className="sm:col-span-2">
-          <p className="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">
+          <p className="rounded-lg bg-g50 px-3 py-2 text-xs text-ink-2">
             Önizleme: <span className="font-medium">{onizleme === '' ? '(antet boş — yalnız liste bilgisi basılır)' : onizleme}</span>
           </p>
         </div>

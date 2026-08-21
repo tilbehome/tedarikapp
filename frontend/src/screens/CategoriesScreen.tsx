@@ -68,7 +68,7 @@ export default function CategoriesScreen() {
 
   return (
     <>
-      <Link to="/ayarlar" className="mb-3 inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-800">
+      <Link to="/ayarlar" className="mb-3 inline-flex items-center gap-1 text-sm text-ink-3 hover:text-ink">
         <ArrowLeft className="h-4 w-4" aria-hidden />
         Ayarlar
       </Link>
@@ -94,7 +94,7 @@ export default function CategoriesScreen() {
       ) : items.length === 0 ? (
         <EmptyState title="Henüz kategori yok" description="İlk kategoriyi yukarıdaki alandan ekleyebilirsin." />
       ) : (
-        <ul className="card divide-y divide-slate-100">
+        <ul className="card divide-y divide-line-soft">
           {items.map((category) => (
             <li key={category.id} className="flex items-center gap-3 px-4 py-3">
               {editingId === category.id ? (
@@ -108,7 +108,7 @@ export default function CategoriesScreen() {
                   />
                   <button
                     type="button"
-                    className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-emerald-700"
+                    className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-ok"
                     aria-label="Kaydet"
                     onClick={() => void rename(category.id)}
                   >
@@ -116,7 +116,7 @@ export default function CategoriesScreen() {
                   </button>
                   <button
                     type="button"
-                    className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-slate-500"
+                    className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-ink-3"
                     aria-label="Vazgeç"
                     onClick={() => setEditingId(null)}
                   >
@@ -127,11 +127,11 @@ export default function CategoriesScreen() {
                 <>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-medium">{category.name}</span>
-                    <span className="block text-xs text-slate-500">{count(category.product_count)} üründe kullanılıyor</span>
+                    <span className="block text-xs text-ink-3">{count(category.product_count)} üründe kullanılıyor</span>
                   </span>
                   <button
                     type="button"
-                    className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-slate-500"
+                    className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-ink-3"
                     aria-label="Yeniden adlandır"
                     onClick={() => {
                       setEditingId(category.id);
@@ -142,7 +142,7 @@ export default function CategoriesScreen() {
                   </button>
                   <button
                     type="button"
-                    className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-rose-600"
+                    className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-err"
                     aria-label="Sil"
                     onClick={() => void remove(category.id)}
                   >

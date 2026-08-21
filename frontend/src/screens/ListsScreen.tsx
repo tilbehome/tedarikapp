@@ -77,7 +77,7 @@ export default function ListsScreen() {
       )}
 
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="flex overflow-hidden rounded-xl border border-slate-200 bg-white" role="tablist">
+        <div className="flex overflow-hidden rounded-xl border border-line bg-surface" role="tablist">
           {tabs.map((tab) => (
             <button
               key={tab}
@@ -85,7 +85,7 @@ export default function ListsScreen() {
               role="tab"
               aria-selected={visibility === tab}
               className={`min-h-11 flex-1 px-4 text-sm font-semibold sm:flex-none ${
-                visibility === tab ? 'bg-brand-600 text-white' : 'text-slate-600 hover:bg-slate-50'
+                visibility === tab ? 'bg-navy text-white' : 'text-ink-2 hover:bg-g50'
               }`}
               onClick={() => setVisibility(tab)}
             >
@@ -95,7 +95,7 @@ export default function ListsScreen() {
         </div>
 
         <label className="relative flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-3" aria-hidden />
           <input
             className="field-input pl-9"
             placeholder="Liste veya tedarikçi ara"
@@ -130,7 +130,7 @@ export default function ListsScreen() {
         <div className="space-y-6">
           {[...groups.entries()].map(([period, group]) => (
             <section key={period}>
-              <h2 className="mb-2 text-sm font-semibold text-slate-500">{period}</h2>
+              <h2 className="mb-2 text-sm font-semibold text-ink-3">{period}</h2>
               <ul className="space-y-3">
                 {group.map((list) => (
                   <li key={list.id}>
@@ -180,15 +180,15 @@ function ListCard({
             <span className="truncate font-semibold">{list.name}</span>
             <ListStatusBadge status={list.status} />
             {list.is_export_stale && list.last_export && (
-              <span className="badge bg-amber-50 text-amber-800 ring-amber-200">Çıktı güncel değil</span>
+              <span className="badge bg-warn-soft text-warn ring-warn/20">Çıktı güncel değil</span>
             )}
           </div>
-          <div className="mt-1 text-xs text-slate-500">
+          <div className="mt-1 text-xs text-ink-3">
             {list.supplier_name ? `${list.supplier_name} · ` : ''}
             {count(list.product_count)} ürün · Toplam ₺{money(list.totals.yuan_tl)}
           </div>
         </Link>
-        <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-slate-400" aria-hidden />
+        <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-ink-3" aria-hidden />
       </div>
 
       <Progress list={list} />
@@ -216,14 +216,14 @@ function ListCard({
             Aktife al
           </button>
         )}
-        <button type="button" className="btn-ghost text-rose-700" onClick={() => setConfirming(true)}>
+        <button type="button" className="btn-ghost text-err" onClick={() => setConfirming(true)}>
           <Trash2 className="h-4 w-4" aria-hidden />
           Sil
         </button>
       </div>
 
       {confirming && (
-        <div className="mt-3 flex flex-col gap-2 rounded-xl bg-amber-50 p-3 text-sm text-amber-900 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-3 flex flex-col gap-2 rounded-xl bg-warn-soft p-3 text-sm text-warn sm:flex-row sm:items-center sm:justify-between">
           <span>Liste çöp kutusuna taşınacak. Emin misin?</span>
           <div className="flex gap-2">
             <button type="button" className="btn-ghost" onClick={() => setConfirming(false)}>
@@ -249,20 +249,20 @@ function ListCard({
 /** İlerleme çubuğu: hangi üründen kaç tane hangi durumda (docs/09 §1). */
 function Progress({ list }: { list: SupplyList }) {
   const segments = [
-    { key: 'received', tone: 'bg-emerald-500', value: list.progress.received ?? 0 },
-    { key: 'in_transit', tone: 'bg-sky-500', value: list.progress.in_transit ?? 0 },
-    { key: 'ordered', tone: 'bg-amber-500', value: list.progress.ordered ?? 0 },
-    { key: 'to_order', tone: 'bg-slate-300', value: list.progress.to_order ?? 0 },
-    { key: 'cancelled', tone: 'bg-rose-400', value: list.progress.cancelled ?? 0 },
+    { key: 'received', tone: 'bg-ok', value: list.progress.received ?? 0 },
+    { key: 'in_transit', tone: 'bg-info', value: list.progress.in_transit ?? 0 },
+    { key: 'ordered', tone: 'bg-warn', value: list.progress.ordered ?? 0 },
+    { key: 'to_order', tone: 'bg-g300', value: list.progress.to_order ?? 0 },
+    { key: 'cancelled', tone: 'bg-err', value: list.progress.cancelled ?? 0 },
   ].filter((segment) => segment.value > 0);
 
   if (list.product_count === 0) {
-    return <p className="mt-3 text-xs text-slate-400">Bu listede henüz ürün yok.</p>;
+    return <p className="mt-3 text-xs text-ink-3">Bu listede henüz ürün yok.</p>;
   }
 
   return (
     <div className="mt-3">
-      <div className="flex h-2 overflow-hidden rounded-full bg-slate-100">
+      <div className="flex h-2 overflow-hidden rounded-full bg-g100">
         {segments.map((segment) => (
           <span
             key={segment.key}
@@ -272,7 +272,7 @@ function Progress({ list }: { list: SupplyList }) {
           />
         ))}
       </div>
-      <div className="mt-1 text-xs text-slate-500">
+      <div className="mt-1 text-xs text-ink-3">
         {count(list.progress.received ?? 0)} geldi · {count(list.progress.in_transit ?? 0)} yolda ·{' '}
         {count(list.progress.to_order ?? 0)} verilecek
       </div>
@@ -318,7 +318,7 @@ function CreateForm({ onCancel, onCreated }: { onCancel: () => void; onCreated: 
           <input className="field-input" value={supplier} onChange={(event) => setSupplier(event.target.value)} />
         </Field>
       </div>
-      {error && <p className="text-sm font-medium text-rose-700">{error}</p>}
+      {error && <p className="text-sm font-medium text-err">{error}</p>}
       <div className="flex gap-2">
         <button type="submit" className="btn-primary" disabled={busy}>
           {busy ? 'Oluşturuluyor…' : 'Oluştur'}
