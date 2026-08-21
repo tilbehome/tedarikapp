@@ -42,10 +42,12 @@ final class ProductFacts
 
     /**
      * @param array<string, mixed> $product ListPresenter::product çıktısı
+     * @param \App\Services\Translation\ValueSet|null $values İE#14 A3 — DEĞERLER de
+     *                                                          sözlükten geçer (灰色 → Gri)
      *
      * @return list<array{0: string, 1: string, 2: string|null}> [TR, 中文, değer|null]
      */
-    public static function build(array $product): array
+    public static function build(array $product, ?\App\Services\Translation\ValueSet $values = null): array
     {
         $raw = self::rawAttributes($product['raw_attributes'] ?? null);
 
@@ -56,6 +58,8 @@ final class ProductFacts
                 if (isset($raw[$aday]) && $raw[$aday] !== '') {
                     $deger = self::anlamli($raw[$aday]);
                     if ($deger !== null) {
+                        // İE#14 A3: değer de A2 hattının belirlenimci katmanından geçer.
+                        $deger = $values !== null ? $values->value($deger) : $deger;
                         break;
                     }
                 }
@@ -64,8 +68,10 @@ final class ProductFacts
         }
 
         // Ürün kolonlarından gelen kesin bilgiler — RAW'a bakmaya gerek yok.
-        $out[] = ['Koli içi', '装箱', self::metin($product['units_per_carton'] ?? null)];
-        $out[] = ['İlan no', '编号', self::metin($product['external_id'] ?? null)];
+        // Koli içi SAYIDIR: "20" anlamsız değildir — A5 elemesi buraya UYGULANMAZ,
+        // yalnız RAW'dan gelen model/stok kodu adaylarına uygulanır.
+        $out[] = ['Koli içi', '装箱', self::sayi($product['units_per_carton'] ?? null)];
+        $out[] = ['İlan no', '编号', self::sayi($product['external_id'] ?? null)];
         $out[] = ['Kaynak', '来源', self::metin($product['platform'] ?? null)];
         $out[] = [
             'Video',
@@ -74,6 +80,32 @@ final class ProductFacts
         ];
 
         return $out;
+    }
+
+    /**
+     * İE#14 A6 — DOLU ALANLAR ÖNCE, boşlar ayrı kümede.
+     *
+     * Detay paneli 16 alanı sırayla basıp yarısını "—" ile dolduruyordu; göz dolu
+     * bilgiyi bulamıyordu. Artık dolu alanlar üstte, boşlar "Eksik bilgileri göster (N)"
+     * katlamasının içinde. Hepsi boşsa bölüm HİÇ BASILMAZ (çağıran `dolu === []` görür).
+     *
+     * @param array<string, mixed> $product
+     *
+     * @return array{dolu: list<array{0: string, 1: string, 2: string}>, bos: list<array{0: string, 1: string}>}
+     */
+    public static function grouped(array $product, ?\App\Services\Translation\ValueSet $values = null): array
+    {
+        $dolu = [];
+        $bos = [];
+        foreach (self::build($product, $values) as [$tr, $cjk, $deger]) {
+            if ($deger === null || $deger === '') {
+                $bos[] = [$tr, $cjk];
+                continue;
+            }
+            $dolu[] = [$tr, $cjk, $deger];
+        }
+
+        return ['dolu' => $dolu, 'bos' => $bos];
     }
 
     /**
@@ -103,6 +135,18 @@ final class ProductFacts
         }
 
         return $out;
+    }
+
+    /** Sayısal kolon değeri: olduğu gibi basılır (anlamsızlık elemesi YOK). */
+    private static function sayi(mixed $deger): ?string
+    {
+        if ($deger === null || $deger === '' || !is_scalar($deger)) {
+            return null;
+        }
+
+        $metin = trim((string) $deger);
+
+        return $metin === '' ? null : $metin;
     }
 
     private static function metin(mixed $deger): ?string

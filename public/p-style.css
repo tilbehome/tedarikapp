@@ -281,3 +281,26 @@ td.not-hucre .val { font-style: italic; }
   /* Baskıda ölçekleme UYGULANMAZ — tarayıcı "sığdır" ayarı bozulmasın. */
   body { zoom: 1 !important; transform: none !important; }
 }
+
+/*
+ * İE#14 A6 — EKSİK BİLGİ KATLAMASI ve A3 varyasyon "+N seçenek".
+ * <details> öğesi kullanılır: açılıp kapanmayı tarayıcı yapar, satır içi script
+ * gerekmez (K51 CSP korunur). Yazdırmada katlama AÇIK basılır — kâğıtta tıklanacak
+ * bir şey yoktur, bilgi görünsün.
+ */
+.eks { margin-top:10px; }
+.eks > summary { cursor:pointer; list-style:none; display:inline-flex; align-items:center; gap:6px;
+  font-size:11.5px; font-weight:600; letter-spacing:.02em; color:var(--t3);
+  border:1px solid var(--ln2); border-radius:8px; padding:5px 10px; background:#FBFCFE; }
+.eks > summary::-webkit-details-marker { display:none; }
+.eks > summary::after { content:'⌄'; font-size:13px; line-height:1; transform:translateY(-1px); }
+.eks[open] > summary::after { content:'⌃'; transform:translateY(1px); }
+.eks > summary:hover { color:var(--t2); border-color:var(--ln); }
+.eks > summary:focus-visible { outline:2px solid var(--ac); outline-offset:2px; }
+.eks > .sg, .eks > .vr { margin-top:10px; 
+  /* İE#14 A6: kâğıtta katlama diye bir şey yoktur — eksik alan ızgarası ve
+     "+N seçenek" listesi baskıda AÇIK basılır, düğme gizlenir. */
+  .eks > summary { display: none !important; }
+  .eks > .sg { display: grid !important; margin-top: 0 !important; }
+  .eks > .vr { display: block !important; margin-top: 0 !important; }
+}

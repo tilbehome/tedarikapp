@@ -27,6 +27,7 @@ use App\Core\Logger;
 use App\Core\SystemClock;
 use App\Services\BackupOffsite;
 use App\Services\BackupService;
+use App\Services\CronLog;
 use App\Services\MaintenanceTasks;
 use App\Services\NightlyRunner;
 
@@ -80,7 +81,12 @@ try {
         return $result['ozet'];
     };
 
+    $baslangic = microtime(true);
     $sonuc = (new NightlyRunner())->run($yedek, $bakim);
+
+    // İE#14 D1: koşunun GÖRÜNÜR izi — cron hiç tetiklenmediyse bu dosya da
+    // ilerlemez; panel "Son yedek: X saat önce" uyarısını buradan/yedek yaşından verir.
+    (new CronLog($basePath))->write($now, $sonuc['ok'], $sonuc['summary'], microtime(true) - $baslangic);
 
     // TEK birleşik özet satırı — seviye Info'ya sabitlenmiş kayıtçı (LOG_LEVEL=warning
     // olsa bile gecelik koşunun izi app_logs'ta durmalı).

@@ -40,6 +40,10 @@ final class SharePageV4Test extends AuthTestCase
             'price_target_try' => '999.00',
             'note' => 'Kutu logolu olacak',
             'url' => 'https://detail.1688.com/offer/833438962156.html',
+            // İE#14 A6: iki alan DOLU, kalanı boş — katlama davranışı böyle sınanır.
+            'platform' => '1688',
+            'external_id' => '833438962156',
+            'units_per_carton' => 20,
         ]);
         $iptal = (int) $this->json($this->write('POST', '/api/lists/' . $listId . '/products', [
             'name' => 'İptal edilen ürün',
@@ -125,10 +129,46 @@ final class SharePageV4Test extends AuthTestCase
 
         self::assertStringContainsString('ÜRÜN BİLGİLERİ', $html);
         self::assertStringContainsString('双层不锈钢保温饭盒500ml', $html, 'Orijinal Çince başlık görünür.');
-        self::assertStringContainsString('class="yok">—<', $html, 'Veri olmayan alan — ile basılır.');
         self::assertStringContainsString('Not: Kutu logolu olacak', $html);
         // TEDARİK PUANI verisi yok → bölüm hiç basılmaz (V3-A'ya kadar).
         self::assertStringNotContainsString('TEDARİK PUANI', $html);
+    }
+
+    /**
+     * İE#14 A6 — DOLU ALANLAR ÜSTTE, boşlar katlamanın içinde.
+     *
+     * Eski davranış: 17 alan sırayla basılıyor, yarısı "—" oluyordu; göz dolu
+     * bilgiyi bulamıyordu. Yeni kural: dolu alanlar ızgarada, boşlar
+     * "Eksik bilgileri göster (N)" katlamasında — ve katlama SATIR İÇİ SCRIPT
+     * kullanmadan (<details>) açılır, CSP korunur (K51).
+     */
+    public function testEksikAlanlarKatlamaninIcinde(): void
+    {
+        $html = $this->sayfa();
+
+        self::assertMatchesRegularExpression(
+            '/Eksik bilgileri göster \((\d+)\)/u',
+            $html,
+            'Boş alanlar sayıyla katlanmalı.',
+        );
+        self::assertStringContainsString('<details class="eks">', $html);
+        self::assertStringNotContainsString('onclick', $html, 'Katlama satır içi script kullanmaz (K51).');
+
+        // Dolu alan ızgarada, boş alan katlamanın İÇİNDE olmalı.
+        $katlamaBasi = strpos($html, 'Eksik bilgileri göster');
+        $koliIci = strpos($html, 'Koli içi');
+        self::assertIsInt($katlamaBasi);
+        self::assertIsInt($koliIci);
+        self::assertLessThan($katlamaBasi, $koliIci, 'Dolu alan katlamadan ÖNCE basılmalı.');
+        self::assertGreaterThan($katlamaBasi, (int) strpos($html, 'Garanti'), 'Boş alan katlamanın içinde.');
+    }
+
+    /**
+     * İE#14 A4 — veri yoksa alan HİÇ BASILMAZ: "Kategorisiz" damgası kalktı.
+     */
+    public function testKategorisizYazisiBasilmaz(): void
+    {
+        self::assertStringNotContainsString('Kategorisiz', $this->sayfa());
     }
 
     /**

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Services\Share;
 
 use App\Services\Export\TemplateV2;
+use App\Services\ProductDetails;
+use App\Services\Translation\ValueSet;
 
 /**
  * Paylaşım sayfası HTML'i (İE#10 Blok 4 · İE#13 F4 TAM YENİLEME).
@@ -27,6 +29,14 @@ use App\Services\Export\TemplateV2;
  */
 final class SharePage
 {
+    /**
+     * İE#14 A3: varyasyon ve öznitelik DEĞERLERİ sözlükten geçirilir; sözlük
+     * verilmezse (eski çağrılar, testler) ham değerler basılır — davranış bozulmaz.
+     */
+    public function __construct(private readonly ?ValueSet $values = null)
+    {
+    }
+
     /**
      * @param array<string, mixed> $list ListPresenter::list çıktısı
      * @param list<array<string, mixed>> $products ListPresenter::productsOf çıktısı
@@ -230,10 +240,10 @@ final class SharePage
         $rozet = ltrim($rozet, '● ');
         $pill = $statusKey === 'cancelled' ? 'p-no' : ($statusKey === 'to_order' ? 'p-wt' : 'p-ok');
 
-        $kategori = 'Kategorisiz';
-        if ($product['category_id'] !== null) {
-            $kategori = $categoryNames[(int) $product['category_id']] ?? 'Kategorisiz';
-        }
+        // İE#14 A4: kategori panelden ya da kırıntı yolundan gelir; hiçbiri yoksa
+        // hücre BOŞ kalır — "Kategorisiz" damgası basılmaz.
+        $kategori = ProductDetails::kategori($product, $categoryNames, $this->values);
+        $detay = ProductDetails::detay($product, $this->values);
 
         $gorsel = $galeri === []
             ? '<span class="pi"><span class="yok-gorsel">görsel<br>yok</span></span>'
@@ -259,14 +269,14 @@ final class SharePage
             <td class="c" style="font-weight:700;color:var(--t3)">' . $sira . '</td>
             <td><div class="prod">' . $gorsel . '<div><div class="pno">№ ' . $sira . '</div>'
                 . $adHtml . $orijinal . '</div></div></td>
-            <td class="mut"><span class="lab">DETAYLAR</span><span class="val">' . $e($product['detail'] ?? '—') . '</span></td>
-            <td class="mut c"><span class="lab">VARYASYON</span><span class="val">' . $e($this->varyasyonMetni($product) ?? '—') . '</span></td>
-            <td class="mut c"><span class="lab">KATEGORİ</span><span class="val">' . $e($kategori) . '</span></td>
+            <td class="mut"><span class="lab">DETAYLAR</span><span class="val">' . $this->hucre($detay, $e) . '</span></td>
+            <td class="mut c"><span class="lab">VARYASYON</span><span class="val">' . $this->hucre($this->varyasyonMetni($product), $e) . '</span></td>
+            <td class="mut c"><span class="lab">KATEGORİ</span><span class="val">' . $this->hucre($kategori, $e) . '</span></td>
             <td class="c"><span class="lab">KAYNAK</span><span class="val"><span class="src">'
                 . $e(TemplateV2::platformLabel($product['platform'] ?? null)) . '</span></span></td>
             <td class="c"><span class="lab">DURUM</span><span class="val"><span class="pill ' . $pill . '">'
                 . '<span class="d"></span>' . $e($rozet) . '</span></span></td>
-            <td class="mut c not-hucre"><span class="lab">NOT</span><span class="val">' . $e($product['note'] ?? '—') . '</span></td>
+            <td class="mut c not-hucre"><span class="lab">NOT</span><span class="val">' . $this->hucre($product['note'] ?? null, $e) . '</span></td>
             <td class="c"><span class="lab">MİKTAR</span><span class="val"><b>' . $e($product['qty']) . '</b></span></td>
             <td class="n"><span class="lab">VİTRİN FİYATI</span><span class="val">¥ ' . $e($product['price_yuan']) . '</span></td>
             <td class="n"><span class="lab">₺ KARŞILIĞI</span><span class="val">₺ ' . $e($product['price_yuan_tl']) . '</span></td>
@@ -290,23 +300,54 @@ final class SharePage
      */
     private function detaySatiri(array $product, int $galeriIndex, array $galeri, callable $e): string
     {
-        $izgara = '';
-        foreach (ProductFacts::build($product) as [$tr, $cjk, $deger]) {
-            $izgara .= '<div><b>' . $e($tr) . ' <span class="zh">' . $e($cjk) . '</span></b>'
-                . ($deger === null
-                    ? '<span class="yok">—</span>'
-                    : '<span>' . $e($deger) . '</span>')
-                . '</div>';
+        // İE#14 A6: dolu alanlar üstte; boşlar katlanmış "Eksik bilgileri göster (N)"
+        // içinde. Hepsi boşsa ÜRÜN BİLGİLERİ bölümü hiç basılmaz.
+        ['dolu' => $dolu, 'bos' => $bos] = ProductFacts::grouped($product, $this->values);
+
+        $bilgiler = '';
+        if ($dolu !== []) {
+            $izgara = '';
+            foreach ($dolu as [$tr, $cjk, $deger]) {
+                $izgara .= '<div><b>' . $e($tr) . ' <span class="zh">' . $e($cjk) . '</span></b>'
+                    . '<span>' . $e($deger) . '</span></div>';
+            }
+
+            $eksik = '';
+            if ($bos !== []) {
+                $eksikIzgara = '';
+                foreach ($bos as [$tr, $cjk]) {
+                    $eksikIzgara .= '<div><b>' . $e($tr) . ' <span class="zh">' . $e($cjk) . '</span></b>'
+                        . '<span class="yok">—</span></div>';
+                }
+                // <details>: satır içi script YOK — açılır davranış tarayıcının kendisi (K51 CSP).
+                $eksik = '<details class="eks"><summary>Eksik bilgileri göster (' . count($bos) . ')</summary>'
+                    . '<div class="sg">' . $eksikIzgara . '</div></details>';
+            }
+
+            $bilgiler = '<div>
+                <div class="dh">ÜRÜN BİLGİLERİ <span class="zh">商品属性</span></div>
+                <div class="sg">' . $izgara . '</div>' . $eksik . '
+            </div>';
         }
 
+        // İE#14 A3: değerler sözlükten geçer; arayüzde ilk 3 + "+N seçenek" (açılır).
         $varyasyonlar = $this->varyasyonListesi($product);
         $sag = '';
         if ($varyasyonlar !== []) {
+            $gorunen = array_slice($varyasyonlar, 0, ValueSet::LIMIT);
+            $gizli = array_slice($varyasyonlar, ValueSet::LIMIT, 40);
             $sag .= '<div class="dh">VARYASYONLAR <span class="zh">规格</span></div><div class="vr">';
-            foreach (array_slice($varyasyonlar, 0, 12) as $varyasyon) {
+            foreach ($gorunen as $varyasyon) {
                 $sag .= '<div><span>' . $e($varyasyon) . '</span><b></b></div>';
             }
             $sag .= '</div>';
+            if ($gizli !== []) {
+                $sag .= '<details class="eks"><summary>+' . count($gizli) . ' seçenek</summary><div class="vr">';
+                foreach ($gizli as $varyasyon) {
+                    $sag .= '<div><span>' . $e($varyasyon) . '</span><b></b></div>';
+                }
+                $sag .= '</div></details>';
+            }
         }
         if (is_string($product['note'] ?? null) && $product['note'] !== '') {
             $sag .= '<div class="nt">Not: ' . $e($product['note']) . '</div>';
@@ -324,13 +365,24 @@ final class SharePage
         }
 
         return '<tr class="dt"><td colspan="14"><div class="din">
-            <div>
-                <div class="dh">ÜRÜN BİLGİLERİ <span class="zh">商品属性</span></div>
-                <div class="sg">' . $izgara . '</div>
-            </div>
+            ' . $bilgiler . '
             <div class="sag">' . $sag . '</div>
             ' . $galeriHtml . '
         </div></td></tr>';
+    }
+
+    /**
+     * İE#14 A4: değer yoksa hücre BOŞ kalır — "—" bile basılmaz; boş sütun görsel
+     * gürültüdür. Mobil kart düzeninde etiket görünür kaldığı için boş bir işaret
+     * bırakılır, uydurma metin basılmaz.
+     *
+     * @param callable(mixed): string $e
+     */
+    private function hucre(mixed $deger, callable $e): string
+    {
+        $metin = is_scalar($deger) ? trim((string) $deger) : '';
+
+        return $metin === '' ? '<span class="yok"></span>' : $e($metin);
     }
 
     /**
@@ -423,7 +475,8 @@ final class SharePage
             }
         }
 
-        return $out;
+        // İE#14 A3: değerler A2 hattının belirlenimci katmanından geçer (灰色 → Gri).
+        return $this->values !== null ? $this->values->values($out) : $out;
     }
 
     /** @param array<string, mixed> $product */
@@ -433,8 +486,11 @@ final class SharePage
         if ($liste === []) {
             return null;
         }
-        $ilk = implode(' · ', array_slice($liste, 0, 2));
+        // İE#14 A3: belge/satır özeti ilk 3 + "… (N seçenek)".
+        $ilk = implode(' · ', array_slice($liste, 0, ValueSet::LIMIT));
 
-        return count($liste) > 2 ? $ilk . ' … (' . count($liste) . ')' : $ilk;
+        return count($liste) > ValueSet::LIMIT
+            ? $ilk . ' … (' . count($liste) . ' seçenek)'
+            : $ilk;
     }
 }

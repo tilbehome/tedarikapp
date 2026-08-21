@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Services\Export;
 
 use App\Services\ListPresenter;
+use App\Services\ProductDetails;
+use App\Services\Translation\ValueSet;
 
 /**
  * Export anlık görüntüsü (K25/K50 — İE#10 Blok 1).
@@ -21,8 +23,15 @@ final class ExportSnapshot
     /** 2: İE#13 Blok F — şablon v2 alanları (platform/ilan no/varyasyon/MOQ/kâr/kopya türü). */
     public const VERSION = 2;
 
-    public function __construct(private readonly ListPresenter $presenter)
-    {
+    /**
+     * @param ValueSet|null $values İE#14 A3/A4 — varyasyon ve öznitelik DEĞERLERİ
+     *                              sözlükten geçer, kategori/detay kırıntı yolundan
+     *                              türer. Verilmezse ham değerler donar (eski davranış).
+     */
+    public function __construct(
+        private readonly ListPresenter $presenter,
+        private readonly ?ValueSet $values = null,
+    ) {
     }
 
     /**
@@ -72,17 +81,18 @@ final class ExportSnapshot
                 'rate_locked_at' => $list['rate_locked_at'],
             ],
             'totals' => $list['totals'],
-            'products' => array_map(static fn (array $product, int $index): array => [
+            'products' => array_map(fn (array $product, int $index): array => [
                 // İE#10.5 ek (b): çıktıdaki NO 1'den ARDIŞIK — silinen ürünün numarası
                 // atlanmaz (sort_no boşluklu kalabilir; firma listesi 1..N okur).
                 'no' => $index + 1,
                 'sort_no' => $product['sort_no'],
-                'category' => $product['category_id'] !== null
-                    ? ($categoryNames[(int) $product['category_id']] ?? 'Kategorisiz')
-                    : 'Kategorisiz',
+                // İE#14 A4: kategori panelden ya da yakalamanın kırıntı yolundan gelir;
+                // yoksa null DONAR ve belgede hücre BOŞ basılır — "Kategorisiz" yazılmaz.
+                'category' => ProductDetails::kategori($product, $categoryNames, $this->values),
                 'name' => $product['name'],
                 'name_original' => $product['name_original'],
-                'detail' => $product['detail'],
+                // İE#14 A4: detay yoksa en dolu 3-4 öznitelikten türetilir; o da yoksa null.
+                'detail' => ProductDetails::detay($product, $this->values),
                 'url' => $product['url'],
                 'main_image' => $product['main_image'],
                 'qty' => $product['qty'],
@@ -98,7 +108,7 @@ final class ExportSnapshot
                 // kendi değerini taşır. SATICI BİLGİSİ BİLEREK TAŞINMAZ (şartname).
                 'platform' => $product['platform'],
                 'external_id' => $product['external_id'],
-                'variant' => self::variant($product),
+                'variant' => $this->variant($product),
                 'moq' => self::moq($product),
                 'units_per_carton' => $product['units_per_carton'],
                 'note' => $product['note'],
@@ -111,11 +121,48 @@ final class ExportSnapshot
     }
 
     /**
-     * Varyasyon özeti: kullanıcı seçimi varsa o, yoksa matristen "Gri · Mavi (2 seçenek)".
+     * Varyasyon özeti: kullanıcı seçimi varsa o, yoksa matristen türetilir.
+     *
+     * İE#14 A3: değerler sözlükten geçer (灰色 → Gri) ve belge özeti İLK 3 +
+     * "… (N seçenek)" biçimindedir — uzun varyasyon listesi hücreyi taşırmaz.
      *
      * @param array<string, mixed> $product
      */
-    private static function variant(array $product): ?string
+    private function variant(array $product): ?string
+    {
+        $degerler = $this->varyasyonDegerleri($product);
+        if ($degerler === []) {
+            return null;
+        }
+
+        $ozet = $this->values !== null
+            ? $this->values->ozet($degerler)
+            : self::ozetle($degerler);
+
+        return $ozet;
+    }
+
+    /**
+     * @param list<string> $degerler
+     */
+    private static function ozetle(array $degerler): ?string
+    {
+        if ($degerler === []) {
+            return null;
+        }
+        $ilk = implode(' · ', array_slice($degerler, 0, ValueSet::LIMIT));
+
+        return count($degerler) > ValueSet::LIMIT
+            ? $ilk . ' … (' . count($degerler) . ' seçenek)'
+            : $ilk;
+    }
+
+    /**
+     * @param array<string, mixed> $product
+     *
+     * @return list<string>
+     */
+    private function varyasyonDegerleri(array $product): array
     {
         $secim = $product['sku_selection'] ?? null;
         if (is_array($secim) && $secim !== []) {
@@ -128,13 +175,13 @@ final class ExportSnapshot
                 }
             }
             if ($parcalar !== []) {
-                return implode(' · ', $parcalar);
+                return $parcalar;
             }
         }
 
         $matris = $product['sku_matrix'] ?? null;
         if (!is_array($matris) || $matris === []) {
-            return null;
+            return [];
         }
 
         $adlar = [];
@@ -154,13 +201,10 @@ final class ExportSnapshot
             }
         }
         if ($adlar === []) {
-            return count($matris) . ' seçenek';
+            return [count($matris) . ' seçenek'];
         }
-        $ilk = implode(' · ', array_slice($adlar, 0, 2));
 
-        return count($adlar) > 2
-            ? $ilk . ' … (' . count($adlar) . ' seçenek)'
-            : $ilk . ' (' . count($adlar) . ' seçenek)';
+        return $adlar;
     }
 
     /**

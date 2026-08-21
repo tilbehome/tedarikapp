@@ -7,6 +7,8 @@ import { count, dateTime, rate } from '../lib/format';
 import { mediaModeLabels } from '../locales/tr';
 import { ErrorNote, Field, PageHeader, Skeleton } from '../components/ui';
 import { useToast } from '../components/Toast';
+import IslemDurumu from '../components/IslemDurumu';
+import { useUzunIslem } from '../lib/useUzunIslem';
 import BelgeAntedi from './ayarlar/BelgeAntedi';
 
 /**
@@ -147,25 +149,47 @@ export default function SettingsScreen() {
           <ShieldCheck className="h-4 w-4 text-brand-600" aria-hidden />
           Güvenlik
         </h2>
-        <dl className="space-y-2 text-sm">
-          <Line
-            label="İki adımlı doğrulama"
-            value={settingsState.data?.totp_enabled ? 'Etkin' : 'Kapalı'}
-          />
-          <Line
-            label="Eklenti API token'ı"
-            value={settingsState.data?.extension_token_preview ?? 'Henüz üretilmedi'}
-          />
-        </dl>
-        <ExtensionTokenActions
-          preview={settingsState.data?.extension_token_preview ?? null}
-          onChanged={settingsState.reload}
-        />
+        {/* İE#14 C3: veri OKUNURKEN "—" gösterilmez — "—" yalnız gerçekten boş
+            alanın işaretidir. Hata olursa kart kendi içinde tekrar denenir; tüm
+            sayfayı yenilemek gerekmez. */}
+        {settingsState.error ? (
+          <ErrorNote message={settingsState.error} onRetry={settingsState.reload} />
+        ) : (
+          <>
+            <dl className="space-y-2 text-sm">
+              <Line
+                label="İki adımlı doğrulama"
+                value={
+                  settingsState.loading
+                    ? 'okunuyor…'
+                    : settingsState.data?.totp_enabled
+                      ? 'Etkin'
+                      : 'Kapalı'
+                }
+              />
+              <Line
+                label="Eklenti API token'ı"
+                value={
+                  settingsState.loading
+                    ? 'okunuyor…'
+                    : (settingsState.data?.extension_token_preview ?? 'Henüz üretilmedi')
+                }
+              />
+            </dl>
+            <ExtensionTokenActions
+              preview={settingsState.data?.extension_token_preview ?? null}
+              onChanged={settingsState.reload}
+            />
+          </>
+        )}
       </section>
 
       <MediaArchiveCard
         mode={settingsState.data?.media_mode ?? null}
         writable={settingsState.data?.media_writable ?? null}
+        loading={settingsState.loading}
+        error={settingsState.error}
+        onRetry={settingsState.reload}
       />
 
       <BackupCard />
@@ -216,15 +240,25 @@ export default function SettingsScreen() {
  * taşı" düğmesi. Taşıma parti parti çalışır: uç tek çağrıda en fazla bir parti işler,
  * kart "kalan" sıfırlanana dek (ya da ilerleme durana dek) tekrar çağırır.
  */
-function MediaArchiveCard({ mode, writable }: { mode: 'download' | 'hotlink' | null; writable: boolean | null }) {
-  const push = useToast((state) => state.push);
-  const [running, setRunning] = useState(false);
-  const [summary, setSummary] = useState<string | null>(null);
+function MediaArchiveCard({
+  mode,
+  writable,
+  loading,
+  error,
+  onRetry,
+}: {
+  mode: 'download' | 'hotlink' | null;
+  writable: boolean | null;
+  loading: boolean;
+  error: string | null;
+  onRetry: () => void;
+}) {
+  // İE#14 C2: taşıma ve denetim aynı uzun-işlem desenini kullanır.
+  const tasima = useUzunIslem();
+  const denetim = useUzunIslem();
 
-  const migrate = async () => {
-    setRunning(true);
-    setSummary(null);
-    try {
+  const migrate = () =>
+    void tasima.baslat(async (rapor, iptalIstendi) => {
       let migrated = 0;
       let failed = 0;
       let remaining = 0;
@@ -233,6 +267,8 @@ function MediaArchiveCard({ mode, writable }: { mode: 'download' | 'hotlink' | n
       const excludeProducts: number[] = [];
       const excludeImages: number[] = [];
       for (let batch = 0; batch < 100; batch++) {
+        // İptal PARTİ ARASINDA denetlenir: yarım parti bırakılmaz, taşınan taşınmış kalır.
+        if (iptalIstendi()) break;
         const result = await systemApi.mediaMigrate({
           exclude_products: excludeProducts,
           exclude_images: excludeImages,
@@ -243,78 +279,68 @@ function MediaArchiveCard({ mode, writable }: { mode: 'download' | 'hotlink' | n
         for (const failure of result.failed) {
           (failure.kind === 'main_image' ? excludeProducts : excludeImages).push(failure.id);
         }
-        setSummary(`${migrated} taşındı, ${failed} başarısız, ${remaining} kaldı…`);
+        // Gerçek ilerleme: sahte yüzde değil, sayılan iş.
+        rapor(`${migrated} taşındı · ${failed} başarısız · ${remaining} kaldı`);
         if (remaining <= excludeProducts.length + excludeImages.length || result.scanned === 0) break;
       }
-      setSummary(`${migrated} görsel arşive taşındı · ${failed} başarısız · ${remaining} kaldı.`);
-      push(
-        failed === 0 && remaining === 0
-          ? 'Tüm görseller arşive taşındı.'
-          : 'Taşıma bitti; başarısız kalanlar bozulmadı, tekrar deneyebilirsiniz.',
-        failed === 0 ? 'success' : 'error',
-      );
-    } catch (caught) {
-      push(messageOf(caught), 'error');
-    } finally {
-      setRunning(false);
-    }
-  };
+
+      return `${migrated} görsel arşive taşındı · ${failed} başarısız · ${remaining} kaldı.` +
+        (failed > 0 ? ' Başarısız olanlar bozulmadı, tekrar denenebilir.' : '');
+    });
 
   // İE#10 5d: DB↔disk bütünlük denetimi — dosyası kayıp yerel kayıtları kaynağından onarır.
-  const check = async () => {
-    setRunning(true);
-    try {
+  const check = () =>
+    void denetim.baslat(async () => {
       const result = await systemApi.mediaCheck();
-      setSummary(`${result.checked} kayıt denetlendi · ${result.missing} kayıp · ${result.repaired} onarıldı.`);
-      push(
-        result.missing === 0
-          ? 'Tüm görsel kayıtları diskle uyumlu.'
-          : `${result.repaired} görsel onarıldı; ${result.failed.length} kayıt onarılamadı (kaynağı yok/erişilemedi).`,
-        result.missing === 0 || result.repaired > 0 ? 'success' : 'error',
-      );
-    } catch (caught) {
-      push(messageOf(caught), 'error');
-    } finally {
-      setRunning(false);
-    }
-  };
+
+      return `${result.checked} kayıt denetlendi · ${result.missing} kayıp · ${result.repaired} onarıldı` +
+        (result.failed.length > 0 ? ` · ${result.failed.length} kayıt onarılamadı (kaynağı yok).` : '.');
+    });
+
+  const running = tasima.calisiyor || denetim.calisiyor;
 
   return (
     <section className="card mb-4 p-4">
       <h2 className="mb-3 text-sm font-semibold text-slate-700">Görsel arşivi</h2>
-      <dl className="space-y-2 text-sm">
-        <Line
-          label="Aktif mod"
-          value={mode === 'download' ? mediaModeLabels.download : mode === 'hotlink' ? mediaModeLabels.hotlink : '—'}
-        />
-        <Line
-          label="Medya klasörü (public/media)"
-          value={writable === null ? '—' : writable ? 'Yazılabilir' : 'Yazılamıyor — arşivleme kapalı'}
-        />
-      </dl>
+      {/* İE#14 C3: okunurken "okunuyor…", hata varsa bu kartın kendi tekrar denemesi. */}
+      {error ? (
+        <ErrorNote message={error} onRetry={onRetry} />
+      ) : (
+        <dl className="space-y-2 text-sm">
+          <Line
+            label="Aktif mod"
+            value={
+              loading
+                ? 'okunuyor…'
+                : mode === 'download'
+                  ? mediaModeLabels.download
+                  : mode === 'hotlink'
+                    ? mediaModeLabels.hotlink
+                    : '—'
+            }
+          />
+          <Line
+            label="Medya klasörü (public/media)"
+            value={
+              loading ? 'okunuyor…' : writable === null ? '—' : writable ? 'Yazılabilir' : 'Yazılamıyor — arşivleme kapalı'
+            }
+          />
+        </dl>
+      )}
       <p className="mt-3 text-xs text-slate-500">
         1688 görselleri orijinal adresinden gösterilemiyor (CDN Referer koruması). Bu düğme hotlink döneminden kalan
         uzak görselleri sunucu arşivine indirir; başarısız olanlar bozulmaz ve tekrar denenebilir.
       </p>
-      {summary ? <p className="mt-2 text-xs font-medium text-slate-600">{summary}</p> : null}
       <div className="mt-3 flex flex-wrap gap-2">
-        <button
-          type="button"
-          className="btn-primary"
-          disabled={running || writable !== true}
-          onClick={() => void migrate()}
-        >
-          {running ? 'Taşınıyor…' : 'Görselleri arşive taşı'}
+        <button type="button" className="btn-primary" disabled={running || writable !== true} onClick={migrate}>
+          {tasima.calisiyor ? 'Taşınıyor…' : 'Görselleri arşive taşı'}
         </button>
-        <button
-          type="button"
-          className="btn-ghost"
-          disabled={running || writable !== true}
-          onClick={() => void check()}
-        >
-          Eksik dosyaları denetle/onar
+        <button type="button" className="btn-ghost" disabled={running || writable !== true} onClick={check}>
+          {denetim.calisiyor ? 'Denetleniyor…' : 'Eksik dosyaları denetle/onar'}
         </button>
       </div>
+      <IslemDurumu islem={tasima} fiil="Görseller arşive taşınıyor" onTekrar={migrate} />
+      <IslemDurumu islem={denetim} fiil="Görsel kayıtları denetleniyor" onTekrar={check} />
     </section>
   );
 }
@@ -328,43 +354,32 @@ function MediaArchiveCard({ mode, writable }: { mode: 'download' | 'hotlink' | n
  *    kayıtları KOŞMADAN işler; DDL çalıştırmaz, idempotenttir.
  */
 function MigrationActions({ onDone }: { onDone: () => void }) {
-  const push = useToast((state) => state.push);
-  const [busy, setBusy] = useState(false);
+  // İE#14 C2: migration TEK ATIMLIK bir iştir — iptal isteği sunucudaki işi
+  // yarıda bırakmaz (yarım migration tehlikelidir), yalnız sonucu işaretler.
+  const guncelleme = useUzunIslem();
+  const defter = useUzunIslem();
 
-  const migrate = async () => {
-    setBusy(true);
-    try {
+  const migrate = () =>
+    void guncelleme.baslat(async () => {
       const result = await systemApi.migrate();
-      push(
-        result.applied_count === 0
-          ? 'Uygulanacak yeni migration yoktu.'
-          : `Güncelleme tamam: ${count(result.applied_count)} migration uygulandı.`,
-      );
       onDone();
-    } catch (caught) {
-      push(messageOf(caught), 'error');
-    } finally {
-      setBusy(false);
-    }
-  };
 
-  const baseline = async () => {
-    setBusy(true);
-    try {
+      return result.applied_count === 0
+        ? 'Uygulanacak yeni migration yoktu.'
+        : `Güncelleme tamam: ${count(result.applied_count)} migration uygulandı.`;
+    });
+
+  const baseline = () =>
+    void defter.baslat(async () => {
       const result = await systemApi.migrateBaseline();
-      push(
-        result.skipped.length === 0
-          ? `Defter eşitlendi: ${count(result.recorded.length)} kayıt işlendi, bekleyen ${count(result.pending_count)}.`
-          : `${count(result.recorded.length)} kayıt işlendi; ${count(result.skipped.length)} kayıt atlandı (nesnesi yok) — bekleyen ${count(result.pending_count)}.`,
-        result.skipped.length === 0 ? 'success' : 'error',
-      );
       onDone();
-    } catch (caught) {
-      push(messageOf(caught), 'error');
-    } finally {
-      setBusy(false);
-    }
-  };
+
+      return result.skipped.length === 0
+        ? `Defter eşitlendi: ${count(result.recorded.length)} kayıt işlendi, bekleyen ${count(result.pending_count)}.`
+        : `${count(result.recorded.length)} kayıt işlendi; ${count(result.skipped.length)} kayıt atlandı (nesnesi yok) — bekleyen ${count(result.pending_count)}.`;
+    });
+
+  const busy = guncelleme.calisiyor || defter.calisiyor;
 
   return (
     <div className="mt-3 border-t border-slate-100 pt-3">
@@ -373,13 +388,15 @@ function MigrationActions({ onDone }: { onDone: () => void }) {
         Tablolar zaten varsa (defter geride kalmışsa) "Defteri eşitle" kullanılır — o işlem tablo oluşturmaz.
       </p>
       <div className="mt-2 flex flex-wrap gap-2">
-        <button type="button" className="btn-primary" disabled={busy} onClick={() => void migrate()}>
-          {busy ? 'Çalışıyor…' : 'Güncellemeyi çalıştır'}
+        <button type="button" className="btn-primary" disabled={busy} onClick={migrate}>
+          {guncelleme.calisiyor ? 'Çalışıyor…' : 'Güncellemeyi çalıştır'}
         </button>
-        <button type="button" className="btn-ghost" disabled={busy} onClick={() => void baseline()}>
-          Defteri eşitle
+        <button type="button" className="btn-ghost" disabled={busy} onClick={baseline}>
+          {defter.calisiyor ? 'Eşitleniyor…' : 'Defteri eşitle'}
         </button>
       </div>
+      <IslemDurumu islem={guncelleme} fiil="Veritabanı güncelleniyor" onTekrar={migrate} />
+      <IslemDurumu islem={defter} fiil="Migration defteri eşitleniyor" onTekrar={baseline} />
     </div>
   );
 }
@@ -389,14 +406,26 @@ function MigrationActions({ onDone }: { onDone: () => void }) {
  * son yedekler (tarih/boyut/indir), son yedek 24 saatten eskiyse uyarı rozeti.
  * Dosyalar şifrelidir (AES-256-GCM, anahtar APP_KEY'den türetilir) ve web'den erişilemez.
  */
-function BackupCard() {
-  const push = useToast((state) => state.push);
-  const state = useAsync(() => systemApi.backupList(), []);
-  const [busy, setBusy] = useState(false);
+/**
+ * İE#14 D1 — yaşın İNSAN dili: "3 saat önce". Yedek hiç yoksa bunu açıkça söyler;
+ * "—" burada yanıltıcı olurdu.
+ */
+function yedekYasi(saniye: number | null): string {
+  if (saniye === null) return 'hiç alınmadı';
+  if (saniye < 3600) return `${Math.max(1, Math.round(saniye / 60))} dakika önce`;
+  const saat = Math.round(saniye / 3600);
+  if (saat < 48) return `${saat} saat önce`;
 
-  const create = async () => {
-    setBusy(true);
-    try {
+  return `${Math.round(saat / 24)} gün önce`;
+}
+
+function BackupCard() {
+  const state = useAsync(() => systemApi.backupList(), []);
+  // İE#14 C2: yedekleme dakikalarca sürebilir; çift tıklama iki yedek üretirdi.
+  const yedekleme = useUzunIslem();
+
+  const create = () =>
+    void yedekleme.baslat(async () => {
       const result = await systemApi.backupCreate();
       state.reload();
       const offsite = result.offsite.attempted
@@ -404,13 +433,9 @@ function BackupCard() {
           ? ` Uzak hedefe gönderildi (${result.offsite.via}).`
           : ` UZAK GÖNDERİM BAŞARISIZ: ${result.offsite.error ?? 'bilinmeyen hata'}`
         : ' Uzak hedef yapılandırılmadı — dosyayı indirip ayrı bir yerde saklayın.';
-      push(`Yedek alındı: ${result.backup.name}.${offsite}`, result.offsite.attempted && !result.offsite.sent ? 'error' : 'success');
-    } catch (caught) {
-      push(messageOf(caught), 'error');
-    } finally {
-      setBusy(false);
-    }
-  };
+
+      return `Yedek alındı: ${result.backup.name}.${offsite}`;
+    });
 
   const sizeOf = (bytes: number) => (bytes > 1048576 ? `${(bytes / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`);
 
@@ -418,16 +443,38 @@ function BackupCard() {
     <section className="card mb-4 p-4">
       <h2 className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700">
         Yedekler
-        {state.data?.stale ? (
+        {/* İE#14 D1: "yedek var mı" değil "NE ZAMAN alındı" sorusu yanıtlanır. */}
+        {state.data?.gecikti ? (
+          <span className="badge bg-amber-50 text-amber-800 ring-amber-200">
+            Gecelik yedek gecikti — cron çalışmıyor olabilir
+          </span>
+        ) : state.data?.stale ? (
           <span className="badge bg-amber-50 text-amber-800 ring-amber-200">Son yedek 24 saatten eski</span>
         ) : null}
       </h2>
+      {state.data ? (
+        <p className={`mb-2 text-sm ${state.data.gecikti ? 'font-medium text-amber-700' : 'text-slate-600'}`}>
+          Son yedek: {yedekYasi(state.data.last_age_seconds)}
+          {state.data.cron ? (
+            <span className="ml-2 text-xs text-slate-500">
+              · son cron koşusu {yedekYasi(state.data.cron.age_seconds)}
+              {state.data.cron.ok ? '' : ' (HATA ile bitti)'}
+            </span>
+          ) : (
+            <span className="ml-2 text-xs text-slate-500">· cron kaydı yok (storage/logs/cron.log boş)</span>
+          )}
+        </p>
+      ) : null}
       {state.data && !state.data.writable ? (
         <p className="text-sm text-red-600">
           Yedek klasörü yazılamıyor (storage/backups) — cPanel'den storage klasörüne yazma izni (775) verin.
         </p>
       ) : null}
-      {state.data && state.data.backups.length > 0 ? (
+      {state.loading ? (
+        <Skeleton rows={2} />
+      ) : state.error ? (
+        <ErrorNote message={state.error} onRetry={state.reload} />
+      ) : state.data && state.data.backups.length > 0 ? (
         <ul className="divide-y divide-slate-100 text-sm">
           {state.data.backups.map((entry) => (
             <li key={entry.name} className="flex items-center justify-between gap-3 py-2">
@@ -448,9 +495,15 @@ function BackupCard() {
           ? 'Uzak hedef yapılandırılmış: her yedek otomatik gönderilir.'
           : 'Uzak hedef yapılandırılmamış: yedeği indirip bilgisayarınızda/bulutta saklayın. Otomatik için cPanel cron: php bin/backup.php'}
       </p>
-      <button type="button" className="btn-primary mt-3" disabled={busy || state.data?.writable === false} onClick={() => void create()}>
-        {busy ? 'Yedek alınıyor…' : 'Şimdi yedek al'}
+      <button
+        type="button"
+        className="btn-primary mt-3"
+        disabled={yedekleme.calisiyor || state.data?.writable === false}
+        onClick={create}
+      >
+        {yedekleme.calisiyor ? 'Yedek alınıyor…' : 'Şimdi yedek al'}
       </button>
+      <IslemDurumu islem={yedekleme} fiil="Veritabanı yedekleniyor" onTekrar={create} />
     </section>
   );
 }

@@ -5,7 +5,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { cleanImageUrl, extractTiers, parse1688 } from '../modules/m1688/parser';
+import { cleanImageUrl, extractBreadcrumb, extractTiers, parse1688 } from '../modules/m1688/parser';
 import { extractContext, resolveRefs } from '../core/jsonpath';
 import selectorsJson from './fixtures/selectors-1688.json';
 import type { SelectorSet } from '../core/types';
@@ -232,5 +232,58 @@ describe('cleanImageUrl / extractTiers uç durumları', () => {
       { min_qty: 10, price_yuan: '5.5' },
     ]);
     expect(extractTiers('bozuk')).toEqual([]);
+  });
+});
+
+/**
+ * İE#14 A4 — KIRINTI YOLU (面包屑): kategori bilgisinin kaynağı.
+ *
+ * Panelde "Kategorisiz" basılmasının nedeni buydu: kategori hiç yakalanmıyordu.
+ * Üç biçim de (dizi, nesne dizisi, ayraçlı metin) aynı listeye inmelidir.
+ */
+describe('extractBreadcrumb — kategori kırıntı yolu (İE#14 A4)', () => {
+  it('düz metin dizisini olduğu gibi alır', () => {
+    expect(extractBreadcrumb(['家居', '厨房用品', '保温杯'])).toEqual(['家居', '厨房用品', '保温杯']);
+  });
+
+  it('nesne dizisinden ad alanlarını çıkarır', () => {
+    expect(
+      extractBreadcrumb([{ name: '家居' }, { categoryName: '厨房用品' }, { text: '保温杯' }]),
+    ).toEqual(['家居', '厨房用品', '保温杯']);
+  });
+
+  it('ayraçlı tek metni böler', () => {
+    expect(extractBreadcrumb('家居 > 厨房用品 > 收纳')).toEqual(['家居', '厨房用品', '收纳']);
+  });
+
+  it('JSON yoksa DOM yedeğine düşer, tekrarları ve boşları eler', () => {
+    expect(extractBreadcrumb(null, ['家居', '', '家居', '厨房用品'])).toEqual(['家居', '厨房用品']);
+  });
+
+  it('hiçbir kaynak yoksa boş liste döner (uydurma YOK)', () => {
+    expect(extractBreadcrumb(undefined, null)).toEqual([]);
+  });
+
+  it('parse1688 çıktısında raw.breadcrumb taşınır', () => {
+    const context = {
+      result: {
+        global: {
+          globalData: {
+            model: {
+              offerDetail: {
+                offerId: 833438962156,
+                subject: '双层不锈钢保温饭盒',
+                categoryPath: ['首页', '家居', '保温杯'],
+              },
+            },
+          },
+        },
+      },
+    };
+    const sonuc = parse1688(context, selectors, 'https://detail.1688.com/offer/833438962156.html', {
+      domPrice: '12.00',
+    });
+
+    expect(sonuc.raw.breadcrumb).toEqual(['首页', '家居', '保温杯']);
   });
 });

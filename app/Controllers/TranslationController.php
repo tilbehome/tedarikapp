@@ -29,6 +29,9 @@ final class TranslationController extends ApiController
         // aynı controller'dan servis edilir — üçü de K56 hattının parçasıdır.
         private readonly Glossary $glossary,
         private readonly TranslatorInterface $translator,
+        // İE#14 A7: sözlük değişikliği de iz bırakır — terim değişimi belgeyi değiştirir.
+        private readonly ?\App\Services\ActivityLog $activity = null,
+        private readonly ?\App\Core\Clock $clock = null,
     ) {
     }
 
@@ -80,6 +83,19 @@ final class TranslationController extends ApiController
             $this->glossary->save($temiz, $dil);
         } catch (\Throwable $exception) {
             return Response::error($response, 'SERVER_ERROR', $exception->getMessage(), 500);
+        }
+
+        if ($this->activity !== null && $this->clock !== null) {
+            $this->activity->record(
+                'settings',
+                null,
+                'glossary_updated',
+                $dil . ' · ' . count($temiz) . ' terim',
+                \App\Core\ClientIp::from($request),
+                $this->clock->now(),
+                \App\Services\ActivityLog::ACTOR_ADMIN,
+                $this->user($request)->id,
+            );
         }
 
         return Response::success($response, ['lang' => $dil, 'terms' => $this->glossary->all($dil)]);

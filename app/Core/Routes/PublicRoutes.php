@@ -67,7 +67,10 @@ final class PublicRoutes
 
         // İE#10 Blok 4: GİRİŞSİZ paylaşım sayfası — /p/{token}. Sabit yanıt ilkesi:
         // geçersiz/iptal/süresi dolmuş token ve hız sınırı aşımı AYNI 404'ü döndürür.
-        $sharePage = new SharePage();
+        // İE#14 A3: paylaşım sayfası da sözlükten geçen değerleri gösterir.
+        $sharePage = new SharePage(new \App\Services\Translation\ValueSet(
+            new \App\Services\Translation\Glossary(dirname(__DIR__, 3) . '/config'),
+        ));
         $shareGate = new ShareGate($connection);
         $app->get('/p/{token}', static function (ServerRequestInterface $request, ResponseInterface $response, array $args) use ($lists, $products, $presenter, $connection, $sharePage, $shareGate, $services): ResponseInterface {
             $now = $services->clock->now();

@@ -311,8 +311,8 @@ final class XlsxRenderer implements ExportRenderer
             }
 
             $this->metin($sheet, 'E' . $row, (string) ($product['detail'] ?? ''), 9, TemplateV2::METIN, true);
-            $this->metin($sheet, 'F' . $row, (string) ($product['variant'] ?? '—'), 9, TemplateV2::METIN, true);
-            $this->metin($sheet, 'G' . $row, (string) $product['category'], 9, TemplateV2::SOLUK);
+            $this->metin($sheet, 'F' . $row, (string) ($product['variant'] ?? ''), 9, TemplateV2::METIN, true);
+            $this->metin($sheet, 'G' . $row, (string) ($product['category'] ?? ''), 9, TemplateV2::SOLUK);
             $this->metin($sheet, 'H' . $row, TemplateV2::platformLabel($product['platform'] ?? null), 8.5, TemplateV2::SOLUK);
             $this->metin($sheet, 'J' . $row, (string) ($product['note'] ?? ''), 8.5, TemplateV2::SOLUK, true);
 

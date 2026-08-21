@@ -110,3 +110,39 @@ Veritabanı ve API **yalnızca** sol sütundaki İngilizce kodları taşır. Tü
 | `assigned` | Atandı |
 
 > Not: `ordered` hem ürün hem liste durumunda geçer ama farklı tablolarda ve farklı anlamlarda (ürün: sipariş verildi · liste: sipariş verildi). Karışıklık olmaması için kod içinde durumlar daima kendi enum/sabit setleriyle kullanılır.
+
+## Uzun süren işlemler (İE#14 C2 — ortak desen)
+
+Görsel arşivi taşıma, yedekleme, veritabanı güncellemesi, belge üretimi ve çeviri
+saniyelerce sürer. Hepsi AYNI deseni kullanır (`useUzunIslem` + `IslemDurumu`):
+
+1. **Düğme işlem boyunca kapalı** ve üzerinde fiil yazar ("Taşınıyor…", "Yedek alınıyor…").
+   Çift tıklama koruması state ile değil `ref` ile yapılır — state güncellemesi asenkron
+   olduğu için hızlı iki tık aynı değeri görebilir ve iş iki kez başlayabilirdi.
+2. **Bilgi şeridi**: ne yapıldığı + geçen süre.
+3. **Gerçek ilerleme**, sayılabiliyorsa: "12 taşındı · 0 başarısız · 28 kaldı". Sahte
+   yüzde çubuğu YOKTUR — bilmediğimiz şeyi biliyormuş gibi göstermeyiz.
+4. **60 saniyeden uzun sürerse**: "Beklenenden uzun sürüyor" uyarısı + İptal.
+   İptal, parti parti çalışan işlerde sıradaki partiden önce denetlenir; tamamlanmış
+   parti geri alınmaz. Tek atımlık işlerde (migration/yedek) sunucudaki iş yarıda
+   BIRAKILMAZ — yarım migration tehlikelidir — yalnız sonuç "iptal edildi" işaretlenir.
+5. **Sonuç kartı** kalıcıdır (bildirim baloncuğu kaçırılabilir): ne olduğu yazar,
+   başarısızsa "Tekrar dene" düğmesi taşır.
+
+## Yükleme durumları (İE#14 C3)
+
+Ayarlar kartlarında (Güvenlik · Görsel arşivi · Yedekler · Sistem durumu) veri
+okunurken **"okunuyor…"** yazar. **"—" yalnız gerçekten boş alanın işaretidir** —
+yükleniyor olmak boş olmak değildir. Hata durumunda ilgili kart kendi içinde
+"Tekrar dene" gösterir; tüm sayfanın yenilenmesi gerekmez.
+
+## Paylaşım sayfasını yazdırma (İE#14 B2)
+
+Tarayıcı yazdırma penceresinde: **Düzen: Yatay** ve **Arka plan grafikleri: açık**.
+Sayfa A4 yatay için tasarlanmıştır; sütun genişlikleri yüzdeyle sabitlenmiştir
+(toplam 100) ve tablo `table-layout: fixed` ile basılır — sağdaki DDP sütunları
+kâğıt dışında kalmaz. Detay panelindeki katlamalar ("Eksik bilgileri göster",
+"+N seçenek") baskıda AÇIK basılır; kâğıtta tıklanacak bir şey yoktur.
+
+Sunucu PDF'i (Belge çıktısı > PDF) ile tarayıcı yazdırması AYRI şeylerdir: PDF
+belge şablonudur (mPDF, K55), yazdırma ise sayfanın kâğıt görünümüdür.

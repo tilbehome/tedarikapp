@@ -1,9 +1,12 @@
 /**
- * Aktivite kaydı kodları → Türkçe cümle (K22 · docs/09 §6 ilkesi).
+ * Aktivite kaydı kodları → Türkçe cümle, simge ve bağlantı (K22 · docs/09 §6 · İE#14 A7).
  *
- * Kodlar backend'deki `activity_log.action` değerleridir; ekranda ham kod
- * gösterilmez. Tanınmayan kod gelirse okunabilir bir metne çevrilir, gizlenmez —
- * kayıt kaybolmasın.
+ * Kodlar backend'deki `activity_log.action` değerleridir; ekranda HAM KOD GÖSTERİLMEZ.
+ * Tanınmayan kod gelirse `insanlastir()` okunabilir bir cümleye çevirir — kayıt asla
+ * gizlenmez, çünkü bilinmeyen bir işlem tam da görülmesi gereken şeydir.
+ *
+ * Her kayıt ilgili kayda GİDER: liste/ürün kaydı liste detayına, gelen kutusu kaydı
+ * gelen kutusuna, ayar kaydı ayarlara. Hedefi olmayan kayıt (oturum, sistem) düz metindir.
  */
 const labels: Record<string, string> = {
   login_success: 'Giriş yapıldı',
@@ -36,18 +39,114 @@ const labels: Record<string, string> = {
   product_bulk_status: 'Toplu durum güncellemesi',
   product_bulk_move: 'Ürünler başka listeye taşındı',
   product_bulk_delete: 'Toplu ürün silme',
+  product_media_repaired: 'Ürün görseli onarıldı',
 
   category_created: 'Kategori eklendi',
   category_updated: 'Kategori güncellendi',
   category_deleted: 'Kategori silindi',
 
+  // İE#14 A7: kayıtlı ama Türkçesi olmayan kodlar tamamlandı.
+  export_created: 'Belge çıktısı alındı',
+  share_created: 'Paylaşım bağlantısı oluşturuldu',
+  share_renewed: 'Paylaşım bağlantısı yenilendi',
+  share_revoked: 'Paylaşım bağlantısı iptal edildi',
+  inbox_assigned: 'Gelen kutusundan listeye aktarıldı',
+  inbox_deleted: 'Gelen kutusu kaydı silindi',
+  extension_token_created: 'Eklenti anahtarı oluşturuldu',
+  extension_token_revoked: 'Eklenti anahtarı iptal edildi',
+  document_header_updated: 'Belge anteti güncellendi',
+  glossary_updated: 'Terim sözlüğü güncellendi',
   rates_updated: 'Kurlar güncellendi',
   migrate: 'Veritabanı güncellemesi çalıştırıldı',
   migrate_failed: 'Veritabanı güncellemesi başarısız',
+  backup_completed: 'Yedek alındı',
+  backup_failed: 'Yedekleme başarısız',
+  maintenance_completed: 'Bakım görevleri çalıştı',
 };
 
+/**
+ * Bilinmeyen kodu cümleye çevirir: `foo_bar_done` → "Foo bar done".
+ * Ham kod (alt çizgili, İngilizce) ASLA olduğu gibi basılmaz.
+ */
+function insanlastir(action: string): string {
+  const metin = action.replace(/[_-]+/g, ' ').trim();
+  if (metin === '') return 'Bilinmeyen işlem';
+
+  return metin.charAt(0).toLocaleUpperCase('tr-TR') + metin.slice(1);
+}
+
 export function actionLabel(action: string): string {
-  return labels[action] ?? action.replace(/_/g, ' ');
+  return labels[action] ?? insanlastir(action);
+}
+
+/**
+ * Kayıt türüne göre simge adı (lucide-react bileşen adı değil, kendi kümemiz —
+ * ekran bunu kendi ikon eşlemesine bağlar).
+ */
+export type ActivityIcon =
+  | 'oturum'
+  | 'liste'
+  | 'urun'
+  | 'kategori'
+  | 'ayar'
+  | 'sistem'
+  | 'belge'
+  | 'paylasim'
+  | 'gelen'
+  | 'uyari';
+
+export function actionIcon(action: string, entityType: string): ActivityIcon {
+  if (action.endsWith('_failed') || action === 'login_locked' || action === 'remember_theft') return 'uyari';
+  if (action.startsWith('share_')) return 'paylasim';
+  if (action.startsWith('export_')) return 'belge';
+  if (action.startsWith('inbox_')) return 'gelen';
+
+  switch (entityType) {
+    case 'auth':
+      return 'oturum';
+    case 'list':
+      return 'liste';
+    case 'product':
+      return 'urun';
+    case 'category':
+      return 'kategori';
+    case 'settings':
+      return 'ayar';
+    default:
+      return 'sistem';
+  }
+}
+
+export interface ActivityEntryRef {
+  entity_type: string;
+  entity_id: number | null;
+  action: string;
+}
+
+/**
+ * Kaydın gideceği panel adresi; hedefi yoksa null (satır düz metin kalır).
+ * Ürün kaydında entity_id ÜRÜN kimliğidir; ürünün listesi bilinmediğinden
+ * liste detayına değil, listeler ekranına gidilir — yanlış listeye götürmektense
+ * bir adım geride bırakmak doğrudur.
+ */
+export function activityLink(entry: ActivityEntryRef): string | null {
+  if (entry.action.startsWith('inbox_')) return '/gelen-kutusu';
+  if (entry.action.startsWith('extension_token_') || entry.action === 'glossary_updated') return '/ayarlar';
+
+  switch (entry.entity_type) {
+    case 'list':
+      return entry.entity_id !== null ? `/listeler/${entry.entity_id}` : '/listeler';
+    case 'export':
+      return entry.entity_id !== null ? `/listeler/${entry.entity_id}` : '/listeler';
+    case 'product':
+      return '/listeler';
+    case 'category':
+      return '/ayarlar/kategoriler';
+    case 'settings':
+      return '/ayarlar';
+    default:
+      return null;
+  }
 }
 
 const entityLabels: Record<string, string> = {
@@ -57,10 +156,12 @@ const entityLabels: Record<string, string> = {
   category: 'Kategori',
   settings: 'Ayarlar',
   system: 'Sistem',
+  export: 'Belge',
+  inbox: 'Gelen kutusu',
 };
 
 export function entityLabel(entity: string): string {
-  return entityLabels[entity] ?? entity;
+  return entityLabels[entity] ?? insanlastir(entity);
 }
 
 export const activityFilters: { value: string; label: string }[] = [

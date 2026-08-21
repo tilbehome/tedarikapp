@@ -141,7 +141,8 @@ Sonraki sürümler: sihirbaz YOK — zip yüklenir, admin girişinde "veritaban�
   0 4 * * *  /usr/local/bin/php /home/<kullanıcı>/<alan-adı>/bin/purge-trash.php
   ```
   `--dry-run` ile ne silineceği yazdırılır, dokunulmaz.
-- Ayda bir yedekten geri yükleme denemesi (test DB'ye) yapılır — denenmemiş yedek, yedek değildir.
+- Ayda bir yedekten geri yükleme denemesi yapılır — denenmemiş yedek, yedek değildir.
+  Tek komuttur: `php bin/restore-test.php` (İE#14 D2; ayrıntı aşağıda "Geri yükleme tatbikatı").
 - **Off-site yedek CANLIYA ALMA ÖN ŞARTIDIR (İE#4 REV2, havuzdaki F11 yeniden sınıflandırıldı):** gece yedeğinin sunucu dışına da kopyalanması (ör. Google Drive) canlıya çıkmadan ÖNCE kurulur. Yalnızca aynı sunucuda duran yedek, sunucu kaybında yedek değildir.
 
 ## Zamanlanmış görevler (İE#13 EK-A — TEK CRON)
@@ -167,6 +168,51 @@ koşar (ve tersi). Sonuç `app_logs`a TEK birleşik özet satırı olarak yazıl
 
 Elle koşum: `php bin/bakim.php` yalnız bakım adımlarını çalıştırır (cron'da GEREKMEZ).
 `purge-trash.php` geriye uyum için durur.
+
+### Cron gerçekten koşuyor mu? (İE#14 D1)
+
+Her koşu — başarılı da başarısız da — `storage/logs/cron.log` dosyasına TEK satır bırakır:
+
+```
+2026-08-21 03:00:04 | OK   | yedek 4.2 MB, off-site ftp · bakım 3 iş | 12.4 sn
+2026-08-22 03:00:02 | HATA | yedek başarısız: disk dolu              | 1.1 sn
+```
+
+Bu dosya `app_logs`tan farklı bir soruyu yanıtlar: **cron hiç tetiklendi mi?** Uygulama
+hiç çalışmadıysa veritabanına da satır yazılmaz; dosyanın ilerlememesi "koşu yok"
+demektir. Dosya 500 satırda sabitlenir (günde bir koşu ≈ 1,5 yıl geçmiş).
+
+Panel karşılığı — **Ayarlar > Yedekler**:
+
+- "Son yedek: 3 saat önce" (hiç yedek yoksa açıkça "hiç alınmadı" yazar),
+- son cron koşusunun yaşı ve hata ile bitip bitmediği,
+- yedek **30 saati** geçtiyse turuncu uyarı: *"Gecelik yedek gecikti — cron çalışmıyor
+  olabilir"*. Eşik 24 değil 30 saattir: gecelik döngüye 6 saat pay bırakır, sunucu saati
+  kayınca boş yere alarm vermez.
+
+### Geri yükleme tatbikatı (İE#14 D2) — ayda bir
+
+"Yedek alınıyor" ile "geri yüklenebiliyor" aynı şey değildir. Tatbikat tek komuttur:
+
+```
+php bin/restore-test.php                        # en yeni yedeği dener
+php bin/restore-test.php yedek-20260821-030004.sql.enc
+php bin/restore-test.php --tut                  # geçici veritabanını silmez (inceleme)
+```
+
+Betik sırasıyla: yedeği **çözer** (APP_KEY yanlışsa burada anlaşılır) → `<db>_restoretest_<zaman>`
+adlı **geçici** bir veritabanı oluşturur → dökümü yükler → tablo ve satır sayılarını
+listeler → kritik tabloları (`users`, `lists`, `products`, `migrations`) ve `users`
+tablosunun boş olmadığını denetler → geçici veritabanını **düşürür**.
+
+**CANLI VERİTABANINA DOKUNMAZ.** Hedef ad her koşuda yeniden üretilir, canlı ada eşit
+çıkarsa betik durur; döküm içinde `USE` / `CREATE DATABASE` gibi veritabanı düzeyinde bir
+ifade bulunursa yükleme yapılmadan durdurulur (geçici şemanın dışına yazma riski).
+
+Çıkış kodu `0` tatbikat başarılı · `1` başarısız. **Başarısız çıktı alınırsa o yedeğe
+güvenilmez:** nedeni giderilip yeni yedek alınır ve tatbikat tekrarlanır. Gereksinim:
+veritabanı kullanıcısının `CREATE DATABASE`/`DROP DATABASE` yetkisi (cPanel'de yoksa
+tatbikat yerel kopyada koşulur).
 
 ## Eklenti kurulumu (İE#11 — Faz 3)
 

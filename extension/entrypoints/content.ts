@@ -32,6 +32,14 @@ export default defineContentScript({
             ogImage: og('og:image'),
             domTitle: document.querySelector('h1, .title-content .title-text')?.textContent?.trim() ?? null,
             domPrice: document.querySelector('.price-content .price-text, .price-column .price')?.textContent?.trim() ?? null,
+            // İE#14 A4: kırıntı yolu (面包屑) — kategori bilgisinin en güvenilir kaynağı.
+            // JSON'da bulunamazsa bu liste kullanılır; kök adımlar backend'de elenir.
+            breadcrumb: Array.from(
+              document.querySelectorAll('.breadcrumb a, .detail-path a, [class*="breadcrumb"] a, .crumbs a'),
+            )
+              .map((node) => node.textContent?.trim() ?? '')
+              .filter((text) => text !== '')
+              .slice(0, 8),
           },
           url: location.href,
         },

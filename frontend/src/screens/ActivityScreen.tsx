@@ -1,9 +1,43 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import {
+  AlertTriangle,
+  Boxes,
+  FileText,
+  Inbox,
+  KeyRound,
+  ListChecks,
+  Package,
+  Server,
+  Settings,
+  Share2,
+} from 'lucide-react';
 import { activity as activityApi } from '../api/endpoints';
 import { useAsync } from '../lib/useAsync';
 import { dateTime } from '../lib/format';
-import { actionLabel, activityFilters, entityLabel } from '../lib/activityLabels';
+import {
+  actionIcon,
+  actionLabel,
+  activityFilters,
+  activityLink,
+  entityLabel,
+  type ActivityIcon,
+} from '../lib/activityLabels';
 import { EmptyState, ErrorNote, PageHeader, Skeleton } from '../components/ui';
+
+/** İE#14 A7: kayıt türü → simge. Uyarı kayıtları kırmızı, kalanı nötr. */
+const icons: Record<ActivityIcon, typeof ListChecks> = {
+  oturum: KeyRound,
+  liste: ListChecks,
+  urun: Package,
+  kategori: Boxes,
+  ayar: Settings,
+  sistem: Server,
+  belge: FileText,
+  paylasim: Share2,
+  gelen: Inbox,
+  uyari: AlertTriangle,
+};
 
 /**
  * E9 — Aktivite: kim, ne, ne zaman.
@@ -52,18 +86,46 @@ export default function ActivityScreen() {
       ) : (
         <>
           <ul className="card divide-y divide-slate-100">
-            {items.map((entry) => (
-              <li key={entry.id} className="flex flex-col gap-1 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                <span className="min-w-0">
-                  <span className="block font-medium">{actionLabel(entry.action)}</span>
-                  <span className="block truncate text-xs text-slate-500">
-                    {entityLabel(entry.entity_type)}
-                    {entry.detail ? ` · ${entry.detail}` : ''}
+            {items.map((entry) => {
+              const tur = actionIcon(entry.action, entry.entity_type);
+              const Simge = icons[tur];
+              const hedef = activityLink(entry);
+              const govde = (
+                <>
+                  <span
+                    className={`flex size-9 shrink-0 items-center justify-center rounded-xl ${
+                      tur === 'uyari' ? 'bg-rose-50 text-rose-600' : 'bg-slate-100 text-slate-500'
+                    }`}
+                    aria-hidden="true"
+                  >
+                    <Simge size={17} />
                   </span>
-                </span>
-                <span className="shrink-0 text-xs text-slate-500">{dateTime(entry.created_at)}</span>
-              </li>
-            ))}
+                  <span className="min-w-0">
+                    <span className="block font-medium">{actionLabel(entry.action)}</span>
+                    <span className="block truncate text-xs text-slate-500">
+                      {entityLabel(entry.entity_type)}
+                      {entry.detail ? ` · ${entry.detail}` : ''}
+                    </span>
+                  </span>
+                </>
+              );
+
+              return (
+                <li
+                  key={entry.id}
+                  className="flex flex-col gap-1 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  {hedef ? (
+                    <Link to={hedef} className="flex min-w-0 items-center gap-3 hover:opacity-80">
+                      {govde}
+                    </Link>
+                  ) : (
+                    <span className="flex min-w-0 items-center gap-3">{govde}</span>
+                  )}
+                  <span className="shrink-0 text-xs text-slate-500">{dateTime(entry.created_at)}</span>
+                </li>
+              );
+            })}
           </ul>
 
           <div className="mt-4 flex items-center justify-between">

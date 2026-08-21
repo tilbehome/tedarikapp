@@ -24,6 +24,43 @@ interface DomFallback {
   ogImage?: string | null;
   domTitle?: string | null;
   domPrice?: string | null;
+  /** İE#14 A4: sayfadaki kırıntı yolu adımları (面包屑) — kategori buradan türer. */
+  breadcrumb?: string[] | null;
+}
+
+/**
+ * Kırıntı yolunu tek biçime indirir (İE#14 A4).
+ *
+ * 1688 bu bilgiyi üç ayrı biçimde verebilir: düz metin dizisi, `{name}`/`{categoryName}`
+ * nesneleri ya da " > " ile ayrılmış tek metin. Üçü de aynı listeye çevrilir; ayıklama
+ * (kök adım atma) BACKEND'DE yapılır ki kural tek yerde dursun.
+ */
+export function extractBreadcrumb(value: unknown, domYolu?: string[] | null): string[] {
+  const out: string[] = [];
+  const ekle = (metin: unknown): void => {
+    if (typeof metin !== 'string') return;
+    const temiz = metin.trim();
+    if (temiz !== '' && !out.includes(temiz)) out.push(temiz);
+  };
+
+  if (typeof value === 'string') {
+    for (const parca of value.split(/[>›»\/|]/)) ekle(parca);
+  } else if (Array.isArray(value)) {
+    for (const entry of value) {
+      if (typeof entry === 'string') {
+        ekle(entry);
+      } else if (entry !== null && typeof entry === 'object') {
+        const record = entry as Record<string, unknown>;
+        ekle(record.name ?? record.categoryName ?? record.text ?? record.title);
+      }
+    }
+  }
+
+  if (out.length === 0 && Array.isArray(domYolu)) {
+    for (const entry of domYolu) ekle(entry);
+  }
+
+  return out.slice(0, 8);
 }
 
 export function cleanImageUrl(url: string, stripSuffixes: string[]): string {
@@ -230,6 +267,8 @@ export function parse1688(
     min_order: firstPath(ctx, paths.min_order ?? []) ?? null,
     unit: firstPath(ctx, paths.unit ?? []) ?? null,
     category_name: firstPath(ctx, paths.category_name ?? []) ?? null,
+    // İE#14 A4: kategori artık "Kategorisiz" basılmasın diye kırıntı yolu da taşınır.
+    breadcrumb: extractBreadcrumb(firstPath(ctx, paths.breadcrumb ?? []), dom.breadcrumb),
     origin_text: originText,
   };
 
