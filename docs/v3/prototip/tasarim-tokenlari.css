@@ -1,0 +1,89 @@
+/* ==========================================================================
+   tedarikapp — TASARIM TOKENLARI (V3)
+   Bu dosya BAĞLAYICIDIR. Panel, paylaşım sayfası ve tüm arayüzler bu
+   değişkenlerden beslenir. Bileşenlerde sabit renk/ölçü yazılmaz.
+   Kaynak: docs/v3/prototip/tedarikapp-v3-prototip.html
+   ========================================================================== */
+
+:root{
+  /* --- Marka --- */
+  --navy:#0F2557;          /* birincil marka */
+  --navy-2:#16336E;        /* hover / koyu yüzey */
+  --navy-3:#1E4086;        /* degrade ucu */
+  --gold:#D4A017;          /* YALNIZ vurgu: aktif öğe şeridi, skor çubuğu, kapanış çizgisi */
+  --blue:#2A5BD7;          /* eylem/bağlantı */
+  --blue-soft:#EEF3FE;     /* seçili satır, yumuşak dolgu */
+
+  /* --- Nötr ölçek --- */
+  --g50:#F8FAFC;  --g100:#F1F4F9; --g200:#E6EAF1; --g300:#D3DAE6;
+  --g400:#98A2B3; --g500:#5B6472; --g700:#334155; --g900:#0F1728;
+
+  /* --- Yüzeyler --- */
+  --bg:#F5F7FA;            /* uygulama zemini */
+  --surface:#FFFFFF;       /* kart / panel */
+  --line:#E6EAF1;          /* ana kenar */
+  --line-soft:#F0F3F8;     /* tablo içi ince ayraç */
+
+  /* --- Metin --- */
+  --text:#0F1728; --text-2:#5B6472; --text-3:#98A2B3;
+
+  /* --- Anlam renkleri (renk TEK BAŞINA anlam taşımaz; ikon+metin ile birlikte) --- */
+  --ok:#0E7A4A;   --ok-bg:#E6F6EE;
+  --warn:#9A6700; --warn-bg:#FFF6E0;
+  --err:#B42318;  --err-bg:#FEECEB;
+  --info:#175CD3; --info-bg:#EAF1FE;
+
+  /* --- Yarıçap --- */
+  --r-sm:8px; --r:12px; --r-lg:16px;
+
+  /* --- Gölge (yalnız 3 seviye) --- */
+  --sh-1:0 1px 2px rgba(15,23,42,.06);          /* kart */
+  --sh-2:0 4px 12px -2px rgba(15,23,42,.08);    /* hover / açılır */
+  --sh-3:0 16px 40px -12px rgba(15,23,42,.22);  /* modal / çekmece */
+
+  /* --- Ölçüler --- */
+  --sidebar:264px;   /* daraltılmış: 68px */
+  --topbar:56px;
+
+  /* --- Aralık ritmi (4px) --- */
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-6:24px; --sp-8:32px; --sp-12:48px;
+
+  /* --- Tipografi --- */
+  --font:Inter,system-ui,-apple-system,sans-serif;
+  --font-cjk:'Noto Sans SC',Inter,sans-serif;
+  --fs-xs:11px; --fs-sm:12.5px; --fs-md:13.5px; --fs-base:14px;
+  --fs-lg:16px; --fs-xl:21px; --fs-2xl:26px;
+  /* Sayılarda daima: font-variant-numeric: tabular-nums */
+}
+
+/* --- KOYU TEMA: yalnız token'lar değişir, bileşen CSS'i tekrar yazılmaz --- */
+[data-theme="dark"]{
+  --bg:#0B1220; --surface:#111A2B; --line:#1E2A40; --line-soft:#18233A;
+  --text:#E8EDF5; --text-2:#9FB0C8; --text-3:#6B7C96;
+  --g50:#162134; --g100:#162134; --g200:#22304A; --g300:#2C3B58;
+  --blue-soft:#152648;
+  --ok-bg:#0F2A20; --warn-bg:#2A2214; --err-bg:#2A1616; --info-bg:#132444;
+  --sh-1:0 1px 2px rgba(0,0,0,.4);
+  --sh-2:0 4px 12px -2px rgba(0,0,0,.5);
+  --sh-3:0 16px 40px -12px rgba(0,0,0,.6);
+}
+
+/* --- Hareket: 120-200 ms, yalnız anlam taşıyan geçişlerde --- */
+:root{ --t-fast:120ms; --t:180ms; --t-slow:220ms; }
+
+/* --- Erişilebilirlik: her etkileşimli öğede görünür odak --- */
+:where(a,button,input,select,textarea,[tabindex]):focus-visible{
+  outline:2px solid var(--blue); outline-offset:2px; border-radius:6px;
+}
+
+/* --- Platform rozet renkleri (platform kaydından gelir; burada varsayılanlar) --- */
+:root{
+  --plat-1688-bg:#FFF1E6; --plat-1688-fg:#B54708;
+  --plat-alibaba-bg:#FFF4E5; --plat-alibaba-fg:#B25E09;
+  --plat-amazon-bg:#EAF1FE; --plat-amazon-fg:#175CD3;
+}
+[data-theme="dark"]{
+  --plat-1688-bg:#3A2312; --plat-1688-fg:#F5A96A;
+  --plat-alibaba-bg:#3A2A12; --plat-alibaba-fg:#F0B45E;
+  --plat-amazon-bg:#132444; --plat-amazon-fg:#8AB4F8;
+}
