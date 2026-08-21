@@ -246,9 +246,9 @@ final class SharePage
         $adHtml = is_string($product['url'] ?? null) && $product['url'] !== ''
             ? '<a class="pn" href="' . $e($product['url']) . '" target="_blank" rel="noreferrer">' . $e($ad) . '</a>'
             : '<span class="pn">' . $e($ad) . '</span>';
-        $orijinal = is_string($product['name_original'] ?? null) && $product['name_original'] !== ''
-            ? '<div class="pz zh">' . $e($product['name_original']) . '</div>'
-            : '';
+        // İE#14 A1: ad ile orijinal AYNIYSA ikinci satır BASILMAZ (ortak kural).
+        $orijinalMetin = \App\Services\Translation\ProductNaming::originalOf($product);
+        $orijinal = $orijinalMetin === null ? '' : '<div class="pz zh">' . $e($orijinalMetin) . '</div>';
 
         $git = is_string($product['url'] ?? null) && $product['url'] !== ''
             ? '<a class="op-git" href="' . $e($product['url']) . '" target="_blank" rel="noreferrer">'

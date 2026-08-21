@@ -239,3 +239,45 @@ td.not-hucre .val { font-style: italic; }
 .hata-karti p { margin: 0 0 8px; color: #334155; font-size: 14px; }
 .hata-ipucu { color: var(--t3); font-size: 12px; }
 .alt { margin-top: 18px; text-align: center; color: var(--t3); font-size: 12px; }
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * İE#14 B2 — YAZDIRMA TAŞMASI DÜZELTMESİ (canlı kusur: sağdaki DDP $ / DDP ₺
+ * sütunları kâğıt dışında kalıyordu). Şartnamenin @media print bloğu YUKARIDA
+ * aynen durur; burası yalnız TAŞMAYI kapatan katmandır ve ondan SONRA gelir.
+ * ──────────────────────────────────────────────────────────────────────────── */
+@media print {
+  /* Sabit yerleşim + genişlik kilidi: tarayıcı sütunları içeriğe göre şişiremez. */
+  .twrap { overflow: visible !important; }
+  table { table-layout: fixed !important; width: 100% !important; min-width: 0 !important; }
+
+  /* Yüzde sütun genişlikleri — TOPLAM 100 (İE#14 B2 kuralı).
+     SAPMA NOTU: emirdeki liste 105 ediyordu (3+22+13+11+7+6+7+7+5+7+7+5+5);
+     "toplam 100" kuralı bağlayıcı olduğu için fazlalık, kırpmaya en dayanıklı
+     METİN sütunlarından düşüldü: Ürün Adı 22→20, Detaylar 13→12,
+     Varyasyon 11→10, Kategori 7→6. Sayısal/para sütunlarına DOKUNULMADI. */
+  table.veri col, table col { width: auto; }
+  thead th:nth-child(1),  tr.r td:nth-child(1)  { width: 3%; }   /* No */
+  thead th:nth-child(2),  tr.r td:nth-child(2)  { width: 20%; }  /* Ürün Adı */
+  thead th:nth-child(3),  tr.r td:nth-child(3)  { width: 12%; }  /* Ürün Detayları */
+  thead th:nth-child(4),  tr.r td:nth-child(4)  { width: 10%; }  /* Varyasyon */
+  thead th:nth-child(5),  tr.r td:nth-child(5)  { width: 6%; }   /* Kategori */
+  thead th:nth-child(6),  tr.r td:nth-child(6)  { width: 6%; }   /* Kaynak */
+  thead th:nth-child(7),  tr.r td:nth-child(7)  { width: 7%; }   /* Durum */
+  thead th:nth-child(8),  tr.r td:nth-child(8)  { width: 7%; }   /* Not */
+  thead th:nth-child(9),  tr.r td:nth-child(9)  { width: 5%; }   /* Miktar */
+  thead th:nth-child(10), tr.r td:nth-child(10) { width: 7%; }   /* Vitrin Fiyatı */
+  thead th:nth-child(11), tr.r td:nth-child(11) { width: 7%; }   /* ₺ Karşılığı */
+  thead th:nth-child(12), tr.r td:nth-child(12) { width: 5%; }   /* DDP $ */
+  thead th:nth-child(13), tr.r td:nth-child(13) { width: 5%; }   /* DDP ₺ */
+
+  /* Uzun kelime/URL satırı taşıramaz. */
+  th, td { overflow-wrap: anywhere; word-break: break-word; }
+
+  /* Varyasyon ve Detay hücreleri baskıda ~3 satırla sınırlı (sayfa şişmesin). */
+  tr.r td:nth-child(3) .val, tr.r td:nth-child(4) .val {
+    display: block; max-height: 3.4em; overflow: hidden;
+  }
+
+  /* Baskıda ölçekleme UYGULANMAZ — tarayıcı "sığdır" ayarı bozulmasın. */
+  body { zoom: 1 !important; transform: none !important; }
+}

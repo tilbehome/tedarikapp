@@ -145,9 +145,9 @@ final class PdfRenderer implements ExportRenderer
             if (is_string($product['url'] ?? null) && $product['url'] !== '') {
                 $ad = '<a href="' . $e($product['url']) . '">' . $ad . '</a>';
             }
-            $orijinal = is_string($product['name_original'] ?? null) && $product['name_original'] !== ''
-                ? '<br><span class="zh">' . $e($product['name_original']) . '</span>'
-                : '';
+            // İE#14 A1: ad ile orijinal AYNIYSA ikinci satır BASILMAZ (ortak kural).
+            $orijinalMetin = \App\Services\Translation\ProductNaming::originalOf($product);
+            $orijinal = $orijinalMetin === null ? '' : '<br><span class="zh">' . $e($orijinalMetin) . '</span>';
 
             $kar = '';
             if ($icKopya) {

@@ -131,6 +131,32 @@ final class SharePageV4Test extends AuthTestCase
         self::assertStringNotContainsString('TEDARİK PUANI', $html);
     }
 
+    /**
+     * İE#14 B2 — YAZDIRMA REGRESYONU: canlıda sağdaki DDP sütunları kâğıt dışında
+     * kalıyordu. Baskı bloğunda sabit yerleşim ve yüzde genişlikler DURMALI.
+     */
+    public function testYazdirmaBloguTasmayiOnleyenKurallariIcerir(): void
+    {
+        $css = (string) file_get_contents(dirname(__DIR__, 2) . '/public/p-style.css');
+
+        self::assertStringContainsString('@page { size: A4 landscape', $css, 'Yatay A4 korunmalı.');
+        self::assertStringContainsString('table-layout: fixed !important', $css);
+        self::assertStringContainsString('min-width: 0 !important', $css, 'min-width baskıda iptal edilmeli.');
+        self::assertStringContainsString('overflow-wrap: anywhere', $css);
+        self::assertStringContainsString('zoom: 1 !important', $css, 'Baskıda ölçekleme uygulanmamalı.');
+
+        // Sütun yüzdeleri: toplam 100 (şartnamedeki sütun sırası).
+        $baskiBlogu = substr($css, (int) strrpos($css, '@media print'));
+        preg_match_all('/nth-child\((\d+)\)\s*{\s*width:\s*(\d+)%/', $baskiBlogu, $eslesmeler);
+        $yuzdeler = array_map('intval', $eslesmeler[2]);
+        self::assertCount(13, $yuzdeler, '13 veri sütununun her biri genişlik almalı.');
+        self::assertSame(100, array_sum($yuzdeler), 'Yüzdeler toplamı 100 olmalı.');
+
+        // Ekran düzeni baskıda TETİKLENMEZ: mobil sorgular "screen and" kilitli.
+        self::assertStringNotContainsString('@media (max-width:940px)', $css);
+        self::assertStringContainsString('@media screen and (max-width:940px)', $css);
+    }
+
     public function testGirissizGoruntuleyendeExcelPdfDugmesiYOK(): void
     {
         $html = $this->sayfa();

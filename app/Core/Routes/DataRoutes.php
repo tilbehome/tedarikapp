@@ -52,12 +52,15 @@ final class DataRoutes
         Connection $connection,
         string $migrationsDir,
     ): void {
-        $app->group('/api', static function (RouteCollectorProxy $group) use ($settingsController, $categoryController, $activityController): void {
+        $app->group('/api', static function (RouteCollectorProxy $group) use ($settingsController, $categoryController, $activityController, $translationController): void {
             $group->get('/settings', [$settingsController, 'show']);
             $group->put('/settings/rates', [$settingsController, 'updateRates']);
             $group->get('/settings/rates/history', [$settingsController, 'rateHistory']);
             // İE#13 F1: belge antedi (çıktı üst bandı) — boş alan basılmaz.
             $group->put('/settings/document-header', [$settingsController, 'updateDocumentHeader']);
+            // İE#14 A2 (K56 Katman 1): Ayarlar > Terminoloji — dosya tabanlı sözlük.
+            $group->get('/settings/glossary', [$translationController, 'glossaryIndex']);
+            $group->put('/settings/glossary', [$translationController, 'glossarySave']);
 
             $group->get('/activity', [$activityController, 'index']);
 
@@ -114,6 +117,8 @@ final class DataRoutes
 
             // İE#13 C4: ZH→TR başlık ÖNERİSİ (K54 — hiçbir alana kendiliğinden yazılmaz).
             $group->post('/panel/translate-suggest', [$translationController, 'suggest']);
+            // İE#14 A2: ürünün TAMAMI tek çağrıda (K56 Katman 2 arayüzü üstünden).
+            $group->post('/panel/translate-product', [$translationController, 'translateProduct']);
 
             $group->get('/trash', [$trashController, 'index']);
             $group->post('/trash/{type}/{id}/restore', [$trashController, 'restore']);

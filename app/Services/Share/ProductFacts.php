@@ -24,7 +24,9 @@ final class ProductFacts
      */
     private const FIELDS = [
         ['Marka', '品牌', ['品牌', 'brand']],
-        ['Model', '型号', ['型号', 'model', '货号']],
+        // İE#14 A5: 货号 (stok kodu) Model adaylarından ÇIKARILDI — "155" gibi
+        // anlamsız stok kodları Model diye basılıyordu. Stok kodu kendi alanındadır.
+        ['Model', '型号', ['型号', 'model', 'model number']],
         ['Malzeme', '材质', ['材质', 'material']],
         ['Ölçü', '尺寸', ['尺寸', '规格尺寸', 'size']],
         ['Ağırlık', '净重', ['净重', '重量', 'weight']],
@@ -32,6 +34,7 @@ final class ProductFacts
         ['Set adedi', '套件', ['套件', '件数', '数量/套']],
         ['Menşe', '产地', ['产地', '原产地', '货源地']],
         ['Kapasite', '容量', ['容量', 'capacity']],
+        ['Stok kodu', '货号', ['货号', 'item no', 'sku']],
         ['Güç', '功率', ['功率', 'power']],
         ['Garanti', '保修', ['保修', '质保']],
         ['Sertifika', '认证', ['认证', 'certificate']],
@@ -51,8 +54,10 @@ final class ProductFacts
             $deger = null;
             foreach ($adaylar as $aday) {
                 if (isset($raw[$aday]) && $raw[$aday] !== '') {
-                    $deger = $raw[$aday];
-                    break;
+                    $deger = self::anlamli($raw[$aday]);
+                    if ($deger !== null) {
+                        break;
+                    }
                 }
             }
             $out[] = [$tr, $cjk, $deger];
@@ -106,6 +111,24 @@ final class ProductFacts
             return null;
         }
 
-        return (string) $deger;
+        return self::anlamli((string) $deger);
+    }
+
+    /**
+     * İE#14 A5 — ANLAMSIZ DEĞER DENETİMİ: yalnızca rakamdan oluşan ve 3 karakterden
+     * kısa değerler ("155", "12") bilgi taşımaz; alan boş sayılır ve "—" basılır.
+     * Ölçü/sayı içeren ama birim taşıyan değerler ("350ml") korunur.
+     */
+    private static function anlamli(string $deger): ?string
+    {
+        $deger = trim($deger);
+        if ($deger === '') {
+            return null;
+        }
+        if (preg_match('/^\d+$/', $deger) === 1 && mb_strlen($deger) < 3) {
+            return null;
+        }
+
+        return $deger;
     }
 }

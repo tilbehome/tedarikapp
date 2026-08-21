@@ -234,18 +234,30 @@ final class AppBuilder
         );
         // İE#13 Blok C: çeviri ÖNERİSİ (K54) — kendi SSRF beyaz listesi vardır;
         // medya allowlist'i (alicdn/1688) GENİŞLETİLMEZ.
-        $translationController = new \App\Controllers\TranslationController(
-            new \App\Services\Translation\TranslationService(
-                new \App\Models\TranslationCacheRepository($connection),
-                $translationClient ?? new \App\Services\Translation\MyMemoryTranslator(
-                    new UrlGuard(array_map('trim', explode(',', $config->get('TRANSLATE_ALLOWED_HOSTS', 'api.mymemory.translated.net')))),
-                    $config->getPositiveInt('TRANSLATE_TIMEOUT', 5),
-                ),
-                $services->clock,
-                $logger,
-                $config->get('TRANSLATE_ENABLED', '1') !== '0',
+        // İE#14 A2 (K56): üç katmanlı çeviri. Katman 1 sözlük DOSYA tabanlıdır
+        // (config/sozluk-<dil>-tr.php; zh ve en), Katman 3 mevcut MyMemory'dir.
+        // Katman 2 (LLM) V3-A'da gelecek — TranslatorInterface o gün hazır olsun diye
+        // bugünden çağrı noktasıdır (LayeredTranslator tek uygulamadır).
+        $glossary = new \App\Services\Translation\Glossary($basePath . '/config');
+        $translationService = new \App\Services\Translation\TranslationService(
+            new \App\Models\TranslationCacheRepository($connection),
+            $translationClient ?? new \App\Services\Translation\MyMemoryTranslator(
+                new UrlGuard(array_map('trim', explode(',', $config->get('TRANSLATE_ALLOWED_HOSTS', 'api.mymemory.translated.net')))),
+                $config->getPositiveInt('TRANSLATE_TIMEOUT', 5),
             ),
+            $services->clock,
+            $logger,
+            $config->get('TRANSLATE_ENABLED', '1') !== '0',
+            'zh',
+            'tr',
+            $glossary,
         );
+        $translator = \App\Services\Translation\TranslatorRegistry::make(
+            $config->get('TRANSLATOR_PROVIDER', 'katmanli'),
+            $glossary,
+            $translationService,
+        );
+        $translationController = new \App\Controllers\TranslationController($translationService, $glossary, $translator);
 
         $app->group('', static function (\Slim\Routing\RouteCollectorProxy $group) use ($extensionController, $translationController): void {
             $group->map(['POST', 'OPTIONS'], '/api/capture', [$extensionController, 'capture']);
