@@ -22,11 +22,20 @@ import {
 /**
  * BİLGİ MİMARİSİ — sol menü (İE#16 D1.5 · V3 kanonu §3).
  *
- * Menü BEŞ GRUPTUR: ÇALIŞMA / TEDARİK / ANALİZ / KAYITLAR / SİSTEM. Kanon bu
- * yapıyı Faz 1'de tam gösterir; ekranların çoğu sonraki fazlarda dolacağı için
- * `hazir: false` olanlar görünür ama "Yakında" rozetiyle pasiftir. GİZLEMİYORUZ:
- * kullanıcı ürünün nereye gittiğini görsün, menü sonradan büyüyüp yerini
- * değiştirmesin (kas hafızası).
+ * Menü BEŞ GRUPTUR: ÇALIŞMA / TEDARİK / ANALİZ / KAYITLAR / SİSTEM.
+ *
+ * "YAKINDA" ÖĞELERİ — İE#20 C8 ile DEĞİŞTİ. İE#16 D1.5'te bu öğeler canlıda da
+ * görünüyordu ("kullanıcı ürünün nereye gittiğini görsün, menü sonradan büyüyüp
+ * yerini değiştirmesin"). Gerekçe geliştirme için hâlâ geçerli ama CANLIDA
+ * ters çalışıyor: gerçek işini yapmaya çalışan kullanıcı, tıkladığında hiçbir
+ * şey yapmayan altı menü öğesiyle karşılaşıyor ve ürünün yarım olduğunu
+ * düşünüyor. Bu yüzden:
+ *
+ *   • ÜRETİM derlemesinde `hazir: false` öğeler GİZLENİR,
+ *   • GELİŞTİRMEDE görünür kalır (yol haritası gözden kaçmasın).
+ *
+ * Ayrım derleme zamanındadır (`import.meta.env.PROD`), yani canlıda o öğeler
+ * pakete bile girmez — yanlışlıkla erişilebilir bir yarım ekran kalmaz.
  *
  * Rozet sayısı 0 ise BASILMAZ (kanon §3).
  */
@@ -49,7 +58,7 @@ export interface MenuGrubu {
   ogeler: MenuOgesi[];
 }
 
-export const menuGruplari: MenuGrubu[] = [
+const tumGruplar: MenuGrubu[] = [
   {
     baslik: 'ÇALIŞMA',
     ogeler: [
@@ -96,6 +105,18 @@ export const menuGruplari: MenuGrubu[] = [
  * Arşiv bir "kapı" ekranıdır: çöp kutusu ve aktivite günlüğü onun altındadır.
  * Menüde tek satır durur, alt maddeler ekranın kendi sekmeleridir (kanon §3).
  */
+/**
+ * Gösterilecek menü: üretimde yalnız HAZIR ekranlar (C8).
+ *
+ * Boşalan grup tamamen düşer — başlığı olup öğesi olmayan bir grup, kullanıcıya
+ * "burada bir şey vardı ama kayboldu" hissi verir.
+ */
+export const menuGruplari: MenuGrubu[] = import.meta.env.PROD
+  ? tumGruplar
+      .map((grup) => ({ ...grup, ogeler: grup.ogeler.filter((oge) => oge.hazir) }))
+      .filter((grup) => grup.ogeler.length > 0)
+  : tumGruplar;
+
 export const arsivAltEkranlari: { to: string; label: string; icon: LucideIcon }[] = [
   { to: '/cop-kutusu', label: 'Çöp Kutusu', icon: Boxes },
   { to: '/aktivite', label: 'Aktivite Günlüğü', icon: ClipboardList },
@@ -111,7 +132,7 @@ export function ekranAdi(pathname: string): [string, string] {
   };
   if (ozel[pathname]) return ozel[pathname];
 
-  for (const grup of menuGruplari) {
+  for (const grup of tumGruplar) {
     for (const oge of grup.ogeler) {
       if (oge.to === '/' ? pathname === '/' : pathname.startsWith(oge.to)) {
         return [oge.bolum, oge.label];
