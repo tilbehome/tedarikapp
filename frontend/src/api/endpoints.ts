@@ -104,6 +104,42 @@ export const exports = {
   fileUrl: (exportId: number) => `/api/exports/${exportId}/file`,
 };
 
+/** İE#20 C4 — Ayarlar > Çeviri. API anahtarı ASLA dönmez; yalnız maskeli önizleme. */
+export interface CeviriAyarlariOzeti {
+  saglayici: string;
+  model: string;
+  hedef_diller: string[];
+  acik: boolean;
+  anahtar_tanimli: boolean;
+  anahtar_onizleme: string | null;
+  saglayicilar: string[];
+}
+
+export const ceviri = {
+  ayarlar: (signal?: AbortSignal) => api.get<CeviriAyarlariOzeti>('/api/settings/translation', { signal }),
+  ayarlariKaydet: (body: Record<string, unknown>) =>
+    api.put<CeviriAyarlariOzeti>('/api/settings/translation', body),
+  /** Çevrilmemiş ürünleri KUYRUĞA alır — ekran beklemez (C4). */
+  topluCevir: (listId?: number) =>
+    api.post<{ kuyruga_alinan: number; mesaj: string }>(
+      '/api/panel/translate-backfill',
+      listId === undefined ? {} : { list_id: listId },
+    ),
+};
+
+/** İE#20 C3 — kuyruk sağlığı. */
+export interface KuyrukDurumuVerisi {
+  kurulu: boolean;
+  mesaj?: string;
+  bekleyen: number;
+  calisan: number;
+  olu: number;
+  en_eski_bekleyen_dakika: number | null;
+  turler: Record<string, number>;
+  olu_isler: { id: number; tur: string; anahtar: string | null; hata: string | null; deneme: number }[];
+  uyari: string | null;
+}
+
 export interface InboxItem {
   id: number;
   status: 'pending' | 'error';
@@ -192,7 +228,9 @@ export const translate = {
       category?: string;
       attributes?: Record<string, string>;
       variants?: string[];
-      meta: { provider: string; sources: Record<string, string> };
+      /** İE#20 C4/C5: dil → alanlar (TR ve EN aynı istekte üretilir). */
+      ceviriler?: Record<string, { name?: string; category?: string } | undefined>;
+      meta?: { provider?: string; sources?: Record<string, string>; target_langs?: string[] };
     }>('/api/panel/translate-product', urun),
 };
 
@@ -237,6 +275,10 @@ export const settings = {
 };
 
 export const system = {
+  /** İE#20 C3: kuyruk sağlığı — panel Sistem durumu bölümü. */
+  kuyruk: (signal?: AbortSignal) => api.get<KuyrukDurumuVerisi>('/api/system/queue', { signal }),
+  kuyrukYenidenDene: (id: number) => api.post<{ queued: boolean }>(`/api/system/queue/${id}/retry`),
+
   status: () => api.get<SystemStatus>('/api/system/status'),
   /** İzinli durum geçişleri — arayüz kendi kopyasını TUTMAZ (İE#8 §2). */
   stateMachine: () => api.get<StateMachineMap>('/api/system/state-machine'),

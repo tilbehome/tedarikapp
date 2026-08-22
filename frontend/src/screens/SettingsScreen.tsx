@@ -10,6 +10,8 @@ import { useToast } from '../components/Toast';
 import IslemDurumu from '../components/IslemDurumu';
 import { useUzunIslem } from '../lib/useUzunIslem';
 import BelgeAntedi from './ayarlar/BelgeAntedi';
+import CeviriAyarlari from './ayarlar/CeviriAyarlari';
+import KuyrukDurumu from './ayarlar/KuyrukDurumu';
 
 /**
  * E8 — Ayarlar: kurlar (tarihçeli), kategoriler, güvenlik, sistem durumu.
@@ -70,7 +72,7 @@ export default function SettingsScreen() {
 
   return (
     <>
-      <PageHeader title="Ayarlar" subtitle="Kurlar, kategoriler, güvenlik ve sistem" />
+      <PageHeader title="Ayarlar" subtitle="Kurlar, kategoriler, çeviri, güvenlik ve sistem" />
 
       <section className="card mb-4 p-4">
         <h2 className="mb-3 text-sm font-semibold text-ink-2">Kurlar</h2>
@@ -102,6 +104,11 @@ export default function SettingsScreen() {
       {settingsState.data ? (
         <BelgeAntedi mevcut={settingsState.data.document_header} onSaved={settingsState.reload} />
       ) : null}
+
+      {/* İE#20 C4/C3: çeviri sağlayıcı ayarları ve kuyruk sağlığı. */}
+      <CeviriAyarlari />
+
+      <KuyrukDurumu />
 
       <section className="card mb-4 p-4">
         <h2 className="mb-3 text-sm font-semibold text-ink-2">Kur tarihçesi</h2>

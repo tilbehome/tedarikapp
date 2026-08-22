@@ -32,7 +32,146 @@ final class TranslationController extends ApiController
         // İE#14 A7: sözlük değişikliği de iz bırakır — terim değişimi belgeyi değiştirir.
         private readonly ?\App\Services\ActivityLog $activity = null,
         private readonly ?\App\Core\Clock $clock = null,
+        // İE#20 C4: Ayarlar > Çeviri (sağlayıcı/anahtar/model/diller) ve toplu çeviri.
+        private readonly ?\App\Services\Translation\CeviriAyarlari $ceviriAyarlari = null,
+        private readonly ?\App\Services\Kuyruk\JobQueue $kuyruk = null,
+        private readonly ?\App\Models\ProductRepository $urunler = null,
     ) {
+    }
+
+    /**
+     * GET /api/settings/translation — Ayarlar > Çeviri ekranının verisi.
+     *
+     * API ANAHTARI DÖNMEZ. Yalnız "tanımlı mı" ve maskeli önizleme döner: panel
+     * ekranı omuz üstünden okunur, tarayıcı geçmişinde kalır, ekran görüntüsüne
+     * girer. Bir sırrı göstermenin tek meşru anı, onu ÜRETTİĞİMİZ andır.
+     */
+    public function translationSettings(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        if ($this->ceviriAyarlari === null) {
+            return Response::error($response, 'SERVER_ERROR', 'Çeviri ayarları yapılandırılmamış.', 500);
+        }
+
+        return Response::success($response, $this->ceviriAyarlari->ozet());
+    }
+
+    /**
+     * PUT /api/settings/translation — sağlayıcı, anahtar, model, hedef diller.
+     *
+     * Anahtar BOŞ gönderilirse mevcut anahtar KORUNUR (panel maskeli değeri geri
+     * gönderemez); anahtarı silmek için açıkça `"anahtar_sil": true` gerekir.
+     */
+    public function translationSettingsSave(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        if ($this->ceviriAyarlari === null) {
+            return Response::error($response, 'SERVER_ERROR', 'Çeviri ayarları yapılandırılmamış.', 500);
+        }
+
+        $body = $this->body($request);
+        $hatalar = [];
+
+        $saglayici = $this->str($body, 'saglayici');
+        if ($saglayici !== '' && !in_array($saglayici, \App\Services\Translation\LlmTranslator::SAGLAYICILAR, true)) {
+            $hatalar['saglayici'] = 'Tanınmayan sağlayıcı. Geçerli değerler: '
+                . implode(', ', \App\Services\Translation\LlmTranslator::SAGLAYICILAR);
+        }
+
+        $diller = $body['hedef_diller'] ?? null;
+        if ($diller !== null && !is_array($diller)) {
+            $hatalar['hedef_diller'] = 'Hedef diller bir liste olmalı.';
+        }
+
+        if ($hatalar !== []) {
+            return Response::error($response, 'VALIDATION', 'Doğrulama hatası', 422, $hatalar);
+        }
+
+        if ($saglayici !== '') {
+            $this->ceviriAyarlari->saglayiciKaydet($saglayici);
+        }
+        $model = $this->str($body, 'model');
+        if ($model !== '') {
+            $this->ceviriAyarlari->modelKaydet($model);
+        }
+        if (is_array($diller)) {
+            /** @var list<string> $temizDiller */
+            $temizDiller = array_values(array_filter(array_map(
+                static fn (mixed $d): string => is_string($d) ? $d : '',
+                $diller,
+            )));
+            $this->ceviriAyarlari->hedefDilleriKaydet($temizDiller);
+        }
+        if (array_key_exists('acik', $body)) {
+            $this->ceviriAyarlari->acikKaydet(($body['acik'] ?? true) !== false);
+        }
+
+        if (($body['anahtar_sil'] ?? false) === true) {
+            $this->ceviriAyarlari->anahtariKaydet('');
+        } else {
+            $anahtar = is_string($body['anahtar'] ?? null) ? trim($body['anahtar']) : '';
+            if ($anahtar !== '') {
+                $this->ceviriAyarlari->anahtariKaydet($anahtar);
+            }
+        }
+
+        $this->izBirak($request, 'ceviri_ayari', 'Çeviri ayarları güncellendi');
+
+        return Response::success($response, $this->ceviriAyarlari->ozet());
+    }
+
+    /**
+     * POST /api/panel/translate-backfill — ÇEVRİLMEMİŞ ürünleri kuyruğa alır (C4).
+     *
+     * Neden kuyruk: 300 ürünü tek istekte çevirmek dakikalar sürer ve isteği
+     * zaman aşımına uğratır. Kuyruk işi parça parça yapar; panel ilerlemeyi
+     * `GET /api/system/queue` üzerinden okur.
+     */
+    public function translateBackfill(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        if ($this->kuyruk === null || $this->urunler === null) {
+            return Response::error($response, 'SERVER_ERROR', 'Kuyruk yapılandırılmamış.', 500);
+        }
+
+        $now = $this->clock?->now() ?? new \DateTimeImmutable();
+        $listeId = isset($this->body($request)['list_id']) ? (int) $this->body($request)['list_id'] : null;
+
+        $adaylar = $this->urunler->cevrilmemisler($listeId);
+        $kuyruga = 0;
+        foreach ($adaylar as $urunId) {
+            $this->kuyruk->ekle(
+                \App\Services\Kuyruk\KuyrukIsleyicileri::TUR_CEVIRI,
+                'urun:' . $urunId,
+                ['urun_id' => $urunId],
+                $now,
+            );
+            $kuyruga++;
+        }
+
+        $this->izBirak($request, 'ceviri_toplu', $kuyruga . ' ürün çeviri kuyruğuna alındı');
+
+        return Response::success($response, [
+            'kuyruga_alinan' => $kuyruga,
+            'mesaj' => $kuyruga === 0
+                ? 'Çevrilmemiş ürün bulunamadı.'
+                : $kuyruga . ' ürün çeviri kuyruğuna alındı. İlerlemeyi Sistem durumundan izleyebilirsiniz.',
+        ]);
+    }
+
+    private function izBirak(ServerRequestInterface $request, string $eylem, string $detay): void
+    {
+        if ($this->activity === null || $this->clock === null) {
+            return;
+        }
+
+        $this->activity->record(
+            'settings',
+            null,
+            $eylem,
+            $detay,
+            \App\Core\ClientIp::from($request),
+            $this->clock->now(),
+            \App\Services\ActivityLog::ACTOR_ADMIN,
+            null,
+        );
     }
 
     /**

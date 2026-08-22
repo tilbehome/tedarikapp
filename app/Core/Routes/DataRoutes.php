@@ -75,6 +75,9 @@ final class DataRoutes
             // İE#14 A2 (K56 Katman 1): Ayarlar > Terminoloji — dosya tabanlı sözlük.
             $group->get('/settings/glossary', [$translationController, 'glossaryIndex']);
             $group->put('/settings/glossary', [$translationController, 'glossarySave']);
+            // İE#20 C4: Ayarlar > Çeviri (sağlayıcı, anahtar, model, hedef diller).
+            $group->get('/settings/translation', [$translationController, 'translationSettings']);
+            $group->put('/settings/translation', [$translationController, 'translationSettingsSave']);
 
             // İE#11: eklenti token yönetimi (Faz 3 rozeti kalktı).
             $group->post('/settings/extension-token', [$settingsController, 'extensionTokenCreate']);
@@ -143,6 +146,8 @@ final class DataRoutes
             $group->post('/panel/translate-suggest', [$translationController, 'suggest']);
             // İE#14 A2: ürünün TAMAMI tek çağrıda (K56 Katman 2 arayüzü üstünden).
             $group->post('/panel/translate-product', [$translationController, 'translateProduct']);
+            // İE#20 C4: "çevrilmemiş N ürünü çevir" — kuyruğa alır, beklemez.
+            $group->post('/panel/translate-backfill', [$translationController, 'translateBackfill']);
 
             $group->get('/trash', [$trashController, 'index']);
             $group->post('/trash/{type}/{id}/restore', [$trashController, 'restore']);

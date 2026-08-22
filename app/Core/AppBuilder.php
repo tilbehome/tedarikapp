@@ -284,12 +284,32 @@ final class AppBuilder
             $glossary,
             $translationService,
         );
+        // İE#20 C4: Katman 2 (LLM) artık GERÇEK. Sağlayıcı/anahtar/model ayarlardan
+        // gelir; anahtar yoksa LlmTranslator sessizce katmanlı yedeğe düşer, yani
+        // yapılandırılmamış sistemde davranış BUGÜNKÜYLE AYNI kalır.
+        $ceviriAyarlari = new \App\Services\Translation\CeviriAyarlari(
+            $settingsRepository,
+            new \App\Core\Encrypter($config),
+        );
+        $translator = new \App\Services\Translation\LlmTranslator(
+            $glossary,
+            $ceviriAyarlari,
+            new \App\Services\Translation\LlmIstemci($config->getPositiveInt('TRANSLATE_LLM_TIMEOUT', 45)),
+            new \App\Models\TranslationCacheRepository($connection),
+            $services->clock,
+            $logger,
+            $translator,
+        );
+
         $translationController = new \App\Controllers\TranslationController(
             $translationService,
             $glossary,
             $translator,
             $services->activity,
             $services->clock,
+            $ceviriAyarlari,
+            new \App\Services\Kuyruk\JobQueue($connection),
+            $products,
         );
 
         $app->group('', static function (\Slim\Routing\RouteCollectorProxy $group) use ($extensionController, $translationController): void {

@@ -308,6 +308,69 @@ final class ProductRepository
         return $updated;
     }
 
+    /**
+     * ÇEVRİLMEMİŞ ürünler (İE#20 C4 toplu geriye dönük çeviri).
+     *
+     * Ölçüt: orijinal başlığı OLAN ama önbellekte o başlık için çeviri BULUNMAYAN
+     * ürünler. "Adı Çince görünüyor" gibi bir tahmine dayanmıyoruz; ölçüt
+     * önbelleğin kendisidir — böylece iki kez kuyruğa alma olmaz.
+     *
+     * @return list<int> ürün kimlikleri
+     */
+    public function cevrilmemisler(?int $listeId = null, int $limit = 500): array
+    {
+        $sql = "SELECT p.id FROM products p
+                WHERE p.deleted_at IS NULL
+                  AND p.name_original IS NOT NULL AND TRIM(p.name_original) <> ''
+                  AND NOT EXISTS (
+                      SELECT 1 FROM translation_cache c
+                      WHERE c.source_text = p.name_original
+                  )";
+        $params = [];
+        if ($listeId !== null) {
+            $sql .= ' AND p.list_id = :list_id';
+            $params['list_id'] = $listeId;
+        }
+        $sql .= ' ORDER BY p.id LIMIT ' . max(1, min(2000, $limit));
+
+        $statement = $this->connection->pdo()->prepare($sql);
+        $statement->execute($params);
+
+        /** @var list<int> */
+        return array_map(static fn (mixed $v): int => (int) $v, $statement->fetchAll(\PDO::FETCH_COLUMN) ?: []);
+    }
+
+    /**
+     * ARAMA METNİNİ tazeler (İE#20 C7) — türetilmiş alandır, elle yazılmaz.
+     */
+    public function aramaMetniniTazele(int $urunId, string $metin): void
+    {
+        $statement = $this->connection->pdo()->prepare(
+            'UPDATE products SET arama_metni = :metin WHERE id = :id',
+        );
+        $statement->execute(['metin' => $metin, 'id' => $urunId]);
+    }
+
+    /**
+     * KAYIP YAZMA KORUMASI (İE#20 C9 — iyimser kilit).
+     *
+     * İki kullanıcı aynı ürünü açıp kaydettiğinde ikincisi birincinin
+     * değişikliğini SESSİZCE eziyordu; kimse bir şey kaybettiğini fark etmiyordu.
+     * Artık istemci okuduğu `surum` değerini geri gönderir; uyuşmuyorsa güncelleme
+     * REDDEDİLİR ve kullanıcıya "bu kayıt siz düzenlerken değişti" denir.
+     *
+     * @return bool sürüm tuttuysa true (ve sürüm bir artırıldı)
+     */
+    public function surumuIlerlet(int $urunId, int $beklenenSurum): bool
+    {
+        $statement = $this->connection->pdo()->prepare(
+            'UPDATE products SET surum = surum + 1 WHERE id = :id AND surum = :surum',
+        );
+        $statement->execute(['id' => $urunId, 'surum' => $beklenenSurum]);
+
+        return $statement->rowCount() === 1;
+    }
+
     /** Durum geçişini tarihçeye yazar (K25). */
     public function recordStatusChange(
         int $productId,

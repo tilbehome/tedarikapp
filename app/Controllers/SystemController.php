@@ -352,6 +352,91 @@ final class SystemController
         return Response::success($response, (new \App\Services\IntegrityChecker($this->basePath))->check());
     }
 
+    /**
+     * GET /api/system/queue — KUYRUK SAĞLIĞI (İE#20 C3).
+     *
+     * Panel "Sistem durumu" ekranının veri kaynağı. Üç sayı ve bir yaş: bekleyen,
+     * çalışan, ölü ve en eski bekleyen işin yaşı. Son ikisi ASIL SİNYALDİR:
+     * ölü iş varsa bir şey kalıcı olarak bozuk; en eski bekleyen yaşlanıyorsa
+     * cron koşmuyor demektir. İkisi de sessizce sürerse kimse fark etmez.
+     */
+    public function queue(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        $this->authenticatedUser($request);
+
+        $kuyruk = new \App\Services\Kuyruk\JobQueue($this->connection);
+        $now = $this->clock->now();
+
+        try {
+            $saglik = $kuyruk->saglik($now);
+            $olu = $kuyruk->oluIsler(20);
+        } catch (Throwable $e) {
+            // Kuyruk tablosu henüz yoksa (migration bekliyor) ekran ÇÖKMEZ.
+            return Response::success($response, [
+                'kurulu' => false,
+                'mesaj' => 'Kuyruk tablosu yok — veritabanı güncellemesi bekliyor olabilir.',
+            ]);
+        }
+
+        return Response::success($response, [
+            'kurulu' => true,
+            'bekleyen' => $saglik['bekleyen'],
+            'calisan' => $saglik['calisan'],
+            'olu' => $saglik['olu'],
+            'en_eski_bekleyen_dakika' => $saglik['en_eski_bekleyen_dakika'],
+            'turler' => $saglik['turler'],
+            'olu_isler' => $olu,
+            // Cron koşmuyorsa bekleyen iş yaşlanır; eşik geçilince panel uyarır.
+            'uyari' => $this->kuyrukUyarisi($saglik),
+        ]);
+    }
+
+    /**
+     * @param array{bekleyen: int, calisan: int, olu: int, en_eski_bekleyen_dakika: int|null, turler: array<string, int>} $saglik
+     */
+    private function kuyrukUyarisi(array $saglik): ?string
+    {
+        if ($saglik['olu'] > 0) {
+            return $saglik['olu'] . ' iş kalıcı olarak başarısız oldu (ölü raf). Hatalarını inceleyip yeniden deneyin.';
+        }
+        if (($saglik['en_eski_bekleyen_dakika'] ?? 0) > 60) {
+            return 'En eski bekleyen iş ' . $saglik['en_eski_bekleyen_dakika']
+                . ' dakikadır sırada. Kuyruk cron görevi (bin/kuyruk.php) koşmuyor olabilir.';
+        }
+
+        return null;
+    }
+
+    /**
+     * POST /api/system/queue/{id}/retry — ölü rafındaki işi yeniden kuyruğa alır.
+     *
+     * @param array<string, string> $args
+     */
+    public function queueRetry(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    {
+        $user = $this->authenticatedUser($request);
+        $id = (int) ($args['id'] ?? 0);
+        if ($id <= 0) {
+            return Response::error($response, 'VALIDATION', 'Geçersiz iş kimliği.', 422);
+        }
+
+        $now = $this->clock->now();
+        (new \App\Services\Kuyruk\JobQueue($this->connection))->dirilt($id, $now);
+
+        (new ActivityLog($this->connection))->record(
+            'system',
+            $id,
+            'queue_retry',
+            $user->email . ': ölü iş yeniden kuyruğa alındı',
+            ClientIp::from($request),
+            $now,
+            ActivityLog::ACTOR_ADMIN,
+            $user->id,
+        );
+
+        return Response::success($response, ['queued' => true]);
+    }
+
     public function status(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
         $this->authenticatedUser($request);

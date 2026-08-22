@@ -684,14 +684,14 @@ function ErisimAnahtari({ listId }: { listId: number }) {
     }
   };
 
-  if (durum.loading) return <p className="mb-3 text-xs text-slate-500">Erişim anahtarı okunuyor…</p>;
+  if (durum.loading) return <p className="mb-3 text-xs text-ink-3">Erişim anahtarı okunuyor…</p>;
   if (durum.error) return <ErrorNote message={durum.error} onRetry={durum.reload} />;
 
   return (
-    <div className="mb-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+    <div className="mb-3 rounded-xl border border-line bg-g50 p-3">
       <div className="flex flex-wrap items-center gap-3">
-        <span className="text-xs font-semibold text-slate-600">Erişim anahtarı</span>
-        <code className="rounded-lg border border-slate-200 bg-white px-3 py-1 font-mono text-base font-bold tracking-[0.3em]">
+        <span className="text-xs font-semibold text-ink-2">Erişim anahtarı</span>
+        <code className="rounded-lg border border-line bg-surface px-3 py-1 font-mono text-base font-bold tracking-[0.3em]">
           {gecerliAcik ? gecerliAnahtar : '—'}
         </code>
         <button
@@ -708,7 +708,7 @@ function ErisimAnahtari({ listId }: { listId: number }) {
         <button type="button" className="btn-ghost !min-h-8 !px-3 !text-xs" disabled={busy} onClick={() => void yenile()}>
           Yenile
         </button>
-        <label className="ml-auto flex items-center gap-2 text-xs text-slate-600">
+        <label className="ml-auto flex items-center gap-2 text-xs text-ink-2">
           <input
             type="checkbox"
             checked={gecerliAcik}
@@ -718,7 +718,7 @@ function ErisimAnahtari({ listId }: { listId: number }) {
           Anahtar sorulsun
         </label>
       </div>
-      <p className="mt-2 text-xs text-amber-700">
+      <p className="mt-2 text-xs text-warn">
         Anahtarı <strong>linkten ayrı bir kanaldan</strong> gönderin (ör. link e-postayla, anahtar WhatsApp'tan) —
         ikisi aynı yerden giderse koruma anlamsız kalır. Yenilemek eski anahtarı anında geçersiz kılar.
       </p>

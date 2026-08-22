@@ -35,6 +35,9 @@ final class SystemRoutes
             $group->get('/status', [$system, 'status']);
             // İE#19 G4: bütünlük denetiminin İSİM İSİM listesi oturum arkasındadır.
             $group->get('/integrity/detay', [$system, 'integrityDetail']);
+            // İE#20 C3: kuyruk sağlığı + ölü işi yeniden deneme.
+            $group->get('/queue', [$system, 'queue']);
+            $group->post('/queue/{id}/retry', [$system, 'queueRetry']);
             $group->get('/state-machine', [$system, 'stateMachine']);
             $group->post('/migrate', [$system, 'migrate']);
             // K46: kilit kaldırmanın admin-oturumu yolu (Auth + CSRF bu grupta).

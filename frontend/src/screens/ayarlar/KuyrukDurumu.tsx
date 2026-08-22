@@ -1,0 +1,109 @@
+import { AlertTriangle, CheckCircle2, ListChecks, RotateCcw } from 'lucide-react';
+import { system as systemApi } from '../../api/endpoints';
+import { useAsync, messageOf } from '../../lib/useAsync';
+import { ErrorNote, Skeleton } from '../../components/ui';
+import { useToast } from '../../components/Toast';
+import EylemDugmesi from '../../components/EylemDugmesi';
+
+/**
+ * AYARLAR > KUYRUK DURUMU (İE#20 C3).
+ *
+ * Kuyruğun panelde görünür olması bir süs değil, bir ZORUNLULUKTUR: arka planda
+ * koşan iş, görünmezse hiç koşmadığında da görünmez. İki sinyal asıl önemlidir:
+ *
+ *  • **Ölü iş** — bir şey KALICI olarak başarısız oldu (yanlış API anahtarı,
+ *    silinmiş ürün). Sessiz kalırsa kullanıcı "çeviri neden gelmedi?" diye sorar
+ *    ve cevabı hiçbir yerde bulamaz.
+ *  • **En eski bekleyen işin yaşı** — büyüyorsa cron koşmuyordur. Bekleyen sayısı
+ *    tek başına bunu göstermez (az iş de olsa saatlerdir bekliyor olabilir).
+ */
+export default function KuyrukDurumu() {
+  const push = useToast((state) => state.push);
+  const durum = useAsync((signal) => systemApi.kuyruk(signal), []);
+  const veri = durum.data;
+
+  return (
+    <section className="card mb-4 p-4">
+      <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-ink-2">
+        <ListChecks className="h-4 w-4" aria-hidden />
+        Kuyruk durumu
+      </h2>
+
+      {durum.loading ? (
+        <Skeleton rows={1} />
+      ) : durum.error ? (
+        <ErrorNote message={durum.error} onRetry={durum.reload} />
+      ) : !veri?.kurulu ? (
+        <p className="text-sm text-ink-3">{veri?.mesaj ?? 'Kuyruk henüz kurulmadı.'}</p>
+      ) : (
+        <>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <Kutu etiket="Bekleyen" deger={veri.bekleyen} />
+            <Kutu etiket="Çalışan" deger={veri.calisan} />
+            <Kutu etiket="Ölü" deger={veri.olu} vurgu={veri.olu > 0} />
+            <Kutu
+              etiket="En eski bekleyen"
+              deger={veri.en_eski_bekleyen_dakika === null ? '—' : `${veri.en_eski_bekleyen_dakika} dk`}
+              vurgu={(veri.en_eski_bekleyen_dakika ?? 0) > 60}
+            />
+          </div>
+
+          {veri.uyari ? (
+            <p className="mt-3 flex items-start gap-2 rounded-lg bg-warn-bg p-2 text-xs text-warn">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+              {veri.uyari}
+            </p>
+          ) : (
+            <p className="mt-3 flex items-center gap-2 text-xs text-ok">
+              <CheckCircle2 className="h-4 w-4" aria-hidden />
+              Kuyruk sağlıklı.
+            </p>
+          )}
+
+          {veri.olu_isler.length > 0 ? (
+            <div className="mt-3 rounded-lg border border-line">
+              <p className="border-b border-line px-3 py-2 text-xs font-semibold text-ink-2">
+                Ölü raf — kalıcı olarak başarısız işler
+              </p>
+              <ul className="divide-y divide-line text-xs">
+                {veri.olu_isler.map((is) => (
+                  <li key={is.id} className="flex flex-wrap items-center gap-2 px-3 py-2">
+                    <span className="font-mono text-ink-2">
+                      {is.tur}
+                      {is.anahtar ? ` · ${is.anahtar}` : ''}
+                    </span>
+                    <span className="text-err">{is.hata ?? 'hata kaydı yok'}</span>
+                    <EylemDugmesi
+                      className="btn-ghost ml-auto !min-h-8 !px-2 !text-xs"
+                      mesgulEtiketi="Deneniyor"
+                      onEylem={async () => {
+                        await systemApi.kuyrukYenidenDene(is.id);
+                        durum.reload();
+                        push('İş yeniden kuyruğa alındı.');
+                      }}
+                      onHata={(hata) => push(messageOf(hata), 'error')}
+                    >
+                      <span className="inline-flex items-center gap-1">
+                        <RotateCcw className="h-3.5 w-3.5" aria-hidden />
+                        Yeniden dene
+                      </span>
+                    </EylemDugmesi>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+        </>
+      )}
+    </section>
+  );
+}
+
+function Kutu({ etiket, deger, vurgu = false }: { etiket: string; deger: number | string; vurgu?: boolean }) {
+  return (
+    <div className={`rounded-lg border p-2 ${vurgu ? 'border-warn bg-warn-bg' : 'border-line bg-g50'}`}>
+      <p className="text-xs text-ink-3">{etiket}</p>
+      <p className={`text-lg font-semibold ${vurgu ? 'text-warn' : 'text-ink'}`}>{deger}</p>
+    </div>
+  );
+}

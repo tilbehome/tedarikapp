@@ -5,6 +5,7 @@ import { products as productsApi, translate as translateApi } from '../api/endpo
 import { ApiError } from '../api/client';
 import type { Product } from '../api/types';
 import { useAsync, messageOf } from '../lib/useAsync';
+import DilSecici, { dildekiMetin, dilSecenekleri, type UrunDili } from '../components/DilSecici';
 import { Field, PageHeader, Skeleton, ErrorNote } from '../components/ui';
 import { useReference } from '../store/reference';
 import { useToast } from '../components/Toast';
@@ -27,16 +28,22 @@ export default function ProductFormScreen() {
   const categories = useReference((state) => state.categories);
   const media = useMediaMode();
 
-  const existing = useAsync<Product | null>(async () => {
+  // İE#19 E11: tek ürün TEK istekle gelir. Eskiden listenin TAMAMI çekilip
+  // içinden aranıyordu; 300 ürünlük bir listede tek alan düzeltmek 300 satır
+  // taşıyordu (mobilde fark edilir bir gecikme ve boşa veri).
+  const existing = useAsync<Product | null>(async (signal) => {
     if (!editing) return null;
-    const items = await productsApi.forList(listId);
-    return items.find((item) => item.id === Number(productId)) ?? null;
-  }, [editing, listId, productId]);
+    return productsApi.find(Number(productId), signal);
+  }, [editing, productId]);
 
   // İE#14 C1: "Türkçe öneri" — kaynak ORİJİNAL BAŞLIK, yoksa ürün adı. Öneri
   // KULLANICI ONAYIYLA yalnız "Ürün adı" alanına yazılır; orijinal başlığa ve
   // başka hiçbir alana dokunulmaz (K54).
+  const [gosterilenDil, setGosterilenDil] = useState<UrunDili>('tr');
   const [oneri, setOneri] = useState<string | null>(null);
+  // C5: diğer dillerdeki karşılıklar. Çeviri ÖNERİ olduğu için (K54) burada
+  // yalnız GÖSTERİLİR; hiçbir alana yazılmaz.
+  const [ceviriler, setCeviriler] = useState<Partial<Record<string, string>>>({});
   const [oneriKaynagi, setOneriKaynagi] = useState<string | null>(null);
   const [oneriYukleniyor, setOneriYukleniyor] = useState(false);
 
@@ -151,7 +158,20 @@ export default function ProductFormScreen() {
     setOneriYukleniyor(true);
     setOneri(null);
     try {
-      const sonuc = await translateApi.suggest(oneriKaynakMetni);
+      // C4/C5: ürünün TAMAMI tek istekte çevrilir ve TR+EN birlikte döner.
+      // Eski tekil `suggest` ucu yedek olarak durur (LLM kapalıysa o çalışır).
+      const tam = await translateApi.product({ name: oneriKaynakMetni });
+      if (tam?.ceviriler) {
+        setCeviriler(
+          Object.fromEntries(
+            Object.entries(tam.ceviriler).map(([dil, alanlar]) => [dil, alanlar?.name ?? '']),
+          ),
+        );
+      }
+
+      const sonuc = tam?.name
+        ? { suggestion: tam.name, source: tam.meta?.sources?.name ?? null, provider: tam.meta?.provider ?? null }
+        : await translateApi.suggest(oneriKaynakMetni);
       // Öneri yoksa SESSİZ geçilir (İE#13 K54 ilkesi): çeviri akışın zorunlu
       // parçası değildir, hata baloncuğu çıkarmak kullanıcıyı boşuna telaşlandırır.
       if (sonuc.suggestion !== null && sonuc.suggestion !== '') {
@@ -243,6 +263,37 @@ export default function ProductFormScreen() {
             </div>
           ) : null}
         </Field>
+
+        {/* İE#20 C5 — ÜÇ DİLLİ GÖRÜNÜM: ZH (kaynak) · TR · EN.
+            Seçici yalnız GÖSTERİMİ değiştirir; düzenlenen alan her zaman TR addır.
+            Bu ayrım bilinçlidir: kullanıcı Çince başlığı "düzeltmeye" kalkarsa
+            kaynak veriyi bozar — orijinal başlık bir kayıttır, bir metin alanı değil. */}
+        <div className="mb-3 rounded-xl border border-line bg-g50 p-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-semibold text-ink-2">Görüntüleme dili</span>
+            <DilSecici
+              secili={gosterilenDil}
+              secenekler={dilSecenekleri({
+                name: form.name,
+                name_original: form.name_original,
+                ceviriler: ceviriler,
+              })}
+              onSec={setGosterilenDil}
+            />
+          </div>
+          <p className="mt-2 text-sm text-ink">
+            {dildekiMetin(gosterilenDil, {
+              name: form.name,
+              name_original: form.name_original,
+              ceviriler: ceviriler,
+            }) ?? <span className="text-ink-3">— bu dilde metin henüz üretilmedi —</span>}
+          </p>
+          {gosterilenDil === 'zh' ? (
+            <p className="mt-1 text-xs text-ink-3">
+              Bu bir çeviri değil, <strong>kaynaktaki metnin kendisidir</strong>; düzenlenmez.
+            </p>
+          ) : null}
+        </div>
 
         <Field label="Orijinal başlık" hint="1688'deki Çince başlık (opsiyonel)" error={fields['name_original']}>
           <input className="field-input" value={form.name_original} onChange={(event) => set('name_original', event.target.value)} />
