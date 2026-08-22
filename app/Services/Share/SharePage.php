@@ -535,21 +535,13 @@ final class SharePage
             $sag .= '<div class="nt">Not: ' . $e($product['note']) . '</div>';
         }
 
-        $galeriHtml = '';
-        if (count($galeri) > 1) {
-            $kucukler = '';
-            foreach ($galeri as $index => $url) {
-                $kucukler .= '<img src="' . $e($url) . '" alt="" loading="lazy" data-galeri="' . $galeriIndex
-                    . '" data-sira="' . $index . '">';
-            }
-            $galeriHtml = '<div class="gl"><div class="dh">GALERİ <span class="zh">图库</span></div>'
-                . '<div class="gr">' . $kucukler . '</div></div>';
-        }
+        // İE#17 G10 (PM kararı, 21 Ağu): detay panelindeki GALERİ ŞERİDİ KALDIRILDI.
+        // Lightbox galeri ana görsel tıklamasıyla ÇALIŞMAYA DEVAM EDER — panelde
+        // ikinci bir küçük resim şeridi tutmanın bilgi değeri yoktu, yer kaplıyordu.
 
         return '<tr class="dt"><td colspan="14"><div class="din">
             ' . $bilgiler . '
             <div class="sag">' . $sag . '</div>
-            ' . $galeriHtml . '
         </div></td></tr>';
     }
 
@@ -748,11 +740,15 @@ final class SharePage
         if ($liste === []) {
             return null;
         }
-        // İE#14 A3: belge/satır özeti ilk 3 + "… (N seçenek)".
-        $ilk = implode(' · ', array_slice($liste, 0, ValueSet::LIMIT));
+        // İE#17 G8-b: satır hücresinde YALNIZ kompakt rozet ("40 seçenek").
+        // Tam liste detay panelindeki VARYASYONLAR bölümündedir.
+        if ($this->values !== null) {
+            return $this->values->ozet($liste);
+        }
+        if (count($liste) === 1 && mb_strlen($liste[0]) <= 40) {
+            return $liste[0];
+        }
 
-        return count($liste) > ValueSet::LIMIT
-            ? $ilk . ' … (' . count($liste) . ' seçenek)'
-            : $ilk;
+        return count($liste) . ' seçenek';
     }
 }

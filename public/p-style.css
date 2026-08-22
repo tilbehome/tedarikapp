@@ -125,10 +125,6 @@ td.n .val, td.c .val { display:inline; }
 .vr div { display:flex; justify-content:space-between; font-size:12.5px; padding:6.5px 0; border-bottom:1px solid var(--ln2); }
 .vr b { font-variant-numeric:tabular-nums; }
 .nt { margin-top:12px; font-size:12px; color:#8A6A00; background:#FFFBEB; border:1px solid #F3E3AC; border-radius:9px; padding:7px 10px; }
-.gl { grid-column:1/-1; border-top:1px solid var(--ln2); margin-top:16px; padding-top:13px; }
-.gl .gr { display:flex; gap:8px; flex-wrap:wrap; }
-.gl img { width:54px; height:54px; border-radius:9px; object-fit:cover; cursor:zoom-in; border:1px solid var(--ln); }
-.gl img:hover { border-color:var(--blue); }
 
 /* ---- toplam + alt ---- */
 .tot { background:var(--navy); color:#fff; display:flex; justify-content:space-between; align-items:center;

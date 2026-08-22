@@ -300,4 +300,37 @@ final class ShareOnarimTest extends AuthTestCase
         // Yanıt gövdesi sebebi AÇIKLAMAZ.
         self::assertStringNotContainsStringIgnoringCase('imza', (string) $response->getBody());
     }
+
+    // ── G10: DETAY PANELİ GALERİ ŞERİDİ KALDIRILDI ──────────────────────────
+
+    public function testDETAY_PANELINDE_GALERI_SERIDI_YOK(): void
+    {
+        $html = $this->sayfa();
+
+        self::assertStringNotContainsString('GALERİ', $html, 'Paneldeki galeri şeridi kaldırıldı (G10).');
+        self::assertStringNotContainsString('class="gl"', $html);
+        // Lightbox AYNEN çalışır: veri ve tetikleyici korunur.
+        self::assertStringContainsString('data-galeriler=', $html);
+        self::assertStringContainsString('id="lbx"', $html);
+    }
+
+    public function testOLU_GALERI_CSS_KURALLARI_TEMIZLENDI(): void
+    {
+        $css = (string) file_get_contents(dirname(__DIR__, 2) . '/public/p-style.css');
+
+        self::assertStringNotContainsString('.gl ', $css);
+        self::assertStringNotContainsString('.gl{', $css);
+    }
+
+    // ── G8: satır hücresi disiplini (uçtan uca) ─────────────────────────────
+
+    public function testUZUN_VARYASYON_SATIR_HUCRESINI_BOGMAZ(): void
+    {
+        $html = $this->sayfa();
+
+        // Bu listedeki ürünlerde varyasyon yok; hücre boş kalmalı, "…" ya da
+        // uzun liste basılmamalı. (Dolu senaryo SunumDisiplinTest'te birim testli.)
+        self::assertStringNotContainsString(' … (', $html, 'Satırda uzun varyasyon özeti kalmamalı.');
+    }
+
 }

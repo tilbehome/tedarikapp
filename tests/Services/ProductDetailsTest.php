@@ -93,17 +93,27 @@ final class ProductDetailsTest extends TestCase
         self::assertNull(ProductDetails::detay($this->urun([]), $this->values()));
     }
 
-    /** A3 — uzun varyasyon listesi: ilk 3 + kalan sayısı. */
-    public function testUzunListeIlkUcVeKalanSayisiylaOzetlenir(): void
+    /**
+     * SÖZLEŞME DEĞİŞTİ (İE#17 G8-b): satır hücresinde artık "ilk 3 + … (N seçenek)"
+     * YOKTUR, yalnız KOMPAKT ROZET vardır. Gerekçe: 40 varyantlı üründe üç değer
+     * bile satırı şişiriyordu; tam liste detay panelindedir.
+     */
+    public function testUzunListeKOMPAKT_ROZETLE_OZETLENIR(): void
     {
         $ozet = $this->values()->ozet(['灰色', '蓝色', '黑色', '红色', '白色']);
 
-        self::assertSame('Gri · Mavi · Siyah … (5 seçenek)', $ozet);
+        self::assertSame('5 seçenek', $ozet);
     }
 
-    public function testKisaListedeSayiEKLENMEZ(): void
+    public function testIKI_DEGERDE_DE_SAYI_BASILIR(): void
     {
-        self::assertSame('Gri · Mavi', $this->values()->ozet(['灰色', '蓝色']));
+        self::assertSame('2 seçenek', $this->values()->ozet(['灰色', '蓝色']));
+    }
+
+    /** Tek ve kısa değer varsa sayı yerine DEĞERİN KENDİSİ daha bilgilendiricidir. */
+    public function testTEK_KISA_DEGERDE_DEGERIN_KENDISI(): void
+    {
+        self::assertSame('Gri', $this->values()->ozet(['灰色']));
     }
 
     public function testEtiketliVeBirlesikDegerlerParcaParcaCevrilir(): void
