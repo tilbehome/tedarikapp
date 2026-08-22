@@ -297,7 +297,16 @@ if ($missing !== []) {
 }
 
 printf(
-    "RELEASE HAZIR ve DOĞRULANDI\n  zip     : %s\n  boyut   : %.2f MB\n  dosya   : %d (+ MANIFEST.txt)\n  sha256  : %s\n  surum   : %s\n",
+    "RELEASE HAZIR ve DOĞRULANDI
+  zip     : %s
+  boyut   : %.2f MB
+"
+    . "  dosya   : %d (+ MANIFEST.txt)
+  sha256  : %s
+"
+    . "  panel   : %s @ %s%s
+  surum   : %s
+",
     $zipPath,
     filesize($zipPath) / 1048576,
     count($files),
