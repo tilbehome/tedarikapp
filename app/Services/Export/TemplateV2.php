@@ -83,7 +83,10 @@ final class TemplateV2
         'J' => [16.0, 'Not', '备注', 'Notes'],
         'K' => [9.0, 'Miktar', '数量', 'Qty'],
         'L' => [11.0, 'Vitrin Fiyatı', '市场价', 'Market'],
-        'M' => [11.0, '₺ Karşılığı', '里拉', 'TRY'],
+        // İE#19 E13: bu sütun Yuan fiyatının kur karşılığıdır — İTHALAT MALİYETİ DEĞİLDİR.
+        // "₺ Karşılığı" okuyanı "bu ürünün bana maliyeti" sanmaya itiyordu; nakliye,
+        // gümrük ve DDP kalemleri bu sayının içinde YOKTUR.
+        'M' => [11.0, 'Yaklaşık ürün bedeli (₺)', '里拉', 'TRY'],
         'N' => [10.51, 'DDP $', '含税', 'Incl. VAT'],
         'O' => [11.5, 'DDP ₺', '含税', 'Incl. VAT'],
     ];

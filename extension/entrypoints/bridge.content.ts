@@ -7,7 +7,7 @@
  * `window.context`ine bakar. Sayfa scriptleri bu dünyaya erişemez.
  */
 
-import { defineContentScript } from 'wxt/sandbox';
+import { defineContentScript } from 'wxt/utils/define-content-script';
 
 import { mountMiniPanel } from '../ui/miniPanel';
 import type { PageData } from '../core/types';

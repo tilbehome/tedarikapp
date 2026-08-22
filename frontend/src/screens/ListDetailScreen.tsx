@@ -387,7 +387,7 @@ export default function ListDetailScreen() {
             <dl className="mt-2 space-y-1 text-sm">
               <Row label="Adet" value={count(list.totals.qty)} />
               <Row label="Yuan" value={`¥${money(list.totals.yuan)}`} />
-              <Row label="TL" value={`₺${money(list.totals.yuan_tl)}`} strong />
+              <Row label="Yaklaşık ürün bedeli (₺)" value={`₺${money(list.totals.yuan_tl)}`} strong />
               <Row label="DDP $" value={`$${money(list.totals.ddp_usd)}`} />
               <Row label="DDP ₺" value={`₺${money(list.totals.ddp_tl)}`} />
             </dl>

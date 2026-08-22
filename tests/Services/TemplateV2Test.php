@@ -166,7 +166,7 @@ final class TemplateV2Test extends TestCase
 
         self::assertSame(
             ['No', 'Görsel', 'Ürün Adı', 'Ürün Detayları', 'Varyasyon', 'Kategori', 'Kaynak', 'Durum', 'Not',
-                'Miktar', 'Vitrin Fiyatı', '₺ Karşılığı', 'DDP $', 'DDP ₺'],
+                'Miktar', 'Vitrin Fiyatı', 'Yaklaşık ürün bedeli (₺)', 'DDP $', 'DDP ₺'],
             array_map(
                 static fn (string $harf): string => (string) $sheet->getCell($harf . '8')->getValue(),
                 range('B', 'O'),

@@ -47,6 +47,19 @@ foreach ($argumanlar as $arguman) {
 $geciciAd = null;
 $pdo = null;
 
+/**
+ * İE#19 G3 — ÇIKIŞ KODU DEĞİŞKENDE TUTULUR, TEK EXIT NOKTASI VARDIR.
+ *
+ * Kanıtlı hata: PHP'de `exit()` çağrısı `finally` bloğunu ÇALIŞTIRMAZ. Bu betikte
+ * temizlik (DROP DATABASE) `finally` içindeydi ama başarı/başarısızlık yolları
+ * `exit(0)` / `exit(1)` ile bloktan atlıyordu — yani tatbikatın bıraktığı geçici
+ * veritabanı HİÇBİR ZAMAN düşmüyordu. Her koşu sunucuda bir `_restoretest_*`
+ * veritabanı bırakıyordu (paylaşımlı hostingde kota dolduran sessiz sızıntı).
+ * Artık sonuç bir değişkende toplanır, `finally` gerçekten koşar ve çıkış EN SONDA
+ * bir kez yapılır.
+ */
+$cikisKodu = 1;
+
 try {
     $config = Config::load($basePath);
     date_default_timezone_set($config->get('TZ', 'Europe/Istanbul'));
@@ -137,11 +150,11 @@ try {
     }
 
     echo "SONUÇ  : TATBİKAT BAŞARILI — bu yedekten geri dönülebilir.\n";
-    exit(0);
+    $cikisKodu = 0;
 } catch (Throwable $e) {
     fwrite(STDERR, "\nSONUÇ  : TATBİKAT BAŞARISIZ — " . $e->getMessage() . "\n");
     fwrite(STDERR, "Bu yedeğe GÜVENMEYİN; nedeni giderilip yeniden yedek alınmalı.\n");
-    exit(1);
+    $cikisKodu = 1;
 } finally {
     // Geçici veritabanı her koşulda düşer — hata da olsa artık bırakmayız.
     if ($pdo instanceof PDO && is_string($geciciAd) && !$tut) {
@@ -156,3 +169,6 @@ try {
         echo 'TUTULDU: ' . $geciciAd . " — incelemeniz bitince elle DROP edin.\n";
     }
 }
+
+// TEK ÇIKIŞ NOKTASI: temizlik (finally) koştuktan SONRA, bir kez.
+exit($cikisKodu);

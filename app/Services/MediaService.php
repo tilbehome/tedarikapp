@@ -28,6 +28,9 @@ final class MediaService
     public const SETTING_KEY = 'media_mode';
 
     /** docs/04 §2d: SVG YASAK — içine script gömülebilir ve tarayıcıda çalışır. */
+    /** E7: decode ÖNCESİ piksel tavanı — 40 megapiksel (decompression bomb kalkanı). */
+    private const MAX_PIKSEL = 40000000;
+
     private const ALLOWED_MIME = [
         'image/jpeg' => 'jpg',
         'image/png' => 'png',
@@ -83,19 +86,62 @@ final class MediaService
     }
 
     /**
+     * ERTELENMİŞ YAZIM (İE#19 E7): dosya önce `.tmp` adına yazılır; kalıcı ada
+     * ancak veritabanı işlemi COMMIT olunca taşınır.
+     *
+     * NEDEN: eskiden görsel diske yazılıyor, sonra ürün satırı yazılıyordu. Ürün
+     * yazımı düşerse (kısıt ihlali, terminal liste, bağlantı kopması) dosya diskte
+     * KALIYORDU: hiçbir kaydın işaret etmediği yetim medya. Paylaşımlı hostingde
+     * bunlar sessizce kotayı yiyor ve hangi dosyanın çöp olduğu sonradan
+     * anlaşılamıyordu. Artık yazım iki adımlıdır ve başarısız işlem dosya bırakmaz.
+     *
+     * @param array{mode: string, path: string|null, url: string, temp?: string|null} $stored
+     */
+    public function commit(array $stored): void
+    {
+        $temp = $stored['temp'] ?? null;
+        if (!is_string($temp) || $temp === '' || !is_string($stored['path'])) {
+            return;
+        }
+
+        $tempMutlak = $this->basePath . '/' . $temp;
+        if (!is_file($tempMutlak)) {
+            return;
+        }
+
+        @rename($tempMutlak, $this->basePath . '/' . $stored['path']);
+        @chmod($this->basePath . '/' . $stored['path'], 0644);
+    }
+
+    /**
+     * İşlem geri sarıldı: geçici dosya SİLİNİR (yetim medya bırakılmaz).
+     *
+     * @param array{mode: string, path: string|null, url: string, temp?: string|null} $stored
+     */
+    public function discard(array $stored): void
+    {
+        $temp = $stored['temp'] ?? null;
+        if (is_string($temp) && $temp !== '' && is_file($this->basePath . '/' . $temp)) {
+            @unlink($this->basePath . '/' . $temp);
+        }
+    }
+
+    /**
      * Görseli sisteme alır.
      *
-     * @return array{mode: string, path: string|null, url: string} `path` yalnız download modunda dolu
+     * @param bool $ertele true ise dosya `.tmp` adına yazılır; kalıcı ada `commit()` taşır
+     *
+     * @return array{mode: string, path: string|null, url: string, temp: string|null} `path` yalnız download modunda dolu
      *
      * @throws MediaException
      */
-    public function store(string $url): array
+    public function store(string $url, bool $ertele = false): array
     {
         // SSRF denetimi HER modda yapılır: hotlink modunda da bu URL kullanıcıya servis edilecek.
         $this->guard->assertAllowed($url);
 
         if ($this->mode() === self::MODE_HOTLINK) {
-            return ['mode' => self::MODE_HOTLINK, 'path' => null, 'url' => $url];
+            return ['mode' => self::MODE_HOTLINK, 'path' => null, 'url' => $url, 'temp' => null];
         }
 
         $fetched = $this->fetcher->fetch($url, $this->maxBytes);
@@ -113,16 +159,24 @@ final class MediaService
         // uyumsuzluğu yapısal olarak imkânsızdır.
         $name = bin2hex(random_bytes(16)) . '.' . $encoded['extension'];
         $relative = trim($this->mediaPath, '/') . '/' . $name;
+        // Ertelenmiş modda kalıcı ad ÖNCEDEN bilinir (URL kayda o adla yazılır),
+        // içerik ise `.tmp` uzantısında bekler; taşıma commit'te yapılır.
+        $yazilacak = $ertele ? $relative . '.tmp' : $relative;
 
-        if (@file_put_contents($this->basePath . '/' . $relative, $encoded['bytes']) === false) {
+        if (@file_put_contents($this->basePath . '/' . $yazilacak, $encoded['bytes']) === false) {
             // Yazma anında izin kaybolduysa hotlink'e düş; ürün kaydı yine de oluşsun.
             $this->rememberMode(self::MODE_HOTLINK);
 
-            return ['mode' => self::MODE_HOTLINK, 'path' => null, 'url' => $url];
+            return ['mode' => self::MODE_HOTLINK, 'path' => null, 'url' => $url, 'temp' => null];
         }
-        @chmod($this->basePath . '/' . $relative, 0644);
+        @chmod($this->basePath . '/' . $yazilacak, 0644);
 
-        return ['mode' => self::MODE_DOWNLOAD, 'path' => $relative, 'url' => $this->publicUrl($relative)];
+        return [
+            'mode' => self::MODE_DOWNLOAD,
+            'path' => $relative,
+            'url' => $this->publicUrl($relative),
+            'temp' => $ertele ? $relative . '.tmp' : null,
+        ];
     }
 
     /**
@@ -153,6 +207,23 @@ final class MediaService
         $info = @getimagesizefromstring($body);
         if ($info === false) {
             throw new MediaException('İndirilen dosya geçerli bir görsel değil.');
+        }
+
+        // İE#19 E7 — PİKSEL SINIRI, DECODE'DAN ÖNCE.
+        //
+        // Bayt sınırı (MEDIA_MAX_MB) tek başına yetmez: "decompression bomb" denen
+        // görseller birkaç yüz KB'dir ama 30.000 × 30.000 piksel açılır. GD bunu
+        // belleğe açmaya kalkınca PHP'nin memory_limit'i patlar ve süreç ÖLÜR —
+        // paylaşımlı hostingde bu, tek bir yakalamayla siteyi düşürmek demektir.
+        // Boyut bilgisi başlıktan okunur; karar GD'yi hiç çağırmadan verilir.
+        $piksel = (int) $info[0] * (int) $info[1];
+        if ($piksel > self::MAX_PIKSEL) {
+            throw new MediaException(sprintf(
+                'Görsel çok büyük: %d × %d piksel (üst sınır %d megapiksel).',
+                (int) $info[0],
+                (int) $info[1],
+                intdiv(self::MAX_PIKSEL, 1000000),
+            ));
         }
 
         $realMime = strtolower($info['mime']);

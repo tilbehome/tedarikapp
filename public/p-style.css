@@ -6,7 +6,9 @@
  * Harici dosyadır: CSP `default-src 'self'` satır içi stile izin vermez (K51).
  * FONTLAR SELF-HOST (K45/K51): Google Fonts'a DIŞ İSTEK YOKTUR — Inter dosyaları
  * /fonts altındadır. Çince için sistem CJK yığını kullanılır (bkz. .zh kuralı);
- * Noto Sans SC'nin tüm alt kümeleri ~5 MB olduğu için pakete konmadı (SAPMA kaydı).
+ * Noto Sans SC ARTIK PAKETTE (İE#16 D1.2 · İE#19 G8): tek parça değil 101
+ * unicode-range dilimi olarak self-host edilir; tarayıcı yalnız sayfadaki Çince
+ * karakterlerin dilimini çeker. Bayat "paketlenmedi" notu kaldırıldı.
  */
 @import url('/fonts/inter.css');
 
@@ -223,7 +225,7 @@ td.n .val, td.c .val { display:inline; }
  * Yazdırma şablonu YUKARIDA (şartnameden birebir) gelir; burada tekrarlanmaz.
  * ──────────────────────────────────────────────────────────────────────────── */
 
-/* Çince metin: Noto Sans SC paketlenmedi (tüm alt kümeleri ~5 MB — SAPMA kaydı),
+/* Çince metin: Noto Sans SC self-host edilir (dilimli); sistem CJK yığını yedektir,
    sistem CJK yığınına düşülür; Inter self-host olduğu için DIŞ İSTEK YOKTUR. */
 .zh { font-family: 'Noto Sans SC', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', Inter, sans-serif; }
 

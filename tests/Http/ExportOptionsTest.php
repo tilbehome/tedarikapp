@@ -112,8 +112,33 @@ final class ExportOptionsTest extends AuthTestCase
 
         self::assertSame('R', $sheet->getHighestColumn());
         self::assertSame('Hedef Satış (₺)', (string) $sheet->getCell('P8')->getValue());
-        // 250,00 hedef − (10,00 ¥ × kur) maliyet: kâr HESAPLANMIŞ gelir, boş değil.
-        self::assertIsFloat($sheet->getCell('Q11')->getValue());
+        self::assertEqualsWithDelta(250.0, (float) $sheet->getCell('P11')->getValue(), 0.001, 'Hedef fiyat basılmalı.');
+    }
+
+    /**
+     * İE#19 E13 — DDP YOKKEN KÂR SÜTUNU "—" BASAR (DAVRANIŞ DEĞİŞTİ).
+     *
+     * Eski davranış: DDP boşsa maliyet yerine Yuan'ın kur karşılığı konuyor ve
+     * fark "kâr" diye basılıyordu. O sayı ürünün Çin'deki etiket fiyatıdır;
+     * nakliye, gümrük, vergi ve DDP hizmet bedeli içinde YOKTUR. Yani basılan
+     * "kâr" gerçek kârdan sistematik olarak yüksekti ve fiyat kararını yanlış
+     * yöne çekiyordu. Veri yoksa sayı uydurmuyoruz.
+     */
+    public function testDDPYokkenKarSutunuBOSBASAR(): void
+    {
+        $sheet = $this->xlsx($this->write('POST', '/api/lists/' . $this->listId . '/export?format=xlsx', ['copy' => 'ic']));
+
+        self::assertSame('—', (string) $sheet->getCell('Q11')->getValue(), 'DDP yokken kâr sayısı üretiliyor.');
+        self::assertSame('—', (string) $sheet->getCell('R11')->getValue());
+    }
+
+    public function testDDPVarkenKarSutunuHESAPLANIR(): void
+    {
+        $this->pdo->exec("UPDATE products SET price_ddp_usd = '3.00'");
+
+        $sheet = $this->xlsx($this->write('POST', '/api/lists/' . $this->listId . '/export?format=xlsx', ['copy' => 'ic']));
+
+        self::assertIsFloat($sheet->getCell('Q11')->getValue(), 'DDP varken kâr HESAPLANMALI.');
     }
 
     /**

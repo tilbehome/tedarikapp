@@ -6,9 +6,9 @@
 
 Panel Web Uygulaması · Chrome Eklentisi · Excel/PDF/HTML Çıktı Motoru
 
-Teknoloji taban çizgisi: [docs/TECH-BASELINE.md](docs/TECH-BASELINE.md) (PHP · Slim · MySQL · React · Vite · MV3)
+Teknoloji taban çizgisi: [docs/TECH-BASELINE.md](docs/TECH-BASELINE.md) (PHP · Slim · MySQL · React · Vite · WXT+TypeScript MV3) · Yapılandırma: [docs/config-referansi.md](docs/config-referansi.md) (K44)
 
-🌐 Üretim: `tedarikapp.tilbehometoptan.com` · 🔒 Görünürlük politikası: docs/08 K28 · 📋 Durum: **Faz 1 kapanışı — İE#9 sağlamlaştırma sprinti (üretim kurulumunun ön şartı)**
+🌐 Üretim: `tedarikapp.tilbehometoptan.com` · 🔒 Görünürlük politikası: docs/08 K28 · 📋 Durum: **v0.11.x üretimde** — Faz 1–4 tamam (panel, export, eklenti, paylaşım); sıradaki iş **V3 Faz 1** (arayüz yenilemesi, dilimli plan: `docs/v3/V3-YOL-HARITASI.md`)
 
 </div>
 
@@ -76,13 +76,19 @@ Sunucu ortamı gerçek raporla doğrulanmıştır (bkz. docs/04 §7): tüm dış
 
 ## 🗺️ Yol Haritası
 
+> **GÜNCELLİK NOTU (İE#19 E10).** Aşağıdaki Faz 0–4 tablosu TARİHÇEDİR ve
+> tamamlanmıştır (`v0.11.x` üretimde koşuyor). Bugünün planı **V3 yol haritasıdır**:
+> tek gerçek kaynak [docs/v3/V3-YOL-HARITASI.md](docs/v3/V3-YOL-HARITASI.md).
+> Bu tablonun "⏳ bekliyor" işaretleri artık geçerli değildir — *superseded, bkz. docs/v3*.
+
 | Faz | Kapsam | Teslimat | Sürüm |
 |---|---|---|---|
 | ✅ **Faz 0** | Belgeler, kararlar (K1–K17), repo iskeleti | 14 dosyalık belge seti · İş Emri #1 | — |
-| 🔄 **Faz 1** | Panel çekirdeği: kurulum sihirbazı, 2FA giriş, listeler, elle ürün, durum takibi (İE#3–İE#8 tamam) — **kapanış: İE#9 sağlamlaştırma** | Hosting'de çalışan panel | `v0.1.0` |
-| ⏳ **Faz 2** | Excel/PDF/CSV export + paylaşım linki | Firmaya gerçek sipariş iletimi | `v0.2.0` |
-| ⏳ **Faz 3** | Chrome eklentisi + Gelen Kutusu | Tek tıkla ürün yakalama | `v0.3.0` |
-| ⏳ **Faz 4** | İstatistik, arşiv derinleştirme, opsiyonel oto-kur, cila | Üretim sürümü | `v1.0.0` |
+| ✅ **Faz 1** | Panel çekirdeği: kurulum sihirbazı, 2FA giriş, listeler, elle ürün, durum takibi | Hosting'de çalışan panel | `v0.1.0` |
+| ✅ **Faz 2** | Excel/PDF/CSV export + paylaşım linki | Firmaya gerçek sipariş iletimi | `v0.2.0` |
+| ✅ **Faz 3** | Chrome eklentisi (WXT+TS) + Gelen Kutusu | Tek tıkla ürün yakalama | `v0.3.0` |
+| ✅ **Faz 4** | Cila, çeviri (K56), paylaşım sayfası, erişim anahtarı (K62) | Üretim sürümü | `v0.11.x` |
+| 🔄 **V3** | Arayüz yenilemesi + ürün≠ilan veri modeli + kuyruk + skor | Dilimli plan — bkz. `docs/v3` | — |
 
 Ayrıntılar ve kabul kriterleri: [docs/05-yol-haritasi.md](docs/05-yol-haritasi.md)
 

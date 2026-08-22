@@ -95,7 +95,13 @@ final class AppBuilder
             $connection,
             // K44 disksiz mod: gerçek dağıtımda oturum DAİMA DB'de (sessions tablosu) —
             // save_path'e güvenilmez. Testler kendi oturumunu enjekte eder.
-            $session ?? NativeSession::fromConfig($config, new \App\Auth\DbSessionHandler($connection)),
+            // İE#19 G8: `sessions.ip` kolonu vardı ama HİÇ DOLMUYORDU — handler'a IP
+            // verilmediği için her satır NULL yazılıyordu. Şüpheli oturum incelemesi
+            // (aynı oturum başka IP'den mi kullanıldı?) bu kolon olmadan yapılamıyordu.
+            $session ?? NativeSession::fromConfig($config, new \App\Auth\DbSessionHandler(
+                $connection,
+                \App\Core\ClientIp::fromGlobals(),
+            )),
             $clock ?? SystemClock::fromConfig($config),
             $logger,
             $requestContext,
@@ -103,11 +109,12 @@ final class AppBuilder
 
         $app->get('/api/health', self::healthAction($config, $connection, $logger));
 
-        // K43: kurulum bütünlüğü — MANIFEST.txt'e göre eksik/bozuk dosya listesi.
-        // /api/health gibi kimliksizdir: sır içermez, yalnız göreli yol adları döner;
-        // "site tuhaf davranıyor" anında ilk bakılacak yer.
+        // K43 + İE#19 G4: kurulum bütünlüğü. Kimliksiz yol yalnız ÖZET döner
+        // (sayılar), dosya adları DÖNMEZ — isim isim liste oturum arkasındaki
+        // /api/system/integrity/detay ucundadır. "Site tuhaf davranıyor" sorusuna
+        // cevap veren sinyal (ok/kaç dosya) kimliksiz kalmaya devam eder.
         $app->get('/api/system/integrity', static function (ServerRequestInterface $request, ResponseInterface $response) use ($basePath): ResponseInterface {
-            return Response::success($response, (new \App\Services\IntegrityChecker($basePath))->check());
+            return Response::success($response, (new \App\Services\IntegrityChecker($basePath))->summary());
         });
 
         // Auth uçları iki gruba ayrılır (İE#4 §3):
@@ -229,12 +236,23 @@ final class AppBuilder
             $services->activity,
             $services->clock,
             new \App\Services\Share\ShareKeyService($lists, (string) $config->get('APP_KEY', '')),
+            $config,
         );
 
         // İE#11 Faz 3: eklenti uçları — Bearer + CORS allowlist + hız sınırı (ExtensionAuth).
         $inboxRepository = new \App\Models\InboxRepository($connection);
         $captureService = new \App\Services\CaptureService($connection, $lists, $products, $mediaService, $validator);
-        $extensionController = new \App\Controllers\ExtensionController($captureService, $inboxRepository, $lists, $services->clock, $basePath);
+        // İE#19 G6: yakalamanın uygulanması TEK serviste — iki çağıran (eklenti,
+        // Gelen Kutusu) aynı atomik bloğu ve aynı terminal-liste kuralını kullanır.
+        $captureApplier = new \App\Services\CaptureApplier(
+            $connection,
+            $captureService,
+            $inboxRepository,
+            $products,
+            new \App\Services\ListMutationPolicy(),
+            $services->activity,
+        );
+        $extensionController = new \App\Controllers\ExtensionController($captureService, $inboxRepository, $lists, $services->clock, $basePath, $captureApplier);
         $extensionAuth = new \App\Middleware\ExtensionAuth(
             $connection,
             $responseFactory,
@@ -279,7 +297,12 @@ final class AppBuilder
             $group->map(['GET', 'OPTIONS'], '/api/extension/selectors', [$extensionController, 'selectors']);
             $group->map(['GET', 'OPTIONS'], '/api/extension/lists', [$extensionController, 'lists']);
             $group->map(['POST', 'OPTIONS'], '/api/extension/translate-suggest', [$translationController, 'suggest']);
-        })->add($extensionAuth);
+        })
+            ->add($extensionAuth)
+            // İE#19 G7: eklenti uçları da şema bağımlıdır (products/inbox yazar);
+            // bekleyen migration varken yakalama 503 alır ve eklenti kuyruğunda
+            // bekler — yarım şemaya yazmaya çalışıp veri kaybetmez.
+            ->add(new \App\Middleware\MigrationGuard($connection, $basePath . '/migrations', $responseFactory));
 
         $inboxController = new \App\Controllers\InboxController(
             $inboxRepository,
@@ -288,6 +311,7 @@ final class AppBuilder
             $services->activity,
             $services->clock,
             $services->timezone,
+            $captureApplier,
         );
 
         // İE#10.5 Blok 6: rota kayıtları modül dosyalarında — AppBuilder yalnız kompozisyon kökü.
@@ -338,7 +362,11 @@ final class AppBuilder
         // Bunlar hata middleware'inden SONRA eklenir, yani EN DIŞTA koşar:
         // 404/405/415/500 gibi hata yanıtları da güvenlik başlıklarını ve X-Request-Id'yi alır.
         // JsonRequest gövde ayrıştırmadan ÖNCE devreye girer (docs/10 §1).
-        $app->add(new JsonRequest($app->getResponseFactory()));
+        // E7: gövde tavanı artık GERÇEKTEN uygulanır (CAPTURE_MAX_PAYLOAD_KB).
+        $app->add(new JsonRequest(
+            $app->getResponseFactory(),
+            $config->getPositiveInt('CAPTURE_MAX_PAYLOAD_KB', JsonRequest::VARSAYILAN_SINIR_KB),
+        ));
         // img-src, indirme beyaz listesinden türetilir: hotlink modunda görsellerin
         // tarayıcıda açılabilmesi için politikanın onları tanıması gerekir (K33).
         // İE#17 G11: video CDN hostları YALNIZ media-src'yi besler (indirme kapısı dar kalır).

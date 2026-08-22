@@ -104,16 +104,33 @@ final class Auth implements MiddlewareInterface
             return $this->unauthenticated('Bu işlem için giriş yapmanız gerekiyor.');
         }
 
+        $now = $this->services->clock->now();
         $this->services->session->loginFromRemember($user->id, $tokenId);
         $this->services->activity->recordAuth(
             ActivityLog::REMEMBER_LOGIN,
             $user->email,
             $ip,
-            $this->services->clock->now(),
+            $now,
             $user->id,
         );
 
-        return $handler->handle($request->withAttribute(self::USER_ATTRIBUTE, $user));
+        // G8: kullanım başına rotasyon — çerez her sessiz girişte tazelenir.
+        $yeniCerez = $this->services->rememberTokens->rotate($tokenId, $user->id, $now);
+        $sonKullanma = $this->services->rememberTokens->expiresAt($tokenId, $now->getTimezone());
+
+        $response = $handler->handle($request->withAttribute(self::USER_ATTRIBUTE, $user));
+
+        if ($yeniCerez !== null && $sonKullanma !== null) {
+            $response = Cookie::write(
+                $response,
+                RememberTokenService::COOKIE_NAME,
+                $yeniCerez,
+                $sonKullanma,
+                $this->services->cookiesAreSecure(),
+            );
+        }
+
+        return $response;
     }
 
     private function expiredToken(?int $tokenId, ?int $userId): ResponseInterface

@@ -8,8 +8,10 @@ use App\Core\Clock;
 use App\Core\Response;
 use App\Models\InboxRepository;
 use App\Models\ListRepository;
+use App\Services\CaptureApplier;
 use App\Services\CaptureException;
 use App\Services\CaptureService;
+use App\Services\ListImmutableException;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
@@ -24,6 +26,7 @@ final class ExtensionController extends ApiController
         private readonly ListRepository $lists,
         private readonly Clock $clock,
         private readonly string $basePath,
+        private readonly ?CaptureApplier $applier = null,
     ) {
     }
 
@@ -81,21 +84,27 @@ final class ExtensionController extends ApiController
                 return Response::error($response, 'NOT_FOUND', 'Hedef liste bulunamadı.', 404);
             }
 
+            // İE#19 G6: rezervasyon + ürün + galeri + revizyon + kuyruk izi + ilk
+            // durum/aktivite TEK transaction'da; terminal liste kuralı burada zorlanır.
             try {
-                $productId = $this->capture->createProduct($payload, (int) $list['id'], $now);
+                $sonuc = $this->applier()->applyToList(
+                    $payload,
+                    $list,
+                    $now,
+                    \App\Core\ClientIp::from($request),
+                );
+            } catch (ListImmutableException $e) {
+                return Response::error($response, 'LIST_IMMUTABLE', $e->getMessage(), 422);
             } catch (CaptureException $e) {
                 return Response::error($response, 'VALIDATION', $e->getMessage(), 422);
             }
 
-            // İz: kuyrukta assigned satırı — capture_id idempotansının kalıcı defteri.
-            $inboxId = $this->inbox->create($this->capture->inboxFields($payload, 'assigned'), $now);
-            $this->inbox->markAssigned($inboxId, $productId, $now);
-
             return Response::success($response, [
-                'inbox_id' => $inboxId,
-                'status' => 'assigned',
-                'product_id' => $productId,
+                'inbox_id' => $sonuc['inbox_id'],
+                'status' => $sonuc['status'],
+                'product_id' => $sonuc['product_id'],
                 'duplicate' => $duplicate,
+                'idempotent_replay' => $sonuc['idempotent_replay'],
             ], [], 201);
         }
 
@@ -107,6 +116,18 @@ final class ExtensionController extends ApiController
             'product_id' => null,
             'duplicate' => $duplicate,
         ], [], 201);
+    }
+
+    /**
+     * Uygulayıcı zorunludur; opsiyonel parametre yalnız eski test kurulumları içindir.
+     */
+    private function applier(): CaptureApplier
+    {
+        if ($this->applier === null) {
+            throw new \LogicException('CaptureApplier enjekte edilmedi (AppBuilder kompozisyonu).');
+        }
+
+        return $this->applier;
     }
 
     /**

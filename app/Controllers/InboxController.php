@@ -11,8 +11,10 @@ use App\Core\Response;
 use App\Models\InboxRepository;
 use App\Models\ListRepository;
 use App\Services\ActivityLog;
+use App\Services\CaptureApplier;
 use App\Services\CaptureException;
 use App\Services\CaptureService;
+use App\Services\ListImmutableException;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
@@ -32,7 +34,18 @@ final class InboxController extends ApiController
         private readonly ActivityLog $activity,
         private readonly Clock $clock,
         private readonly \DateTimeZone $timezone,
+        private readonly ?CaptureApplier $applier = null,
     ) {
+    }
+
+    /** Uygulayıcı zorunludur; opsiyonel parametre yalnız eski test kurulumları içindir. */
+    private function applier(): CaptureApplier
+    {
+        if ($this->applier === null) {
+            throw new \LogicException('CaptureApplier enjekte edilmedi (AppBuilder kompozisyonu).');
+        }
+
+        return $this->applier;
     }
 
     /**
@@ -188,14 +201,32 @@ final class InboxController extends ApiController
                 continue;
             }
 
+            // İE#19 G6: sahiplenme + ürün + tarihçe TEK transaction; terminal liste
+            // kuralı burada da geçerli (kural artık iki yolda ORTAK serviste yaşar).
             try {
-                $productId = $this->capture->createProduct($payload, (int) $list['id'], $now);
+                $sonuc = $this->applier()->applyInboxItem(
+                    $id,
+                    $payload,
+                    $list,
+                    $now,
+                    ClientIp::from($request),
+                    $this->user($request)->id,
+                    $this->requestId($request),
+                );
+            } catch (ListImmutableException $e) {
+                $failed[] = ['id' => $id, 'error' => $e->getMessage()];
+
+                continue;
             } catch (CaptureException $e) {
                 $failed[] = ['id' => $id, 'error' => $e->getMessage()];
 
                 continue;
             }
-            $this->inbox->markAssigned($id, $productId, $now);
+            if ($sonuc['idempotent_replay']) {
+                $failed[] = ['id' => $id, 'error' => 'Kayıt bu sırada başka bir istek tarafından taşındı.'];
+
+                continue;
+            }
             $moved++;
         }
 

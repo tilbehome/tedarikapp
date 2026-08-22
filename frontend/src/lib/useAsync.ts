@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ApiError } from '../api/client';
+import { ApiError, isAborted } from '../api/client';
 import { errorMessages } from '../locales/tr';
 
 /** ApiError'ı kullanıcıya gösterilecek Türkçe metne çevirir. */
@@ -22,7 +22,10 @@ interface AsyncState<T> {
  *
  * `deps` değişince yeniden çeker; bileşen sökülürse sonucu yazmaz.
  */
-export function useAsync<T>(loader: () => Promise<T>, deps: unknown[]): AsyncState<T> & { reload: () => void } {
+export function useAsync<T>(
+  loader: (signal: AbortSignal) => Promise<T>,
+  deps: unknown[],
+): AsyncState<T> & { reload: () => void } {
   const [state, setState] = useState<AsyncState<T>>({ data: null, loading: true, error: null });
   const [tick, setTick] = useState(0);
   const alive = useRef(true);
@@ -36,21 +39,29 @@ export function useAsync<T>(loader: () => Promise<T>, deps: unknown[]): AsyncSta
 
   useEffect(() => {
     alive.current = true;
+    // İE#19 E12: her koşu kendi AbortController'ını taşır. Bağımlılık değişince
+    // (ör. arama metni) ESKİ istek iptal edilir; böylece geç dönen bir yanıt yeni
+    // sonucun üzerine yazamaz. İptal bir HATA DEĞİLDİR: ekranda kırmızı kutu
+    // göstermek, kullanıcının yazmaya devam etmesini "arıza" gibi gösterirdi.
+    const controller = new AbortController();
+
     // react-hooks 7 "set-state-in-effect": burada amaç DIŞ SİSTEMLE (API) eşitlenmek;
     // yükleme bayrağı isteğin başladığı anda kalkmalı. F41 kapsamında ele alınacak.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setState((previous) => ({ ...previous, loading: true, error: null }));
 
-    run()
+    run(controller.signal)
       .then((data) => {
         if (alive.current) setState({ data, loading: false, error: null });
       })
       .catch((error: unknown) => {
-        if (alive.current) setState({ data: null, loading: false, error: messageOf(error) });
+        if (!alive.current || isAborted(error)) return;
+        setState({ data: null, loading: false, error: messageOf(error) });
       });
 
     return () => {
       alive.current = false;
+      controller.abort();
     };
   }, [run, tick]);
 

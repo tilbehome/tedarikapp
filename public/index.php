@@ -94,15 +94,35 @@ try {
     $konum = $bootFailure->getFile() . ':' . $bootFailure->getLine();
 
     if (is_file($basePath . '/config.php') || is_file($basePath . '/.env')) {
-        // Kurulu/kurulmakta olan sistem: sır vardır → özet göster, tam iz gösterme.
+        /**
+         * İE#19 G4 — KURULU SİSTEMDE EKRANA YALNIZ HATA KİMLİĞİ BASILIR.
+         *
+         * Eskiden istisna sınıfı, mesajı ve DOSYA YOLU ekrana yazılıyordu. Bu
+         * "sır sızmıyor" sayılıyordu çünkü APP_KEY maskeleniyordu; ama mesaj ve
+         * yol tek başına bilgi verir: mutlak dizin yapısı, veritabanı adı, hangi
+         * sınıfın hangi satırda düştüğü. Dışarıdan bakan biri için bu bir keşif
+         * hediyesidir. Artık ayrıntı YALNIZ loga gider; kullanıcı destek talebine
+         * kısa kimliği yazar, ayrıntıyı log dosyasından biz okuruz.
+         */
+        $hataKimligi = strtoupper(bin2hex(random_bytes(4)));
+        $detay = '[' . date('c') . '] ' . $hataKimligi . ' ' . $sinif . ': ' . $mesaj
+            . ' @ ' . $konum . ' · PHP ' . PHP_VERSION . ' (' . PHP_SAPI . ')' . "\n";
+        // K44: uygulama yalnız storage/ altına yazar. Yazılamıyorsa (izinler) sessizce
+        // geçilir — hata sayfası yine gösterilir, kullanıcı çıkmaz sokakta kalmaz.
+        $logDizini = $basePath . '/storage/logs';
+        if (is_dir($logDizini) && is_writable($logDizini)) {
+            @file_put_contents($logDizini . '/acilis-hatalari.log', $detay, FILE_APPEND | LOCK_EX);
+        }
+
         tedarikapp_erken_hata_sayfasi(
             500,
             'Uygulama başlatılamadı',
             [
-                'Beklenmeyen bir açılış hatası oluştu; ayrıntı aşağıdaki teknik detayda.',
-                'Sorun sürerse bu ekranı destek talebinize aynen ekleyin.',
+                'Beklenmeyen bir açılış hatası oluştu. Teknik ayrıntı sunucu günlüğüne yazıldı.',
+                'Destek talebinize aşağıdaki hata kimliğini ekleyin; kaydı bu kimlikle buluruz.',
             ],
-            $sinif . ': ' . $mesaj . "\n" . 'Konum: ' . $konum . "\n" . 'PHP ' . PHP_VERSION . ' (' . PHP_SAPI . ') · ' . date('c'),
+            'Hata kimligi: ' . $hataKimligi . "\n" . 'Zaman: ' . date('c')
+            . "\n" . 'Kayit: storage/logs/acilis-hatalari.log',
         );
     }
 

@@ -8,7 +8,7 @@ Bu dosya Claude Code için bağlayıcıdır. Her oturumda geçerlidir, iş emirl
 - Belgelerle çelişki görürsen: belge kazanır; çelişkiyi raporla, kafana göre çözme.
 
 ## 2. Teknoloji Sınırları (değiştirilemez — karar K5/K13)
-- Backend: PHP + Slim + MySQL (PDO). Frontend: React + Vite. Eklenti: vanilla JS, Manifest V3. Sürümlerin TEK gerçek kaynağı: `docs/TECH-BASELINE.md` (İE#9 §F14) — belgelere sürüm numarası yazma, oraya referans ver.
+- Backend: PHP + Slim + MySQL (PDO). Frontend: React + Vite. Eklenti: **WXT + TypeScript**, Manifest V3 (İE#11'de vanilla JS'ten geçildi; kaynak `extension/`, üretim bundle'ı CI'da derlenir). Sürümlerin TEK gerçek kaynağı: `docs/TECH-BASELINE.md` (İE#9 §F14) — belgelere sürüm numarası yazma, oraya referans ver.
 - YASAK: Python/FastAPI, PostgreSQL, Redis, Docker, Node backend, framework değişikliği.
 - Yeni composer/npm paketi eklemeden önce ÇIKTI RAPORU'nda gerekçesiyle bildir; büyük bağımlılıklar PM onayı ister.
 - Yeni bağımlılık/özellik eklerken `docs/SUNUCU-PROFILI.md` ile uyumu doğrula; uyumsuzlukta uygulamadan önce PM'e bildir (K41).
@@ -21,7 +21,7 @@ Bu dosya Claude Code için bağlayıcıdır. Her oturumda geçerlidir, iş emirl
   friendsofphp/php-cs-fixer (PSR-12)
 - Frontend (npm): react · react-dom · react-router-dom · zustand · axios ·
   tailwindcss · lucide-react — geliştirme: vite · eslint · prettier
-- Chrome eklentisi: SIFIR harici bağımlılık (vanilla JS, Manifest V3)
+- Chrome eklentisi: WXT + TypeScript + Vitest (Manifest V3). ÇALIŞMA ZAMANI bağımlılığı SIFIRDIR — bundle'a hiçbir üçüncü parti kütüphane girmez; WXT/Vitest/TS yalnız GELİŞTİRME zinciridir ve `npm audit --audit-level=high` kapısına tabidir (İE#19 E1).
 - Kurallar: sürümler composer.lock/package-lock ile sabitlenir ve repoya girer;
   her faz sonunda güvenlik denetimi (composer audit / npm audit) raporlanır;
   PHPStan ve CS-Fixer her PR öncesi temiz geçer.

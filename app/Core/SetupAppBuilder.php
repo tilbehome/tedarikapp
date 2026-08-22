@@ -15,6 +15,7 @@ use App\Middleware\SetupCsrf;
 use App\Middleware\SetupGuard;
 use App\Setup\ConfigWriter;
 use App\Setup\CookieSession;
+use App\Setup\ReSetupTicket;
 use App\Setup\SetupDiagnostics;
 use App\Setup\SetupLock;
 use App\Setup\SetupState;
@@ -130,7 +131,8 @@ final class SetupAppBuilder
 
         // En dıştan içe: RequestId → SecurityHeaders → CookieSession → JsonRequest → Guard → Audit → rotalar.
         $app->add(new SetupAudit($logger)); // K42: adım adı/sonuç/süre günlüğü (kapıyı geçen istekler)
-        $app->add(new SetupGuard($lock, $responseFactory, $logger, $clock));
+        // G2: kilitli sistemde kapıyı yalnız geçerli yeniden-kurulum bileti açar.
+        $app->add(new SetupGuard($lock, $responseFactory, $logger, $clock, new ReSetupTicket($lock->connection())));
         $app->add(new JsonRequest($responseFactory));
         if ($cookieSession !== null) {
             // Oturuma bakan her katmandan (guard dahil) ÖNCE bağlanmalı, yanıtı en sonda yazmalı.

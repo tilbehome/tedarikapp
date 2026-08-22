@@ -7,7 +7,7 @@
  * yerine yakalama isteğini rozetle işaretler; kullanıcı eklenti simgesine tıklar).
  */
 
-import { defineContentScript } from 'wxt/sandbox';
+import { defineContentScript } from 'wxt/utils/define-content-script';
 
 export default defineContentScript({
   matches: ['https://detail.1688.com/*'],

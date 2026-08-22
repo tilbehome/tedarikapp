@@ -24,6 +24,7 @@ use App\Setup\ConfigWriter;
 use App\Setup\DatabaseProbe;
 use App\Setup\QrCodeSvg;
 use App\Setup\RequirementChecker;
+use App\Setup\ReSetupTicket;
 use App\Setup\SetupDiagnostics;
 use App\Setup\SetupLock;
 use App\Setup\SetupState;
@@ -146,10 +147,74 @@ final class SetupController
         }
 
         $gate->recordSuccess($ip, $now, 'app_key');
-        $this->lock->clear();
-        $this->state->reset();
 
-        return Response::success($response, ['unlocked' => true]);
+        // İE#19 G2: kilit ARTIK SİLİNMEZ. Kanıt karşılığında 15 dakikalık, tek
+        // kullanımlık bir bilet verilir; sihirbaz yalnız bu bileti taşıyan tarayıcıya
+        // açılır. Eskiden kilit silindiği için bir kez kanıt gösteren kişi sihirbazı
+        // HERKESE açık bırakıyordu (ve yarıda bırakılan kurulum sistemi kilitsiz
+        // koyuyordu) — bilet hem süreli hem de istemciye bağlıdır.
+        $this->state->reset();
+        $ticket = $this->reSetupTicket()->issue($now, 'app_key');
+
+        return $this->withTicketCookie(
+            Response::success($response, [
+                'unlocked' => true,
+                'ticket' => true,
+                'expires_in_seconds' => ReSetupTicket::LIFETIME_SECONDS,
+                'message' => 'Yeniden kurulum bileti verildi. Sihirbaz bu tarayıcıda 15 dakika açık kalır.',
+            ]),
+            $ticket,
+            $request,
+            $now,
+        );
+    }
+
+    /** Bilet çerezi: HttpOnly + SameSite=Lax + HTTPS'te Secure (Cookie sınıfı sabitleri). */
+    private function withTicketCookie(
+        ResponseInterface $response,
+        string $ticket,
+        ServerRequestInterface $request,
+        \DateTimeImmutable $now,
+    ): ResponseInterface {
+        return \App\Core\Cookie::write(
+            $response,
+            ReSetupTicket::COOKIE_NAME,
+            $ticket,
+            $now->modify('+' . ReSetupTicket::LIFETIME_SECONDS . ' seconds'),
+            strtolower($request->getUri()->getScheme()) === 'https',
+        );
+    }
+
+    private function reSetupTicket(): ReSetupTicket
+    {
+        return new ReSetupTicket($this->lock->connection() ?? $this->connection());
+    }
+
+    /**
+     * E6 — /api/setup/admin kapısı: KURULU sistemde yönetici oluşturma bilet ister.
+     *
+     * SetupGuard zaten kilitli sistemde biletsiz isteği geçirmez; bu ikinci kapı
+     * "kilit bir şekilde kalkmışsa" (eski sürümün sildiği kilit, elle temizlenmiş
+     * satır) devreye girer: sistemde ZATEN kullanıcı varsa, bilet olmadan yeni
+     * yönetici açılamaz. Gerçek ilk kurulumda (kullanıcı yok) hiçbir şey değişmez.
+     */
+    private function adminGateBlocked(ServerRequestInterface $request): bool
+    {
+        try {
+            $statement = $this->connection()->pdo()->query('SELECT COUNT(*) FROM users');
+            $mevcutKullanici = $statement === false ? 0 : (int) $statement->fetchColumn();
+        } catch (Throwable) {
+            return false; // users tablosu yoksa kurulum gerçekten ilk kurulumdur
+        }
+
+        if ($mevcutKullanici === 0) {
+            return false;
+        }
+
+        $cookies = $request->getCookieParams();
+        $raw = $cookies[ReSetupTicket::COOKIE_NAME] ?? null;
+
+        return !(is_string($raw) && $this->reSetupTicket()->validate($raw, $this->clock->now()));
     }
 
     private function unlockGate(): UnlockGate
@@ -434,6 +499,16 @@ final class SetupController
             return $this->outOfOrder($response, 'Önce veritabanı tablolarını oluşturun.');
         }
 
+        if ($this->adminGateBlocked($request)) {
+            return Response::error(
+                $response,
+                'FORBIDDEN',
+                'Bu sistemde zaten yönetici hesabı var. Yeni yönetici oluşturmak için '
+                . 'geçerli bir yeniden kurulum bileti gerekir (config.php içindeki APP_KEY ile alınır).',
+                403,
+            );
+        }
+
         $body = $this->body($request);
         $email = strtolower($this->str($body, 'email'));
         $password = is_string($body['password'] ?? null) ? $body['password'] : '';
@@ -505,6 +580,15 @@ final class SetupController
     {
         if (!$this->state->canRun(SetupState::STEP_ADMIN)) {
             return $this->outOfOrder($response, 'Önce yönetici bilgilerini girin.');
+        }
+
+        if ($this->adminGateBlocked($request)) {
+            return Response::error(
+                $response,
+                'FORBIDDEN',
+                'Bu sistemde zaten yönetici hesabı var; bilet olmadan yeni hesap açılamaz.',
+                403,
+            );
         }
 
         /** @var array{email: string, password_hash: string, secret: string}|null $pending */
@@ -590,6 +674,10 @@ final class SetupController
         }
 
         $this->state->complete(SetupState::STEP_RECOVERY);
+
+        // G2: bilet TEK KULLANIMLIKTIR — kurulum tamamlandığı an düşer; süresi
+        // dolmasını beklemeyiz.
+        $this->reSetupTicket()->consume();
 
         $summary = [
             'php_version' => PHP_VERSION,

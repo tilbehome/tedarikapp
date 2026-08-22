@@ -110,6 +110,47 @@ final class IntegrityChecker
     }
 
     /**
+     * OTURUMSUZ ÖZET (İE#19 G4) — dosya ADI İÇERMEZ.
+     *
+     * `check()` çıktısı eksik/bozuk dosyaların YOLLARINI listeler. Bu, kurulum
+     * sırasında ("vendor/ eksik açılmış") hayat kurtarır; kurulmuş bir sistemde ise
+     * kimliksiz bir istekle dizin yapısını, hangi bileşenin kurulu olduğunu ve neyin
+     * elle değiştirildiğini dışarı verir. Kimliksiz yol artık YALNIZ sayıları döner;
+     * isim isim liste oturum arkasındadır (`/api/system/integrity/detay`).
+     *
+     * @return array{
+     *     manifest_exists: bool,
+     *     ok: bool,
+     *     total: int,
+     *     checked: int,
+     *     missing_count: int,
+     *     modified_count: int,
+     *     message: string
+     * }
+     */
+    public function summary(): array
+    {
+        $full = $this->check();
+
+        return [
+            'manifest_exists' => $full['manifest_exists'],
+            'ok' => $full['ok'],
+            'total' => $full['total'],
+            'checked' => $full['checked'],
+            'missing_count' => $full['missing_count'],
+            'modified_count' => $full['modified_count'],
+            'message' => $full['ok']
+                ? $full['message']
+                : sprintf(
+                    'Kurulum EKSİK/BOZUK: %d dosya eksik, %d dosya beklenenden farklı. '
+                    . 'Ayrıntılı liste için panele giriş yapıp Ayarlar > Sistem durumu ekranını açın.',
+                    $full['missing_count'],
+                    $full['modified_count'],
+                ),
+        ];
+    }
+
+    /**
      * Manifest satırlarını çözer. Biçim: `<sha256>  <göreli yol>`; `#` yorumdur.
      *
      * @return list<array{string, string}>
