@@ -18,6 +18,7 @@ final class SharePageV4Test extends AuthTestCase
 {
     private string $csrf = '';
     private string $shareUrl = '';
+    private int $listId = 0;
 
     protected function setUp(): void
     {
@@ -27,7 +28,7 @@ final class SharePageV4Test extends AuthTestCase
         $this->call('POST', '/api/auth/totp', ['code' => $this->totpCodeFor($user['secret'])]);
         $this->csrf = (string) $this->json($this->call('GET', '/api/auth/me'))['data']['csrf_token'];
 
-        $listId = (int) $this->json($this->write('POST', '/api/lists', [
+        $this->listId = $listId = (int) $this->json($this->write('POST', '/api/lists', [
             'name' => 'Paylaşım <script>alert(1)</script>',
             'period' => 'Eylül 2026',
         ]))['data']['id'];
@@ -66,7 +67,8 @@ final class SharePageV4Test extends AuthTestCase
     private function sayfa(): string
     {
         $token = substr($this->shareUrl, strrpos($this->shareUrl, '/') + 1);
-        $response = $this->call('GET', '/p/' . $token);
+        // İE#18 G6: kapı varsayılan AÇIK — içerik sözleşmesi anahtardan SONRA sınanır.
+        $response = $this->call('GET', '/liste/' . $token, null, [], $this->paylasimCerezi($token, $this->listId, $this->csrf));
         self::assertSame(200, $response->getStatusCode());
 
         return (string) $response->getBody();

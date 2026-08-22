@@ -194,6 +194,13 @@ export const share = {
       body,
     ),
   revoke: (listId: number) => api.delete<void>(`/api/lists/${listId}/share`),
+
+  // İE#18 G6 (K62): erişim anahtarı — paylaşım linki artık tek başına yetmez.
+  key: (listId: number) => api.get<{ key: string; enabled: boolean }>(`/api/lists/${listId}/share-key`),
+  rotateKey: (listId: number) =>
+    api.post<{ key: string; enabled: boolean }>(`/api/lists/${listId}/share-key`, {}),
+  toggleKey: (listId: number, enabled: boolean) =>
+    api.patch<{ enabled: boolean }>(`/api/lists/${listId}/share-key`, { enabled }),
 };
 
 export const categories = {

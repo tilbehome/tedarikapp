@@ -15,6 +15,89 @@
 (function () {
   'use strict';
 
+  // ── İE#18 G6: ERİŞİM ANAHTARI KİLİT EKRANI ────────────────────────────────
+  // Kilit ekranı ayrı bir sayfadır (liste verisi YOK). Orada yalnız kod girişi
+  // davranışı çalışır; paylaşım sayfasının geri kalanı bulunmadığı için burada
+  // erken dönülür. Satır içi script YOK (K51) — tüm davranış bu dosyada.
+  var anahtarHaneleri = document.querySelector('[data-anahtar-haneler]');
+  if (anahtarHaneleri !== null) {
+    var haneler = Array.prototype.slice.call(anahtarHaneleri.querySelectorAll('.kis-hane'));
+    var gizliAlan = document.querySelector('[data-anahtar-deger]');
+    var form = document.querySelector('[data-anahtar-form]');
+
+    var topla = function () {
+      var deger = haneler
+        .map(function (h) {
+          return h.value.trim().toUpperCase();
+        })
+        .join('');
+      if (gizliAlan !== null) gizliAlan.value = deger;
+
+      return deger;
+    };
+
+    haneler.forEach(function (hane, index) {
+      hane.addEventListener('input', function () {
+        hane.value = hane.value.replace(/[^0-9A-Za-z]/g, '').toUpperCase().slice(0, 1);
+        hane.classList.toggle('dolu', hane.value !== '');
+        // Otomatik ilerleme: kullanıcı Tab'a basmak zorunda kalmasın.
+        if (hane.value !== '' && index < haneler.length - 1) haneler[index + 1].focus();
+        topla();
+      });
+
+      hane.addEventListener('keydown', function (olay) {
+        // Boş kutuda geri silmek ÖNCEKİ kutuya döner — elle düzeltme akıcı olsun.
+        if (olay.key === 'Backspace' && hane.value === '' && index > 0) {
+          olay.preventDefault();
+          haneler[index - 1].focus();
+          haneler[index - 1].value = '';
+          haneler[index - 1].classList.remove('dolu');
+          topla();
+        }
+        if (olay.key === 'ArrowLeft' && index > 0) haneler[index - 1].focus();
+        if (olay.key === 'ArrowRight' && index < haneler.length - 1) haneler[index + 1].focus();
+      });
+
+      // YAPIŞTIRMA: anahtar tek parça kopyalanmış olur; kutulara dağıtılır.
+      hane.addEventListener('paste', function (olay) {
+        var metin = (olay.clipboardData || window.clipboardData).getData('text') || '';
+        var temiz = metin.replace(/[^0-9A-Za-z]/g, '').toUpperCase().slice(0, haneler.length);
+        if (temiz === '') return;
+        olay.preventDefault();
+        haneler.forEach(function (kutu, i) {
+          kutu.value = temiz[i] || '';
+          kutu.classList.toggle('dolu', kutu.value !== '');
+        });
+        topla();
+        haneler[Math.min(temiz.length, haneler.length - 1)].focus();
+      });
+    });
+
+    if (form !== null) {
+      form.addEventListener('submit', function (olay) {
+        // Eksik kod boşuna sunucuya gitmesin; sallanma anında geri bildirim verir.
+        if (topla().length < haneler.length) {
+          olay.preventDefault();
+          form.classList.remove('sallan');
+          void form.offsetWidth; // animasyon yeniden tetiklensin
+          form.classList.add('sallan');
+          haneler[0].focus();
+        }
+      });
+    }
+
+    return; // kilit ekranında paylaşım sayfası davranışları yok
+  }
+
+  // ── İE#18 G6-d: AÇILIŞ EFEKTİ ─────────────────────────────────────────────
+  // Doğru anahtardan sonra sunucu ?acildi=1 ile döner; liste yumuşak belirir.
+  if (location.search.indexOf('acildi=1') !== -1) {
+    var sayfaKabi = document.querySelector('.page');
+    if (sayfaKabi !== null) sayfaKabi.classList.add('acildi');
+    // Adres temizlenir: yenilemede efekt tekrar oynamasın.
+    history.replaceState({}, '', location.pathname);
+  }
+
   var katman = document.getElementById('lbx');
   var gorsel = document.getElementById('lbi');
   var video = document.getElementById('lbv');
@@ -103,7 +186,10 @@
       video.hidden = true;
       if (lbNot !== null) {
         lbNot.hidden = false;
-        lbNot.textContent = 'Video şu an oynatılamıyor.';
+        // İE#18 G4c: bu bir HATA değil VERİ EKSİĞİDİR — kullanıcı ne yapacağını bilsin.
+        lbNot.textContent =
+          'Bu ürün eski sürümle yakalandığı için video adresi kayıtlı değil. ' +
+          'İlan yeniden yakalanınca video burada oynar.';
         var kaynak = hedef.dataset.videoKaynak;
         if (kaynak) {
           var bag = document.createElement('a');

@@ -58,6 +58,7 @@ final class ActivityController extends ApiController
         // her indirme tıklamasında bir satır düşer, akışı boğardı. Gerçek indirme
         // (share_download) akışta KALIR: o firmanın yaptığı bir iştir.
         $where[] = "action <> '" . \App\Services\Share\ShareGate::ACTION_LINK . "'";
+        $where[] = "action <> '" . \App\Services\Share\ShareGate::ACTION_ANAHTAR . "'";
 
         // $where hep dolu (capture_request filtresi eklendi) — koşul kaldırıldı.
         $clause = ' WHERE ' . implode(' AND ', $where);

@@ -224,7 +224,12 @@ final class AppBuilder
             $settingsRepository,
         );
 
-        $shareController = new ShareController($lists, $services->activity, $services->clock);
+        $shareController = new ShareController(
+            $lists,
+            $services->activity,
+            $services->clock,
+            new \App\Services\Share\ShareKeyService($lists, (string) $config->get('APP_KEY', '')),
+        );
 
         // İE#11 Faz 3: eklenti uçları — Bearer + CORS allowlist + hız sınırı (ExtensionAuth).
         $inboxRepository = new \App\Models\InboxRepository($connection);

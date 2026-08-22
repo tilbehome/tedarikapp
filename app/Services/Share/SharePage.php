@@ -86,8 +86,16 @@ final class SharePage
 
         $origin = $canonicalUrl !== '' ? (string) preg_replace('#(^https?://[^/]+).*#', '$1', $canonicalUrl) : '';
         $totals = $list['totals'];
-        $antetSatiri = TemplateV2::headerLine($documentHeader, $list) . " · Çin'den DDP Sipariş Listesi";
+
+        // İE#18 G2 — HERO BİLGİ MİMARİSİ (PDF antediyle AYNI):
+        //   sol : marka etiketi + liste adı + TEK SATIR meta (boş alan basılmaz)
+        //   sağ : BELGE (kod + Rev) · KUR (kilitli/güncel + ¥/$) · GÜNCELLEME
+        $markaEtiketi = is_string($documentHeader['company'] ?? null) && $documentHeader['company'] !== ''
+            ? mb_strtoupper((string) $documentHeader['company'], 'UTF-8')
+            : 'TEDARİKAPP';
+        $antetSatiri = $this->metaSatiri($documentHeader, $list);
         $kurEtiketi = ($list['rate_locked_at'] ?? null) !== null ? 'KUR · KİLİTLİ' : 'KUR · GÜNCEL';
+        $revizyonHarfi = TemplateV2::revisionLabel(max(1, (int) ($list['revision'] ?? 0) + 1));
 
         $araclar = $this->araclar($list, $sira, $canonicalUrl, $token, $dil, $now, $e);
         $lightboxVerisi = htmlspecialchars(
@@ -128,14 +136,18 @@ final class SharePage
       <div class="hb">
         <img src="/panel/apple-touch-icon.png" alt="" width="46" height="46">
         <div>
+          <div class="hmarka">' . $e($markaEtiketi) . '</div>
           <div class="ht">' . $e($list['name']) . '</div>
           <div class="hs">' . $e($antetSatiri) . '</div>
         </div>
       </div>
       <div class="hm">
-        <div><b>BELGE</b><span>' . $e($this->belgeKodu($list)) . '</span></div>
-        <div><b>' . $e($kurEtiketi) . '</b><span>¥ ' . $e($list['yuan_rate']) . ' · $ ' . $e($list['usd_rate']) . '</span></div>
-        <div><b>GÜNCELLEME</b><span>' . $e($this->tarih((string) $list['updated_at'])) . '</span></div>
+        <div><b>BELGE</b><span>' . $e($this->belgeKodu($list)) . '</span>
+          <span class="alt">Rev ' . $e($revizyonHarfi) . '</span></div>
+        <div><b>' . $e($kurEtiketi) . '</b><span>¥ ' . $e($list['yuan_rate']) . '</span>
+          <span class="alt">$ ' . $e($list['usd_rate']) . '</span></div>
+        <div><b>GÜNCELLEME</b><span>' . $e($this->tarih((string) $list['updated_at'], 'd.m.Y')) . '</span>
+          <span class="alt">' . $e($this->tarih((string) $list['updated_at'], 'H:i')) . '</span></div>
       </div>
     </div>
 
@@ -320,7 +332,7 @@ final class SharePage
         foreach (ShareTexts::DILLER as $secenek) {
             $adres = $token === ''
                 ? '#'
-                : '/p/' . $token . ($secenek === 'tr' ? '' : '?lang=' . $secenek);
+                : '/liste/' . $token . ($secenek === 'tr' ? '' : '?lang=' . $secenek);
             $html .= '<a href="' . $e($adres) . '"' . ($secenek === $aktif ? ' class="secili" aria-current="true"' : '')
                 . '>' . $e(ShareTexts::dilAdi($secenek)) . '</a>';
         }
@@ -660,13 +672,42 @@ final class SharePage
         return TemplateV2::documentCode((int) $list['id'], (int) date('Y'), 'A');
     }
 
-    private function tarih(string $iso): string
+    private function tarih(string $iso, string $bicim = 'd.m.Y H:i'): string
     {
         try {
-            return (new \DateTimeImmutable($iso))->format('d.m.Y H:i');
+            return (new \DateTimeImmutable($iso))->format($bicim);
         } catch (\Throwable) {
             return $iso;
         }
+    }
+
+    /**
+     * İE#18 G2 — TEK SATIR META: firma · web · e-posta · dönem · kopya türü ·
+     * tedarikçi. Ayraç TEK TİP ("·"); BOŞ ALAN BASILMAZ (antet ayarları eksikse
+     * satır kısalır, "· ·" gibi boşluk artığı oluşmaz).
+     *
+     * @param array{company?: string|null, web?: string|null, email?: string|null, prepared_by?: string|null} $antet
+     * @param array<string, mixed> $list
+     */
+    private function metaSatiri(array $antet, array $list): string
+    {
+        $parcalar = [
+            $antet['company'] ?? null,
+            $antet['web'] ?? null,
+            $antet['email'] ?? null,
+            $list['period'] ?? null,
+            'Firma kopyası',
+            $list['supplier_name'] ?? null,
+        ];
+
+        $temiz = [];
+        foreach ($parcalar as $parca) {
+            if (is_string($parca) && trim($parca) !== '') {
+                $temiz[] = trim($parca);
+            }
+        }
+
+        return implode(' · ', $temiz);
     }
 
     /**

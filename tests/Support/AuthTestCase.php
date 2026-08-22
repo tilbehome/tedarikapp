@@ -140,6 +140,33 @@ abstract class AuthTestCase extends TestCase
     }
 
     /**
+    /**
+     * İE#18 G6 (K62) — PAYLAŞIM SAYFASI ÇEREZİ.
+     *
+     * Erişim anahtarı kapısı varsayılan AÇIK olduğu için paylaşım sayfasını
+     * sınayan testler önce anahtarı doğrular. Kapıyı kapatmak da mümkündü ama o
+     * zaman CANLIDAKİ varsayılan yol test dışı kalırdı; bu yardımcı gerçek yolu
+     * kullanır: anahtarı panelden okur, doğrular, dönen çerezi verir.
+     *
+     * @return array<string, string> `call()` metoduna verilecek çerez dizisi
+     */
+    protected function paylasimCerezi(string $token, int $listId, string $csrf): array
+    {
+        $anahtar = (string) $this->json(
+            $this->call('GET', '/api/lists/' . $listId . '/share-key', null, [\App\Middleware\Csrf::HEADER => $csrf]),
+        )['data']['key'];
+
+        $yanit = $this->call('POST', '/liste/' . $token . '/anahtar', ['anahtar' => $anahtar]);
+        preg_match(
+            '/' . \App\Services\Share\ShareKeyService::CEREZ_ADI . '=([^;]+)/',
+            $yanit->getHeaderLine('Set-Cookie'),
+            $eslesme,
+        );
+
+        return [\App\Services\Share\ShareKeyService::CEREZ_ADI => (string) ($eslesme[1] ?? '')];
+    }
+
+    /**
      * @param array<string, mixed>|null $body
      * @param array<string, string> $headers
      * @param array<string, string> $cookies
@@ -279,6 +306,10 @@ abstract class AuthTestCase extends TestCase
                 share_token_hash TEXT NULL,
                 share_token_prefix TEXT NULL,
                 share_expires_at TEXT NULL,
+                -- İE#18 G6 (K62): erişim anahtarı kapısı.
+                share_key_hash TEXT NULL,
+                share_key_plain TEXT NULL,
+                share_key_enabled INTEGER NOT NULL DEFAULT 1,
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL,
                 archived_at TEXT NULL,

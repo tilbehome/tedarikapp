@@ -62,6 +62,12 @@ final class Migrator
             ['table' => 'translation_cache'],
             ['column' => ['products', 'price_target_try']],
         ],
+        // İE#18 G6 (K62): erişim anahtarı kolonları.
+        '0021_add_lists_share_key' => [
+            ['column' => ['lists', 'share_key_hash']],
+            ['column' => ['lists', 'share_key_plain']],
+            ['column' => ['lists', 'share_key_enabled']],
+        ],
     ];
 
     /** @param array<string, list<array{table?: string, column?: array{string, string}}>>|null $baselineObjects test amaçlı harita (null = gerçek harita) */

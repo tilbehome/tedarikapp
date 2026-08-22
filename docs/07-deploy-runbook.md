@@ -34,7 +34,7 @@ Not: cPanel'de subdomain kökü `public/` klasörüne çekilemiyorsa, kök `.hta
 1. cPanel → MySQL: veritabanı + kullanıcı oluştur, yetki ver (sihirbaz DB oluşturamaz, cPanel yetkisi ister — tek elle yapılan adım budur).
 2. Release zip'ini yükle ve aç, tarayıcıdan siteye gir → **kurulum sihirbazı** otomatik açılır:
    - Gereksinim denetimi: PHP sürümü/eklentileri, production'da HTTPS (zorunlu — K37 §A3), `public/media/` ve `storage/` yazma izinleri. Yazılamayan klasör kurulumu BLOKLAMAZ (K37 §D10): sihirbaz hotlink + DB-log moduyla devam eder ve hangi klasöre hangi iznin verileceğini ekranda söyler.
-   - DB bilgilerini sorar, bağlantıyı test eder, `.env`'i kendisi yazar (APP_KEY ve token tuzunu kriptografik üretir).
+   - DB bilgilerini sorar, bağlantıyı test eder, `config.php` (veya legacy `.env`)'i kendisi yazar (APP_KEY ve token tuzunu kriptografik üretir).
    - Migration'ları çalıştırır, admin hesabını oluşturtur, **2FA'yı QR kodla tanımlatır** ve kurtarma kodlarını gösterir.
    - Bitince kendini **kalıcı olarak kilitler** (kilit `settings` tablosunda; tekrar erişim denemeleri loglanır).
 3. SSL aktif ve HTTP→HTTPS yönlendirmesi çalışıyor mu doğrula; smoke test (bölüm 6) koş.
@@ -44,11 +44,11 @@ Not: cPanel'de subdomain kökü `public/` klasörüne çekilemiyorsa, kök `.hta
 Üretim sunucusunda PHP **`nobody`** kullanıcısıyla (DSO) çalışıyor ve uygulama diske
 yazamıyor. Bu kalıcı bir kısıt; kurulum akışı buna göre farklıdır:
 
-1. **`.env` elle kaydedilir.** Sihirbaz dosyayı yazamadığını fark eder ve üretilen içeriği
+1. **`config.php` (veya legacy `.env`) elle kaydedilir.** Sihirbaz dosyayı yazamadığını fark eder ve üretilen içeriği
    ekranda gösterir. İçeriği kopyalayın, cPanel > Dosya Yöneticisi ile uygulama kökünde
-   **`.env`** adıyla kaydedin (baştaki nokta dahil), sonra "Kaydettim" deyin. Sihirbaz
+   **`config.php` (veya legacy `.env`)** adıyla kaydedin (baştaki nokta dahil), sonra "Kaydettim" deyin. Sihirbaz
    dosyayı okuyup APP_KEY eşleşmesini doğrular; uyuşmazsa devam etmez.
-2. **Loglar veritabanına gider.** `.env` içinde `LOG_DRIVER=db` gelir; loglar `app_logs`
+2. **Loglar veritabanına gider.** `config.php` (veya legacy `.env`) içinde `LOG_DRIVER=db` gelir; loglar `app_logs`
    tablosuna yazılır. Dosya hedefi bu sunucuda kullanılmaz — sessizce kaybolurdu.
 3. **Görseller için `public/media` izni.** Sihirbaz bu klasörü yazılabilir bulamazsa
    **hotlink moduna** düşer: görseller indirilmez, 1688 URL'si saklanır. Panel bunu rozetle
@@ -102,11 +102,11 @@ Sonraki sürümler: sihirbaz YOK — zip yüklenir, admin girişinde "veritaban�
    | `migrations/` | sihirbazın ve güncelleme yolunun migration kaynağı |
    | `setup/` | kurulum sihirbazının HTML/JS/CSS'i — olmadan sihirbaz açılamaz |
    | `bin/` | `migrate.php`, `purge-trash.php` (housekeeping cron), `user-create.php` |
-   | `.env.example` | sihirbazın `.env` ŞABLONU — olmadan env adımı çalışmaz |
+   | `.env.example` | sihirbazın `config.php` (veya legacy `.env`) ŞABLONU — olmadan env adımı çalışmaz |
    | `.htaccess` + `public/.htaccess` | yönlendirme ve koruma kuralları |
    | `storage/` (boş iskelet) | loglar/kilit için; yazılamıyorsa K33 DB modu devreye girer |
 
-   Zip'e GİRMEZ: `.env` (sunucuda üretilir/korunur), `.git*`, `frontend/` kaynakları,
+   Zip'e GİRMEZ: `config.php` (veya legacy `.env`) (sunucuda üretilir/korunur), `.git*`, `frontend/` kaynakları,
    `tests/`, `docs/`, `node_modules/`, geliştirme konfigleri (`phpunit.xml`, `phpstan.neon`, `.php-cs-fixer.php`).
 3. **Üretim profili doğrulaması (K41):** CI'daki `uretim-profili` job'ı yeşil olmadan release ÇIKARILMAZ — docs/SUNUCU-PROFILI.md manifestine uyum (sodium'suz şifreleme, yazılamaz disk yolları, allow_url_fopen/mail yasağı statik taraması) her PR'da otomatik denetlenir.
 4. cPanel Dosya Yöneticisi ile yükle → mevcut sürümün üzerine AÇMADAN önce: `app/`'i `app_onceki/` olarak yedekle.
@@ -115,7 +115,7 @@ Sonraki sürümler: sihirbaz YOK — zip yüklenir, admin girişinde "veritaban�
 
 **Hata davranışı (K42):** kurulum ve açılış hataları hiçbir evrede çıplak 500 üretmez:
 - Ön kontrol kapısı (`bootstrap/preflight.php`): PHP sürümü/eklenti/vendor eksikse **503** + madde madde eksik + çözüm; geçince tamamen sessiz.
-- Açılış (bootstrap) hatası: `.env` yoksa tam teşhisli statik sayfa, varsa özet + teknik detay (sır maskeli).
+- Açılış (bootstrap) hatası: `config.php` (veya legacy `.env`) yoksa tam teşhisli statik sayfa, varsa özet + teknik detay (sır maskeli).
 - Sihirbaz adım hatası: dostane Türkçe mesaj + teknik detay bölümü + **"Tanılama raporunu kopyala"** düğmesi (ortam + eklenti VAR/YOK + hata + işlem günlüğü; sır İÇERMEZ).
 - Kurulu (kilitli) sistemde çalışma zamanı hatası: kullanıcıya zarif genel mesaj + Request-ID; tam detay `app_logs`a yazılır ve aynı Request-ID ile bulunur.
 

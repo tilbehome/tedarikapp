@@ -27,7 +27,120 @@ final class ShareController extends ApiController
         private readonly ListRepository $lists,
         private readonly ActivityLog $activity,
         private readonly Clock $clock,
+        // İE#18 G6 (K62): erişim anahtarı — paylaşım linki artık tek başına yetmez.
+        private readonly ?\App\Services\Share\ShareKeyService $anahtar = null,
     ) {
+    }
+
+    /**
+     * GET /api/lists/{id}/share-key — panelde gösterilecek anahtar ve kapı durumu.
+     *
+     * Anahtar 6 hanelidir ve firmaya ELDEN iletilir; hash'ten geri okunamayacağı
+     * için düz metni de saklanır (bkz. migration 0021 gerekçesi). Bu uç oturum
+     * arkasındadır — dışarıya hiçbir yoldan sızmaz.
+     *
+     * @param array<string, string> $args
+     */
+    public function keyShow(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    {
+        [$row, $hata] = $this->anahtarIcinListe($response, $args);
+        if ($row === null) {
+            return $hata;
+        }
+
+        $row = $this->anahtar?->hazirla($row, $this->clock->now()) ?? $row;
+
+        return Response::success($response, [
+            'key' => (string) ($row['share_key_plain'] ?? ''),
+            'enabled' => (int) ($row['share_key_enabled'] ?? 1) === 1,
+        ]);
+    }
+
+    /**
+     * POST /api/lists/{id}/share-key — anahtarı YENİLER.
+     *
+     * Yenileme eskisini ANINDA öldürür (K51 iptal ruhu): hash değişir, eski
+     * anahtarla alınmış tarayıcı çerezleri de geçersizleşir çünkü çerez imzası
+     * hash'i kapsar. Firmaya yeni anahtar iletilmelidir.
+     *
+     * @param array<string, string> $args
+     */
+    public function keyRotate(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    {
+        [$row, $hata] = $this->anahtarIcinListe($response, $args);
+        if ($row === null) {
+            return $hata;
+        }
+
+        $now = $this->clock->now();
+        $yeni = $this->anahtar?->yenile((int) $row['id'], $now) ?? '';
+
+        $this->activity->record(
+            'list',
+            (int) $row['id'],
+            'share_key_rotated',
+            'erişim anahtarı yenilendi',
+            ClientIp::from($request),
+            $now,
+            ActivityLog::ACTOR_ADMIN,
+            $this->user($request)->id,
+        );
+
+        return Response::success($response, ['key' => $yeni, 'enabled' => true]);
+    }
+
+    /**
+     * PATCH /api/lists/{id}/share-key — kapıyı aç/kapat ({enabled: bool}).
+     *
+     * KAPALI listede davranış eski hâlidir: token bilen görür. Bu bilinçli bir
+     * seçenektir (bazı listeler gerçekten herkese açık paylaşılmak istenebilir),
+     * varsayılan AÇIK'tır.
+     *
+     * @param array<string, string> $args
+     */
+    public function keyToggle(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    {
+        [$row, $hata] = $this->anahtarIcinListe($response, $args);
+        if ($row === null) {
+            return $hata;
+        }
+
+        $govde = $this->body($request);
+        $acik = ($govde['enabled'] ?? null) === true;
+        $now = $this->clock->now();
+        $this->lists->update((int) $row['id'], ['share_key_enabled' => $acik ? 1 : 0], $now);
+
+        $this->activity->record(
+            'list',
+            (int) $row['id'],
+            $acik ? 'share_key_enabled' : 'share_key_disabled',
+            $acik ? 'erişim anahtarı açıldı' : 'erişim anahtarı kapatıldı',
+            ClientIp::from($request),
+            $now,
+            ActivityLog::ACTOR_ADMIN,
+            $this->user($request)->id,
+        );
+
+        return Response::success($response, ['enabled' => $acik]);
+    }
+
+    /**
+     * @param array<string, string> $args
+     *
+     * @return array{0: array<string, mixed>|null, 1: ResponseInterface}
+     */
+    private function anahtarIcinListe(ResponseInterface $response, array $args): array
+    {
+        $listId = $this->intArg($args, 'id');
+        $row = $listId === null ? null : $this->lists->find($listId);
+        if ($row === null) {
+            return [null, Response::error($response, 'NOT_FOUND', 'Liste bulunamadı.', 404)];
+        }
+        if ($this->anahtar === null) {
+            return [null, Response::error($response, 'SERVER_ERROR', 'Anahtar servisi kullanılamıyor.', 500)];
+        }
+
+        return [$row, $response];
     }
 
     /**
@@ -85,7 +198,7 @@ final class ShareController extends ApiController
 
         // Adres istekten türetilir: alt alan adı/klasör yerleşimi ne olursa olsun doğru taban.
         $uri = $request->getUri();
-        $shareUrl = $uri->getScheme() . '://' . $uri->getAuthority() . '/p/' . $token;
+        $shareUrl = $uri->getScheme() . '://' . $uri->getAuthority() . '/liste/' . $token;
 
         return Response::success($response, [
             'share_url' => $shareUrl,

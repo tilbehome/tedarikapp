@@ -18,7 +18,8 @@ final class ListRepository
 {
     private const COLUMNS = 'id, name, period, supplier_name, status, note, visibility,
         yuan_rate, usd_rate, rate_locked_at, revision, share_token_hash, share_token_prefix,
-        share_expires_at, created_at, updated_at, archived_at, deleted_at';
+        share_expires_at, share_key_hash, share_key_plain, share_key_enabled,
+        created_at, updated_at, archived_at, deleted_at';
 
     public function __construct(private readonly Connection $connection)
     {
@@ -121,6 +122,8 @@ final class ListRepository
             'name', 'period', 'supplier_name', 'status', 'note', 'visibility',
             'yuan_rate', 'usd_rate', 'rate_locked_at', 'archived_at',
             'share_token_hash', 'share_token_prefix', 'share_expires_at',
+            // İE#18 G6 (K62): erişim anahtarı — hash + panelde gösterilen düz metin + kapı anahtarı.
+            'share_key_hash', 'share_key_plain', 'share_key_enabled',
         ];
 
         $assignments = [];

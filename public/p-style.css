@@ -28,13 +28,22 @@ body { font-family:Inter,system-ui,sans-serif; background:var(--bg); color:var(-
 .hero { background:linear-gradient(120deg,#0E2251 0%,#16336E 70%,#1E4086 100%); color:#fff;
   padding:22px 26px 20px; display:flex; justify-content:space-between; gap:18px; flex-wrap:wrap; position:relative; }
 .hero::after { content:""; position:absolute; left:0; right:0; bottom:0; height:3px; background:var(--gold); }
-.hb { display:flex; gap:14px; align-items:center; }
-.hb img { width:46px; height:46px; border-radius:12px; }
-.ht { font-size:23px; font-weight:800; letter-spacing:-.02em; }
-.hs { font-size:12.5px; color:#A9BCEB; margin-top:3px; font-weight:500; }
-.hm { display:flex; gap:clamp(14px,2.4vw,30px); text-align:right; flex-wrap:wrap; align-items:center; }
-.hm b { display:block; font-size:9.5px; letter-spacing:.12em; color:#7E97D8; font-weight:700; margin-bottom:2px; }
-.hm span { font-size:13.5px; font-weight:700; font-variant-numeric:tabular-nums; }
+.hb { display:flex; gap:14px; align-items:flex-start; min-width:0; }
+.hb img { width:46px; height:46px; border-radius:12px; flex:none; }
+.hmarka { font-size:9.5px; letter-spacing:.14em; color:#8FA5CC; font-weight:700; }
+.ht { font-size:23px; font-weight:800; letter-spacing:-.02em; margin-top:1px; }
+/* İE#18 G2: TEK SATIR meta — firma · web · e-posta · dönem · tür · tedarikçi.
+   Ayraç tek tip "·"; boş alan hiç basılmaz (SharePage süzer). */
+.hs { font-size:12.5px; color:#A9BCEB; margin-top:5px; font-weight:500; line-height:1.5; }
+
+/* İE#18 G2: sağ blok artık HİZALI ETİKET-DEĞER IZGARASI (üç sütun).
+   Aynı bilgi mimarisi PDF antedinde de kullanılır (pdf-rev4). */
+.hm { display:grid; grid-auto-flow:column; gap:clamp(16px,2.6vw,34px); text-align:right; align-items:start; }
+.hm > div { min-width:0; }
+.hm b { display:block; font-size:9.5px; letter-spacing:.12em; color:#7E97D8; font-weight:700; margin-bottom:3px;
+  white-space:nowrap; }
+.hm span { display:block; font-size:13.5px; font-weight:700; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.hm .alt { font-size:11.5px; font-weight:600; color:#C3D0E8; margin-top:2px; }
 
 /* ---- araç çubuğu ---- */
 .tools { display:flex; gap:7px; padding:12px 26px; border-bottom:1px solid var(--ln); background:#FBFCFE; flex-wrap:wrap; }
@@ -43,7 +52,7 @@ body { font-family:Inter,system-ui,sans-serif; background:var(--bg); color:var(-
 .tb svg { width:14px; height:14px; }
 .tb:hover { color:var(--navy); border-color:#C9D3E8; }
 .tb.wa { color:#0E7A4A; }
-.tb.pri { background:var(--navy); border-color:var(--navy); color:#fff; margin-left:auto; }
+.tb.pri { background:var(--navy); border-color:var(--navy); color:#fff; }
 .tb.pri:hover { background:var(--navy2); }
 
 /* ---- KPI şeridi ---- */
@@ -73,11 +82,16 @@ td.c { text-align:center; } td.n { text-align:right; font-variant-numeric:tabula
 td.n .val, td.c .val { display:inline; }
 .mut { color:var(--t2); font-weight:500; }
 .prod { display:flex; gap:11px; align-items:center; min-width:215px; }
-.pi { position:relative; flex:none; cursor:zoom-in; }
+.pi { position:relative; flex:none; cursor:zoom-in; }  /* lightbox tetikleyicisi: GÖRSELİN KENDİSİ */
 .pi img { width:50px; height:50px; border-radius:11px; object-fit:cover; display:block; box-shadow:0 1px 4px rgba(15,37,87,.14); }
-.pi .vb { position:absolute; right:-5px; bottom:-5px; width:20px; height:20px; border-radius:50%;
-  background:var(--navy); border:2px solid #fff; color:#fff; display:flex; align-items:center; justify-content:center; }
-.pi .vb svg { width:7px; height:7px; fill:currentColor; }
+/* İE#18 G4: NET PLAY rozeti — büyüteç/zoom algısı veren stil YOK. Lightbox
+   tetikleyicisi GÖRSELİN KENDİSİDİR; rozet ayrı bir düğmedir (imleç pointer). */
+.pi .vb { position:absolute; right:-5px; bottom:-5px; width:21px; height:21px; border-radius:50%;
+  background:var(--navy); color:#fff; display:flex; align-items:center; justify-content:center;
+  border:2px solid #fff; cursor:pointer; box-shadow:0 1px 4px rgba(15,37,87,.35); transition:.15s; }
+.pi .vb svg { width:8px; height:8px; fill:currentColor; margin-left:1px; }
+.pi .vb:hover { background:var(--navy2); transform:scale(1.12); }
+.pi .vb:focus-visible { outline:2px solid var(--gold); outline-offset:2px; }
 .pno { font-size:10px; color:var(--t3); font-weight:700; letter-spacing:.06em; }
 .pn { font-size:13px; font-weight:700; color:var(--navy); text-decoration:none; letter-spacing:-.01em; line-height:1.3; }
 .pn:hover { color:var(--blue); }
@@ -253,8 +267,12 @@ td.not-hucre .val { font-style: italic; }
 .tb.bekliyor { opacity:.7; pointer-events:none; }
 
 /* Paylaş menüsü (C1) */
-.pmenu { position:relative; margin-left:auto; }
+/* İE#18 G1: Paylaş, çıktı grubunun İÇİNDE ve en sağında durur — sağ uca
+   itilmiyor (margin-left:auto kalktı), böylece dar ekranda grup dağılmıyor. */
+.pmenu { position:relative; }
+/* Popover düğmeye göre konumlanır; dar ekranda sağa yapışıp taşmaz. */
 .pmenu-liste { position:absolute; right:0; top:calc(100% + 6px); z-index:40; min-width:230px;
+  max-width:min(300px, calc(100vw - 32px));
   background:#fff; border:1px solid var(--ln); border-radius:12px; padding:6px;
   box-shadow:0 18px 40px rgba(15,37,87,.16); display:flex; flex-direction:column; gap:2px; }
 .pmenu-liste[hidden] { display:none; }
@@ -304,6 +322,58 @@ td.not-hucre .val { font-style: italic; }
 .lbnot { color:#fff; font-size:14px; text-align:center; line-height:1.7; max-width:420px; }
 .lbnot[hidden] { display:none; }
 .lbnot a { color:#fff; text-decoration:underline; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * İE#18 G6 — ERİŞİM ANAHTARI KİLİT EKRANI (K62)
+ *
+ * Arkadaki iskelet SABİT bir desendir; gerçek veriden türetilmez (sunucu zaten
+ * liste verisini hiç basmaz). Buğu yalnız görsel bir imadır — koruma sunucudadır.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+.kilit-govde { min-height:100vh; margin:0; background:linear-gradient(150deg,#0B1A3C 0%,#0F2557 55%,#16336E 100%);
+  display:flex; align-items:center; justify-content:center; padding:24px; position:relative; overflow:hidden; }
+
+.kis-fon { position:absolute; inset:0; padding:60px 40px; display:flex; flex-direction:column; gap:18px;
+  filter:blur(7px); opacity:.16; pointer-events:none; user-select:none; }
+.kis-satir { display:flex; align-items:center; gap:16px; }
+.kis-kutu { width:52px; height:52px; border-radius:12px; background:#fff; flex:none; }
+.kis-cizgi { height:12px; border-radius:6px; background:#fff; }
+.kis-cizgi.w1 { width:22%; } .kis-cizgi.w2 { width:14%; }
+.kis-cizgi.w3 { width:9%; }  .kis-cizgi.w4 { width:7%; }
+
+.kis-kapi { position:relative; z-index:2; width:100%; max-width:380px; }
+.kis-kart { background:#fff; border-radius:20px; padding:34px 30px 26px; text-align:center;
+  box-shadow:0 24px 60px -18px rgba(0,0,0,.55); }
+.kis-logo { border-radius:14px; }
+.kis-baslik { font-size:19px; font-weight:800; color:var(--t1); margin:12px 0 2px; letter-spacing:-.01em; }
+.kis-firma { font-size:12.5px; color:var(--t3); margin:0 0 2px; font-weight:600; }
+.kis-aciklama { font-size:12.5px; color:var(--t2); line-height:1.6; margin:12px 0 18px; }
+
+.kis-haneler { display:flex; gap:8px; justify-content:center; }
+.kis-hane { width:42px; height:52px; border:1.5px solid var(--ln); border-radius:11px; background:#FBFCFE;
+  font-size:21px; font-weight:800; text-align:center; color:var(--t1); text-transform:uppercase;
+  font-family:inherit; transition:.15s; }
+.kis-hane:focus { outline:none; border-color:var(--navy); background:#fff; box-shadow:0 0 0 3px rgba(15,37,87,.10); }
+.kis-hane.dolu { border-color:var(--navy3); }
+
+.kis-hata { color:var(--err); font-size:12.5px; font-weight:600; margin:12px 0 0; }
+.kis-dugme { width:100%; margin-top:18px; min-height:46px; border:0; border-radius:12px; cursor:pointer;
+  background:var(--navy); color:#fff; font:inherit; font-size:14.5px; font-weight:700; transition:.15s; }
+.kis-dugme:hover { background:var(--navy2); }
+.kis-not { font-size:11.5px; color:var(--t3); margin:14px 0 0; line-height:1.5; }
+
+/* Yanlış anahtar: kısa ve tek seferlik sallanma (V3 hareket kuralı — abartı yok). */
+@keyframes kis-salla { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-7px)}
+  40%{transform:translateX(7px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(4px)} }
+.kis-kart.sallan { animation:kis-salla 320ms ease-in-out; }
+
+/* AÇILIŞ EFEKTİ (G6-d): doğru anahtardan sonra liste yumuşak belirir. */
+@keyframes kis-acil { from { opacity:0; transform:translateY(10px); filter:blur(6px); }
+  to { opacity:1; transform:none; filter:none; } }
+.page.acildi { animation:kis-acil 200ms ease-out; }
+
+@media (prefers-reduced-motion: reduce) {
+  .kis-kart.sallan, .page.acildi { animation:none; }
+}
 
 @media print {
   /* Sabit yerleşim + genişlik kilidi: tarayıcı sütunları içeriğe göre şişiremez. */
