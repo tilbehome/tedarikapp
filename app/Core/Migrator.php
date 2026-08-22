@@ -66,6 +66,12 @@ final class Migrator
             ['table' => 'translation_cache'],
             ['column' => ['products', 'price_target_try']],
         ],
+        // İE#20 C2: ürün ≠ ilan ayrımı (platform kaydı + ilan tabloları).
+        '0022_create_platforms' => [['table' => 'platforms']],
+        '0023_create_listings' => [
+            ['table' => 'listings'],
+            ['table' => 'listing_price_tiers'],
+        ],
         // İE#18 G6 (K62): erişim anahtarı kolonları.
         '0021_add_lists_share_key' => [
             ['column' => ['lists', 'share_key_hash']],
