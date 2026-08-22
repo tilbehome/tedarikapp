@@ -20,6 +20,7 @@ declare(strict_types=1);
  *   2. `cd frontend && npm run build` koşulmuş olmalı (public/panel/ dolu).
  *
  * Kullanım: php bin/release.php [--out=dist] [--version=v0.9.2-faz1] [--allow-dev-vendor]
+ *                                [--panel-dal=<beklenen dal>]
  */
 
 use App\Services\IntegrityChecker;
@@ -33,7 +34,7 @@ $basePath = dirname(__DIR__);
 require $basePath . '/vendor/autoload.php';
 
 // ── Argümanlar ──
-$options = getopt('', ['out::', 'version::', 'allow-dev-vendor']);
+$options = getopt('', ['out::', 'version::', 'allow-dev-vendor', 'panel-dal::']);
 $outDir = is_string($options['out'] ?? null) && $options['out'] !== '' ? $options['out'] : $basePath . '/dist';
 $version = is_string($options['version'] ?? null) && $options['version'] !== ''
     ? $options['version']
@@ -49,6 +50,39 @@ $fail = static function (string $message): never {
 if (!is_file($basePath . '/vendor/autoload.php')) {
     $fail('vendor/autoload.php yok. Önce: composer install --no-dev --optimize-autoloader');
 }
+/**
+ * PANEL BUILD DAMGASI (v0.11.3 koruması — sürüm disiplini ihlali dersi).
+ *
+ * OLAY: v0.11.2 paketine panelin BAŞKA BİR DALDA derlenmiş build'i girdi.
+ * `public/panel/` .gitignore'dadır; dal değiştirmek diskteki derlemeyi geri
+ * almaz ve bu betik diskte ne varsa paketler. Sonuç: onaylanmamış bir arayüz
+ * kimse fark etmeden canlıya çıktı.
+ *
+ * KORUMA: derleme artık `public/panel/BUILD.json` damgası bırakır (vite eklentisi).
+ * Burada damga ARANIR; yoksa paketleme REDDEDİLİR. `--panel-dal=` verilirse
+ * damgadaki dal ile eşleşmesi ŞART KOŞULUR — "hangi panel gitti?" sorusu artık
+ * tahmine değil kayda dayanır. Damga MANIFEST'e de girer (dosya listesindedir).
+ */
+$panelDamgaYolu = $basePath . '/public/panel/BUILD.json';
+if (!is_file($panelDamgaYolu)) {
+    $fail(
+        "public/panel/BUILD.json YOK — panel derlemesi damgasız.\n"
+        . '  Çözüm: cd frontend && npx vite build   (damgayı vite eklentisi yazar)',
+    );
+}
+/** @var array{dal?: string, commit?: string, temiz?: bool, zaman?: string} $panelDamga */
+$panelDamga = json_decode((string) file_get_contents($panelDamgaYolu), true) ?: [];
+$panelDal = (string) ($panelDamga['dal'] ?? 'bilinmiyor');
+$beklenenDal = isset($options['panel-dal']) ? trim((string) $options['panel-dal']) : '';
+if ($beklenenDal !== '' && $panelDal !== $beklenenDal) {
+    $fail(sprintf(
+        "Panel build BEKLENEN DALDAN değil: damga '%s', beklenen '%s'.\n"
+        . '  Doğru dala geçip paneli yeniden derleyin ya da --panel-dal değerini düzeltin.',
+        $panelDal,
+        $beklenenDal,
+    ));
+}
+
 if (!$allowDevVendor && is_dir($basePath . '/vendor/phpunit')) {
     $fail('vendor/ dev bağımlılıkları içeriyor (phpunit bulundu). Üretim zip\'i için önce: '
         . 'composer install --no-dev --optimize-autoloader  (test ortamına dönüş: composer install)');
@@ -263,11 +297,23 @@ if ($missing !== []) {
 }
 
 printf(
-    "RELEASE HAZIR ve DOĞRULANDI\n  zip     : %s\n  boyut   : %.2f MB\n  dosya   : %d (+ MANIFEST.txt)\n  sha256  : %s\n  surum   : %s\n",
+    "RELEASE HAZIR ve DOĞRULANDI
+  zip     : %s
+  boyut   : %.2f MB
+"
+    . "  dosya   : %d (+ MANIFEST.txt)
+  sha256  : %s
+"
+    . "  panel   : %s @ %s%s
+  surum   : %s
+",
     $zipPath,
     filesize($zipPath) / 1048576,
     count($files),
     hash_file('sha256', $zipPath),
+    $panelDal,
+    (string) ($panelDamga['commit'] ?? '?'),
+    ($panelDamga['temiz'] ?? true) === false ? ' (KİRLİ çalışma kopyası)' : '',
     $version,
 );
 exit(0);
