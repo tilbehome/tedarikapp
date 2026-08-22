@@ -58,8 +58,14 @@ final class ListRepository
             $params['status'] = $filters['status'];
         }
         if (isset($filters['q']) && $filters['q'] !== '') {
-            $sql .= ' AND (name LIKE :q OR supplier_name LIKE :q)';
-            $params['q'] = '%' . $filters['q'] . '%';
+            // HER SÜTUN İÇİN AYRI YER TUTUCU (canlı hata dersi): üretimde PDO
+            // native prepare kullanır (ATTR_EMULATE_PREPARES=false) ve MySQL aynı
+            // isimli yer tutucunun İKİ KEZ geçmesine izin vermez — istek HY093
+            // ile düşer. Emülasyon açık olan SQLite bunu hoş gördüğü için hata
+            // testlerde görünmüyordu; artık isimler ayrı, değer iki kez bağlanır.
+            $sql .= ' AND (name LIKE :q_ad OR supplier_name LIKE :q_tedarikci)';
+            $params['q_ad'] = '%' . $filters['q'] . '%';
+            $params['q_tedarikci'] = '%' . $filters['q'] . '%';
         }
 
         $sql .= ' ORDER BY created_at DESC, id DESC';

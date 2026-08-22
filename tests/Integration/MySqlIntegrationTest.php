@@ -178,4 +178,53 @@ final class MySqlIntegrationTest extends AuthTestCase
         $skip = $this->write('PATCH', '/api/products/' . $product['id'] . '/status', ['status' => 'received']);
         self::assertSame(422, $skip->getStatusCode(), 'Durum atlama MySQL üzerinde de reddedilmeli.');
     }
+
+    /**
+     * CANLI HATA REGRESYONU (22 Ağu 2026) — arama uçları MySQL'de 500 veriyordu.
+     *
+     * `... name LIKE :q OR supplier_name LIKE :q` aynı yer tutucuyu iki kez
+     * kullanıyordu. Üretim PDO'su native prepare kullanır (EMULATE_PREPARES=false)
+     * ve MySQL bunu HY093 ile reddeder. SQLite süiti emülasyon açık koştuğu için
+     * kusuru GÖREMİYORDU — bu yüzden regresyon TAM OLARAK BURADA durur: bu sınıf
+     * üretimle aynı sürücü ayarıyla gerçek MySQL'e bağlanır.
+     */
+    public function testARAMA_UCLARI_MYSQL_UZERINDE_CALISIR(): void
+    {
+        $liste = $this->json($this->write('POST', '/api/lists', [
+            'name' => 'Mutfak Grubu',
+            'supplier_name' => 'Ningbo Kitchen Co.',
+        ]))['data'];
+
+        $this->write('POST', '/api/lists/' . $liste['id'] . '/products', [
+            'name' => 'Termos Yemek Kabı',
+            'name_original' => '保温饭盒',
+            'qty' => 5,
+            'price_yuan' => '12.00',
+        ]);
+
+        // 1) LİSTE ARAMASI — iki sütun (name + supplier_name) tek değerle taranır.
+        $eslesen = $this->call('GET', '/api/lists?q=Mutfak');
+        self::assertSame(200, $eslesen->getStatusCode(), 'Liste araması MySQL üzerinde 500 vermemeli.');
+        self::assertCount(1, $this->json($eslesen)['data']);
+
+        // Tedarikçi adından da bulunmalı (ikinci yer tutucu gerçekten bağlanıyor mu?).
+        $tedarikciden = $this->call('GET', '/api/lists?q=Ningbo');
+        self::assertSame(200, $tedarikciden->getStatusCode());
+        self::assertCount(1, $this->json($tedarikciden)['data']);
+
+        // 2) SONUÇSUZ ARAMA — canlıda hatayı tetikleyen tam senaryo.
+        $bos = $this->call('GET', '/api/lists?q=MUTF-OLMAYAN-LISTE');
+        self::assertSame(200, $bos->getStatusCode(), 'Eşleşme yoksa da 200 dönmeli.');
+        self::assertSame([], $this->json($bos)['data']);
+
+        // 3) ÜRÜN ARAMASI — üç sütun (ad, orijinal ad, detay) aynı desenle taranır.
+        $urun = $this->call('GET', '/api/lists/' . $liste['id'] . '/products?q=Termos');
+        self::assertSame(200, $urun->getStatusCode(), 'Ürün araması MySQL üzerinde 500 vermemeli.');
+        self::assertCount(1, $this->json($urun)['data']);
+
+        $cince = $this->call('GET', '/api/lists/' . $liste['id'] . '/products?q=保温');
+        self::assertSame(200, $cince->getStatusCode());
+        self::assertCount(1, $this->json($cince)['data'], 'Orijinal başlıktan da bulunmalı.');
+    }
+
 }
