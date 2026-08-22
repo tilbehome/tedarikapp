@@ -190,6 +190,8 @@ final class MySqlIntegrationTest extends AuthTestCase
      */
     public function testARAMA_UCLARI_MYSQL_UZERINDE_CALISIR(): void
     {
+        $this->loginAsAdmin();
+
         $liste = $this->json($this->write('POST', '/api/lists', [
             'name' => 'Mutfak Grubu',
             'supplier_name' => 'Ningbo Kitchen Co.',
