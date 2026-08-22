@@ -69,6 +69,13 @@ test.describe('Video rozeti', () => {
     });
     expect(tasima.ok(), await tasima.text()).toBeTruthy();
 
+    // İE#18 G6: bu süit VİDEO davranışını sınar — anahtar kapısı kapatılır
+    // (kapının kendisi 07-erisim-anahtari süitinin konusudur).
+    await page.request.patch(`/api/lists/${listId}/share-key`, {
+      headers: { 'X-CSRF-Token': await csrfToken(page) },
+      data: { enabled: false },
+    });
+
     // Paylaşım linki üret.
     const paylasim = await page.request.post(`/api/lists/${listId}/share`, {
       headers: { 'X-CSRF-Token': await csrfToken(page) },
@@ -109,6 +116,11 @@ test.describe('Video rozeti', () => {
     await page.request.post(`/api/lists/${listId}/products`, {
       headers: { 'X-CSRF-Token': await csrfToken(page) },
       data: { name: 'Videosuz ürün', qty: 2, price_yuan: '5.00' },
+    });
+
+    await page.request.patch(`/api/lists/${listId}/share-key`, {
+      headers: { 'X-CSRF-Token': await csrfToken(page) },
+      data: { enabled: false },
     });
 
     const paylasim = await page.request.post(`/api/lists/${listId}/share`, {

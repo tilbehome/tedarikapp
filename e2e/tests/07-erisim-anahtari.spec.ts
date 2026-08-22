@@ -49,17 +49,24 @@ test.describe('Erişim anahtarı', () => {
     // YANLIŞ anahtar: sallanma + hata, liste hâlâ yok.
     await haneler.first().click();
     await sayfa.keyboard.type('ZZZZZZ');
-    await sayfa.getByRole('button', { name: 'Görüntüle' }).click();
-    await expect(gorunen(sayfa.getByText('Anahtar hatalı'))).toBeVisible();
+    // Form gönderimi bir GEZİNMEDİR; yanıtı beklemeden doğrulama yapılmaz.
+    await Promise.all([
+      sayfa.waitForLoadState('domcontentloaded'),
+      sayfa.getByRole('button', { name: 'Görüntüle' }).click(),
+    ]);
+    await expect(sayfa.locator('[data-anahtar-hata]')).toBeVisible();
     await expect(sayfa.getByText('Anahtarla Görünen Ürün')).toHaveCount(0);
 
     // DOĞRU anahtar: otomatik ilerleyen kutulara yazılır, liste açılır.
     const yeniHaneler = sayfa.locator('.kis-hane');
     await yeniHaneler.first().click();
     await sayfa.keyboard.type(anahtar);
-    await sayfa.getByRole('button', { name: 'Görüntüle' }).click();
+    await Promise.all([
+      sayfa.waitForLoadState('domcontentloaded'),
+      sayfa.getByRole('button', { name: 'Görüntüle' }).click(),
+    ]);
 
-    await expect(gorunen(sayfa.getByText('Anahtarla Görünen Ürün'))).toBeVisible();
+    await expect(gorunen(sayfa.getByText('Anahtarla Görünen Ürün'))).toBeVisible({ timeout: 15_000 });
     await expect(sayfa.locator('.kis-hane')).toHaveCount(0);
 
     // Çerez 12 saat geçerli: yenilemede tekrar anahtar sorulmaz.
@@ -106,8 +113,11 @@ test.describe('Erişim anahtarı', () => {
 
     await expect(sayfa.locator('.kis-hane').nth(5)).toHaveValue(anahtar[5]);
 
-    await sayfa.getByRole('button', { name: 'Görüntüle' }).click();
-    await expect(gorunen(sayfa.getByText('Yapıştırma ürünü'))).toBeVisible();
+    await Promise.all([
+      sayfa.waitForLoadState('domcontentloaded'),
+      sayfa.getByRole('button', { name: 'Görüntüle' }).click(),
+    ]);
+    await expect(gorunen(sayfa.getByText('Yapıştırma ürünü'))).toBeVisible({ timeout: 15_000 });
 
     await misafir.close();
   });
