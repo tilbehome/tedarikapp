@@ -193,7 +193,7 @@ final class PdfRenderer implements ExportRenderer
         // TÜRKÇE. Üç dilli kademe 13 sütunda başlık bloğunu üçe katlıyor ve
         // okunaksız kılıyordu; EKRANDA üç dil AYNEN kalır (Çinli muhatap sütunu
         // orada tanır). Sayı sütunları sağa hizalanır.
-        $sagaHizali = ['No' => 'c', 'Miktar' => 'r', 'Vitrin Fiyatı' => 'r', '₺ Karşılığı' => 'r',
+        $sagaHizali = ['No' => 'c', 'Miktar' => 'r', 'Vitrin Fiyatı' => 'r', 'Yaklaşık ürün bedeli (₺)' => 'r',
             'DDP $' => 'r', 'DDP ₺' => 'r', 'Hedef Satış (₺)' => 'r', 'Birim Kâr (₺)' => 'r',
             'Toplam Kâr (₺)' => 'r', 'Görsel' => 'c', 'Kaynak' => 'c', 'Durum' => 'c'];
         foreach ($sutunlar as [$genislik, $tr]) {

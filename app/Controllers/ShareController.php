@@ -29,6 +29,8 @@ final class ShareController extends ApiController
         private readonly Clock $clock,
         // İE#18 G6 (K62): erişim anahtarı — paylaşım linki artık tek başına yetmez.
         private readonly ?\App\Services\Share\ShareKeyService $anahtar = null,
+        // İE#19 E5: dışa verilen adresler settings.APP_URL'den üretilir (Host'tan DEĞİL).
+        private readonly ?\App\Core\Config $appConfig = null,
     ) {
     }
 
@@ -196,9 +198,10 @@ final class ShareController extends ApiController
             $this->user($request)->id,
         );
 
-        // Adres istekten türetilir: alt alan adı/klasör yerleşimi ne olursa olsun doğru taban.
-        $uri = $request->getUri();
-        $shareUrl = $uri->getScheme() . '://' . $uri->getAuthority() . '/liste/' . $token;
+        // İE#19 E5: adres AYARLARDAKİ APP_URL'den üretilir. Eskiden isteğin Host
+        // başlığından türetiliyordu; Host istemcinin yazdığı bir değerdir ve sahte
+        // bir Host, firmaya gidecek QR'a yabancı bir alan adı bastırabilirdi.
+        $shareUrl = \App\Core\AppUrl::to($this->appConfig?->get('APP_URL'), $request, '/liste/' . $token);
 
         return Response::success($response, [
             'share_url' => $shareUrl,

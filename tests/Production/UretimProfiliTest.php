@@ -116,6 +116,11 @@ final class UretimProfiliTest extends AuthTestCase
             // İE#14 A2: sözlük üstyazımı storage/sozluk-*.php'ye yazılır; config/ SALT
             // OKUNUR kalır (K44 + sürüm güncellemesi kullanıcı terimlerini silmesin).
             'app/Services/Translation/Glossary.php',
+            // İE#19 G4: açılış (bootstrap) hatası artık ekrana ayrıntı basmaz; ayrıntı
+            // storage/logs/acilis-hatalari.log'a yazılır ve kullanıcıya yalnız kısa bir
+            // hata kimliği gösterilir. Yazım K44 sınırı içindedir (yalnız storage/) ve
+            // dizin yazılamıyorsa sessizce atlanır — hata sayfası yine gösterilir.
+            'public/index.php',
         ];
         $pattern = '/(?<![>\w$:])(?<!function )(file_put_contents|fwrite|mkdir|tempnam|touch)\s*\(|(?<![>\w$:])fopen\s*\([^)]*,\s*[\'"][waxc]/';
 

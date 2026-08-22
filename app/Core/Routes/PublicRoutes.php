@@ -105,7 +105,7 @@ final class PublicRoutes
         // olarak AYNEN kalır (yönlendirme DEĞİL, aynı handler iki yola bağlı) —
         // daha önce gönderilmiş bağlantılar kırılmasın. K51 disiplini iki ön ekte
         // BİREBİR aynıdır: token denetimi, sabit 404, hız sınırı, X-Robots-Tag.
-        $sayfaHandler = static function (ServerRequestInterface $request, ResponseInterface $response, array $args) use ($lists, $products, $presenter, $connection, $sharePage, $shareGate, $services, $anahtar, $kilitSayfasi, $surum): ResponseInterface {
+        $sayfaHandler = static function (ServerRequestInterface $request, ResponseInterface $response, array $args) use ($lists, $products, $presenter, $connection, $sharePage, $shareGate, $services, $anahtar, $kilitSayfasi, $surum, $config): ResponseInterface {
             $now = $services->clock->now();
             $ip = ClientIp::from($request);
             $token = (string) ($args['token'] ?? '');
@@ -155,14 +155,14 @@ final class PublicRoutes
             }
 
             $categoryNames = array_column((new CategoryRepository($connection))->all(), 'name', 'id');
-            $uri = $request->getUri();
             $html = $sharePage->render(
                 $presenter->list($row),
                 $presenter->productsOf($products->forList((int) $row['id']), $row),
                 $categoryNames,
-                // Kanonik adres (İE#18 G5): sayfanın kendi bağlantısı, QR ve kanal
-                // metinleri /liste/ taşır — /p/ ile açılmış olsa bile.
-                $uri->getScheme() . '://' . $uri->getAuthority() . self::KANONIK_ON_EK . '/' . $token,
+                // Kanonik adres (İE#18 G5 · İE#19 E5): sayfanın kendi bağlantısı, QR ve
+                // kanal metinleri /liste/ taşır — /p/ ile açılmış olsa bile — ve taban
+                // adres AYARLARDAN gelir, isteğin Host başlığından DEĞİL.
+                \App\Core\AppUrl::to($config->get('APP_URL'), $request, self::KANONIK_ON_EK . '/' . $token),
                 // İE#13 F4: paylaşım sayfası da belge antedini taşır (aynı kurumsal dil).
                 (new \App\Models\SettingsRepository($connection))->documentHeader(),
                 false,
@@ -291,7 +291,7 @@ final class PublicRoutes
 
         // İE#15 C3 — PAYLAŞIM QR'ı: sunucuda üretilir (dış servis YOK, K45).
         // İçeriği YALNIZ paylaşım adresidir; imzalı indirme adresi QR'a KONMAZ.
-        $qrHandler = static function (ServerRequestInterface $request, ResponseInterface $response, array $args) use ($lists, $shareGate, $services, $anahtar): ResponseInterface {
+        $qrHandler = static function (ServerRequestInterface $request, ResponseInterface $response, array $args) use ($lists, $shareGate, $services, $anahtar, $config): ResponseInterface {
             $now = $services->clock->now();
             $token = (string) ($args['token'] ?? '');
             $bos404 = static fn (): ResponseInterface => $response->withStatus(404)
@@ -318,8 +318,8 @@ final class PublicRoutes
             }
 
             $dil = \App\Services\Share\ShareTexts::dil($request->getQueryParams()['lang'] ?? null);
-            $uri = $request->getUri();
-            $adres = $uri->getScheme() . '://' . $uri->getAuthority() . self::KANONIK_ON_EK . '/' . $token
+            // E5: QR'ın taşıdığı adres ayarlardaki APP_URL'den üretilir.
+            $adres = \App\Core\AppUrl::to($config->get('APP_URL'), $request, self::KANONIK_ON_EK . '/' . $token)
                 . ($dil === 'tr' ? '' : '?lang=' . $dil);
 
             $png = \App\Services\Export\QrImage::png($adres);

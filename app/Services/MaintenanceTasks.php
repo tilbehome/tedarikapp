@@ -76,10 +76,17 @@ final class MaintenanceTasks
         }
         $lines[] = sprintf('(c) yedekler: %d eski dosya silindi (en yeni 5 her koşulda korunur)', $prunedCount);
 
+        [$dusurulen, $kalan] = $this->sahipsizTatbikatVeritabanlari($now, $uyarilar);
+        $lines[] = sprintf(
+            '(d) tatbikat artıkları: %d sahipsiz _restoretest_ veritabanı düşürüldü · %d bekliyor',
+            $dusurulen,
+            $kalan,
+        );
+
         return [
             'lines' => $lines,
             'ozet' => sprintf(
-                'çöp %d/%d · medya %d+%d · log %d · sayaç %d · yedek %d',
+                'çöp %d/%d · medya %d+%d · log %d · sayaç %d · yedek %d · tatbikat %d',
                 $purgedLists,
                 $purgedProducts,
                 $deletedFiles,
@@ -87,9 +94,80 @@ final class MaintenanceTasks
                 $purgedLogs,
                 $purgedCounters,
                 $prunedCount,
+                $dusurulen,
             ),
             'uyarilar' => $uyarilar,
         ];
+    }
+
+    /**
+     * (d) SAHİPSİZ TATBİKAT VERİTABANLARI (İE#19 G3).
+     *
+     * `bin/restore-test.php` geçici bir `<db>_restoretest_<zaman>` veritabanı yaratır
+     * ve düşürür. `exit()`in `finally`yi atlaması yüzünden (G3'te düzeltildi) canlıda
+     * bu veritabanları BİRİKMİŞ olabilir; ayrıca `--tut` ile bilerek bırakılanlar ve
+     * süreç öldürüldüğünde kalanlar da vardır. Bakım, ADI KALIBA UYAN ve 24 SAATTEN
+     * ESKİ olanları düşürür.
+     *
+     * İKİ EMNİYET: (1) ad deseni `^<canlı-db-öneki>_restoretest_YYYYMMDD_HHMMSS$`
+     * olmalı, (2) canlı veritabanı adına eşit olan asla dokunulmaz. 24 saat sınırı,
+     * o an KOŞAN bir tatbikatın veritabanını elimizden almamak içindir.
+     *
+     * @param list<string> $uyarilar
+     *
+     * @return array{0: int, 1: int} düşürülen, (henüz genç olduğu için) kalan
+     */
+    private function sahipsizTatbikatVeritabanlari(DateTimeImmutable $now, array &$uyarilar): array
+    {
+        $canliAd = (string) $this->config->get('DB_NAME', '');
+        if ($canliAd === '') {
+            return [0, 0];
+        }
+
+        try {
+            $pdo = $this->connection->pdo();
+            if ($pdo->getAttribute(\PDO::ATTR_DRIVER_NAME) !== 'mysql') {
+                return [0, 0]; // SQLite (test şeması) — veritabanı listesi kavramı yok
+            }
+
+            $statement = $pdo->prepare('SHOW DATABASES LIKE :desen');
+            $statement->execute(['desen' => substr($canliAd, 0, 40) . '\_restoretest\_%']);
+            /** @var list<string> $adaylar */
+            $adaylar = $statement->fetchAll(\PDO::FETCH_COLUMN);
+        } catch (\Throwable $exception) {
+            $uyarilar[] = 'tatbikat artıkları taranamadı: ' . $exception->getMessage();
+
+            return [0, 0];
+        }
+
+        $dusurulen = 0;
+        $kalan = 0;
+        foreach ($adaylar as $aday) {
+            $aday = (string) $aday;
+            if ($aday === $canliAd || preg_match('/^[A-Za-z0-9_]+_restoretest_(\d{8})_(\d{6})$/', $aday, $eslesme) !== 1) {
+                continue;
+            }
+
+            $olusma = DateTimeImmutable::createFromFormat(
+                'Ymd His',
+                $eslesme[1] . ' ' . $eslesme[2],
+                $now->getTimezone(),
+            );
+            if ($olusma === false || $olusma > $now->modify('-24 hours')) {
+                $kalan++;
+
+                continue; // koşmakta olan tatbikatın veritabanı olabilir
+            }
+
+            try {
+                $this->connection->pdo()->exec('DROP DATABASE IF EXISTS `' . $aday . '`');
+                $dusurulen++;
+            } catch (\Throwable $exception) {
+                $uyarilar[] = 'tatbikat artığı düşürülemedi (' . $aday . '): ' . $exception->getMessage();
+            }
+        }
+
+        return [$dusurulen, $kalan];
     }
 
     /**

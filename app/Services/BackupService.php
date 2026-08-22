@@ -83,19 +83,126 @@ final class BackupService
         // Dump düz metni bellekte gereksiz tutulmasın.
         unset($dump);
 
-        $name = 'yedek-' . date('Ymd-His') . '.sql.enc';
+        $damga = date('Ymd-His');
+        $name = 'yedek-' . $damga . '.sql.enc';
         $path = $this->directory() . '/' . $name;
         if (@file_put_contents($path, $encrypted) === false) {
             throw new RuntimeException('Yedek dosyası yazılamadı: storage/backups izinlerini denetleyin.');
         }
         @chmod($path, 0600);
 
+        $dosyalar = $this->dosyaYedegiYaz($damga);
+
         return [
             'name' => $name,
             'size' => strlen($encrypted),
             'sha256' => hash('sha256', $encrypted),
             'created_at' => date(DATE_ATOM),
+            'files_name' => $dosyalar['name'],
+            'files_included' => $dosyalar['included'],
         ];
+    }
+
+    /**
+     * DOSYA YEDEĞİ (İE#19 G8) — veritabanı tek başına yeterli DEĞİLDİR.
+     *
+     * Yedek yalnız SQL dökümüydü. Sunucu tamamen kaybedilirse dökümü geri yüklemek
+     * için `config.php` gerekir (DB bilgileri + APP_KEY) ve APP_KEY olmadan dökümün
+     * kendisi de ÇÖZÜLEMEZ — yani "yedeğim var" diyen kullanıcı, elindeki tek
+     * dosyayla hiçbir şey yapamıyordu. Ayrıca kullanıcının kendi terminolojisi
+     * (`storage/sozluk-*.php`, K44) hiçbir yedeğe girmiyordu; sunucu gidince
+     * aylarca biriken sözlük düzeltmeleri de gidiyordu.
+     *
+     * KAPSAM: `config.php` (yoksa legacy `.env`) + `storage/sozluk-*.php`.
+     * Şifreleme SQL yedeğiyle aynı anahtarladır. Bu, APP_KEY'i kaybeden birinin
+     * config.php'yi de kurtaramayacağı anlamına gelir — bu yüzden APP_KEY EMANET
+     * PROSEDÜRÜ zorunludur ve runbook'ta (docs/07 §5b) tarif edilir: anahtar,
+     * yedeklerden AYRI bir yerde (parola yöneticisi / kapalı zarf) saklanır.
+     *
+     * @return array{name: string|null, included: list<string>}
+     */
+    private function dosyaYedegiYaz(string $damga): array
+    {
+        $adaylar = [];
+        foreach (['config.php', '.env'] as $ayar) {
+            if (is_file($this->basePath . '/' . $ayar)) {
+                $adaylar[] = $ayar;
+
+                break; // config.php varsa legacy .env'e gerek yok
+            }
+        }
+        foreach (glob($this->basePath . '/storage/sozluk-*.php') ?: [] as $sozluk) {
+            $adaylar[] = 'storage/' . basename($sozluk);
+        }
+
+        if ($adaylar === []) {
+            return ['name' => null, 'included' => []];
+        }
+
+        $paket = [];
+        $iceren = [];
+        foreach ($adaylar as $goreli) {
+            $icerik = @file_get_contents($this->basePath . '/' . $goreli);
+            if ($icerik === false) {
+                continue;
+            }
+            $paket[$goreli] = base64_encode($icerik);
+            $iceren[] = $goreli;
+        }
+        if ($paket === []) {
+            return ['name' => null, 'included' => []];
+        }
+
+        $govde = json_encode(
+            ['surum' => 1, 'uretim' => date(DATE_ATOM), 'dosyalar' => $paket],
+            JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR,
+        );
+
+        $ad = 'yedek-' . $damga . '.files.enc';
+        $yol = $this->directory() . '/' . $ad;
+        if (@file_put_contents($yol, $this->encrypt($govde)) === false) {
+            return ['name' => null, 'included' => []];
+        }
+        @chmod($yol, 0600);
+
+        return ['name' => $ad, 'included' => $iceren];
+    }
+
+    /**
+     * Dosya yedeğini çözer: göreli yol → içerik (geri yükleme ve tatbikat için).
+     *
+     * @return array<string, string>
+     */
+    public function decryptFiles(#[SensitiveParameter] string $encrypted): array
+    {
+        $decoded = json_decode($this->decrypt($encrypted), true);
+        if (!is_array($decoded) || !is_array($decoded['dosyalar'] ?? null)) {
+            throw new RuntimeException('Dosya yedeği çözüldü ama içeriği okunamadı.');
+        }
+
+        $sonuc = [];
+        foreach ($decoded['dosyalar'] as $goreli => $base64) {
+            if (!is_string($goreli) || !is_string($base64)) {
+                continue;
+            }
+            $icerik = base64_decode($base64, true);
+            if ($icerik !== false) {
+                $sonuc[$goreli] = $icerik;
+            }
+        }
+
+        return $sonuc;
+    }
+
+    /** SQL yedeğinin yanındaki dosya yedeğinin tam yolu (varsa). */
+    public function filesPathFor(string $sqlName): ?string
+    {
+        if (preg_match(self::NAME_PATTERN, $sqlName) !== 1) {
+            return null;
+        }
+        $path = $this->directory() . '/' . str_replace('.sql.enc', '.files.enc', $sqlName);
+
+        return is_file($path) ? $path : null;
     }
 
     /**
@@ -165,6 +272,11 @@ final class BackupService
             $path = $this->pathFor($entry['name']);
             if ($path !== null && @unlink($path)) {
                 $deleted[] = $entry['name'];
+                // G8: dosya yedeği SQL yedeğiyle birlikte yaşar, birlikte düşer.
+                $dosyaYolu = $this->directory() . '/' . str_replace('.sql.enc', '.files.enc', $entry['name']);
+                if (is_file($dosyaYolu)) {
+                    @unlink($dosyaYolu);
+                }
             }
         }
 

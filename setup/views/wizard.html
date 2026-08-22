@@ -29,15 +29,17 @@
   <!-- K45: kurulum tamamlanmışsa çıkmaz sokak YOK — panele git veya kilidi kaldırıp yeniden kur -->
   <section class="card" id="locked-box" hidden>
     <h2>Kurulum zaten tamamlanmış</h2>
-    <p class="muted">Panel kullanıma hazır olmalı. Yeniden kurmak isterseniz kilidi kaldırabilirsiniz
-      (mevcut ayar kilidi silinir; veritabanı tablolarına dokunulmaz — isterseniz sonraki adımda
-      "Temiz kurulum" ile onları da sıfırlayabilirsiniz).</p>
+    <p class="muted">Panel kullanıma hazır olmalı. Yeniden kurmak isterseniz sahiplik kanıtıyla
+      <strong>15 dakikalık, yalnız bu tarayıcıya özel</strong> bir yeniden kurulum bileti alabilirsiniz.
+      Kurulum kilidi <strong>silinmez</strong>: bilet süresi dolduğunda sihirbaz kendiliğinden kapanır,
+      yani yarıda bırakılan bir kurulum sistemi açıkta bırakmaz. Veritabanı tablolarına dokunulmaz —
+      isterseniz sonraki adımda "Temiz kurulum" ile onları da sıfırlayabilirsiniz.</p>
     <label>Sahiplik kanıtı — config.php içindeki APP_KEY (K46)
       <input id="unlock-app-key" autocomplete="off" placeholder="64 haneli anahtar — File Manager ile config.php dosyasından kopyalayın">
     </label>
     <div class="actions">
       <a class="button" href="/panel">Panele git</a>
-      <button type="button" class="ghost" id="unlock-run">Kilidi kaldır ve yeniden kur</button>
+      <button type="button" class="ghost" id="unlock-run">Bilet al ve yeniden kur</button>
     </div>
     <p class="muted">Anahtar, WordPress'teki wp-config.php mantığıyla sunucudaki <code>config.php</code>
       dosyasında durur; dosyayı okuyabilen = sistemin sahibi. Yanlış denemeler artan beklemeye tabidir.</p>

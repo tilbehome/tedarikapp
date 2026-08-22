@@ -34,13 +34,13 @@ export const auth = {
 };
 
 export const lists = {
-  all: (params: { visibility?: Visibility; status?: string; q?: string } = {}) => {
+  all: (params: { visibility?: Visibility; status?: string; q?: string } = {}, signal?: AbortSignal) => {
     const query = new URLSearchParams();
     if (params.visibility) query.set('visibility', params.visibility);
     if (params.status) query.set('status', params.status);
     if (params.q) query.set('q', params.q);
     const suffix = query.toString();
-    return api.get<SupplyList[]>(`/api/lists${suffix ? `?${suffix}` : ''}`);
+    return api.get<SupplyList[]>(`/api/lists${suffix ? `?${suffix}` : ''}`, { signal });
   },
   find: (id: number) => api.get<SupplyList>(`/api/lists/${id}`),
   create: (body: { name: string; period?: string; supplier_name?: string; note?: string }) =>
@@ -52,14 +52,23 @@ export const lists = {
 };
 
 export const products = {
-  forList: (listId: number, params: { status?: ProductStatus; q?: string; category_id?: number } = {}) => {
+  forList: (
+    listId: number,
+    params: { status?: ProductStatus; q?: string; category_id?: number } = {},
+    signal?: AbortSignal,
+  ) => {
     const query = new URLSearchParams();
     if (params.status) query.set('status', params.status);
     if (params.q) query.set('q', params.q);
     if (params.category_id !== undefined) query.set('category_id', String(params.category_id));
     const suffix = query.toString();
-    return api.get<Product[]>(`/api/lists/${listId}/products${suffix ? `?${suffix}` : ''}`);
+    return api.get<Product[]>(`/api/lists/${listId}/products${suffix ? `?${suffix}` : ''}`, { signal });
   },
+  /**
+   * İE#19 E11: TEK ürün. Düzenleme ekranı eskiden listenin tamamını çekip içinden
+   * arıyordu; 300 ürünlük bir listede tek alan düzeltmek 300 satır taşıyordu.
+   */
+  find: (id: number, signal?: AbortSignal) => api.get<Product>(`/api/products/${id}`, { signal }),
   create: (listId: number, body: Record<string, unknown>) =>
     api.post<Product>(`/api/lists/${listId}/products`, body),
   update: (id: number, body: Record<string, unknown>) => api.patch<Product>(`/api/products/${id}`, body),

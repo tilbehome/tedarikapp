@@ -222,8 +222,18 @@ final class ListPresenter
             return [null, null, null];
         }
 
-        $maliyet = $this->money->isPositive($ddpTl) ? $ddpTl : $yuanTl;
-        $birimKar = $this->money->subtract($priceTarget, $maliyet);
+        // İE#19 E13 — DDP YOKSA KÂR HESAPLANMAZ.
+        //
+        // Eskiden DDP boşsa maliyet yerine Yuan'ın kur karşılığı konuyordu. O sayı
+        // ürünün Çin'deki etiket fiyatıdır: nakliye, gümrük, vergi ve DDP hizmet
+        // bedeli İÇİNDE YOKTUR. Ondan çıkarılan fark "kâr" değildir — gerçek kârdan
+        // sistematik olarak YÜKSEKTİR ve fiyat kararlarını yanlış yöne çeker.
+        // Veri yoksa sayı uydurmayız: hücre "—" basar (aynı disiplin: skor, menşe).
+        if (!$this->money->isPositive($ddpTl)) {
+            return [$priceTarget, null, null];
+        }
+
+        $birimKar = $this->money->subtract($priceTarget, $ddpTl);
         $satirKar = $this->money->times($birimKar, $qty);
 
         return [$priceTarget, $birimKar, $satirKar];

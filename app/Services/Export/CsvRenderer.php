@@ -9,6 +9,10 @@ namespace App\Services\Export;
  *
  * Türkçe Excel uyumu: UTF-8 BOM + noktalı virgül ayracı. Ondalıklar snapshot'taki
  * string değerlerdir (nokta ayraçlı) — CSV veri taşır, biçimleme Excel çıktısının işidir.
+ *
+ * FORMÜL ENJEKSİYONU (İE#19 G5): METİN hücreleri `SafeCell::text()` üzerinden yazılır.
+ * Sayı hücreleri BİLEREK ham geçer — onlar snapshot'ta doğrulanmış ondalıklardır ve
+ * öneklemek negatif değerleri bozardı.
  */
 final class CsvRenderer implements ExportRenderer
 {
@@ -33,19 +37,21 @@ final class CsvRenderer implements ExportRenderer
             fputcsv($handle, $row, ';', '"', '\\');
         };
 
+        $metin = static fn (mixed $deger): string => SafeCell::text($deger);
+
         $list = $snapshot['list'];
-        $write(['Liste', (string) $list['name'], 'Dönem', (string) ($list['period'] ?? '')]);
+        $write(['Liste', $metin($list['name']), 'Dönem', $metin($list['period'] ?? '')]);
         $write(['Kur', '¥ ' . $list['yuan_rate'] . ' / $ ' . $list['usd_rate'], 'Üretim', (string) $snapshot['generated_at']]);
         $write([]);
-        $write(['NO', 'KATEGORİ', 'ÜRÜN ADI', 'ÜRÜN DETAY', 'ÜRÜN LİNKİ', 'MİKTAR', 'YUAN', 'TL', 'DOLAR (DDP)', 'TL (DDP)']);
+        $write(['NO', 'KATEGORİ', 'ÜRÜN ADI', 'ÜRÜN DETAY', 'ÜRÜN LİNKİ', 'MİKTAR', 'YUAN', 'YAKLAŞIK ÜRÜN BEDELİ (₺)', 'DOLAR (DDP)', 'TL (DDP)']);
 
         foreach ($snapshot['products'] as $product) {
             $write([
                 (string) ($product['no'] ?? $product['sort_no']),
-                (string) ($product['category'] ?? ''),
-                (string) $product['name'],
-                (string) ($product['detail'] ?? ''),
-                (string) ($product['url'] ?? ''),
+                $metin($product['category'] ?? ''),
+                $metin($product['name']),
+                $metin($product['detail'] ?? ''),
+                $metin($product['url'] ?? ''),
                 (string) $product['qty'],
                 (string) $product['price_yuan'],
                 (string) $product['price_yuan_tl'],

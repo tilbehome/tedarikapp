@@ -170,6 +170,25 @@ final class InboxRepository
         return $statement === false ? 0 : (int) $statement->fetchColumn();
     }
 
+    /**
+     * SAHİPLENME (İE#19 G6) — kuyruk satırını "işleniyor" olarak kilitler.
+     *
+     * Satır YALNIZCA hâlâ `pending`/`error` iken sahiplenilir; koşullu UPDATE'in
+     * etkilediği satır sayısı yarışın kimin kazandığını söyler. İki eşzamanlı
+     * "listeye taşı" isteğinden kaybeden `false` alır ve ürün YAZMAZ — eskiden
+     * ikisi de yazıyor, aynı yakalamadan iki ürün doğuyordu.
+     */
+    public function claim(int $id, DateTimeImmutable $now): bool
+    {
+        $statement = $this->connection->pdo()->prepare(
+            "UPDATE inbox_items SET status = 'assigned', assigned_at = :at
+             WHERE id = :id AND status IN ('pending', 'error')",
+        );
+        $statement->execute(['at' => Dates::toStorage($now), 'id' => $id]);
+
+        return $statement->rowCount() === 1;
+    }
+
     public function markAssigned(int $id, int $productId, DateTimeImmutable $now): void
     {
         $statement = $this->connection->pdo()->prepare(

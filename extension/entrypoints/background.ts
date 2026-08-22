@@ -7,7 +7,7 @@
  * bu yüzden kullanıcı "sayfayı yenileyin (F5)" duvarına çarpıyordu (canlı vaka).
  */
 
-import { defineBackground } from 'wxt/sandbox';
+import { defineBackground } from 'wxt/utils/define-background';
 
 import { panelApi } from '../core/api';
 import type { CapturePayload } from '../core/types';

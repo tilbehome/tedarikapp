@@ -21,6 +21,10 @@ use Throwable;
  */
 final class Migrator
 {
+    /** Eşzamanlı koşumu engelleyen MySQL adlandırılmış kilidi (G7). */
+    private const ADVISORY_LOCK_ADI = 'tedarikapp_migrate';
+    private const ADVISORY_LOCK_BEKLEME = 15;
+
     /**
      * K49 BASELINE haritası: migration adı → defterde "uygulanmış" sayılabilmesi için
      * veritabanında GERÇEKTEN var olması gereken nesne(ler).
@@ -69,6 +73,30 @@ final class Migrator
             ['column' => ['lists', 'share_key_enabled']],
         ],
     ];
+
+    /**
+     * KAYITLI DEĞİŞİKLİK DEFTERİ (İE#19 G7).
+     *
+     * K23 kuralı nettir: uygulanmış bir migration dosyası DEĞİŞTİRİLMEZ; değişiklik
+     * yeni dosyayla yapılır. Bu kuralın tek istisnası, dosyanın DAVRANIŞINI değil
+     * DAYANIKLILIĞINI düzelten, PM onaylı ve BURAYA YAZILMIŞ değişikliklerdir:
+     * 0016 iki ALTER'li olduğu için yarım kalabiliyordu ve yarım kalınca bir daha
+     * asla tamamlanamıyordu (MySQL'de DDL örtük commit yapar). Dosyayı idempotent
+     * yapmak, "aynı sonucu üretmeye devam eden" bir düzeltmedir.
+     *
+     * Buradaki eşleşme sessiz DEĞİLDİR: defterdeki checksum yenisiyle GÜNCELLENİR ve
+     * `run()` dönüşünde raporlanır. Haritada olmayan her checksum farkı eskisi gibi
+     * koşumu DURDURUR — koruma kalkmadı, kapısı belgelendi.
+     *
+     * @var array<string, list<string>> migration adı → kabul edilen ESKİ checksum'lar
+     */
+    private const KABUL_EDILEN_ESKI_CHECKSUMLAR = [
+        // İE#19 G7 öncesi (iki ALTER'li, idempotent olmayan) 0016.
+        '0016_media_storage_columns' => ['7e37b3dfe43eca4aac0625e439c944dd4de37a79f0b325f7471da8432a706b13'],
+    ];
+
+    /** @var list<string> bu koşumda checksum'u tazelenen migration'lar */
+    private array $tazelenenChecksumlar = [];
 
     /** @param array<string, list<array{table?: string, column?: array{string, string}}>>|null $baselineObjects test amaçlı harita (null = gerçek harita) */
     public function __construct(
@@ -189,22 +217,74 @@ final class Migrator
      */
     public function run(): array
     {
-        $this->ensureMigrationsTable();
+        // İE#19 G7 — DB ADVISORY LOCK: iki koşum aynı anda başlayamaz.
+        //
+        // Migrate üç yerden tetiklenir: sihirbaz, panel "Sistem durumu" düğmesi ve
+        // `bin/migrate.php`. İkisi aynı anda koşarsa ikisi de aynı bekleyen listeyi
+        // görür ve aynı DDL'i çalıştırmaya kalkar; MySQL'de DDL geri sarılmadığı için
+        // sonuç yarım şema + "Duplicate column" hatasıdır. Kilit tüm koşumu kapsar.
+        $kilitAlindi = $this->advisoryLockAl();
 
-        $files = $this->migrationFiles();
-        $applied = $this->appliedChecksums();
-        $this->assertAppliedFilesUnchanged($files, $applied);
+        try {
+            $this->ensureMigrationsTable();
 
-        $justApplied = [];
-        foreach ($files as $name => $file) {
-            if (array_key_exists($name, $applied)) {
-                continue;
+            $files = $this->migrationFiles();
+            $applied = $this->appliedChecksums();
+            $this->assertAppliedFilesUnchanged($files, $applied);
+
+            $justApplied = [];
+            foreach ($files as $name => $file) {
+                if (array_key_exists($name, $applied)) {
+                    continue;
+                }
+                $this->apply($name, $file);
+                $justApplied[] = $name;
             }
-            $this->apply($name, $file);
-            $justApplied[] = $name;
+
+            return $justApplied;
+        } finally {
+            if ($kilitAlindi) {
+                $this->advisoryLockBirak();
+            }
+        }
+    }
+
+    /** Bu koşumda defteri tazelenen migration adları (raporlama için). */
+    /** @return list<string> */
+    public function tazelenenChecksumlar(): array
+    {
+        return $this->tazelenenChecksumlar;
+    }
+
+    /** MySQL adlandırılmış kilidi; SQLite'ta (testler) kavram yok — sessizce atlanır. */
+    private function advisoryLockAl(): bool
+    {
+        if ($this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME) !== 'mysql') {
+            return false;
         }
 
-        return $justApplied;
+        $statement = $this->pdo->prepare('SELECT GET_LOCK(:ad, :saniye)');
+        $statement->execute(['ad' => self::ADVISORY_LOCK_ADI, 'saniye' => self::ADVISORY_LOCK_BEKLEME]);
+        $sonuc = $statement->fetchColumn();
+
+        if ((int) $sonuc !== 1) {
+            throw new RuntimeException(
+                'Başka bir migration koşumu sürüyor (veritabanı kilidi alınamadı). '
+                . 'Diğer koşumun bitmesini bekleyin; aynı anda iki güncelleme şemayı yarım bırakabilir.',
+            );
+        }
+
+        return true;
+    }
+
+    private function advisoryLockBirak(): void
+    {
+        try {
+            $statement = $this->pdo->prepare('SELECT RELEASE_LOCK(:ad)');
+            $statement->execute(['ad' => self::ADVISORY_LOCK_ADI]);
+        } catch (Throwable) {
+            // Bağlantı kapandıysa MySQL kilidi kendiliğinden bırakır.
+        }
     }
 
     /**
@@ -284,6 +364,15 @@ final class Migrator
             }
 
             $currentChecksum = $this->checksumOf($files[$name]);
+            if (!hash_equals($recordedChecksum, $currentChecksum)
+                && in_array($recordedChecksum, self::KABUL_EDILEN_ESKI_CHECKSUMLAR[$name] ?? [], true)) {
+                // Kayıtlı, gerekçesi belgelenmiş dayanıklılık düzeltmesi: defter tazelenir.
+                $guncelle = $this->pdo->prepare('UPDATE migrations SET checksum = ? WHERE name = ?');
+                $guncelle->execute([$currentChecksum, $name]);
+                $this->tazelenenChecksumlar[] = $name;
+
+                continue;
+            }
             if (!hash_equals($recordedChecksum, $currentChecksum)) {
                 throw new RuntimeException(sprintf(
                     'Uygulanmış migration "%s" değiştirilmiş (checksum uyuşmuyor: kayıtlı %s, güncel %s). '

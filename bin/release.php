@@ -19,8 +19,10 @@ declare(strict_types=1);
  *      (vendor'da phpunit OLMAMALI — dev bağımlılığı üretime taşınmaz).
  *   2. `cd frontend && npm run build` koşulmuş olmalı (public/panel/ dolu).
  *
- * Kullanım: php bin/release.php [--out=dist] [--version=v0.9.2-faz1] [--allow-dev-vendor]
- *                                [--panel-dal=<beklenen dal>]
+ * Kullanım: php bin/release.php --panel-dal=<dal> [--out=dist] [--version=v0.9.2-faz1]
+ *                                [--allow-dev-vendor]
+ *
+ * `--panel-dal` ZORUNLUDUR (İE#19 E9): hangi panelin paketlendiği tahmine bırakılamaz.
  */
 
 use App\Services\IntegrityChecker;
@@ -73,13 +75,108 @@ if (!is_file($panelDamgaYolu)) {
 /** @var array{dal?: string, commit?: string, temiz?: bool, zaman?: string} $panelDamga */
 $panelDamga = json_decode((string) file_get_contents($panelDamgaYolu), true) ?: [];
 $panelDal = (string) ($panelDamga['dal'] ?? 'bilinmiyor');
+$panelCommit = (string) ($panelDamga['commit'] ?? '');
+$panelTemiz = ($panelDamga['temiz'] ?? null) === true;
+
+// E9-1: parametre ZORUNLU. Eskiden opsiyoneldi ve atlanınca damga yalnız BASILIYOR,
+// denetlenmiyordu — yani koruma çağıranın hatırlamasına bağlıydı. Artık çağrı,
+// hangi paneli paketlediğini beyan etmeden çalışmaz.
 $beklenenDal = isset($options['panel-dal']) ? trim((string) $options['panel-dal']) : '';
-if ($beklenenDal !== '' && $panelDal !== $beklenenDal) {
+if ($beklenenDal === '') {
+    $fail(
+        "--panel-dal ZORUNLU: hangi daldan derlenmiş panelin paketlendiğini beyan edin.\n"
+        . "  Örnek: php bin/release.php --panel-dal=v3-faz1\n"
+        . '  Diskteki damga: ' . ($panelDal === '' ? '(bos)' : $panelDal),
+    );
+}
+if ($panelDal !== $beklenenDal) {
     $fail(sprintf(
         "Panel build BEKLENEN DALDAN değil: damga '%s', beklenen '%s'.\n"
         . '  Doğru dala geçip paneli yeniden derleyin ya da --panel-dal değerini düzeltin.',
         $panelDal,
         $beklenenDal,
+    ));
+}
+
+// E9-2: KİRLİ çalışma kopyasından derlenmiş panel PAKETLENEMEZ. Böyle bir damgadaki
+// commit yalan söyler: diskteki kaynak o commit'te olmayan değişiklikler içerir,
+// yani "hangi panel gitti?" sorusunun cevabı yine yoktur.
+if (!$panelTemiz) {
+    $fail(
+        "Panel damgası KİRLİ çalışma kopyası diyor (temiz=false) — paketleme reddedildi.\n"
+        . '  Değişiklikleri commitleyip paneli yeniden derleyin: cd frontend && npx vite build',
+    );
+}
+
+// E9-3: damgadaki commit, beyan edilen DALIN UCUYLA eşleşmeli. `git` ÇALIŞTIRMAYIZ
+// (docs/04 §7 exec yasağı disiplinini araçlarda da koruruz); ref dosyası doğrudan
+// okunur. Böylece "v3-faz1'den derledim" beyanı depodaki kayda karşı doğrulanır.
+$dalUcu = (static function (string $basePath, string $dal): ?string {
+    $refYolu = $basePath . '/.git/refs/heads/' . $dal;
+    if (is_file($refYolu)) {
+        $deger = trim((string) file_get_contents($refYolu));
+
+        return preg_match('/^[0-9a-f]{40}$/', $deger) === 1 ? $deger : null;
+    }
+    // Sıkıştırılmış ref'ler (git gc sonrası) packed-refs dosyasındadır.
+    $packed = $basePath . '/.git/packed-refs';
+    if (!is_file($packed)) {
+        return null;
+    }
+    foreach (explode("\n", (string) file_get_contents($packed)) as $satir) {
+        if (preg_match('#^([0-9a-f]{40}) refs/heads/(.+)$#', trim($satir), $m) === 1 && $m[2] === $dal) {
+            return $m[1];
+        }
+    }
+
+    return null;
+})($basePath, $beklenenDal);
+
+// Ayrık HEAD (CI'da pull_request çıkarması) durumunda dal adı "HEAD"tir ve
+// refs/heads altında karşılığı yoktur. O zaman ölçüt DALIN UCU değil, ÇALIŞMA
+// KOPYASININ HEAD'idir: "panel tam da paketlenen ağaçtan derlendi mi?" Asıl
+// güvence budur; dal ucu yalnızca bunun günlük kullanımdaki vekiliydi.
+$headCommit = (static function (string $basePath): ?string {
+    $headYolu = $basePath . '/.git/HEAD';
+    if (!is_file($headYolu)) {
+        return null;
+    }
+    $head = trim((string) file_get_contents($headYolu));
+    if (preg_match('/^[0-9a-f]{40}$/', $head) === 1) {
+        return $head; // ayrık HEAD
+    }
+    if (preg_match('#^ref: (refs/heads/.+)$#', $head, $m) !== 1) {
+        return null;
+    }
+    $refYolu = $basePath . '/.git/' . $m[1];
+    if (is_file($refYolu)) {
+        $deger = trim((string) file_get_contents($refYolu));
+
+        return preg_match('/^[0-9a-f]{40}$/', $deger) === 1 ? $deger : null;
+    }
+
+    return null;
+})($basePath);
+
+$kabulEdilen = array_values(array_filter([$dalUcu, $headCommit]));
+if ($kabulEdilen === []) {
+    $fail(sprintf('"%s" dalı da HEAD de okunamadı — panel damgası doğrulanamıyor.', $beklenenDal));
+}
+
+$eslesti = false;
+foreach ($kabulEdilen as $aday) {
+    if ($panelCommit !== '' && str_starts_with($aday, $panelCommit)) {
+        $eslesti = true;
+
+        break;
+    }
+}
+if (!$eslesti) {
+    $fail(sprintf(
+        "Panel damgasındaki commit paketlenen ağaçla EŞLEŞMİYOR: damga '%s'; kabul edilen: %s.\n"
+        . '  Dalı güncelleyip paneli yeniden derleyin (cd frontend && npx vite build).',
+        $panelCommit === '' ? '(bos)' : $panelCommit,
+        implode(', ', array_map(static fn (string $x): string => substr($x, 0, 12), $kabulEdilen)),
     ));
 }
 
@@ -120,9 +217,21 @@ $collect = function (string $relativeDir) use ($basePath, &$files, $excludedBase
         if ($relative === '.env' || str_ends_with($relative, '/.env') || str_ends_with($relative, '.log')) {
             continue;
         }
+        // EK-2: config.php SUNUCUNUN sırrıdır — hiçbir koşulda pakete girmez
+        // (örneği config.example.php adıyla ayrıca eklenir).
+        if ($relative === 'config.php' || str_ends_with($relative, '/config.php')) {
+            continue;
+        }
         // public/media: yalnız koruma dosyası taşınır; geliştirme makinesindeki
         // deneme görselleri pakete sızmaz.
         if (str_starts_with($relative, 'public/media/') && $relative !== 'public/media/.htaccess') {
+            continue;
+        }
+        // İE#19 G4: public/tani.php PAKETE GİRMEZ. Kimliksiz erişilebilen bu teşhis
+        // sayfası sunucu yollarını, PHP sürümünü, dosya varlığını ve rewrite
+        // davranışını dışarı basıyordu — kurulum sırasında faydalıydı, kurulmuş
+        // sistemde yalnız keşif kolaylığıdır. Depoda kalır (yerel araç), canlıya gitmez.
+        if ($relative === 'public/tani.php') {
             continue;
         }
         // İE#10.5 Blok 7: mPDF font ayıklaması — kullanılan yalnız DejaVu (TR/₺/¥) ve
@@ -145,7 +254,7 @@ $collect = function (string $relativeDir) use ($basePath, &$files, $excludedBase
 foreach (['app', 'bin', 'bootstrap', 'config', 'migrations', 'public', 'setup', 'vendor'] as $directory) {
     $collect($directory);
 }
-foreach (['.env.example', '.htaccess', 'composer.json', 'composer.lock'] as $rootFile) {
+foreach (['.env.example', 'config.example.php', '.htaccess', 'composer.json', 'composer.lock'] as $rootFile) {
     if (!is_file($basePath . '/' . $rootFile)) {
         $fail($rootFile . ' bulunamadı.');
     }
@@ -185,6 +294,11 @@ $manifestLines = [
     '# surum: ' . $version,
     '# uretim: ' . date(DATE_ATOM),
     '# dosya_sayisi: ' . count($files),
+    // E9-4: panel damgası MANIFEST'e girer — paketin hangi panel derlemesini
+    // taşıdığı zip açıldıktan sonra da okunabilir olsun.
+    '# panel_dal: ' . $panelDal,
+    '# panel_commit: ' . $panelCommit,
+    '# panel_temiz: evet', // kirli damga yukarıda paketlemeyi reddeder
 ];
 foreach ($files as $relative) {
     $hash = $relative === $appVersionRelative
@@ -245,6 +359,7 @@ $requiredEntries = [
     'setup/views/wizard.html',
     'setup/views/wizard.js',
     'setup/views/wizard.css',
+    'config.example.php',
     'vendor/autoload.php',
     'vendor/composer/autoload_real.php',
     'vendor/slim/slim/Slim/App.php',
@@ -272,6 +387,12 @@ foreach (['config/sozluk-zh-tr.php', 'config/sozluk-en-tr.php'] as $sozluk) {
 }
 if ($verify->locateName('.env') !== false) {
     $missing[] = 'İHLAL: .env zip\'e girmiş!';
+}
+if ($verify->locateName('config.php') !== false) {
+    $missing[] = 'İHLAL: config.php zip\'e girmiş! (sunucu sırrı)';
+}
+if ($verify->locateName('public/tani.php') !== false) {
+    $missing[] = 'İHLAL: public/tani.php zip\'e girmiş! (G4 sızıntı kapatma)';
 }
 
 // İE#9.8: paketteki AppVersion.php gerçekten bu sürümü mü taşıyor?
@@ -304,7 +425,7 @@ printf(
     . "  dosya   : %d (+ MANIFEST.txt)
   sha256  : %s
 "
-    . "  panel   : %s @ %s%s
+    . "  panel   : %s @ %s (temiz)
   surum   : %s
 ",
     $zipPath,
@@ -312,8 +433,7 @@ printf(
     count($files),
     hash_file('sha256', $zipPath),
     $panelDal,
-    (string) ($panelDamga['commit'] ?? '?'),
-    ($panelDamga['temiz'] ?? true) === false ? ' (KİRLİ çalışma kopyası)' : '',
+    $panelCommit,
     $version,
 );
 exit(0);

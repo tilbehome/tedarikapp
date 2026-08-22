@@ -7,6 +7,7 @@ namespace App\Middleware;
 use App\Core\ClientIp;
 use App\Core\Clock;
 use App\Core\Response;
+use App\Setup\ReSetupTicket;
 use App\Setup\SetupLock;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -16,13 +17,21 @@ use Psr\Http\Server\RequestHandlerInterface;
 use Psr\Log\LoggerInterface;
 
 /**
- * Kurulum sihirbazının kapısı (K45 — BASİTLEŞTİRİLDİ, Ürün Sahibi talimatı).
+ * Kurulum sihirbazının kapısı (K45 + İE#19 G1/G2).
  *
- * TEK kural: veritabanında kurulum kilidi KESİN olarak varsa 403; diğer her
- * durumda sihirbaz AÇIKTIR. K37'nin ek katmanları (config/.env varlığı kilidi,
- * okunamayan kilit = kapalı, oturum sahiplik işareti) kurulumu üretimde defalarca
- * blokladığı için KALDIRILDI — kilit yazılana kadar sihirbaz her koşulda çalışır,
- * mevcut yapılandırma varsa üzerine YAZMADAN kullanır (SetupController).
+ * ÜÇ DURUM, ÜÇ DAVRANIŞ — kilit okuması artık iki değerli değil:
+ *
+ *  • `unlocked` → sihirbaz AÇIK. Bu, kilit satırı HİÇ YAZILMAMIŞ demektir: gerçek
+ *    ilk kurulum. K45'in "kurulum hiçbir koşulda bloklanmaz" sözü burada geçerlidir
+ *    ve DEĞİŞMEDİ.
+ *  • `locked` → sihirbaz KAPALI; tek istisna geçerli bir yeniden-kurulum biletidir
+ *    (G2). Biletsiz istek 403 alır ve loglanır.
+ *  • `unknown` → veritabanı YAPILANDIRILMIŞ ama kilit OKUNAMIYOR (DB düştü, tablo
+ *    yok, kimlik hatalı). Eskiden bu durum sessizce "kilitli değil" muamelesi
+ *    görüyordu: `status() !== STATE_LOCKED` koşulu `unknown`u da geçiriyordu. Yani
+ *    kurulu bir sistemde veritabanını bir an düşürebilen biri, sihirbazı kimliksiz
+ *    açabiliyordu — SetupLock'ın fail-closed niyeti (K37) kapıya hiç ulaşmıyordu.
+ *    Artık 503: karar verilemiyorsa GEÇİRİLMEZ.
  */
 final class SetupGuard implements MiddlewareInterface
 {
@@ -31,13 +40,47 @@ final class SetupGuard implements MiddlewareInterface
         private readonly ResponseFactoryInterface $responseFactory,
         private readonly LoggerInterface $logger,
         private readonly Clock $clock,
+        private readonly ?ReSetupTicket $ticket = null,
     ) {
     }
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        // K45: kilit kaldırma ucu ve sihirbaz sayfası kilitliyken de erişilebilir —
-        // kullanıcı "yeniden kur" seçeneğini EKRANDA görür, çıkmaz sokakta kalmaz.
+        $status = $this->lock->status();
+
+        // FAIL-CLOSED (G1): kilit okunamıyorsa kimse geçmez — sihirbaz sayfası dahil.
+        // Sayfayı da kapatmak bilinçlidir: DB okunamıyorken sihirbazın yapabileceği
+        // hiçbir adım yoktur (unlock da, migrate de aynı veritabanına yazar), açık
+        // bırakmak yalnız saldırı yüzeyi olurdu.
+        if ($status === SetupLock::STATE_UNKNOWN) {
+            $this->logger->error('Kurulum kilidi OKUNAMADI — kapı fail-closed 503 verdi', [
+                'ip' => ClientIp::from($request),
+                'yol' => $request->getUri()->getPath(),
+                'zaman' => $this->clock->now()->format(DATE_ATOM),
+            ]);
+
+            return Response::error(
+                $this->responseFactory->createResponse(),
+                'SETUP_STATE_UNKNOWN',
+                'Kurulum durumu doğrulanamadı (veritabanına ulaşılamıyor). Güvenlik gereği '
+                . 'sihirbaz bu durumda açılmaz. Veritabanı erişimini düzeltip tekrar deneyin.',
+                503,
+            );
+        }
+
+        if ($status === SetupLock::STATE_UNLOCKED) {
+            return $handler->handle($request);
+        }
+
+        // ── Buradan aşağısı: sistem KİLİTLİ ──────────────────────────────────────
+        // G2: geçerli yeniden-kurulum bileti taşıyan istek, kilitli sistemde de geçer.
+        if ($this->ticketValid($request)) {
+            return $handler->handle($request);
+        }
+
+        // K45: bilet ALMA yolu kilitliyken de açık kalmalı — kullanıcı "yeniden kur"
+        // seçeneğini EKRANDA görür, çıkmaz sokakta kalmaz. Sihirbaz sayfası ve
+        // varlıkları veri döndürmez; unlock ucu ise sahiplik kanıtı ister.
         $path = $request->getUri()->getPath();
         if (str_ends_with($path, '/api/setup/unlock')
             || str_ends_with($path, '/setup')
@@ -46,13 +89,9 @@ final class SetupGuard implements MiddlewareInterface
             return $handler->handle($request);
         }
 
-        if ($this->lock->status() !== SetupLock::STATE_LOCKED) {
-            return $handler->handle($request);
-        }
-
         $this->logger->warning('Kilitli kuruluma erişim denemesi', [
             'ip' => ClientIp::from($request),
-            'yol' => $request->getUri()->getPath(),
+            'yol' => $path,
             'metot' => $request->getMethod(),
             'zaman' => $this->clock->now()->format(DATE_ATOM),
         ]);
@@ -60,8 +99,21 @@ final class SetupGuard implements MiddlewareInterface
         return Response::error(
             $this->responseFactory->createResponse(),
             'FORBIDDEN',
-            'Kurulum zaten tamamlanmış. Sihirbaz kalıcı olarak kapalıdır.',
+            'Kurulum zaten tamamlanmış. Sihirbazı yeniden açmak için "Yeniden kurulum" '
+            . 'adımından config.php içindeki APP_KEY ile bilet alın.',
             403,
         );
+    }
+
+    private function ticketValid(ServerRequestInterface $request): bool
+    {
+        if ($this->ticket === null) {
+            return false;
+        }
+
+        $cookies = $request->getCookieParams();
+        $raw = $cookies[ReSetupTicket::COOKIE_NAME] ?? null;
+
+        return is_string($raw) && $this->ticket->validate($raw, $this->clock->now());
     }
 }
