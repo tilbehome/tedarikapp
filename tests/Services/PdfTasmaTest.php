@@ -132,4 +132,54 @@ final class PdfTasmaTest extends TestCase
             self::assertNotContains($ic, $etiketler);
         }
     }
+
+    /**
+     * REV4 GÖRSEL KATMANI (İE#18 G3 Aşama B).
+     *
+     * Ürün Sahibi bulgusu "renkler çarpık"tı: lacivert yalnız antette değil
+     * tablo başlığında ve toplam bandında da vardı. Bu test o üç kuralı
+     * sabitler — biri geri gelirse belge yine kirlenir.
+     */
+    public function testREV4_GORSEL_KATMANI_KORUNUR(): void
+    {
+        $kaynak = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Services/Export/PdfRenderer.php');
+
+        // 1) Gövde beyaz; tablo başlığı AÇIK GRİ zemin + koyu metin.
+        self::assertStringContainsString('background: #fff;', $kaynak);
+        self::assertStringContainsString('table.veri th { background: #F1F4F9; color: #334155;', $kaynak);
+        self::assertStringNotContainsString(
+            "table.veri th { background: #' . TemplateV2::LACIVERT_ACIK",
+            $kaynak,
+            'Tablo başlığı LACİVERT olmamalı (rev4).',
+        );
+
+        // 2) Toplam bandı koyu DEĞİL: açık zemin + lacivert üst çizgi.
+        self::assertStringContainsString('.toplam td { background: #F1F4F9;', $kaynak);
+
+        // 3) Ürün adı düz koyu metin — köprü mavi/altı çizili DEĞİL.
+        self::assertStringContainsString('.ad .adlink { color: #101828; text-decoration: none; }', $kaynak);
+
+        // 4) PDF başlıkları TEK SATIR TÜRKÇE (üç dilli kademe kalktı).
+        self::assertStringNotContainsString('<span class="cn">', $kaynak);
+        self::assertStringNotContainsString('<span class="en">', $kaynak);
+        self::assertStringContainsString('mb_strtoupper($tr', $kaynak);
+    }
+
+    /** Şartname örneği ÜRETİM SINIFIYLA üretilir — belge ile kod ayrışamaz. */
+    public function testSARTNAME_ORNEGI_URETIM_CIKTISIYLA_AYNI_KURALLARI_TASIR(): void
+    {
+        $ornek = dirname(__DIR__, 2) . '/docs/sablon/sablon-v2-pdf-ornek-rev4.pdf';
+        self::assertFileExists($ornek, 'rev4 örneği repoda olmalı.');
+
+        $bytes = (new PdfRenderer(dirname(__DIR__, 2)))->render($this->snapshot(18));
+
+        self::assertStringStartsWith('%PDF-', $bytes);
+        // Örnek de üretim de YATAY A4 ve tek/çok sayfa kuralında aynı davranır.
+        self::assertMatchesRegularExpression('/MediaBox\s*\[\s*0\s+0\s+8\d\d(\.\d+)?\s+5\d\d/', $bytes);
+        self::assertMatchesRegularExpression(
+            '/MediaBox\s*\[\s*0\s+0\s+8\d\d(\.\d+)?\s+5\d\d/',
+            (string) file_get_contents($ornek),
+        );
+    }
+
 }

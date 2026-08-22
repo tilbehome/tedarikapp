@@ -219,7 +219,17 @@ final class PublicRoutes
             }
 
             $govde = (array) ($request->getParsedBody() ?? []);
-            $girilen = is_string($govde['anahtar'] ?? null) ? (string) $govde['anahtar'] : '';
+            $girilen = is_string($govde['anahtar'] ?? null) ? trim((string) $govde['anahtar']) : '';
+            if ($girilen === '' && is_array($govde['anahtar_hane'] ?? null)) {
+                // JS KAPALIYKEN: tarayıcı yalnız hane kutularını gönderir; gizli
+                // alan boş gelir. Haneler birleştirilir — doğrulama kuralı AYNI.
+                $girilen = '';
+                foreach ($govde['anahtar_hane'] as $hane) {
+                    if (is_scalar($hane)) {
+                        $girilen .= trim((string) $hane);
+                    }
+                }
+            }
             $shareGate->recordAnahtarDeneme($token, $ip, $now);
 
             $row = $anahtar->hazirla($row, $now);

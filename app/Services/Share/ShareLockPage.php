@@ -41,7 +41,12 @@ final class ShareLockPage
 
         $kutular = '';
         for ($i = 0; $i < 6; $i++) {
-            $kutular .= '<input class="kis-hane" type="text" inputmode="latin" maxlength="1" autocomplete="off"'
+            // JS'SİZ ÇALIŞMA (İE#18 G6 düzeltmesi): kutuların KENDİ adı vardır.
+            // Eskiden yalnız gizli alan gönderiliyordu; JavaScript kapalıyken o
+            // alan boş kalıyor ve kapı 401 veriyordu — yani "aşamalı geliştirme"
+            // sözü kâğıt üstünde kalıyordu. Artık haneler de gönderilir.
+            $kutular .= '<input class="kis-hane" type="text" name="anahtar_hane[]"'
+                . ' inputmode="latin" maxlength="1" autocomplete="off"'
                 . ' aria-label="Anahtar hanesi ' . ($i + 1) . '" data-hane="' . $i . '"'
                 . ($i === 0 ? ' autofocus' : '') . '>';
         }

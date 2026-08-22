@@ -344,4 +344,57 @@ final class ErisimAnahtariTest extends AuthTestCase
         );
     }
 
+
+    /**
+     * JS KAPALIYKEN DE ÇALIŞIR (İE#18 G6 düzeltmesi — PM bulgusu).
+     *
+     * Hane kutularının başta `name` niteliği yoktu: JavaScript kapalıyken
+     * tarayıcı yalnız BOŞ gizli alanı gönderiyor, kapı 401 veriyordu. Yani
+     * 415 düzeltmesiyle açılan "aşamalı geliştirme" kapısı fiilen kapalıydı.
+     * Artık haneler de gönderilir ve sunucu onları birleştirir.
+     */
+    public function testJS_KAPALIYKEN_HANELER_BIRLESTIRILIR(): void
+    {
+        $anahtar = $this->anahtar();
+        $haneler = mb_str_split($anahtar);
+
+        // Gizli alan BOŞ (JS yazmadı), haneler DOLU — tarayıcının yaptığı budur.
+        $yanit = $this->call('POST', '/liste/' . $this->token . '/anahtar', [
+            'anahtar' => '',
+            'anahtar_hane' => $haneler,
+        ]);
+
+        self::assertSame(303, $yanit->getStatusCode(), 'JS olmadan da kapı açılmalı.');
+        self::assertStringContainsString(ShareKeyService::CEREZ_ADI, $yanit->getHeaderLine('Set-Cookie'));
+    }
+
+    public function testHER_IKISI_DE_BOSSA_401(): void
+    {
+        $yanit = $this->call('POST', '/liste/' . $this->token . '/anahtar', [
+            'anahtar' => '',
+            'anahtar_hane' => ['', '', '', '', '', ''],
+        ]);
+
+        self::assertSame(401, $yanit->getStatusCode());
+    }
+
+    /** JS varken gizli alan ÖNCELİKLİDİR (davranış değişmedi). */
+    public function testGIZLI_ALAN_DOLUYSA_ONCELIKLIDIR(): void
+    {
+        $yanit = $this->call('POST', '/liste/' . $this->token . '/anahtar', [
+            'anahtar' => $this->anahtar(),
+            'anahtar_hane' => ['Z', 'Z', 'Z', 'Z', 'Z', 'Z'],
+        ]);
+
+        self::assertSame(303, $yanit->getStatusCode());
+    }
+
+    /** Kilit ekranındaki kutular gerçekten GÖNDERİLEBİLİR alanlardır. */
+    public function testKILIT_EKRANI_HANELERI_ISIMLI(): void
+    {
+        $html = (string) $this->call('GET', '/liste/' . $this->token)->getBody();
+
+        self::assertSame(6, substr_count($html, 'name="anahtar_hane[]"'), 'Altı hane de gönderilebilir olmalı.');
+    }
+
 }
