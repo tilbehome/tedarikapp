@@ -1,3 +1,4 @@
+import EylemDugmesi from '../components/EylemDugmesi';
 import { useState } from 'react';
 import { inbox as inboxApi, lists as listsApi } from '../api/endpoints';
 import { useAsync, messageOf } from '../lib/useAsync';
@@ -256,22 +257,24 @@ export default function InboxScreen() {
             />
           ) : null}
 
-          <button
-            type="button"
+          {/* C10/B11: toplu eylemler de meşgul durumunu düğmenin ÜSTÜNDE gösterir;
+              çift tık ikinci istek üretmez (EylemDugmesi senkron kilit tutar). */}
+          <EylemDugmesi
             className="btn-primary"
+            mesgulEtiketi="Taşınıyor"
             disabled={busy || selected.length === 0}
-            onClick={() => void assign(selected)}
+            onEylem={() => assign(selected)}
           >
             Seçilenleri taşı ({selected.length})
-          </button>
-          <button
-            type="button"
+          </EylemDugmesi>
+          <EylemDugmesi
             className="btn-ghost text-err"
+            mesgulEtiketi="Siliniyor"
             disabled={busy || selected.length === 0}
-            onClick={() => void remove(selected)}
+            onEylem={() => remove(selected)}
           >
             Seçilenleri sil
-          </button>
+          </EylemDugmesi>
         </div>
       </div>
 
@@ -298,8 +301,8 @@ export default function InboxScreen() {
                 secili={selected.includes(item.id)}
                 onSec={() => toggle(item.id)}
                 onAc={() => setAcikDetay(item.id)}
-                onTasi={() => void assign([item.id])}
-                onSil={() => void remove([item.id])}
+                onTasi={() => assign([item.id])}
+                onSil={() => remove([item.id])}
                 secilenAd={adlar[item.id]}
                 onAdSec={(ad) => setAdlar((current) => ({ ...current, [item.id]: ad }))}
                 busy={busy}

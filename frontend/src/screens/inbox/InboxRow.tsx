@@ -1,5 +1,6 @@
+import EylemDugmesi from '../../components/EylemDugmesi';
 import { useState } from 'react';
-import { Languages, Trash2 } from 'lucide-react';
+import { Languages } from 'lucide-react';
 import { translate as translateApi, type InboxItem } from '../../api/endpoints';
 import { messageOf } from '../../lib/useAsync';
 import { dateTime } from '../../lib/format';
@@ -13,8 +14,8 @@ interface Props {
   secili: boolean;
   onSec: () => void;
   onAc: () => void;
-  onTasi: () => void;
-  onSil: () => void;
+  onTasi: () => Promise<unknown>;
+  onSil: () => Promise<unknown>;
   /** Kullanıcı çeviriyi kabul ettiyse taşımada kullanılacak ad (K54). */
   secilenAd: string | undefined;
   onAdSec: (ad: string) => void;
@@ -109,12 +110,19 @@ export default function InboxRow({ item, secili, onSec, onAc, onTasi, onSil, sec
         ) : null}
       </div>
 
-      <button type="button" className="btn-ghost" disabled={busy} onClick={onTasi}>
-        Taşı
-      </button>
-      <button type="button" className="btn-ghost text-err" disabled={busy} onClick={onSil} aria-label="Sil">
-        <Trash2 className="h-4 w-4" aria-hidden />
-      </button>
+      {/* C10/B11: satır eylemi de meşgul/başarı/hata üçlüsünü gösterir. */}
+      <EylemDugmesi className="btn-ghost" mesgulEtiketi="Taşınıyor" disabled={busy} onEylem={onTasi}>
+        Listeye taşı
+      </EylemDugmesi>
+      <EylemDugmesi
+        className="btn-ghost text-err"
+        mesgulEtiketi="Siliniyor"
+        disabled={busy}
+        onEylem={onSil}
+        aria-label="Sil"
+      >
+        Sil
+      </EylemDugmesi>
     </li>
   );
 }

@@ -638,6 +638,12 @@ jobs:
       - name: ESLint
         run: npm run lint
 
+      - name: Birim testleri (vitest — İE#20 C11)
+        # Kapsam BİLİNÇLİ OLARAK DAR: token bekçileri + davranışı olan bileşenler
+        # (B11 eylem düğmesi). K35'in "ekran kabulü manueldir" kuralı duruyor;
+        # bu adım yalnız DAVRANIŞ iddialarını güvenceye alır.
+        run: npm test
+
       - name: Derleme
         run: npx vite build
 
