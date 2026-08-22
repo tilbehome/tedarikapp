@@ -49,8 +49,10 @@ final class CsvRenderer implements ExportRenderer
                 (string) $product['qty'],
                 (string) $product['price_yuan'],
                 (string) $product['price_yuan_tl'],
-                (string) $product['price_ddp_usd'],
-                (string) $product['price_ddp_tl'],
+                // İE#17 G3: girilmemiş fiyat BOŞ hücredir; "0.00" yazmak veriyi
+                // tüketen tarafta (Excel'e alan firma) yanlış hesaba yol açar.
+                TemplateV2::girilmis($product['price_ddp_usd'] ?? null) ? (string) $product['price_ddp_usd'] : '',
+                TemplateV2::girilmis($product['price_ddp_tl'] ?? null) ? (string) $product['price_ddp_tl'] : '',
             ]);
         }
 

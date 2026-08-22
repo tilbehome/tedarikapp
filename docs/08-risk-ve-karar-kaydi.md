@@ -93,6 +93,7 @@
 | K60 | 21 Ağu 2026 | **ÇİN TARAFI PAYLAŞIM KANALLARI (İE#15 C1-C4).** WhatsApp tek kanaldı; Çinli muhataplar başka araç kullanıyor. Paylaş menüsü: Linki kopyala · WhatsApp · **WeChat 微信 (QR)** · QQ · **DingTalk 钉钉 (QR)** · Telegram · E-posta. WeChat ve DingTalk **link şemasıyla açılmaz** — doğru yol karedir; bu iki kanal QR MODALI açar (büyük kare + "özet metnini kopyala" + PNG indir). QR **SUNUCUDA** üretilir (`GET /p/{token}/qr.png`, mevcut QrImage/GD; imagick yok — dış QR servisi K45 gereği KULLANILMAZ) ve içeriği YALNIZ paylaşım adresidir: imzalı indirme adresi ya da iç veri QR'a KONMAZ. Paylaşım metinleri `ShareTexts` dil dosyasındadır (TR/中文/EN), koda gömülmez; menüdeki dil seçici bağlantıya `?lang=` ekler ve hem sayfa metinleri hem indirme çıktısı o dile göre gelir. Mobilde önce `navigator.share` denenir | Tek kanal, alıcı kitlenin yarısını dışarıda bırakıyordu; QR kararı teknik zorunluluktur, tercih değil |
 | — | 21 Ağu 2026 | **SAPMA (İE#15 A3): sayfa ARAYÜZÜ çevrilmedi, ÇIKTI ve PAYLAŞIM METİNLERİ çevrildi.** İş emri "dil altyapısı yoksa TR üretilir" diyordu; panelde/paylaşım sayfasında i18n altyapısı yoktur. Uygulanan: `?lang=tr|zh|en` paylaşım metinlerini (ShareTexts) ve çıktı ürün adını (zh → orijinal başlık) belirler; sayfa etiketleri ve belge başlıkları TR + 中文 + EN üç satırlı şablonuyla (K55) zaten üç dilli basıldığı için ek çeviri katmanına girilmedi. **PM kararı: tam çok dillilik V3 Faz 3'e (Firma Portalı) yazıldı** (aşağıda Fikir Havuzu) | Üç satırlı başlık şablonu Çinli muhatabın sütunu tanıması için yeterli; yarım bir i18n katmanı kalıcı borç olurdu |
 | — | 21 Ağu 2026 | **TEŞHİS (İE#15 E1): video neden oynamıyordu.** Zincirin ilk halkası kopuktu: eklenti `normalized.video_url` alanını BİLEREK `null` bırakıyordu (İE#11 C3 notu: "oynatılabilir mp4 adresi MTOP imzalı istek ister; v1'de id+poster raw'da taşınır"). Yani (a) yakalama adresi hiç almıyordu; (b) taşıma ve (c) modal zaten doğruydu — rozet hiç basılmadığı için modal da hiç açılmıyordu. Çözüm: eklenti artık sayfadaki `<video>` öğesinden oynatılabilir adresi alır (yalnız https + mp4/m3u8/webm; blob:/data:/http REDDEDİLİR — çalışmayacak adres taşımak boş modaldan kötüdür), alamazsa `raw.video` (id/poster) "video var" bilgisi olarak okunur ve modal nazik bir açıklama + kaynak sayfa bağlantısı gösterir. Hiç veri yoksa rozet BASILMAZ | Sahte rozet kullanıcıyı boş modala götürür; "video yok" demek yanıltmaktan iyidir |
+| — | 21 Ağu 2026 | **ŞARTNAME DEĞİŞİKLİĞİ (İE#17 G10, PM/Ürün Sahibi kararı): paylaşım sayfası detay panelindeki GALERİ ŞERİDİ KALDIRILDI.** `paylasim-v4-premium.html` şartnamesinde panelde küçük resim şeridi (.gl/.gr) vardı; canlı turda gereksiz bulundu — ana görselin lightbox galerisi zaten aynı resimleri veriyor. Lightbox AYNEN ÇALIŞIR (data-galeriler ve tetikleyiciler korundu); yalnız paneldeki şerit ve ölü CSS kaldırıldı | İki yerde aynı galeriyi tutmanın bilgi değeri yok, panelde yer kaplıyordu |
 
 Yeni kararlar bu tabloya eklenir; bir karar değişirse silinmez, üzeri çizilip yeni satır açılır (tarihçe korunur).
 
@@ -102,6 +103,15 @@ Yeni kararlar bu tabloya eklenir; bir karar değişirse silinmez, üzeri çizili
 > v2 vizyon belgesi `docs/archive/v2/` altına alınmıştır. Çelişkide docs/v3 kazanır.
 
 ## 3. Fikir Havuzu (Faz 4+)
+
+- **F44 — TCMB OTOMATİK KUR** _(ONAYLI V3 KARARI, PM 21 Ağu 2026; uygulama V3 Faz 2 /
+  Ayarlar > Kur sekmesi, AYRI iş emriyle — İE#17'den ve Dilim 2'den bağımsız)_: kur TCMB
+  resmî günlük yayınından (15:30) otomatik çekilir. **K4 İLE ÇELİŞMEZ:** otomatik çekim
+  yalnız AYARLARDAKİ güncel kuru besler; K4'ün "kilitliyse listenin kuru, taslaktaysa güncel
+  kur" seçimi ve K48 kilitleme anı AYNEN korunur. Elle geçersiz kılma kalır ve GEREKÇE
+  ZORUNLUDUR. Teknik hat: TCMB günlük XML + **yalnız cURL (K8)** + gecelik cron adımı +
+  **sapma uyarı eşiği** (bir günde beklenmedik sıçrama olursa otomatik yazmaz, uyarır).
+  Hafta sonu/tatilde TCMB yayın yapmaz — son yayın korunur, uydurma yapılmaz.
 
 - **TAM ÇOK DİLLİLİK — V3 Faz 3 (Firma Portalı)** _(PM, 21 Ağu 2026 · İE#15 A3 sapmasından)_:
   bugün `?lang=tr|zh|en` yalnız **paylaşım metinlerini** (`ShareTexts`) ve **çıktı ürün adını**

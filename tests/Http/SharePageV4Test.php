@@ -103,8 +103,9 @@ final class SharePageV4Test extends AuthTestCase
         self::assertStringNotContainsString('fonts.gstatic.com', $html);
         self::assertStringNotContainsString('onclick=', $html, 'K51: satır içi olay işleyicisi yok.');
         self::assertStringNotContainsString('<style', $html, 'K51: satır içi stil yok.');
-        self::assertStringContainsString('<script src="/p-share.js" defer></script>', $html);
-        self::assertStringContainsString('href="/p-style.css"', $html);
+        // İE#17 G1: varlık adresleri artık ?v=<sürüm> taşır (bayat önbellek kusuru).
+        self::assertMatchesRegularExpression('#<script src="/p-share\.js\?v=[^"]+" defer></script>#', $html);
+        self::assertMatchesRegularExpression('#href="/p-style\.css\?v=[^"]+"#', $html);
     }
 
     public function testIcKopyaVerisiSAYFADA_GORUNMEZ(): void

@@ -169,10 +169,11 @@ final class PdfRenderer implements ExportRenderer
                 . nl2br($e($rozet)) . '</span></td>'
                 . '<td class="kucuk soluk">' . $e($product['note'] ?? '') . '</td>'
                 . '<td class="c">' . $e($product['qty']) . '</td>'
-                . '<td class="r">¥' . $e($product['price_yuan']) . '</td>'
-                . '<td class="r">₺' . $e($product['price_yuan_tl']) . '</td>'
-                . '<td class="r">$' . $e($product['price_ddp_usd']) . '</td>'
-                . '<td class="r">₺' . $e($product['price_ddp_tl']) . '</td>'
+                // İE#17 G3: girilmemiş fiyat boş basılır — "0.00" yanlış bilgidir.
+                . '<td class="r">' . self::para($product['price_yuan'] ?? null, '¥', $e) . '</td>'
+                . '<td class="r">' . self::para($product['price_yuan_tl'] ?? null, '₺', $e) . '</td>'
+                . '<td class="r">' . self::para($product['price_ddp_usd'] ?? null, '$', $e) . '</td>'
+                . '<td class="r">' . self::para($product['price_ddp_tl'] ?? null, '₺', $e) . '</td>'
                 . $kar
                 . '</tr>';
         }
@@ -357,4 +358,18 @@ final class PdfRenderer implements ExportRenderer
             return $iso;
         }
     }
+
+    /**
+     * Girilmemiş fiyat hücresi BOŞ kalır (İE#17 G3); para simgesi de basılmaz.
+     *
+     * Canlı kusur: DDP girilmemiş ürünlerde belgeye "$0.00" basılıyordu — firma
+     * bunu "bedeli sıfır" diye okuyabilir. Yokluğu sıfır göstermek yanlış bilgidir.
+     *
+     * @param callable(mixed): string $e
+     */
+    private static function para(mixed $tutar, string $simge, callable $e): string
+    {
+        return TemplateV2::girilmis($tutar) ? $e($simge) . $e($tutar) : '';
+    }
+
 }

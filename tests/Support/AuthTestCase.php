@@ -83,12 +83,16 @@ abstract class AuthTestCase extends TestCase
     protected ?\App\Services\Translation\TranslationClient $translationClient = null;
 
     /** @return \Slim\App<\Psr\Container\ContainerInterface|null> */
-    protected function app(): \Slim\App
+    /**
+     * @param \Psr\Log\LoggerInterface|null $logger İE#17 G6: teşhis logunu sınayan
+     *                                               testler kendi kayıtçısını verir
+     */
+    protected function app(?\Psr\Log\LoggerInterface $logger = null): \Slim\App
     {
         return AppBuilder::build(
             $this->config(),
             fn (): PDO => $this->pdo,
-            new NullLogger(),
+            $logger ?? new NullLogger(),
             $this->session,
             $this->clock,
             null,

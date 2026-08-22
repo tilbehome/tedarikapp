@@ -26,6 +26,21 @@ final class ProductDetails
     /** Detay metnine girecek EN ÇOK öznitelik. */
     private const DETAY_ALANI = 4;
 
+    /**
+     * SATIR HÜCRESİ UZUN DEĞER EŞİĞİ (İE#17 G8) — tek sabit, dört yüzey.
+     *
+     * Canlı kusur: 40 varyantlık "Renk" özniteliği ÜRÜN DETAYLARI hücresine
+     * olduğu gibi basılıyor, satır Çince değer duvarına dönüşüyordu. Bu eşiği
+     * aşan öznitelik satır hücresine HİÇ GİRMEZ — kırpılmaz, "…" konmaz,
+     * ipucu basılmaz: tam değer detay panelindeki ÜRÜN BİLGİLERİ ızgarasında
+     * zaten durur.
+     *
+     * Kural CSS'te değil BURADA olmalı: aynı disiplin Excel/PDF/CSV çıktısına
+     * da uygulanacak ve CSS belgeye uygulanamaz. Salt metin uzunluğuna bakar,
+     * ağa çıkmaz — K50/K61 determinizmi korunur.
+     */
+    public const SATIR_ESIGI = 80;
+
     /** Detayda anlamsız kalan alanlar (satır zaten kendi sütununda var). */
     private const DETAY_DISI = ['İlan no', 'Kaynak', 'Video', 'Koli içi'];
 
@@ -106,12 +121,17 @@ final class ProductDetails
     {
         $mevcut = $product['detail'] ?? null;
         if (is_string($mevcut) && trim($mevcut) !== '') {
-            return trim($mevcut);
+            // Kullanıcının kendi yazdığı detay KIRPILMAZ: onu o yazdı, bilerek yazdı.
+            return \App\Services\Translation\ValueSet::normalize($mevcut);
         }
 
         $parcalar = [];
         foreach (ProductFacts::build($product, $values) as [$tr, , $deger]) {
             if ($deger === null || in_array($tr, self::DETAY_DISI, true)) {
+                continue;
+            }
+            // İE#17 G8: eşiği aşan değer satıra GİRMEZ (panelde tam hâliyle durur).
+            if (mb_strlen($deger) > self::SATIR_ESIGI) {
                 continue;
             }
             $parcalar[] = $tr . ': ' . $deger;

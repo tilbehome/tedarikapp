@@ -125,10 +125,6 @@ td.n .val, td.c .val { display:inline; }
 .vr div { display:flex; justify-content:space-between; font-size:12.5px; padding:6.5px 0; border-bottom:1px solid var(--ln2); }
 .vr b { font-variant-numeric:tabular-nums; }
 .nt { margin-top:12px; font-size:12px; color:#8A6A00; background:#FFFBEB; border:1px solid #F3E3AC; border-radius:9px; padding:7px 10px; }
-.gl { grid-column:1/-1; border-top:1px solid var(--ln2); margin-top:16px; padding-top:13px; }
-.gl .gr { display:flex; gap:8px; flex-wrap:wrap; }
-.gl img { width:54px; height:54px; border-radius:9px; object-fit:cover; cursor:zoom-in; border:1px solid var(--ln); }
-.gl img:hover { border-color:var(--blue); }
 
 /* ---- toplam + alt ---- */
 .tot { background:var(--navy); color:#fff; display:flex; justify-content:space-between; align-items:center;
@@ -344,6 +340,20 @@ td.not-hucre .val { font-style: italic; }
 
   /* Baskıda ölçekleme UYGULANMAZ — tarayıcı "sığdır" ayarı bozulmasın. */
   body { zoom: 1 !important; transform: none !important; }
+
+  /* IE#14 A6: kagitta katlama diye bir sey yoktur — eksik alan izgarasi ve
+     "+N secenek" listesi baskida ACIK basilir, dugme gizlenir.
+     IE#17 G2 DUZELTMESI: bu kurallar IE#14'te yanlislikla KAPATILMAMIS bir ekran
+     kuralinin ICINE dusmustu (`.eks > .sg { … .pmenu {…} }`). CSS yuvalama
+     sayesinde dosya hatasiz parse ediliyordu ama kurallar `.eks > .sg .pmenu`
+     gibi hicbir zaman eslesmeyen torun secicilere donusuyordu: baskida menu,
+     QR, yazdirma uyarisi ve lightbox gizlenmiyor; katlama acik basilmiyordu. */
+  .eks > summary { display: none !important; }
+  .eks > .sg { display: grid !important; margin-top: 0 !important; }
+  .eks > .vr { display: block !important; margin-top: 0 !important; }
+
+  /* IE#15: paylas menusu, QR modali, yazdirma uyarisi ve lightbox KAGIDA BASILMAZ. */
+  .pmenu, .qrm, .ynot, .lbx, .tools { display: none !important; }
 }
 
 /*
@@ -361,13 +371,4 @@ td.not-hucre .val { font-style: italic; }
 .eks[open] > summary::after { content:'⌃'; transform:translateY(1px); }
 .eks > summary:hover { color:var(--t2); border-color:var(--ln); }
 .eks > summary:focus-visible { outline:2px solid var(--blue); outline-offset:2px; }
-.eks > .sg, .eks > .vr { margin-top:10px; 
-  /* İE#14 A6: kâğıtta katlama diye bir şey yoktur — eksik alan ızgarası ve
-     "+N seçenek" listesi baskıda AÇIK basılır, düğme gizlenir. */
-  .eks > summary { display: none !important; }
-  .eks > .sg { display: grid !important; margin-top: 0 !important; }
-  .eks > .vr { display: block !important; margin-top: 0 !important; }
-
-  /* İE#15: paylaş menüsü, QR modalı, yazdırma uyarısı ve lightbox KÂĞIDA BASILMAZ. */
-  .pmenu, .qrm, .ynot, .lbx, .tools { display: none !important; }
-}
+.eks > .sg, .eks > .vr { margin-top:10px; }

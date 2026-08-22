@@ -44,6 +44,7 @@ final class PublicRoutes
         \App\Services\Export\ExportSnapshot $snapshot,
         array $exportRenderers,
         string $basePath,
+        \Psr\Log\LoggerInterface $logger,
     ): void {
         // İE#10 5c YEDEK HAT: /media normalde Apache'nin statik işidir (.htaccess [END]
         // kuralları); rewrite zinciri hangi yerleşimde şaşarsa şaşsın görsel yine açılsın
@@ -147,8 +148,12 @@ final class PublicRoutes
             $sharePage,
             $services->clock,
             $services->timezone,
+            $logger,
         );
         $app->get('/p/{token}/export', [$publicExport, 'download']);
+        // İE#17 G4: sayfa yenilenmeden TAZE imzalı bağlantı — 15 dakikadan uzun
+        // açık kalan sayfada indirme düğmeleri ölmesin.
+        $app->get('/p/{token}/export-link', [$publicExport, 'link']);
 
         // İE#15 C3 — PAYLAŞIM QR'ı: sunucuda üretilir (dış servis YOK, K45).
         // İçeriği YALNIZ paylaşım adresidir; imzalı indirme adresi QR'a KONMAZ.

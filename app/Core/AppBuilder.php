@@ -298,6 +298,7 @@ final class AppBuilder
             new \App\Services\Export\ExportSnapshot($presenter, $valueSet),
             $exportRenderers,
             $basePath,
+            $logger,
         );
         Routes\DataRoutes::register(
             $app,
@@ -335,7 +336,12 @@ final class AppBuilder
         $app->add(new JsonRequest($app->getResponseFactory()));
         // img-src, indirme beyaz listesinden türetilir: hotlink modunda görsellerin
         // tarayıcıda açılabilmesi için politikanın onları tanıması gerekir (K33).
-        $app->add(new SecurityHeaders($allowedHosts));
+        // İE#17 G11: video CDN hostları YALNIZ media-src'yi besler (indirme kapısı dar kalır).
+        $videoHosts = array_values(array_filter(array_map(
+            'trim',
+            explode(',', $config->get('VIDEO_ALLOWED_HOSTS', 'cloud.video.taobao.com,video.alicdn.com')),
+        )));
+        $app->add(new SecurityHeaders($allowedHosts, $videoHosts));
         $app->add(new RequestId($requestContext));
         // EN DIŞTA: /panel/ veya /api/lists/ gibi sondaki eğik çizgili adresler rotayı bulamıyordu.
         $app->add(new \App\Middleware\TrailingSlash());
