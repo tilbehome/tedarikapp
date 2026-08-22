@@ -282,4 +282,66 @@ final class ErisimAnahtariTest extends AuthTestCase
         $yeni = $this->json($this->write('POST', '/api/lists/' . $this->listId . '/share-key'))['data'];
         self::assertNotSame($ilk['key'], $yeni['key'], 'Yenileme farklı anahtar üretmeli.');
     }
+
+    /**
+     * HTML FORM GÖNDERİMİ KABUL EDİLİR (İE#18 G6 · CI'da yakalandı).
+     *
+     * Kilit ekranı gerçek bir `<form method="post">`tır; tarayıcı bunu daima
+     * `application/x-www-form-urlencoded` ile yollar. Global JsonRequest ara
+     * katmanı yazma isteklerinde JSON şart koşuyordu ve kapı **415** ile
+     * düşüyordu — E2E bunu gösterdi, birim testler görmedi çünkü onlar gövdeyi
+     * doğrudan enjekte ediyor. Artık bu yol JSON şartından MUAFTIR (API uçları
+     * için şart aynen sürer).
+     */
+    public function testFORM_GONDERIMI_415_VERMEZ(): void
+    {
+        $istek = $this->rawRequest('POST', '/liste/' . $this->token . '/anahtar')
+            ->withHeader('Content-Type', 'application/x-www-form-urlencoded')
+            ->withParsedBody(['anahtar' => $this->anahtar()]);
+
+        $yanit = $this->app()->handle($istek);
+
+        self::assertSame(303, $yanit->getStatusCode(), 'Form gönderimi JSON şartına takılmamalı.');
+    }
+
+    /**
+     * İstisna DAR: API uçlarında JSON şartı aynen sürer.
+     *
+     * Ara katman doğrudan sınanır — uygulama üzerinden gitmek CSRF/oturum
+     * katmanlarına takılır ve asıl kural görünmez olur.
+     */
+    public function testAPI_UCLARINDA_JSON_SARTI_SURUYOR(): void
+    {
+        $fabrika = new \Slim\Psr7\Factory\ResponseFactory();
+        $middleware = new \App\Middleware\JsonRequest($fabrika);
+        $handler = new class () implements \Psr\Http\Server\RequestHandlerInterface {
+            public function handle(\Psr\Http\Message\ServerRequestInterface $request): \Psr\Http\Message\ResponseInterface
+            {
+                return (new \Slim\Psr7\Factory\ResponseFactory())->createResponse(200);
+            }
+        };
+
+        $govdeli = static function (string $yol): \Psr\Http\Message\ServerRequestInterface {
+            $akis = (new \Slim\Psr7\Factory\StreamFactory())->createStream('anahtar=ABC123');
+
+            return (new \Slim\Psr7\Factory\ServerRequestFactory())
+                ->createServerRequest('POST', $yol)
+                ->withHeader('Content-Type', 'application/x-www-form-urlencoded')
+                ->withBody($akis);
+        };
+
+        // API ucu: form gövdesi REDDEDİLİR.
+        self::assertSame(415, $middleware->process($govdeli('/api/lists'), $handler)->getStatusCode());
+
+        // Kilit ekranı formu: KABUL EDİLİR (aşamalı geliştirme).
+        self::assertSame(
+            200,
+            $middleware->process($govdeli('/liste/' . $this->token . '/anahtar'), $handler)->getStatusCode(),
+        );
+        self::assertSame(
+            200,
+            $middleware->process($govdeli('/p/' . $this->token . '/anahtar'), $handler)->getStatusCode(),
+        );
+    }
+
 }

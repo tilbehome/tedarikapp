@@ -30,6 +30,18 @@ final class JsonRequest implements MiddlewareInterface
 
     private const REQUIRED_TYPE = 'application/json';
 
+    /**
+     * HTML FORM YÜZEYLERİ (İE#18 G6) — bu yollar API değildir.
+     *
+     * Erişim anahtarı kapısı gerçek bir `<form method="post">` ile çalışır:
+     * JavaScript kapalı olsa da firma anahtarını girip listeyi görebilmelidir
+     * (aşamalı geliştirme). Tarayıcı bu gönderimi daima
+     * `application/x-www-form-urlencoded` ile yapar; JSON şartı burada geçerli
+     * olamaz. İstisna DAR tutulur: yalnız paylaşım ön ekleri ve yalnız
+     * `/anahtar` ucu. API uçlarında JSON zorunluluğu AYNEN sürer.
+     */
+    private const FORM_YOLLARI = ['#^/(liste|p)/[0-9a-f]{64}/anahtar$#'];
+
     public function __construct(private readonly ResponseFactoryInterface $responseFactory)
     {
     }
@@ -42,6 +54,9 @@ final class JsonRequest implements MiddlewareInterface
         if (!$this->hasBody($request)) {
             return $handler->handle($request);
         }
+        if ($this->formYuzeyi($request)) {
+            return $handler->handle($request);
+        }
         if ($this->mediaType($request) === self::REQUIRED_TYPE) {
             return $handler->handle($request);
         }
@@ -52,6 +67,19 @@ final class JsonRequest implements MiddlewareInterface
             'Bu API yalnızca JSON kabul eder. İsteği "Content-Type: application/json" ile gönderin.',
             415,
         );
+    }
+
+    /** İstek bir HTML form yüzeyine mi gidiyor? (JSON şartından muaf) */
+    private function formYuzeyi(ServerRequestInterface $request): bool
+    {
+        $yol = $request->getUri()->getPath();
+        foreach (self::FORM_YOLLARI as $desen) {
+            if (preg_match($desen, $yol) === 1) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /** `application/json; charset=utf-8` → `application/json` */
