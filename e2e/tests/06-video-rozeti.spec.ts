@@ -94,7 +94,8 @@ test.describe('Video rozeti', () => {
     await rozet.click();
     const overlay = sayfa.locator('#lbx');
     await expect(overlay).toHaveClass(/on/);
-    await expect(gorunen(sayfa.getByText('Video şu an oynatılamıyor'))).toBeVisible();
+    // İE#18 G4c: metin "veri eksiği" diliyle değişti (hata değil, eksik kayıt).
+    await expect(gorunen(sayfa.getByText('video adresi kayıtlı değil'))).toBeVisible();
     await expect(sayfa.getByRole('link', { name: 'Kaynak sayfada aç' })).toBeVisible();
 
     // ESC kapatır.

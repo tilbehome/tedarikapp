@@ -49,11 +49,13 @@ test.describe('Erişim anahtarı', () => {
     // YANLIŞ anahtar: sallanma + hata, liste hâlâ yok.
     await haneler.first().click();
     await sayfa.keyboard.type('ZZZZZZ');
-    // Form gönderimi bir GEZİNMEDİR; yanıtı beklemeden doğrulama yapılmaz.
-    await Promise.all([
-      sayfa.waitForLoadState('domcontentloaded'),
+    // Form gönderimi bir GEZİNMEDİR: yanıtın KENDİSİ beklenir, böylece hata
+    // durumunda raporda durum kodu görünür (körlemesine "görünmedi" demez).
+    const [yanlisYanit] = await Promise.all([
+      sayfa.waitForResponse((y) => y.url().includes('/anahtar') && y.request().method() === 'POST'),
       sayfa.getByRole('button', { name: 'Görüntüle' }).click(),
     ]);
+    expect(yanlisYanit.status(), 'Yanlış anahtar 401 dönmeli').toBe(401);
     await expect(sayfa.locator('[data-anahtar-hata]')).toBeVisible();
     await expect(sayfa.getByText('Anahtarla Görünen Ürün')).toHaveCount(0);
 
@@ -61,10 +63,11 @@ test.describe('Erişim anahtarı', () => {
     const yeniHaneler = sayfa.locator('.kis-hane');
     await yeniHaneler.first().click();
     await sayfa.keyboard.type(anahtar);
-    await Promise.all([
-      sayfa.waitForLoadState('domcontentloaded'),
+    const [dogruYanit] = await Promise.all([
+      sayfa.waitForResponse((y) => y.url().includes('/anahtar') && y.request().method() === 'POST'),
       sayfa.getByRole('button', { name: 'Görüntüle' }).click(),
     ]);
+    expect(dogruYanit.status(), 'Doğru anahtar 303 ile yönlendirmeli').toBe(303);
 
     await expect(gorunen(sayfa.getByText('Anahtarla Görünen Ürün'))).toBeVisible({ timeout: 15_000 });
     await expect(sayfa.locator('.kis-hane')).toHaveCount(0);
