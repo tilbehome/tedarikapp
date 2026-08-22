@@ -34,8 +34,44 @@ final class ProductRepository
         'raw_attributes', 'country_of_origin', 'country_of_dispatch',
     ];
 
-    /** Değişince listenin `revision` sayacını artıran alanlar (K25). */
-    public const REVISION_FIELDS = ['qty', 'price_yuan', 'price_ddp_usd', 'name', 'sort_no'];
+    /**
+     * ÇIKTIYI ETKİLEYEN ALANLAR — değişince liste `revision`ı artar (K25 · K57).
+     *
+     * İE#20 C9 DÜZELTMESİ: bu liste beş alandan ibaretti (`qty`, `price_yuan`,
+     * `price_ddp_usd`, `name`, `sort_no`). Oysa belge bunlardan FAZLASINI basıyor:
+     * kategori, detay, ürün linki, görsel, durum, platform/ilan no, varyant, koli
+     * içi adet, not, video ve iç kopyadaki hedef satış. Bu alanlardan birini
+     * değiştirmek belgeyi DEĞİŞTİRİYOR ama revizyon harfi yerinde kalıyordu:
+     *
+     *   • firmaya "Rev C" diye ikinci kez farklı bir belge gidiyor,
+     *   • "çıktı güncel değil" rozeti yanılıyor (K25),
+     *   • K57'nin "harf içerikten türer" sözü kâğıt üstünde kalıyordu.
+     *
+     * Kural artık şudur: SNAPSHOT'A GİREN HER KAYNAK ALAN BU LİSTEDEDİR. Bunu
+     * `RevizyonSozlesmesiTest` denetler — ExportSnapshot'a yeni bir alan eklenir
+     * ve buraya eklenmezse test KIRILIR.
+     *
+     * Listede OLMAYANLAR bilinçlidir: `tracking_no` (kargo takip — belgede yok;
+     * değişince firmaya "yeni revizyon" demek yanlış alarmdır) ve
+     * `vendor_name`/`vendor_url` (şablon v2 satıcıyı BASMAZ).
+     */
+    public const REVISION_FIELDS = [
+        // Sayısal/parasal
+        'qty', 'price_yuan', 'price_ddp_usd', 'price_target_try', 'units_per_carton',
+        // Metin ve kimlik
+        'name', 'name_original', 'detail', 'note', 'category_id',
+        'platform', 'external_id',
+        // Medya ve bağlantı
+        'url', 'main_image', 'video_url',
+        // Varyant seçimi (belgede "Varyant" sütunu)
+        'sku_selection', 'sku_matrix',
+        // Sıra ve durum
+        'sort_no', 'status',
+        // Ham yakalama bloğu: belgeye DOĞRUDAN girmez ama DETAY, MOQ ve VARYANT
+        // sütunları ondan TÜRETİLİR (ProductDetails). Sözleşme testi bunu yakaladı —
+        // "ham veri belgede yok" varsayımı yanlıştı.
+        'raw_attributes',
+    ];
 
     public function __construct(private readonly Connection $connection)
     {
@@ -119,7 +155,9 @@ final class ProductRepository
                 main_image, main_image_source, video_url, qty, price_yuan, price_ddp_usd, price_target_try,
                 units_per_carton, raw_attributes, country_of_origin, country_of_dispatch,
                 tracking_no, status, note, created_at, updated_at)
-             VALUES (:list_id, :sort_no, :category_id, :platform, :external_id, :name,
+             VALUES (:list_id,
+                COALESCE(:sort_no, (SELECT sonraki FROM (SELECT COALESCE(MAX(sort_no), 0) + 1 AS sonraki
+                    FROM products WHERE list_id = :list_id_sira) AS s)), :category_id, :platform, :external_id, :name,
                 :name_original, :detail, :url, :vendor_name, :vendor_url, :sku_selection, :sku_matrix,
                 :main_image, :main_image_source, :video_url, :qty, :price_yuan, :price_ddp_usd, :price_target_try,
                 :units_per_carton, :raw_attributes, :country_of_origin, :country_of_dispatch,
@@ -127,7 +165,14 @@ final class ProductRepository
         );
         $statement->execute([
             'list_id' => $listId,
-            'sort_no' => $data['sort_no'] ?? ($this->maxSortNo($listId) + 1),
+            // İE#20 C9 — SORT_NO YARIŞI: sıra ÖNCE okunup sonra yazılıyordu.
+            // İki ürün aynı anda eklendiğinde ikisi de aynı MAX+1 değerini okuyup
+            // AYNI sırayı alıyordu; belge sıralaması rastgeleleşiyor, "yeniden
+            // sırala" ekranı iki ürünü üst üste gösteriyordu. Sıra artık AYNI
+            // DEYİMDE üretilir (okuma ile yazma arasında boşluk kalmaz); açıkça
+            // verilen sort_no (liste kopyalama) yine önceliklidir.
+            'sort_no' => $data['sort_no'] ?? null,
+            'list_id_sira' => $listId,
             'category_id' => $data['category_id'] ?? null,
             'platform' => $data['platform'] ?? null,
             'external_id' => $data['external_id'] ?? null,
@@ -540,6 +585,46 @@ final class ProductRepository
             }
             $statement->execute(['product_id' => $productId, 'path' => $url, 'sort' => ++$sort, 'source_url' => $url]);
         }
+    }
+
+    /**
+     * GALERİYİ KOPYALAR (İE#20 C9) — liste kopyalamada eksik kalan parça.
+     *
+     * Liste kopyalanırken yalnız `products` satırları çoğaltılıyordu; galeri
+     * görselleri KOPYAYA GELMİYORDU. Kullanıcı için sonuç: "aynı listeyi
+     * kopyaladım ama ürünlerin fotoğrafları gitti". Ana görsel ürün satırında
+     * olduğu için duruyor, ek görseller kayboluyordu — hata yarım görünüyor ve
+     * geç fark ediliyordu.
+     *
+     * Dosya KOPYALANMAZ, KAYIT kopyalanır: iki ürün aynı dosyayı gösterir. Aynı
+     * görselin iki kopyası diski boşuna doldururdu; medya temizliği referans sayar.
+     */
+    public function copyImages(int $kaynakUrunId, int $hedefUrunId): int
+    {
+        $kaynak = $this->connection->pdo()->prepare(
+            'SELECT path, sort, storage_mode, source_url FROM product_images
+             WHERE product_id = :product_id ORDER BY sort, id',
+        );
+        $kaynak->execute(['product_id' => $kaynakUrunId]);
+
+        $ekle = $this->connection->pdo()->prepare(
+            'INSERT INTO product_images (product_id, path, sort, storage_mode, source_url)
+             VALUES (:product_id, :path, :sort, :storage_mode, :source_url)',
+        );
+
+        $adet = 0;
+        foreach ($kaynak->fetchAll() ?: [] as $satir) {
+            $ekle->execute([
+                'product_id' => $hedefUrunId,
+                'path' => $satir['path'],
+                'sort' => $satir['sort'],
+                'storage_mode' => $satir['storage_mode'] ?? 'local',
+                'source_url' => $satir['source_url'] ?? null,
+            ]);
+            $adet++;
+        }
+
+        return $adet;
     }
 
     /** @return list<array<string, mixed>> */

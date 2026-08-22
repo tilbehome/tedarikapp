@@ -323,7 +323,24 @@ final class ListController extends ApiController
                 $copy['status'] = StateMachine::PRODUCT_TO_ORDER;
                 $copy['tracking_no'] = null;
 
-                $this->products->create($newId, $copy, $now);
+                $yeniUrunId = $this->products->create($newId, $copy, $now);
+
+                // İE#20 C9: KOPYA EKSİKSİZ OLMALI.
+                //  • Galeri: ek görseller kopyaya gelmiyordu; kullanıcı "fotoğraflar
+                //    gitti" diyordu ve ana görsel durduğu için hata yarım görünüyordu.
+                //  • İlk tarihçe: kopyadaki ürünler TARİHÇESİZ doğuyordu; durum
+                //    grafiği ilk adımı görmüyor, "bu ürün ne zaman açıldı?" sorusu
+                //    yanıtsız kalıyordu.
+                $this->products->copyImages((int) $product['id'], $yeniUrunId);
+                $this->products->recordStatusChange(
+                    $yeniUrunId,
+                    null,
+                    StateMachine::PRODUCT_TO_ORDER,
+                    $now,
+                    ActivityLog::ACTOR_ADMIN,
+                    $this->user($request)->id,
+                    $this->requestId($request),
+                );
             }
 
             $this->log($request, 'list_duplicated', $newId, sprintf('kaynak:%d', (int) $row['id']));

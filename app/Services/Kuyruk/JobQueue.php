@@ -126,10 +126,16 @@ final class JobQueue
         }
 
         // Koşullu sahiplenme: iki işleyici arasındaki yarışı burası çözer.
+        //
+        // YER TUTUCU DİSİPLİNİ (v0.11.3 dersi): aynı adlı yer tutucu bir SQL
+        // deyiminde İKİ KEZ geçemez. Üretimde `ATTR_EMULATE_PREPARES=false`
+        // olduğu için MySQL yerel prepare kullanır ve tekrar eden adı HY093 ile
+        // reddeder — canlıda 500, testte (emülasyonlu) sessizce çalışır. Bu yüzden
+        // her tekrar AYRI ADLA yazılır.
         $al = $pdo->prepare(
             "UPDATE jobs
-             SET durum = :calisiyor, kilit_sahibi = :sahip, kilitlendi_at = :simdi,
-                 deneme = deneme + 1, updated_at = :simdi
+             SET durum = :calisiyor, kilit_sahibi = :sahip, kilitlendi_at = :kilit_at,
+                 deneme = deneme + 1, updated_at = :guncelleme_at
              WHERE id = :id AND (
                    (durum = :bekliyor AND calisacak_at <= :simdi)
                 OR (durum = :calisiyor2 AND kilitlendi_at IS NOT NULL AND kilitlendi_at <= :kilit_eskisi)
@@ -140,6 +146,8 @@ final class JobQueue
             'calisiyor2' => self::CALISIYOR,
             'bekliyor' => self::BEKLIYOR,
             'sahip' => mb_substr($isleyiciKimligi, 0, 64),
+            'kilit_at' => $zaman,
+            'guncelleme_at' => $zaman,
             'simdi' => $zaman,
             'kilit_eskisi' => $kilitEskisi,
             'id' => (int) $id,
@@ -160,10 +168,16 @@ final class JobQueue
     {
         $statement = $this->connection->pdo()->prepare(
             'UPDATE jobs SET durum = :durum, hata = NULL, kilit_sahibi = NULL, kilitlendi_at = NULL,
-                    bitti_at = :simdi, updated_at = :simdi
+                    bitti_at = :bitti_at, updated_at = :guncelleme_at
              WHERE id = :id',
         );
-        $statement->execute(['durum' => self::BITTI, 'simdi' => Dates::toStorage($now), 'id' => $id]);
+        $zaman = Dates::toStorage($now);
+        $statement->execute([
+            'durum' => self::BITTI,
+            'bitti_at' => $zaman,
+            'guncelleme_at' => $zaman,
+            'id' => $id,
+        ]);
     }
 
     /**
@@ -189,10 +203,17 @@ final class JobQueue
         if ($deneme >= $max) {
             $statement = $pdo->prepare(
                 'UPDATE jobs SET durum = :durum, hata = :hata, kilit_sahibi = NULL, kilitlendi_at = NULL,
-                        bitti_at = :simdi, updated_at = :simdi
+                        bitti_at = :bitti_at, updated_at = :guncelleme_at
                  WHERE id = :id',
             );
-            $statement->execute(['durum' => self::OLU, 'hata' => $hata, 'simdi' => Dates::toStorage($now), 'id' => $id]);
+            $zaman = Dates::toStorage($now);
+            $statement->execute([
+                'durum' => self::OLU,
+                'hata' => $hata,
+                'bitti_at' => $zaman,
+                'guncelleme_at' => $zaman,
+                'id' => $id,
+            ]);
 
             return;
         }
@@ -224,13 +245,15 @@ final class JobQueue
     {
         $statement = $this->connection->pdo()->prepare(
             'UPDATE jobs SET durum = :durum, hata = :hata, kilit_sahibi = NULL, kilitlendi_at = NULL,
-                    bitti_at = :simdi, updated_at = :simdi
+                    bitti_at = :bitti_at, updated_at = :guncelleme_at
              WHERE id = :id',
         );
+        $zaman = Dates::toStorage($now);
         $statement->execute([
             'durum' => self::OLU,
             'hata' => mb_substr($hata, 0, 2000),
-            'simdi' => Dates::toStorage($now),
+            'bitti_at' => $zaman,
+            'guncelleme_at' => $zaman,
             'id' => $id,
         ]);
     }
@@ -240,10 +263,16 @@ final class JobQueue
     {
         $statement = $this->connection->pdo()->prepare(
             'UPDATE jobs SET durum = :durum, deneme = 0, hata = NULL, kilit_sahibi = NULL,
-                    kilitlendi_at = NULL, bitti_at = NULL, calisacak_at = :simdi, updated_at = :simdi
+                    kilitlendi_at = NULL, bitti_at = NULL, calisacak_at = :calisacak_at, updated_at = :guncelleme_at
              WHERE id = :id',
         );
-        $statement->execute(['durum' => self::BEKLIYOR, 'simdi' => Dates::toStorage($now), 'id' => $id]);
+        $zaman = Dates::toStorage($now);
+        $statement->execute([
+            'durum' => self::BEKLIYOR,
+            'calisacak_at' => $zaman,
+            'guncelleme_at' => $zaman,
+            'id' => $id,
+        ]);
     }
 
     /**
