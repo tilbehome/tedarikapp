@@ -125,6 +125,9 @@ final class DataRoutes
 
             // İE#19 E11: tekil ürün — düzenleme ekranı tüm listeyi çekmez.
             $group->get('/products/{id}', [$productController, 'show']);
+            // İE#20 C8: "HAZIR" kalite kapısı — kural sunucuda zorlanır.
+            $group->patch('/products/{id}/hazir', [$productController, 'setHazir']);
+            $group->get('/lists/{id}/hazirlik', [$productController, 'listeHazirligi']);
 
             // bulk, {id} deseninden ÖNCE tanımlanır; aksi hâlde "bulk" bir kimlik sanılır.
             $group->patch('/products/bulk', [$productController, 'bulk']);

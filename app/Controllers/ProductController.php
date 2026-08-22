@@ -123,6 +123,105 @@ final class ProductController extends ApiController
     }
 
     /**
+     * PATCH /api/products/{id}/hazir — "HAZIR" kalite kapısı (İE#20 C8).
+     *
+     * Kapı SUNUCUDA zorlanır: eksik alanı olan ürün hazır işaretlenemez. Panelin
+     * düğmeyi gizlemesi yeterli değildir — kural yalnız arayüzdeyse, arayüzü
+     * atlayan her istemci (betik, eski panel, elle atılan istek) onu delip geçer.
+     *
+     * Reddedilen istek EKSİKLERİ İSİM İSİM döner: kullanıcı neyi tamamlayacağını
+     * bilmeden "hazır değil" uyarısı almamalı.
+     *
+     * @param array<string, string> $args
+     */
+    public function setHazir(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    {
+        $productId = $this->intArg($args, 'id');
+        $product = $productId === null ? null : $this->products->find($productId);
+        if ($product === null) {
+            return Response::error($response, 'NOT_FOUND', 'Ürün bulunamadı.', 404);
+        }
+
+        $list = $this->lists->find((int) $product['list_id']);
+        if ($list === null) {
+            return Response::error($response, 'NOT_FOUND', 'Ürün bulunamadı.', 404);
+        }
+        if ($this->mutationPolicy->isTerminal($list)) {
+            return $this->listImmutable($response, $list);
+        }
+
+        $hazir = ($this->body($request)['hazir'] ?? true) !== false;
+        $eksikler = \App\Services\Ilan\HazirlikKapisi::eksikler($product);
+
+        if ($hazir && $eksikler !== []) {
+            return Response::error(
+                $response,
+                'VALIDATION',
+                'Bu ürün henüz hazır işaretlenemez: ' . implode(', ', $eksikler) . ' eksik.',
+                422,
+                ['hazir' => implode(', ', $eksikler) . ' tamamlanmalı.'],
+                ['eksikler' => $eksikler],
+            );
+        }
+
+        $now = $this->clock->now();
+        $this->connection->transaction(function () use ($request, $product, $hazir, $now): void {
+            $statement = $this->connection->pdo()->prepare(
+                'UPDATE products SET hazir = :hazir, hazir_at = :hazir_at, updated_at = :updated_at WHERE id = :id',
+            );
+            $zaman = \App\Core\Dates::toStorage($now);
+            $statement->execute([
+                'hazir' => $hazir ? 1 : 0,
+                'hazir_at' => $hazir ? $zaman : null,
+                'updated_at' => $zaman,
+                'id' => (int) $product['id'],
+            ]);
+
+            $this->log(
+                $request,
+                $hazir ? 'product_ready' : 'product_unready',
+                (int) $product['id'],
+                (string) $product['name'],
+            );
+        });
+
+        return Response::success($response, ['hazir' => $hazir, 'eksikler' => $eksikler]);
+    }
+
+    /**
+     * GET /api/lists/{id}/hazirlik — listenin hazırlık özeti (C8).
+     *
+     * @param array<string, string> $args
+     */
+    public function listeHazirligi(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    {
+        $listId = $this->intArg($args, 'id');
+        $list = $listId === null ? null : $this->lists->find($listId);
+        if ($list === null) {
+            return Response::error($response, 'NOT_FOUND', 'Liste bulunamadı.', 404);
+        }
+
+        $urunler = $this->products->forList((int) $list['id']);
+        $ozet = \App\Services\Ilan\HazirlikKapisi::listeTamamlanabilirMi($urunler);
+
+        $eksikDokumu = [];
+        foreach ($urunler as $urun) {
+            foreach (\App\Services\Ilan\HazirlikKapisi::eksikler($urun) as $eksik) {
+                $eksikDokumu[$eksik] = ($eksikDokumu[$eksik] ?? 0) + 1;
+            }
+        }
+        arsort($eksikDokumu);
+
+        return Response::success($response, [
+            'urun' => count($urunler),
+            'hazir_olmayan' => $ozet['hazir_olmayan'],
+            'tamamlanabilir' => $ozet['tamamlanabilir'],
+            'neden' => $ozet['neden'],
+            'eksik_dokumu' => $eksikDokumu,
+        ]);
+    }
+
+    /**
      * GET /api/products/{id} — TEK ÜRÜN (İE#19 E11).
      *
      * Düzenleme ekranı ürünü, listenin TÜM ürünlerini çekip içinden aramakla

@@ -93,34 +93,21 @@ final class ProductRepository
     }
 
     /**
-     * @param array{status?: string, category_id?: int, q?: string} $filters
+     * @param array{status?: string, category_id?: int, q?: string, hazir?: bool} $filters
      *
      * @return list<array<string, mixed>>
      */
-    public function forList(int $listId, array $filters = []): array
+    public function forList(int $listId, array $filters = [], ?int $limit = null, int $offset = 0): array
     {
-        $sql = 'SELECT ' . self::COLUMNS . ' FROM products WHERE list_id = :list_id AND deleted_at IS NULL';
-        $params = ['list_id' => $listId];
+        [$where, $params] = $this->suzgec($listId, $filters);
 
-        if (isset($filters['status']) && $filters['status'] !== '') {
-            $sql .= ' AND status = :status';
-            $params['status'] = $filters['status'];
+        $sql = 'SELECT ' . self::COLUMNS . " FROM products p WHERE {$where} ORDER BY p.sort_no, p.id";
+        if ($limit !== null) {
+            // İE#20 C7: SAYFALAMA. Sınırsız sorgu, liste büyüdükçe hem sunucuyu
+            // hem tarayıcıyı yorar; 500 ürünlük bir listede tek istek megabaytlarca
+            // JSON taşır. Sınır AÇIKÇA verilir — sessiz kırpma yapılmaz.
+            $sql .= ' LIMIT ' . max(1, min(500, $limit)) . ' OFFSET ' . max(0, $offset);
         }
-        if (isset($filters['category_id'])) {
-            $sql .= ' AND category_id = :category_id';
-            $params['category_id'] = $filters['category_id'];
-        }
-        if (isset($filters['q']) && $filters['q'] !== '') {
-            // Aynı canlı hata (bkz. ListRepository::all): native prepare'de tekrar
-            // eden yer tutucu HY093 verir. Üç sütun, üç ayrı ad.
-            $sql .= ' AND (name LIKE :q_ad OR name_original LIKE :q_orijinal OR detail LIKE :q_detay)';
-            $desen = '%' . $filters['q'] . '%';
-            $params['q_ad'] = $desen;
-            $params['q_orijinal'] = $desen;
-            $params['q_detay'] = $desen;
-        }
-
-        $sql .= ' ORDER BY sort_no, id';
 
         $statement = $this->connection->pdo()->prepare($sql);
         $statement->execute($params);
@@ -129,6 +116,69 @@ final class ProductRepository
         $rows = $statement->fetchAll();
 
         return $rows;
+    }
+
+    /**
+     * Süzgece uyan toplam ürün sayısı — sayfalama üst bilgisi (C7).
+     *
+     * @param array{status?: string, category_id?: int, q?: string, hazir?: bool} $filters
+     */
+    public function countForList(int $listId, array $filters = []): int
+    {
+        [$where, $params] = $this->suzgec($listId, $filters);
+
+        $statement = $this->connection->pdo()->prepare("SELECT COUNT(*) FROM products p WHERE {$where}");
+        $statement->execute($params);
+
+        return (int) $statement->fetchColumn();
+    }
+
+    /**
+     * Ortak süzgeç — liste ve sayım aynı koşulları kullanır.
+     *
+     * İkisi ayrı yazılsaydı zamanla ayrışır ve "37 kayıt" yazan bir sayfa 40 satır
+     * gösterirdi; sayfalamanın en sinsi hatası budur.
+     *
+     * @param array{status?: string, category_id?: int, q?: string, hazir?: bool} $filters
+     *
+     * @return array{0: string, 1: array<string, mixed>}
+     */
+    private function suzgec(int $listId, array $filters): array
+    {
+        $where = 'p.list_id = :list_id AND p.deleted_at IS NULL';
+        $params = ['list_id' => $listId];
+
+        if (isset($filters['status']) && $filters['status'] !== '') {
+            $where .= ' AND p.status = :status';
+            $params['status'] = $filters['status'];
+        }
+        if (isset($filters['category_id'])) {
+            $where .= ' AND p.category_id = :category_id';
+            $params['category_id'] = $filters['category_id'];
+        }
+        if (isset($filters['hazir'])) {
+            $where .= ' AND p.hazir = :hazir';
+            $params['hazir'] = $filters['hazir'] ? 1 : 0;
+        }
+        if (isset($filters['q']) && $filters['q'] !== '') {
+            // İE#20 C7: arama artık TÜRETİLMİŞ `arama_metni` alanına bakar (TR ad +
+            // Çince başlık + çeviriler + ilan no). Alan boşsa (henüz tazelenmemiş
+            // eski kayıt) eski üç sütunlu arama YEDEK olarak çalışır — göç sırasında
+            // arama kesintiye uğramasın.
+            //
+            // Yer tutucular AYRI adlandırılır: native prepare'de tekrar eden ad
+            // HY093 verir (v0.11.3 canlı vakası).
+            $where .= ' AND (p.arama_metni LIKE :q_arama'
+                . ' OR (p.arama_metni IS NULL AND (p.name LIKE :q_ad OR p.name_original LIKE :q_orijinal'
+                . ' OR p.detail LIKE :q_detay)))';
+            $desen = '%' . $filters['q'] . '%';
+            $params['q_arama'] = $desen;
+            $params['q_ad'] = $desen;
+            $params['q_orijinal'] = $desen;
+            $params['q_detay'] = $desen;
+        }
+
+        return [$where, $params];
     }
 
     /** @return list<string> Listedeki silinmemiş ürünlerin durumları. */
