@@ -72,6 +72,17 @@ final class Migrator
             ['table' => 'listings'],
             ['table' => 'listing_price_tiers'],
         ],
+        // İE#20 C3/C6/C7/C8: kuyruk, skor, arama ve kalite kapısı.
+        '0024_create_jobs' => [['table' => 'jobs']],
+        '0025_add_listings_skor' => [
+            ['column' => ['listings', 'skor']],
+            ['column' => ['translation_cache', 'guven']],
+        ],
+        '0026_arama_ve_kalite' => [
+            ['column' => ['products', 'arama_metni']],
+            ['column' => ['products', 'hazir']],
+            ['column' => ['products', 'surum']],
+        ],
         // İE#18 G6 (K62): erişim anahtarı kolonları.
         '0021_add_lists_share_key' => [
             ['column' => ['lists', 'share_key_hash']],
