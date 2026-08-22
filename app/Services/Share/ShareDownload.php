@@ -59,8 +59,9 @@ final class ShareDownload
     {
         $sonKullanma = $now->getTimestamp() + self::OMUR_SANIYE;
 
+        // İE#18 G5: üretilen bağlantı KANONİK ön eki taşır (/liste); /p yalnız alias.
         return sprintf(
-            '/p/%s/export?format=%s&lang=%s&exp=%d&sig=%s',
+            '/liste/%s/export?format=%s&lang=%s&exp=%d&sig=%s',
             $token,
             $format,
             $dil,

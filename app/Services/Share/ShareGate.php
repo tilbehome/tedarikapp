@@ -30,6 +30,9 @@ final class ShareGate
     /** İE#17 G4: taze imza ucu — token başına DAKİKADA en çok bağlantı. */
     public const ACTION_LINK = 'share_link';
     private const MAX_LINK_PER_MINUTE = 12;
+    /** İE#18 G6: erişim anahtarı denemesi — token+IP başına DAKİKADA en çok. */
+    public const ACTION_ANAHTAR = 'share_key_try';
+    private const MAX_ANAHTAR_PER_MINUTE = 5;
 
     public function __construct(private readonly Connection $connection)
     {
@@ -122,6 +125,47 @@ final class ShareGate
             'entity_type' => 'share',
             'action' => self::ACTION_LINK,
             'detail' => 'önek:' . substr($tokenPrefix, 0, 8) . ' · ' . $format . ' · ' . $dil,
+            'actor_type' => 'visitor',
+            'created_at' => Dates::toStorage($now),
+        ]);
+    }
+
+    /**
+     * İE#18 G6 — ERİŞİM ANAHTARI deneme sınırı: token+IP başına dakikada 5.
+     *
+     * Sınır TOKEN VE IP birlikte sayılır: aynı listeyi farklı ofislerden açan iki
+     * kişi birbirinin hakkını yemez, ama tek bir kaynaktan kaba kuvvet denemesi
+     * beş adımda durur. 6 hanelik alfabede (32 karakter) ~1.07 milyar olasılık
+     * vardır; dakikada 5 deneme bunu pratikte imkânsız kılar.
+     */
+    public function anahtarBlocked(string $tokenPrefix, string $ip, DateTimeImmutable $now): bool
+    {
+        $statement = $this->connection->pdo()->prepare(
+            'SELECT COUNT(*) FROM activity_log
+             WHERE action = :action AND ip = :ip AND detail LIKE :prefix AND created_at >= :window_start',
+        );
+        $statement->execute([
+            'action' => self::ACTION_ANAHTAR,
+            'ip' => $ip,
+            'prefix' => 'önek:' . substr($tokenPrefix, 0, 8) . '%',
+            'window_start' => Dates::toStorage($now->modify('-1 minute')),
+        ]);
+
+        return (int) $statement->fetchColumn() >= self::MAX_ANAHTAR_PER_MINUTE;
+    }
+
+    /** Anahtar denemesini sayaca işler (doğru da olsa yanlış da — sayaç deneme sayar). */
+    public function recordAnahtarDeneme(string $tokenPrefix, string $ip, DateTimeImmutable $now): void
+    {
+        $statement = $this->connection->pdo()->prepare(
+            'INSERT INTO activity_log (entity_type, entity_id, action, detail, ip, actor_type, actor_id, created_at)
+             VALUES (:entity_type, NULL, :action, :detail, :ip, :actor_type, NULL, :created_at)',
+        );
+        $statement->execute([
+            'entity_type' => 'share',
+            'action' => self::ACTION_ANAHTAR,
+            'detail' => 'önek:' . substr($tokenPrefix, 0, 8),
+            'ip' => $ip,
             'actor_type' => 'visitor',
             'created_at' => Dates::toStorage($now),
         ]);

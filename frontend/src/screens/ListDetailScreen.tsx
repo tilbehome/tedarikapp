@@ -468,6 +468,7 @@ function SharePanel({ listId, tokenPrefix, onChanged }: { listId: number; tokenP
   return (
     <section className="card mb-4 p-4">
       <h2 className="mb-2 text-sm font-semibold text-slate-700">Paylaşım linki</h2>
+      <ErisimAnahtari listId={listId} />
       {url ? (
         <>
           <p className="break-all rounded-lg bg-slate-50 p-2 font-mono text-xs">{url}</p>
@@ -624,5 +625,99 @@ function SortHeader({
         {active && <span aria-hidden>{sort.asc ? '↑' : '↓'}</span>}
       </button>
     </th>
+  );
+}
+
+/**
+ * ERİŞİM ANAHTARI (İE#18 G6-a/f · K62).
+ *
+ * Paylaşım sayfası artık "linki bilen görür" değildir: firma 6 haneli anahtarı
+ * girmeden liste verisi render EDİLMEZ. Bu blok anahtarı gösterir, kopyalar,
+ * yeniler ve kapıyı açıp kapatır.
+ *
+ * ANAHTAR OTOMATİK OLARAK KANAL METİNLERİNE YAZILMAZ (G6-f): link ile anahtarın
+ * aynı kanaldan gitmesi korumayı anlamsız kılar — kullanıcı ayrı göndersin diye
+ * yanında ipucu durur.
+ */
+function ErisimAnahtari({ listId }: { listId: number }) {
+  const push = useToast((state) => state.push);
+  const durum = useAsync(() => shareApi.key(listId), [listId]);
+  const [anahtar, setAnahtar] = useState<string | null>(null);
+  const [acik, setAcik] = useState<boolean | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const gecerliAnahtar = anahtar ?? durum.data?.key ?? '';
+  const gecerliAcik = acik ?? durum.data?.enabled ?? true;
+
+  const yenile = async () => {
+    setBusy(true);
+    try {
+      const sonuc = await shareApi.rotateKey(listId);
+      setAnahtar(sonuc.key);
+      setAcik(true);
+      push('Yeni anahtar üretildi — eski anahtar artık geçersiz. Firmaya yeni anahtarı iletin.');
+    } catch (caught) {
+      push(messageOf(caught), 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const cevir = async (yeniDurum: boolean) => {
+    setBusy(true);
+    try {
+      await shareApi.toggleKey(listId, yeniDurum);
+      setAcik(yeniDurum);
+      push(
+        yeniDurum
+          ? 'Erişim anahtarı açıldı — sayfa artık anahtar soracak.'
+          : 'Erişim anahtarı kapatıldı — linki bilen herkes görebilir.',
+      );
+    } catch (caught) {
+      push(messageOf(caught), 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (durum.loading) return <p className="mb-3 text-xs text-slate-500">Erişim anahtarı okunuyor…</p>;
+  if (durum.error) return <ErrorNote message={durum.error} onRetry={durum.reload} />;
+
+  return (
+    <div className="mb-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-xs font-semibold text-slate-600">Erişim anahtarı</span>
+        <code className="rounded-lg border border-slate-200 bg-white px-3 py-1 font-mono text-base font-bold tracking-[0.3em]">
+          {gecerliAcik ? gecerliAnahtar : '—'}
+        </code>
+        <button
+          type="button"
+          className="btn-ghost !min-h-8 !px-3 !text-xs"
+          disabled={!gecerliAcik || gecerliAnahtar === ''}
+          onClick={() => {
+            void navigator.clipboard?.writeText(gecerliAnahtar);
+            push('Anahtar kopyalandı.');
+          }}
+        >
+          Kopyala
+        </button>
+        <button type="button" className="btn-ghost !min-h-8 !px-3 !text-xs" disabled={busy} onClick={() => void yenile()}>
+          Yenile
+        </button>
+        <label className="ml-auto flex items-center gap-2 text-xs text-slate-600">
+          <input
+            type="checkbox"
+            checked={gecerliAcik}
+            disabled={busy}
+            onChange={(olay) => void cevir(olay.target.checked)}
+          />
+          Anahtar sorulsun
+        </label>
+      </div>
+      <p className="mt-2 text-xs text-amber-700">
+        Anahtarı <strong>linkten ayrı bir kanaldan</strong> gönderin (ör. link e-postayla, anahtar WhatsApp'tan) —
+        ikisi aynı yerden giderse koruma anlamsız kalır. Yenilemek eski anahtarı anında geçersiz kılar.
+      </p>
+    </div>
   );
 }

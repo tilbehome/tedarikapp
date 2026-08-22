@@ -61,7 +61,14 @@ final class ShareOnarimTest extends AuthTestCase
 
     private function sayfa(): string
     {
-        $response = $this->call('GET', '/p/' . $this->token);
+        // İE#18 G6: kapı varsayılan AÇIK — sayfa anahtarla açılır.
+        $response = $this->call(
+            'GET',
+            '/liste/' . $this->token,
+            null,
+            [],
+            $this->paylasimCerezi($this->token, $this->listId, $this->csrf),
+        );
         self::assertSame(200, $response->getStatusCode());
 
         return (string) $response->getBody();
@@ -141,7 +148,13 @@ final class ShareOnarimTest extends AuthTestCase
         $url = (string) $this->json($this->write('POST', '/api/lists/' . $listId . '/share'))['data']['share_url'];
         $token = substr($url, strrpos($url, '/') + 1);
 
-        $html = (string) $this->call('GET', '/p/' . $token)->getBody();
+        $html = (string) $this->call(
+            'GET',
+            '/liste/' . $token,
+            null,
+            [],
+            $this->paylasimCerezi($token, $listId, $this->csrf),
+        )->getBody();
 
         self::assertMatchesRegularExpression(
             '/DDP · KDV DAHİL<\/b><span>—<\/span>/u',
@@ -157,7 +170,8 @@ final class ShareOnarimTest extends AuthTestCase
         $adres = '/p/' . $this->token . '/export?format=csv&lang=tr&exp=' . $exp
             . '&sig=' . $downloads->imza($this->token, 'csv', 'tr', $exp);
 
-        $csv = (string) $this->call('GET', $adres)->getBody();
+        $cerez = $this->paylasimCerezi($this->token, $this->listId, $this->csrf);
+        $csv = (string) $this->call('GET', $adres, null, [], $cerez)->getBody();
         $satirlar = array_values(array_filter(explode("
 ", $csv)));
 
@@ -178,7 +192,8 @@ final class ShareOnarimTest extends AuthTestCase
 
     public function testTazeImzaUcuKULLANILABILIR_BAGLANTI_DONER(): void
     {
-        $response = $this->call('GET', '/p/' . $this->token . '/export-link?format=xlsx&lang=tr');
+        $cerez = $this->paylasimCerezi($this->token, $this->listId, $this->csrf);
+        $response = $this->call('GET', '/liste/' . $this->token . '/export-link?format=xlsx&lang=tr', null, [], $cerez);
 
         self::assertSame(200, $response->getStatusCode());
         self::assertStringContainsString('application/json', $response->getHeaderLine('Content-Type'));
@@ -187,10 +202,14 @@ final class ShareOnarimTest extends AuthTestCase
         /** @var array{ok: bool, data: array{url: string}} $govde */
         $govde = json_decode((string) $response->getBody(), true);
         self::assertTrue($govde['ok']);
-        self::assertMatchesRegularExpression('#^/p/[0-9a-f]{64}/export\?format=xlsx&lang=tr&exp=\d+&sig=\S{32}$#', $govde['data']['url']);
+        // İE#18 G5: üretilen bağlantı KANONİK ön eki taşır (/liste); /p yalnız alias.
+        self::assertMatchesRegularExpression(
+            '#^/liste/[0-9a-f]{64}/export\?format=xlsx&lang=tr&exp=\d+&sig=\S{32}$#',
+            $govde['data']['url'],
+        );
 
         // Dönen bağlantı GERÇEKTEN indirilebilir olmalı (uçtan uca).
-        $indirme = $this->call('GET', $govde['data']['url']);
+        $indirme = $this->call('GET', $govde['data']['url'], null, [], $cerez);
         self::assertSame(200, $indirme->getStatusCode());
         self::assertStringContainsString('attachment;', $indirme->getHeaderLine('Content-Disposition'));
     }
@@ -226,8 +245,12 @@ final class ShareOnarimTest extends AuthTestCase
     public function testTazeImzaUcuSAATLIK_INDIRME_SAYACINI_TUKETMEZ(): void
     {
         // 12 bağlantı üretmek (dakikalık sınırın altında) indirme hakkını yememeli.
+        $cerez = $this->paylasimCerezi($this->token, $this->listId, $this->csrf);
         for ($i = 0; $i < 11; $i++) {
-            self::assertSame(200, $this->call('GET', '/p/' . $this->token . '/export-link?format=csv&lang=tr')->getStatusCode());
+            self::assertSame(
+                200,
+                $this->call('GET', '/liste/' . $this->token . '/export-link?format=csv&lang=tr', null, [], $cerez)->getStatusCode(),
+            );
         }
 
         $sayac = (int) $this->pdo
@@ -238,20 +261,27 @@ final class ShareOnarimTest extends AuthTestCase
 
     public function testTazeImzaUcuDAKIKALIK_SINIRDA_404(): void
     {
+        $cerez = $this->paylasimCerezi($this->token, $this->listId, $this->csrf);
         for ($i = 0; $i < 12; $i++) {
-            $this->call('GET', '/p/' . $this->token . '/export-link?format=csv&lang=tr');
+            $this->call('GET', '/liste/' . $this->token . '/export-link?format=csv&lang=tr', null, [], $cerez);
         }
 
         self::assertSame(
             404,
-            $this->call('GET', '/p/' . $this->token . '/export-link?format=csv&lang=tr')->getStatusCode(),
+            $this->call('GET', '/liste/' . $this->token . '/export-link?format=csv&lang=tr', null, [], $cerez)->getStatusCode(),
             'Dakikalık üst sınır aşılınca sabit 404.',
         );
     }
 
     public function testImzaUretimSatirlariPANEL_AKISINDA_GORUNMEZ(): void
     {
-        $this->call('GET', '/p/' . $this->token . '/export-link?format=csv&lang=tr');
+        $this->call(
+            'GET',
+            '/liste/' . $this->token . '/export-link?format=csv&lang=tr',
+            null,
+            [],
+            $this->paylasimCerezi($this->token, $this->listId, $this->csrf),
+        );
 
         $kayitlar = $this->json($this->call('GET', '/api/activity'))['data'];
         foreach ($kayitlar as $kayit) {

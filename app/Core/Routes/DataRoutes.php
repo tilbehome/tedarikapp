@@ -87,6 +87,10 @@ final class DataRoutes
             // İE#10 Blok 4: paylaşım linki üret/yenile + iptal (token yalnız yanıtın içinde bir kez).
             $group->post('/lists/{id}/share', [$shareController, 'create']);
             $group->delete('/lists/{id}/share', [$shareController, 'destroy']);
+            // İE#18 G6 (K62): erişim anahtarı — göster · yenile · aç/kapat.
+            $group->get('/lists/{id}/share-key', [$shareController, 'keyShow']);
+            $group->post('/lists/{id}/share-key', [$shareController, 'keyRotate']);
+            $group->patch('/lists/{id}/share-key', [$shareController, 'keyToggle']);
 
             // İE#10: export üretimi + geçmiş + geçmişten indirme (snapshot'tan yeniden üretim).
             // İE#11 Görev E: ÜRETİM POST'a çevrildi (CSRF'li — durum değiştiren işlem);

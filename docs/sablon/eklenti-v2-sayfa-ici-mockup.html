@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eklenti v2 — Sayfa İçi Yakalama Mockup'ı</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ============ tedarikapp tasarım tokenları (bağlayıcı set) ============ */
+:root{
+  --lacivert:#0F2557; --lacivert-koyu:#0A1A3F; --altin:#D4A017;
+  --n50:#F7F8FB; --n100:#EEF0F5; --n150:#E3E6EE; --n200:#D5D9E4;
+  --n400:#9AA1B2; --n500:#6C7484; --n700:#3C4354; --n900:#171C2A;
+  --yesil:#1E8E5A; --sari:#B7791F; --sari-zemin:#FDF6E7; --kirmizi:#C0392B;
+  --r8:8px; --r12:12px; --r16:16px;
+  --golge-kart:0 1px 3px rgba(15,37,87,.08);
+  --golge-acilir:0 8px 24px rgba(15,37,87,.14);
+  --golge-modal:0 20px 60px rgba(10,26,63,.28);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,sans-serif;background:#E8E9ED;color:var(--n900);min-height:100vh}
+button{font-family:inherit;cursor:pointer;border:none}
+
+/* ============ MOCKUP NOTU ============ */
+.mocknot{position:fixed;left:16px;bottom:16px;z-index:60;background:var(--n900);color:#fff;
+  font-size:11px;letter-spacing:.3px;padding:8px 14px;border-radius:999px;opacity:.85}
+
+/* ============ TEMSİLÎ 1688 SAYFASI (grileştirilmiş arka plan) ============ */
+.sayfa{max-width:1180px;margin:0 auto;padding:20px 24px 60px;filter:saturate(.55)}
+.s-ust{display:flex;align-items:center;gap:16px;background:#fff;border-radius:10px;padding:12px 18px;margin-bottom:14px}
+.s-logo{font-weight:800;font-size:26px;color:#E8590C}
+.s-ara{flex:1;height:38px;border:2px solid #E8590C;border-radius:6px;background:#fff;
+  display:flex;align-items:center;padding:0 12px;color:var(--n400);font-size:13px}
+.s-arabtn{background:#E8590C;color:#fff;font-size:13px;font-weight:600;padding:9px 22px;border-radius:6px}
+.s-govde{display:grid;grid-template-columns:400px 1fr;gap:20px}
+.s-galeri{background:#fff;border-radius:10px;padding:14px}
+.s-buyuk{height:330px;border-radius:8px;background:linear-gradient(135deg,#DDE0D2,#C9CDB8);
+  display:flex;align-items:center;justify-content:center;color:#8A8F79;font-size:13px;font-weight:600;letter-spacing:1px}
+.s-kucukler{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:10px}
+.s-kucuk{height:52px;border-radius:6px;background:#D9DCCF}
+.s-detay{background:#fff;border-radius:10px;padding:20px 22px;position:relative}
+.s-baslik{font-size:16px;font-weight:600;line-height:1.5;margin-bottom:4px}
+.s-satici{font-size:12px;color:var(--n500);margin-bottom:14px}
+.s-satici b{color:var(--n700)}
+.s-fiyatblok{background:#FFF4EC;border-radius:8px;padding:14px 16px;display:flex;align-items:baseline;gap:14px}
+.s-fy{color:#E8590C;font-weight:800;font-size:28px}
+.s-fy small{font-size:14px;font-weight:600}
+.s-fyaralik{color:#B0430A;font-weight:700;font-size:16px}
+.s-satis{margin-left:auto;font-size:12px;color:var(--n500)}
+.s-varyant{margin-top:16px}
+.s-vbaslik{font-size:12px;color:var(--n500);margin-bottom:8px}
+.s-renkler{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.s-renk{display:flex;align-items:center;gap:8px;border:1px solid var(--n200);border-radius:6px;padding:6px 8px;font-size:12px;color:var(--n700)}
+.s-renk .kutu{width:26px;height:26px;border-radius:4px;flex-shrink:0}
+.s-bedenler{margin-top:14px;border-top:1px dashed var(--n200);padding-top:12px}
+.s-beden{display:flex;align-items:center;font-size:12.5px;color:var(--n700);padding:7px 2px;border-bottom:1px solid var(--n100)}
+.s-beden .st{margin-left:auto;color:var(--n400)}
+
+/* ============ SAYFA İÇİ DÜĞME (imza konum: fiyat bloğunun hemen altı) ============ */
+.tdk-btn{margin-top:14px;width:100%;display:flex;align-items:center;justify-content:center;gap:10px;
+  background:var(--lacivert);color:#fff;border-radius:10px;padding:13px 18px;
+  font-size:14.5px;font-weight:600;letter-spacing:.2px;filter:saturate(1.9);
+  box-shadow:var(--golge-kart);transition:transform .15s ease, box-shadow .15s ease, background .15s ease}
+.tdk-btn:hover{background:var(--lacivert-koyu);box-shadow:var(--golge-acilir);transform:translateY(-1px)}
+.tdk-btn:focus-visible{outline:3px solid var(--altin);outline-offset:2px}
+.tdk-btn .kup{width:20px;height:20px;border-radius:5px;background:linear-gradient(135deg,#fff 0%,#fff 55%,var(--altin) 55%);flex-shrink:0}
+.tdk-btn .rozet{margin-left:auto;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);
+  font-size:10.5px;font-weight:600;padding:3px 9px;border-radius:999px;color:#F4E9CE}
+
+/* ============ SAĞ ÇEKMECE ============ */
+.ortu{position:fixed;inset:0;background:rgba(10,26,63,.42);opacity:0;pointer-events:none;transition:opacity .2s ease;z-index:40}
+.cekmece{position:fixed;top:0;right:0;bottom:0;width:448px;max-width:100vw;background:#fff;z-index:50;
+  box-shadow:var(--golge-modal);transform:translateX(105%);transition:transform .22s cubic-bezier(.32,.72,.32,1);
+  display:flex;flex-direction:column}
+body.acik .ortu{opacity:1;pointer-events:auto}
+body.acik .cekmece{transform:translateX(0)}
+@media (prefers-reduced-motion: reduce){ .cekmece,.ortu,.tdk-btn{transition:none} }
+
+.c-ust{background:var(--lacivert);color:#fff;padding:14px 18px;display:flex;align-items:center;gap:11px;border-bottom:3px solid var(--altin)}
+.c-ust .kup{width:26px;height:26px;border-radius:7px;background:linear-gradient(135deg,#fff 0%,#fff 55%,var(--altin) 55%)}
+.c-marka{font-weight:800;font-size:16px;letter-spacing:-.2px}
+.c-marka small{display:block;font-weight:500;font-size:9.5px;letter-spacing:1.6px;color:#AAB6D6}
+.c-durum{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:11px;color:#CFE8DC;background:rgba(255,255,255,.09);padding:5px 11px;border-radius:999px}
+.c-durum .nk{width:7px;height:7px;border-radius:50%;background:#3DC98A}
+.c-kapat{background:transparent;color:#B9C3DE;font-size:20px;line-height:1;padding:4px 6px;border-radius:6px}
+.c-kapat:hover{background:rgba(255,255,255,.12);color:#fff}
+
+.c-golde{flex:1;overflow-y:auto;padding:16px 18px 18px;background:var(--n50)}
+
+.c-urun{display:flex;gap:12px;background:#fff;border:1px solid var(--n150);border-radius:var(--r12);padding:12px;box-shadow:var(--golge-kart)}
+.c-gorsel{width:64px;height:64px;border-radius:8px;background:linear-gradient(135deg,#DDE0D2,#C9CDB8);flex-shrink:0}
+.c-adlar{min-width:0}
+.c-zh{font-size:12px;color:var(--n500);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.c-tr{font-size:13.5px;font-weight:600;color:var(--n900);margin-top:2px;line-height:1.35}
+.c-tr .oneri{font-size:10px;font-weight:600;color:var(--altin);background:#FBF3DC;border-radius:4px;padding:1px 6px;margin-left:6px;vertical-align:1px}
+
+.c-eski{display:flex;gap:9px;align-items:flex-start;background:var(--sari-zemin);border:1px solid #EAD9A8;
+  border-radius:var(--r8);padding:9px 12px;margin-top:10px;font-size:12px;color:var(--sari);line-height:1.45}
+
+/* Alan doluluk */
+.c-doluluk{background:#fff;border:1px solid var(--n150);border-radius:var(--r12);padding:14px;margin-top:12px;box-shadow:var(--golge-kart)}
+.c-dust{display:flex;align-items:center;gap:12px}
+.halka{width:52px;height:52px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  background:conic-gradient(var(--altin) 0 315deg, var(--n150) 315deg 360deg)}
+.halka b{width:40px;height:40px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:12.5px;color:var(--lacivert)}
+.c-dbilgi h4{font-size:13.5px;font-weight:700;color:var(--n900)}
+.c-dbilgi p{font-size:11.5px;color:var(--n500);margin-top:2px}
+
+.c-alanlar{margin-top:12px;border-top:1px solid var(--n100);padding-top:6px}
+.alan{display:flex;align-items:center;gap:8px;padding:6.5px 2px;font-size:12.5px;border-bottom:1px solid var(--n100)}
+.alan:last-child{border-bottom:none}
+.alan .ok{color:var(--yesil);font-weight:700;width:14px}
+.alan .ad{color:var(--n700);width:118px;flex-shrink:0}
+.alan .deger{color:var(--n900);font-weight:600;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kanal{margin-left:auto;font-size:9.5px;font-weight:700;letter-spacing:.4px;padding:2px 7px;border-radius:4px;flex-shrink:0}
+.kanal.mtop{color:var(--lacivert);background:#E7ECF7}
+.kanal.json{color:#6B21A8;background:#F3E8FF}
+.kanal.dom{color:var(--n500);background:var(--n100)}
+.alan.eksik .ok{color:var(--kirmizi)}
+.alan.eksik .deger{color:var(--kirmizi);font-weight:500;font-style:italic}
+
+/* Hedef bölümü */
+.c-hedef{background:#fff;border:1px solid var(--n150);border-radius:var(--r12);padding:14px;margin-top:12px;box-shadow:var(--golge-kart)}
+.c-hedef h4{font-size:12px;font-weight:700;letter-spacing:.6px;color:var(--n500);text-transform:uppercase;margin-bottom:10px}
+.satir2{display:grid;grid-template-columns:1fr 108px;gap:10px}
+.girdi label{display:block;font-size:11px;font-weight:600;color:var(--n500);margin-bottom:5px}
+.girdi select,.girdi input,.girdi textarea{width:100%;border:1px solid var(--n200);border-radius:var(--r8);
+  padding:9px 11px;font-size:13px;font-family:inherit;color:var(--n900);background:#fff}
+.girdi select:focus,.girdi input:focus,.girdi textarea:focus{outline:2px solid var(--lacivert);outline-offset:0;border-color:var(--lacivert)}
+.girdi.mt{margin-top:10px}
+.etiketler{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.cip{font-size:11px;font-weight:600;color:var(--n700);background:var(--n100);border:1px solid var(--n200);border-radius:999px;padding:4px 11px;cursor:pointer}
+.cip.secili{color:#fff;background:var(--lacivert);border-color:var(--lacivert)}
+
+/* Alt eylem bandı */
+.c-alt{border-top:1px solid var(--n150);background:#fff;padding:13px 18px}
+.gonder{width:100%;background:var(--lacivert);color:#fff;font-size:14.5px;font-weight:700;
+  border-radius:10px;padding:13px;transition:background .15s ease}
+.gonder:hover{background:var(--lacivert-koyu)}
+.gonder:focus-visible{outline:3px solid var(--altin);outline-offset:2px}
+.c-alt .ipucu{font-size:10.5px;color:var(--n400);text-align:center;margin-top:7px}
+
+/* Gönderim adımları + başarı */
+.adimlar{display:none;align-items:center;justify-content:center;gap:8px;font-size:12px;color:var(--n500);padding:12px 0 2px}
+.adim{display:flex;align-items:center;gap:5px}
+.adim .top{width:8px;height:8px;border-radius:50%;background:var(--n200)}
+.adim.ok .top{background:var(--yesil)}
+.adim.ok{color:var(--yesil);font-weight:600}
+.basari{display:none;text-align:center;padding:6px 0 2px}
+.basari .buyuk{width:44px;height:44px;border-radius:50%;background:#E4F5EC;color:var(--yesil);
+  font-size:22px;font-weight:800;display:flex;align-items:center;justify-content:center;margin:0 auto 8px}
+.basari h5{font-size:14.5px;color:var(--n900)}
+.basari p{font-size:12px;color:var(--n500);margin-top:3px}
+.basari .git{margin-top:10px;background:#fff;color:var(--lacivert);border:1.5px solid var(--lacivert);
+  border-radius:var(--r8);padding:8px 18px;font-size:12.5px;font-weight:700}
+
+body.gonderiliyor .gonder{display:none}
+body.gonderiliyor .adimlar{display:flex}
+body.tamam .gonder,body.tamam .adimlar,body.tamam .ipucu{display:none}
+body.tamam .basari{display:block}
+</style>
+</head>
+<body>
+
+<div class="mocknot">MOCKUP — temsilî veriler · Eklenti v2 / Dilim 3 tasarım önerisi</div>
+
+<!-- ═══════════ TEMSİLÎ 1688 SAYFASI ═══════════ -->
+<div class="sayfa" aria-hidden="false">
+  <div class="s-ust">
+    <div class="s-logo">1688</div>
+    <div class="s-ara">搜索关键词搜本店商品</div>
+    <button class="s-arabtn">搜 索</button>
+  </div>
+
+  <div class="s-govde">
+    <div class="s-galeri">
+      <div class="s-buyuk">ÜRÜN GÖRSELİ</div>
+      <div class="s-kucukler">
+        <div class="s-kucuk"></div><div class="s-kucuk"></div><div class="s-kucuk"></div>
+        <div class="s-kucuk"></div><div class="s-kucuk"></div><div class="s-kucuk"></div>
+      </div>
+    </div>
+
+    <div class="s-detay">
+      <div class="s-baslik">洞洞鞋男士2025夏季新款外穿包头拖鞋 EVA 防滑厚底凉拖鞋</div>
+      <div class="s-satici"><b>义乌市盎燕电子商务有限公司</b> · 源头旗舰 · 入驻13年 · 主营 家居鞋</div>
+
+      <div class="s-fiyatblok">
+        <div class="s-fy"><small>¥</small>15.90</div>
+        <div class="s-fyaralik">¥18.90 ~ ¥21.90</div>
+        <div class="s-satis">已售 7200+ 双</div>
+      </div>
+
+      <!-- ══ SAYFA İÇİ DÜĞME — fiyat bloğunun hemen altında, tam genişlik ══ -->
+      <button class="tdk-btn" id="ac" aria-haspopup="dialog">
+        <span class="kup" aria-hidden="true"></span>
+        Tedarikapp'e Ekle
+        <span class="rozet">panelde yok</span>
+      </button>
+
+      <div class="s-varyant">
+        <div class="s-vbaslik">颜色</div>
+        <div class="s-renkler">
+          <div class="s-renk"><span class="kutu" style="background:#8A9A6B"></span>绿色【足弓支撑 久站不累脚】</div>
+          <div class="s-renk"><span class="kutu" style="background:#5B7FA6"></span>蓝色【足弓支撑 久站不累脚】</div>
+          <div class="s-renk"><span class="kutu" style="background:#8C8F96"></span>灰色【足弓支撑 久站不累脚】</div>
+          <div class="s-renk"><span class="kutu" style="background:#2C2E33"></span>黑色【足弓支撑 久站不累脚】</div>
+        </div>
+        <div class="s-bedenler">
+          <div class="s-beden">38/39 · ¥18.9 <span class="st">库存 1813 双</span></div>
+          <div class="s-beden">40/41 · ¥18.9 <span class="st">库存 1548 双</span></div>
+          <div class="s-beden">42/43 · ¥18.9 <span class="st">库存 1437 双</span></div>
+          <div class="s-beden">44/45 · ¥18.9 <span class="st">库存 1698 双</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ ÇEKMECE ═══════════ -->
+<div class="ortu" id="ortu"></div>
+<aside class="cekmece" id="cekmece" role="dialog" aria-modal="true" aria-label="Tedarikapp yakalama önizlemesi">
+
+  <div class="c-ust">
+    <span class="kup" aria-hidden="true"></span>
+    <div class="c-marka">tedarikapp<small>TİLBE HOME</small></div>
+    <div class="c-durum"><span class="nk"></span> Bağlı</div>
+    <button class="c-kapat" id="kapat" aria-label="Kapat">×</button>
+  </div>
+
+  <div class="c-golde">
+
+    <!-- Ürün kimliği -->
+    <div class="c-urun">
+      <div class="c-gorsel"></div>
+      <div class="c-adlar">
+        <div class="c-zh">洞洞鞋男士2025夏季新款外穿包头拖鞋 EVA…</div>
+        <div class="c-tr">EVA Kaymaz Kalın Taban Erkek Sandalet <span class="oneri">TR önerisi</span></div>
+      </div>
+    </div>
+
+    <!-- Alan doluluk + kaynak izli alan listesi -->
+    <div class="c-doluluk">
+      <div class="c-dust">
+        <div class="halka" role="img" aria-label="14 / 16 alan yakalandı"><b>14/16</b></div>
+        <div class="c-dbilgi">
+          <h4>Yakalama önizlemesi</h4>
+          <p>Rozetler verinin geldiği kanalı gösterir: sayfa yanıtı · gömülü veri · sayfa metni</p>
+        </div>
+      </div>
+      <div class="c-alanlar">
+        <div class="alan"><span class="ok">✓</span><span class="ad">Fiyat kademeleri</span><span class="deger">¥15.90 – ¥21.90 · 3 kademe</span><span class="kanal mtop">YANIT</span></div>
+        <div class="alan"><span class="ok">✓</span><span class="ad">Varyantlar</span><span class="deger">8 renk × 4 beden = 32 SKU</span><span class="kanal mtop">YANIT</span></div>
+        <div class="alan"><span class="ok">✓</span><span class="ad">Gerçek stok</span><span class="deger">6.496 çift (SKU bazında)</span><span class="kanal mtop">YANIT</span></div>
+        <div class="alan"><span class="ok">✓</span><span class="ad">Birim ağırlık</span><span class="deger">0,42 kg / çift</span><span class="kanal mtop">YANIT</span></div>
+        <div class="alan"><span class="ok">✓</span><span class="ad">MOQ</span><span class="deger">1 çift (karma sipariş açık)</span><span class="kanal json">GÖMÜLÜ</span></div>
+        <div class="alan"><span class="ok">✓</span><span class="ad">Satıcı karnesi</span><span class="deger">13 yıl · %51 tekrar alım · 4★</span><span class="kanal mtop">YANIT</span></div>
+        <div class="alan"><span class="ok">✓</span><span class="ad">Satış</span><span class="deger">7.200+ (toplam)</span><span class="kanal dom">SAYFA</span></div>
+        <div class="alan"><span class="ok">✓</span><span class="ad">Galeri + video</span><span class="deger">12 görsel · 1 video</span><span class="kanal json">GÖMÜLÜ</span></div>
+        <div class="alan"><span class="ok">✓</span><span class="ad">Kategori yolu</span><span class="deger">家居鞋 › 拖鞋 › EVA</span><span class="kanal dom">SAYFA</span></div>
+        <div class="alan eksik"><span class="ok">!</span><span class="ad">Koli ölçüsü</span><span class="deger">sayfada yok — panelde elle girilir</span></div>
+        <div class="alan eksik"><span class="ok">!</span><span class="ad">Üretim süresi</span><span class="deger">sayfada yok</span></div>
+      </div>
+    </div>
+
+    <!-- Daha önce yakalandı örneği (bu üründe kapalı; rozet metni düğmede) -->
+    <div class="c-eski">
+      <span aria-hidden="true">ⓘ</span>
+      <span><b>Bu ilan panelde yok.</b> Daha önce yakalanmış olsaydı burada "12 Ağu'da yakalandı — <u>tazele</u>" seçeneği görünürdü.</span>
+    </div>
+
+    <!-- Hedef -->
+    <div class="c-hedef">
+      <h4>Nereye gitsin</h4>
+      <div class="satir2">
+        <div class="girdi">
+          <label for="liste">Hedef</label>
+          <select id="liste">
+            <option>Gelen Kutusu (varsayılan)</option>
+            <option>MUTFAK ÜRÜNLERİ listesi</option>
+            <option>DENEME listesi</option>
+          </select>
+        </div>
+        <div class="girdi">
+          <label for="adet">Miktar</label>
+          <input id="adet" type="number" value="200">
+        </div>
+      </div>
+      <div class="girdi mt">
+        <label for="not">Not</label>
+        <textarea id="not" rows="2" placeholder="ör. gri ve siyah renkler; numunesiz denenebilir">Yaz sezonu adayı — arch support modeli</textarea>
+      </div>
+      <div class="etiketler" aria-label="Etiketler">
+        <button class="cip secili">yaz-2027</button>
+        <button class="cip">terlik</button>
+        <button class="cip">+ etiket</button>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="c-alt">
+    <button class="gonder" id="gonder">Yakala ve Gönder</button>
+    <div class="adimlar" aria-live="polite">
+      <span class="adim ok" id="a1"><span class="top"></span> Okundu</span>
+      <span class="adim" id="a2"><span class="top"></span> Doğrulandı</span>
+      <span class="adim" id="a3"><span class="top"></span> Gönderildi</span>
+    </div>
+    <div class="basari">
+      <div class="buyuk">✓</div>
+      <h5>Gelen Kutusu'na eklendi</h5>
+      <p>14 alan · 12 görsel · 1 video — panel sunucusu onayladı</p>
+      <button class="git">Panelde aç</button>
+    </div>
+    <div class="ipucu">Bağlantı yoksa yakalama cihaz kuyruğunda bekler, bağlanınca gönderilir.</div>
+  </div>
+
+</aside>
+
+<script>
+const ac=document.getElementById('ac'),kapat=document.getElementById('kapat'),
+      ortu=document.getElementById('ortu'),gonder=document.getElementById('gonder');
+function acCek(){document.body.classList.add('acik');kapat.focus()}
+function kapa(){document.body.classList.remove('acik','gonderiliyor','tamam');
+  ['a2','a3'].forEach(i=>document.getElementById(i).classList.remove('ok'));ac.focus()}
+ac.addEventListener('click',acCek);
+kapat.addEventListener('click',kapa);
+ortu.addEventListener('click',kapa);
+document.addEventListener('keydown',e=>{if(e.key==='Escape')kapa()});
+gonder.addEventListener('click',()=>{
+  document.body.classList.add('gonderiliyor');
+  setTimeout(()=>document.getElementById('a2').classList.add('ok'),550);
+  setTimeout(()=>{document.getElementById('a3').classList.add('ok');
+    setTimeout(()=>document.body.classList.add('tamam'),350)},1150);
+});
+</script>
+</body>
+</html>

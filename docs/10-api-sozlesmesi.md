@@ -146,11 +146,23 @@ Belge kodu ve revizyon (F7 · **İE#14 B1 / K57 ile düzeltildi**): kod `TDK-<y�
 
 ## 8. Yakalama ve Dışa Açık Sayfa
 
-### Oturumsuz paylaşım uçları (İE#15 — K58/K60)
+### Oturumsuz paylaşım uçları (İE#15 K58/K60 · İE#18 G5/G6)
+
+**ADRES ÖN EKİ (İE#18 G5):** kanonik ön ek `/liste`; `/p` alias olarak KALIR (aynı
+handler, yönlendirme yok) — eski bağlantılar kırılmaz. Aşağıdaki tabloda `/liste/...`
+yazan her uç `/p/...` ile de çalışır.
+
+**ERİŞİM ANAHTARI (İE#18 G6 · K62):** kapı AÇIK listelerde `/export`, `/export-link`
+ve `/qr.png` uçları geçerli anahtar ÇEREZİ ister; yoksa sabit 404. Çerez K58 imza
+modelinin yerine geçmez, üstüne eklenir.
 
 | Uç | Açıklama |
 |---|---|
-| `GET /p/{token}` | Paylaşım sayfası. `?lang=tr\|zh\|en` paylaşım metinlerini ve indirme bağlantılarının dilini belirler (varsayılan `tr`); tanınmayan değer TR'ye düşer |
+| `POST /liste/{token}/anahtar` (ve `/p/` alias) | **İE#18 G6 (K62)** — erişim anahtarı doğrulama. Gövde `{anahtar}` (6 hane, büyük/küçük duyarsız). Doğru → `303` + HttpOnly/SameSite=Lax **imzalı çerez** (kapsam o token, ömür 12 saat) + kanonik adrese dönüş. Yanlış → `401` + kilit ekranı ("Anahtar hatalı"; kaç deneme kaldığı SÖYLENMEZ). Token+IP başına **dakikada 5** deneme; aşımda **sabit 404** (K51) + app_logs kaydı |
+| `GET /api/lists/{id}/share-key` | Panel (oturumlu): `{key, enabled}` — anahtarı gösterir |
+| `POST /api/lists/{id}/share-key` | Anahtarı YENİLER; eski anahtar ve onunla alınmış çerezler ANINDA geçersizleşir |
+| `PATCH /api/lists/{id}/share-key` | `{enabled: bool}` — kapıyı aç/kapat. KAPALI listede davranış eskisi gibidir (token yeter) |
+| `GET /liste/{token}` (kanonik) · `GET /p/{token}` (alias) | Paylaşım sayfası. `?lang=tr\|zh\|en` paylaşım metinlerini ve indirme bağlantılarının dilini belirler (varsayılan `tr`); tanınmayan değer TR'ye düşer |
 | `GET /p/{token}/export` | **İmzalı, oturumsuz belge indirme.** Sorgu: `format=xlsx\|pdf\|csv`, `lang=tr\|zh\|en`, `exp` (unix zaman), `sig` (HMAC-SHA256, APP_KEY; kapsam token+format+lang+exp). Bağlantıyı SUNUCU üretir (sayfa açılırken, 15 dk ömür) — elle kurulamaz. Kopya türü **DAİMA `firma`**: iç kopya verisi hiçbir biçimde çıkmaz. Hız sınırı token başına saatte 20 → aşımda `429` + `Retry-After: 3600`. Geçersiz imza/süre/iptal → **sabit 404** (K51). Erişim `activity_log`'a `share_download` olarak yazılır: token ÖNEKİ + biçim + dil + kırpılmış IP. `exports` tablosuna kayıt AÇILMAZ (revizyon harfi tüketilmez — K57) |
 | `GET /p/{token}/qr.png` | Paylaşım adresinin kare kodu (PNG, sunucuda üretilir; dış QR servisi yok — K45). `?lang=` kareye gömülen adrese eklenir. İçerik YALNIZ paylaşım adresidir — imzalı indirme adresi QR'a konmaz. Geçersiz/iptal token → 404 |
 

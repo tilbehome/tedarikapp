@@ -60,9 +60,15 @@ final class ShareDownloadTest extends AuthTestCase
         $downloads = new ShareDownload($this->appKey());
         $sonKullanma = $this->clock->now()->getTimestamp() + ShareDownload::OMUR_SANIYE + $kaymaSaniye;
 
-        return '/p/' . $this->token . '/export?format=' . $format . '&lang=' . $dil
+        return '/liste/' . $this->token . '/export?format=' . $format . '&lang=' . $dil
             . '&exp=' . $sonKullanma
             . '&sig=' . $downloads->imza($this->token, $format, $dil, $sonKullanma);
+    }
+
+    /** İE#18 G6: kapı varsayılan AÇIK — indirme testleri anahtarla geçer. */
+    private function kapiCerezi(): array
+    {
+        return $this->paylasimCerezi($this->token, $this->listId, $this->csrf);
     }
 
     private function appKey(): string
@@ -72,10 +78,13 @@ final class ShareDownloadTest extends AuthTestCase
 
     public function testImzaliBaglantiylaOTURUMSUZ_indirilebilir(): void
     {
+        // Anahtar çerezi OTURUM KAPANMADAN alınır: firma da anahtarı önceden
+        // almış olur; buradaki senaryo "panel oturumu olmadan indirme"dir.
+        $cerez = $this->kapiCerezi();
         $this->call('POST', '/api/auth/logout', [], [Csrf::HEADER => $this->csrf]);
 
         foreach (['xlsx', 'pdf', 'csv'] as $format) {
-            $response = $this->call('GET', $this->imzali($format));
+            $response = $this->call('GET', $this->imzali($format), null, [], $cerez);
 
             self::assertSame(200, $response->getStatusCode(), $format . ' oturumsuz indirilebilmeli.');
             self::assertNotSame('', (string) $response->getBody());
@@ -141,8 +150,9 @@ final class ShareDownloadTest extends AuthTestCase
     /** A3 — ZH çıktıda ürün adı ORİJİNAL başlıktır. */
     public function testZH_CIKTIDA_URUN_ADI_ORIJINALDIR(): void
     {
-        $tr = (string) $this->call('GET', $this->imzali('csv', 'tr'))->getBody();
-        $zh = (string) $this->call('GET', $this->imzali('csv', 'zh'))->getBody();
+        $cerez = $this->kapiCerezi();
+        $tr = (string) $this->call('GET', $this->imzali('csv', 'tr'), null, [], $cerez)->getBody();
+        $zh = (string) $this->call('GET', $this->imzali('csv', 'zh'), null, [], $cerez)->getBody();
 
         self::assertStringContainsString('Termos Yemek Kabı', $tr);
         self::assertStringContainsString('双层不锈钢保温饭盒500ml', $zh, 'ZH çıktı orijinal başlığı basar.');
@@ -151,11 +161,12 @@ final class ShareDownloadTest extends AuthTestCase
     /** A1 — hız sınırı: token başına saatte 20 indirme. */
     public function testHIZ_SINIRI_ASILINCA_429(): void
     {
+        $cerez = $this->kapiCerezi();
         for ($i = 0; $i < 20; $i++) {
-            self::assertSame(200, $this->call('GET', $this->imzali('csv'))->getStatusCode());
+            self::assertSame(200, $this->call('GET', $this->imzali('csv'), null, [], $cerez)->getStatusCode());
         }
 
-        $response = $this->call('GET', $this->imzali('csv'));
+        $response = $this->call('GET', $this->imzali('csv'), null, [], $cerez);
         self::assertSame(429, $response->getStatusCode());
         self::assertSame('3600', $response->getHeaderLine('Retry-After'));
     }
@@ -163,7 +174,7 @@ final class ShareDownloadTest extends AuthTestCase
     /** A1 — erişim kaydı: token ÖNEKİ ve KIRPILMIŞ IP; tam token asla loglanmaz. */
     public function testERISIM_KAYDI_tam_token_ve_tam_IP_ICERMEZ(): void
     {
-        $this->call('GET', $this->imzali('csv'));
+        $this->call('GET', $this->imzali('csv'), null, [], $this->kapiCerezi());
 
         $satir = $this->pdo
             ->query("SELECT detail, ip FROM activity_log WHERE action = 'share_download' ORDER BY id DESC LIMIT 1")
@@ -179,7 +190,7 @@ final class ShareDownloadTest extends AuthTestCase
     /** C3 — QR sunucuda üretilir; dış servis yok, içeriği yalnız paylaşım adresi. */
     public function testQR_SUNUCUDA_URETILIR(): void
     {
-        $response = $this->call('GET', '/p/' . $this->token . '/qr.png');
+        $response = $this->call('GET', '/liste/' . $this->token . '/qr.png', null, [], $this->kapiCerezi());
 
         self::assertSame(200, $response->getStatusCode());
         self::assertSame('image/png', $response->getHeaderLine('Content-Type'));
