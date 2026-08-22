@@ -30,7 +30,14 @@
 | Bileşen | Taban |
 |---|---|
 | Manifest | **V3** |
-| Bağımlılık | **SIFIR harici paket** — vanilla JS |
+| Çatı | **WXT** (build + zip + HMR) |
+| Dil | **TypeScript** (`tsc --noEmit` CI kapısı) |
+| Test | **Vitest** — fixture tabanlı parser testleri, canlı 1688 isteği YOK |
+| Bağımlılık | **Çalışma zamanında SIFIR harici paket.** Bundle'a üçüncü parti kod girmez; WXT/Vitest/TS yalnız geliştirme zinciridir. CI'da `npm audit --audit-level=high` kapısı vardır (İE#19 E1). |
+
+> **Not (İE#19 E10):** bu tablo İE#11'e kadar "vanilla JS" diyordu; eklenti o iş
+> emrinde WXT+TypeScript'e taşındı ve belge geride kalmıştı. Kaynak `extension/`,
+> üretim bundle'ı ve Store zip'i CI'da derlenir.
 
 ## Kalite Hattı
 

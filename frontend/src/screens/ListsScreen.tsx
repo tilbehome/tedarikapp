@@ -4,6 +4,7 @@ import { Archive, ArrowRight, Copy, EyeOff, Plus, RotateCcw, Search, Trash2 } fr
 import { lists as listsApi } from '../api/endpoints';
 import type { SupplyList, Visibility } from '../api/types';
 import { useAsync, messageOf } from '../lib/useAsync';
+import { useAramaSorgusu } from '../lib/useAramaSorgusu';
 import { count, money } from '../lib/format';
 import { visibilityLabels } from '../locales/tr';
 import { EmptyState, ErrorNote, Field, ListStatusBadge, PageHeader, Skeleton } from '../components/ui';
@@ -18,11 +19,15 @@ const tabs: Visibility[] = ['active', 'passive', 'archived'];
 
 export default function ListsScreen() {
   const [visibility, setVisibility] = useState<Visibility>('active');
-  const [query, setQuery] = useState('');
+  // İE#19 E12: her tuşta istek YOK — 280 ms bekle, yeni istek eskisini iptal etsin.
+  const arama = useAramaSorgusu();
   const [creating, setCreating] = useState(false);
   const push = useToast((state) => state.push);
 
-  const state = useAsync(() => listsApi.all({ visibility, q: query || undefined }), [visibility, query]);
+  const state = useAsync(
+    (signal) => listsApi.all({ visibility, q: arama.gecikmeli || undefined }, signal),
+    [visibility, arama.gecikmeli],
+  );
   const items = state.data ?? [];
 
   const act = async (label: string, action: () => Promise<unknown>, undo?: () => Promise<unknown>) => {
@@ -99,8 +104,8 @@ export default function ListsScreen() {
           <input
             className="field-input pl-9"
             placeholder="Liste veya tedarikçi ara"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
+            value={arama.deger}
+            onChange={(event) => arama.yaz(event.target.value)}
             aria-label="Liste ara"
           />
         </label>

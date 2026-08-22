@@ -184,9 +184,24 @@ final class SystemController
         (new \App\Setup\UnlockGate($this->connection, $this->basePath, new \DateTimeZone(date_default_timezone_get())))
             ->recordSuccess(\App\Core\ClientIp::from($request), $now, 'admin:' . $user->email);
 
-        $this->lock->clear();
+        // İE#19 G2: kilit SİLİNMEZ — yönetici oturumuna bağlı 15 dakikalık, tek
+        // kullanımlık bir yeniden-kurulum bileti üretilir. Bilet HttpOnly çerezde
+        // taşınır; sihirbaz yalnız bu tarayıcıya açılır ve süre dolunca kendiliğinden
+        // kapanır. (Eskiden kilit siliniyor, sihirbaz herkese açık kalıyordu.)
+        $ticket = (new \App\Setup\ReSetupTicket($this->connection))->issue($now, 'admin:' . $user->email);
 
-        return \App\Core\Response::success($response, ['unlocked' => true]);
+        return \App\Core\Cookie::write(
+            \App\Core\Response::success($response, [
+                'unlocked' => true,
+                'ticket' => true,
+                'expires_in_seconds' => \App\Setup\ReSetupTicket::LIFETIME_SECONDS,
+                'setup_url' => '/setup',
+            ]),
+            \App\Setup\ReSetupTicket::COOKIE_NAME,
+            $ticket,
+            $now->modify('+' . \App\Setup\ReSetupTicket::LIFETIME_SECONDS . ' seconds'),
+            strtolower($request->getUri()->getScheme()) === 'https',
+        );
     }
 
     /**
@@ -307,11 +322,12 @@ final class SystemController
             null,
             'media_check',
             sprintf(
-                '%s: %d denetlendi, %d kayıp, %d onarıldı, %d başarısız',
+                '%s: %d denetlendi, %d kayıp, %d onarıldı, %d kapalı listede atlandı, %d başarısız',
                 $user->email,
                 $result['checked'],
                 $result['missing'],
                 $result['repaired'],
+                $result['skipped_terminal'],
                 count($result['failed']),
             ),
             ClientIp::from($request),
@@ -321,6 +337,19 @@ final class SystemController
         );
 
         return Response::success($response, $result);
+    }
+
+    /**
+     * GET /api/system/integrity/detay — bütünlük denetiminin İSİM İSİM listesi (İE#19 G4).
+     *
+     * Kimliksiz uç (`/api/system/integrity`) yalnız sayı döner; eksik/bozuk dosya
+     * ADLARI burada, oturum arkasında verilir.
+     */
+    public function integrityDetail(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        $this->authenticatedUser($request);
+
+        return Response::success($response, (new \App\Services\IntegrityChecker($this->basePath))->check());
     }
 
     public function status(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface

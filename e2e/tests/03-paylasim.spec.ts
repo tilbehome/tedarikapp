@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { girisYap, gorunen, listeAc, urunEkle } from './yardimcilar';
+import { csrfToken, girisYap, gorunen, listeAc, urunEkle } from './yardimcilar';
 
 /**
  * E2E-3 (İE#13 E2 · K51): paylaşım linki GİRİŞSİZ açılır; iptalden sonra 404 verir.
@@ -20,7 +20,15 @@ test.describe('Paylaşım sayfası', () => {
     const linkMetni = page.locator('p.font-mono');
     await expect(linkMetni).toBeVisible();
     const url = ((await linkMetni.textContent()) ?? '').trim();
-    expect(url).toMatch(/\/p\/[0-9a-f]{64}$/);
+    // İE#18 G5: kanonik ön ek /liste (eski /p alias olarak yaşamaya devam eder).
+    expect(url).toMatch(/\/liste\/[0-9a-f]{64}$/);
+
+    // İE#18 G6: bu süit paylaşım SÖZLEŞMESİNİ sınar, anahtar kapısını değil —
+    // kapı ayrı bir süitin konusudur (07-erisim-anahtari). Burada kapatılır.
+    await page.request.patch(`/api/lists/${listId}/share-key`, {
+      headers: { 'X-CSRF-Token': await csrfToken(page) },
+      data: { enabled: false },
+    });
 
     // ── Girişsiz bağlam: yeni tarayıcı bağlamı, oturum çerezi YOK ──
     const misafir = await browser.newContext();

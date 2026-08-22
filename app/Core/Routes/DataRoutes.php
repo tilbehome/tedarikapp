@@ -52,7 +52,21 @@ final class DataRoutes
         Connection $connection,
         string $migrationsDir,
     ): void {
-        $app->group('/api', static function (RouteCollectorProxy $group) use ($settingsController, $categoryController, $activityController, $translationController): void {
+        // İE#19 G7 — AKTİVİTE DEFTERİ BİLEREK KAPI DIŞINDA.
+        //
+        // MigrationGuard'ın kapsamı bu iş emrinde genişledi; aktivite ucu ise
+        // KASITLI olarak dışarıda bırakıldı. Gerekçe: bu uç salt okunurdur ve tam
+        // olarak sistem BOZUKKEN gereklidir — "migrate koşuldu mu, kim koştu, ne
+        // zaman?" sorusunun cevabı burada. Onu da 503'e kapatmak, kullanıcıyı
+        // arızayı teşhis edecek tek ekrandan mahrum bırakırdı. Uç yalnız
+        // `activity_log` tablosunu okur; şema kaymasından etkilenen kolonları yoktur.
+        $app->group('/api', static function (RouteCollectorProxy $group) use ($activityController): void {
+            $group->get('/activity', [$activityController, 'index']);
+        })
+            ->add(new Csrf($services->session, $responseFactory))
+            ->add(new Auth($services, $responseFactory));
+
+        $app->group('/api', static function (RouteCollectorProxy $group) use ($settingsController, $categoryController, $translationController): void {
             $group->get('/settings', [$settingsController, 'show']);
             $group->put('/settings/rates', [$settingsController, 'updateRates']);
             $group->get('/settings/rates/history', [$settingsController, 'rateHistory']);
@@ -61,8 +75,6 @@ final class DataRoutes
             // İE#14 A2 (K56 Katman 1): Ayarlar > Terminoloji — dosya tabanlı sözlük.
             $group->get('/settings/glossary', [$translationController, 'glossaryIndex']);
             $group->put('/settings/glossary', [$translationController, 'glossarySave']);
-
-            $group->get('/activity', [$activityController, 'index']);
 
             // İE#11: eklenti token yönetimi (Faz 3 rozeti kalktı).
             $group->post('/settings/extension-token', [$settingsController, 'extensionTokenCreate']);
@@ -74,7 +86,12 @@ final class DataRoutes
             $group->delete('/categories/{id}', [$categoryController, 'destroy']);
         })
             ->add(new Csrf($services->session, $responseFactory))
-            ->add(new Auth($services, $responseFactory));
+            ->add(new Auth($services, $responseFactory))
+            // İE#19 G7: kapsam GENİŞLEDİ — ayarlar/kategoriler/aktivite/terminoloji de
+            // şema bağımlıdır. Eskiden bu grup korumasızdı: bekleyen migration varken
+            // Ayarlar ekranı "Undefined column" ile çöküyor, kullanıcı sorunun
+            // güncelleme olduğunu anlayamıyordu.
+            ->add(new MigrationGuard($connection, $migrationsDir, $responseFactory));
 
         $app->group('/api', static function (RouteCollectorProxy $group) use ($listController, $productController, $trashController, $exportController, $shareController, $inboxController, $translationController): void {
             $group->get('/lists', [$listController, 'index']);
@@ -87,6 +104,10 @@ final class DataRoutes
             // İE#10 Blok 4: paylaşım linki üret/yenile + iptal (token yalnız yanıtın içinde bir kez).
             $group->post('/lists/{id}/share', [$shareController, 'create']);
             $group->delete('/lists/{id}/share', [$shareController, 'destroy']);
+            // İE#18 G6 (K62): erişim anahtarı — göster · yenile · aç/kapat.
+            $group->get('/lists/{id}/share-key', [$shareController, 'keyShow']);
+            $group->post('/lists/{id}/share-key', [$shareController, 'keyRotate']);
+            $group->patch('/lists/{id}/share-key', [$shareController, 'keyToggle']);
 
             // İE#10: export üretimi + geçmiş + geçmişten indirme (snapshot'tan yeniden üretim).
             // İE#11 Görev E: ÜRETİM POST'a çevrildi (CSRF'li — durum değiştiren işlem);
@@ -98,6 +119,9 @@ final class DataRoutes
             $group->get('/lists/{id}/products', [$productController, 'index']);
             $group->post('/lists/{id}/products', [$productController, 'store']);
             $group->patch('/lists/{id}/products/reorder', [$productController, 'reorder']);
+
+            // İE#19 E11: tekil ürün — düzenleme ekranı tüm listeyi çekmez.
+            $group->get('/products/{id}', [$productController, 'show']);
 
             // bulk, {id} deseninden ÖNCE tanımlanır; aksi hâlde "bulk" bir kimlik sanılır.
             $group->patch('/products/bulk', [$productController, 'bulk']);

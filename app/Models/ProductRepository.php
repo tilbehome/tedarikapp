@@ -75,8 +75,13 @@ final class ProductRepository
             $params['category_id'] = $filters['category_id'];
         }
         if (isset($filters['q']) && $filters['q'] !== '') {
-            $sql .= ' AND (name LIKE :q OR name_original LIKE :q OR detail LIKE :q)';
-            $params['q'] = '%' . $filters['q'] . '%';
+            // Aynı canlı hata (bkz. ListRepository::all): native prepare'de tekrar
+            // eden yer tutucu HY093 verir. Üç sütun, üç ayrı ad.
+            $sql .= ' AND (name LIKE :q_ad OR name_original LIKE :q_orijinal OR detail LIKE :q_detay)';
+            $desen = '%' . $filters['q'] . '%';
+            $params['q_ad'] = $desen;
+            $params['q_orijinal'] = $desen;
+            $params['q_detay'] = $desen;
         }
 
         $sql .= ' ORDER BY sort_no, id';

@@ -178,6 +178,9 @@ final class ExportSnapshot
     }
 
     /**
+     * Sözlük verilmediğinde kullanılan yedek özetleyici — İE#17 G8-b ile aynı
+     * kompakt kural: hücrede yalnız "N seçenek" (tek kısa değer varsa kendisi).
+     *
      * @param list<string> $degerler
      */
     private static function ozetle(array $degerler): ?string
@@ -185,11 +188,11 @@ final class ExportSnapshot
         if ($degerler === []) {
             return null;
         }
-        $ilk = implode(' · ', array_slice($degerler, 0, ValueSet::LIMIT));
+        if (count($degerler) === 1 && mb_strlen($degerler[0]) <= 40) {
+            return $degerler[0];
+        }
 
-        return count($degerler) > ValueSet::LIMIT
-            ? $ilk . ' … (' . count($degerler) . ' seçenek)'
-            : $ilk;
+        return count($degerler) . ' seçenek';
     }
 
     /**

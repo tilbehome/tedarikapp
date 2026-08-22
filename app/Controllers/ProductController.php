@@ -123,6 +123,35 @@ final class ProductController extends ApiController
     }
 
     /**
+     * GET /api/products/{id} — TEK ÜRÜN (İE#19 E11).
+     *
+     * Düzenleme ekranı ürünü, listenin TÜM ürünlerini çekip içinden aramakla
+     * buluyordu (`forList` + istemci tarafı `find`). 300 ürünlük bir listede tek bir
+     * alanı düzeltmek için 300 satır + görsel bilgisi taşınıyordu; ekran gecikiyor,
+     * mobilde veri harcanıyordu. Tekil uç bunu tek satıra indirir.
+     *
+     * Yetki: liste bulunamazsa veya ürün silinmişse 404 — oturum zaten grup
+     * middleware'indedir (Auth + CSRF + MigrationGuard).
+     *
+     * @param array<string, string> $args
+     */
+    public function show(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    {
+        $productId = $this->intArg($args, 'id');
+        $product = $productId === null ? null : $this->products->find($productId);
+        if ($product === null) {
+            return Response::error($response, 'NOT_FOUND', 'Ürün bulunamadı.', 404);
+        }
+
+        $list = $this->lists->find((int) $product['list_id']);
+        if ($list === null) {
+            return Response::error($response, 'NOT_FOUND', 'Ürün bulunamadı.', 404);
+        }
+
+        return Response::success($response, $this->presenter->product($product, $list));
+    }
+
+    /**
      * GET /api/lists/{id}/products
      *
      * @param array<string, string> $args

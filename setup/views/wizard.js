@@ -36,6 +36,7 @@
         appendLog({ step: method + ' ' + path, ok: ok, ms: Date.now() - startedAt });
         if (ok) return payload.data;
         var error = new Error((payload && payload.error && payload.error.message) || 'Beklenmeyen bir hata oluştu.');
+        error.code = (payload && payload.error && payload.error.code) || '';
         error.fields = (payload && payload.error && payload.error.fields) || {};
         error.diagnostics = (payload && payload.meta && payload.meta.diagnostics) || null;
         throw error;
@@ -567,7 +568,8 @@
   $('unlock-run').addEventListener('click', function (event) {
     var appKey = $('unlock-app-key').value.trim();
     if (!appKey) { alertBox('bad', 'Sahiplik kanıtı gerekli: config.php içindeki APP_KEY değerini girin.'); return; }
-    if (!window.confirm('Kurulum kilidi kaldırılacak ve sihirbaz yeniden çalışacak. Emin misiniz?')) return;
+    if (!window.confirm('Bu tarayıcı için 15 dakikalık bir yeniden kurulum bileti alınacak ve sihirbaz '
+      + 'yeniden çalışacak. Kurulum kilidi SİLİNMEZ. Devam edilsin mi?')) return;
     var button = event.target;
     busy(button, true, 'Doğrulanıyor…');
     api('POST', '/api/setup/unlock', { app_key: appKey }).then(function () {
@@ -587,9 +589,18 @@
     return null;
   }).catch(function (error) {
     // K45: "kurulum tamamlanmış" 403'ü çıkmaz sokak değil — seçenek sun.
-    if (error && typeof error.message === 'string' && error.message.indexOf('kalıcı olarak kapalı') !== -1) {
+    // İE#19 G1: kilit okunamıyorsa (503) sihirbaz hiç açılmaz — bu bir arıza
+    // bildirimidir, "yeniden kur" seçeneği DEĞİL: kanıt olmadan kapı açılmaz.
+    if (error && error.code === 'SETUP_STATE_UNKNOWN') {
+      alertBox('bad', error.message);
+      return;
+    }
+    // K45: "kurulum tamamlanmış" 403'ü çıkmaz sokak değil — seçenek sun.
+    if (error && (error.code === 'FORBIDDEN')
+        && typeof error.message === 'string' && error.message.indexOf('Kurulum zaten tamamlanmış') !== -1) {
       $('locked-box').hidden = false;
-      alertBox('warn', 'Kurulum tamamlanmış görünüyor. Panele gidebilir veya kilidi kaldırıp yeniden kurabilirsiniz.');
+      alertBox('warn', 'Kurulum tamamlanmış görünüyor. Panele gidebilir veya APP_KEY ile 15 dakikalık '
+        + 'yeniden kurulum bileti alıp sihirbazı yeniden çalıştırabilirsiniz.');
       return;
     }
     failBox(error);

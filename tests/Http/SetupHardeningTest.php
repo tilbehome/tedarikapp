@@ -78,9 +78,13 @@ final class SetupHardeningTest extends TestCase
         self::assertSame(403, $this->call('GET', '/api/setup/state', $lock)->getStatusCode());
     }
 
-    public function testKilitOkunamiyorsaSihirbazYineAcik(): void
+    public function testKilitOKUNAMIYORSAKAPIFAILCLOSED(): void
     {
-        // K45: fail-closed KALDIRILDI — kilit doğrulanamıyorsa kurulum bloklanmaz.
+        // İE#19 G1 — DAVRANIŞ DEĞİŞTİ (PM emri). Eskiden kilit okunamıyorsa sihirbaz
+        // AÇILIYORDU: kurulu bir sistemde veritabanını bir an düşürebilen biri,
+        // kimliksiz bir kurulum kapısı elde ediyordu. Artık karar verilemiyorsa
+        // GEÇİLMEZ: 503. "Kilit satırı hiç yazılmamış" gerçek ilk kurulum (bağlantı
+        // yapılandırılmamış) bundan etkilenmez — o yol aşağıdaki testlerde.
         $broken = new SetupLock(
             Connection::fromCallable(static function (): \PDO {
                 throw new RuntimeException('DB yok (test)');
@@ -88,7 +92,18 @@ final class SetupHardeningTest extends TestCase
             $this->tempPath('storage'),
         );
 
-        self::assertSame(200, $this->call('GET', '/api/setup/state', $broken)->getStatusCode());
+        $yanit = $this->call('GET', '/api/setup/state', $broken);
+        self::assertSame(503, $yanit->getStatusCode());
+        self::assertStringContainsString('SETUP_STATE_UNKNOWN', (string) $yanit->getBody());
+    }
+
+    public function testYapilandirilmamisSistemdeSihirbazACIKKALIR(): void
+    {
+        // G1'in sınırı: bağlantı YOKSA (config.php yok) kilit dosyadan okunur ve
+        // "unlocked" döner. Gerçek ilk kurulum hiçbir koşulda bloklanmaz (K45).
+        $lock = new SetupLock(null, $this->tempPath('storage'));
+
+        self::assertSame(200, $this->call('GET', '/api/setup/state', $lock)->getStatusCode());
     }
 
     public function testConfigVarkenSihirbazAcikVeIlkAdimlarOtomatikGecilir(): void

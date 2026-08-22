@@ -58,6 +58,57 @@ final class RememberTokenService
         ];
     }
 
+    /**
+     * KULLANIM BAŞINA ROTASYON (İE#19 G8).
+     *
+     * "Beni hatırla" çerezi tek bir validator ile 30 gün boyunca sabit kalıyordu:
+     * çerez bir kez sızarsa (paylaşılan bilgisayar, yedeklenmiş tarayıcı profili,
+     * kötücül eklenti) hırsız ay boyunca sessizce girebiliyordu. Selector+validator
+     * deseninin hırsızlık tespiti ancak GERÇEK KULLANICI da girmeye çalıştığında
+     * çalışır — ve sabit token'da o an hiçbir uyumsuzluk doğmaz.
+     *
+     * Artık her sessiz girişte validator (ve selector) TAZELENİR. Eski değer anında
+     * geçersizdir; hırsız eski çerezle döndüğünde `Stolen` yoluna düşer ve kullanıcının
+     * tüm token'ları iptal edilir — yani sızıntı sessiz kalmaz, ALARM ÜRETİR.
+     *
+     * Son kullanma tarihi UZATILMAZ: rotasyon bir güvenlik önlemidir, süre uzatma değil.
+     *
+     * @return string|null yeni çerez değeri (`selector:validator`); satır yoksa null
+     */
+    public function rotate(int $tokenId, int $userId, DateTimeImmutable $now): ?string
+    {
+        $selector = bin2hex(random_bytes(8));
+        $validator = bin2hex(random_bytes(32));
+
+        $statement = $this->connection->pdo()->prepare(
+            'UPDATE remember_tokens SET selector = :selector, token_hash = :token_hash
+             WHERE id = :id AND user_id = :user_id',
+        );
+        $statement->execute([
+            'selector' => $selector,
+            'token_hash' => hash('sha256', $validator),
+            'id' => $tokenId,
+            'user_id' => $userId,
+        ]);
+
+        return $statement->rowCount() === 1 ? $selector . ':' . $validator : null;
+    }
+
+    /**
+     * Token'ın son kullanma tarihi — rotasyon sonrası çerezi AYNI süreyle yazmak için.
+     *
+     * Zaman dilimi çağırandan gelir: depolanan değer dilimsizdir ve uygulamanın
+     * dilimiyle yorumlanmalıdır (Dates sözleşmesi).
+     */
+    public function expiresAt(int $tokenId, \DateTimeZone $timezone): ?DateTimeImmutable
+    {
+        $statement = $this->connection->pdo()->prepare('SELECT expires_at FROM remember_tokens WHERE id = :id');
+        $statement->execute(['id' => $tokenId]);
+        $value = $statement->fetchColumn();
+
+        return is_string($value) ? Dates::fromStorage($value, $timezone) : null;
+    }
+
     /** Çerez değerini doğrular; çağıran sonucu duruma göre işler (çalıntı token → hepsini sil). */
     public function validate(?string $cookieValue, DateTimeImmutable $now): RememberTokenMatch
     {

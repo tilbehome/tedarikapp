@@ -66,6 +66,18 @@ interface RequestOptions {
   body?: unknown;
   /** 401'de yönlendirmeyi bastır (giriş ekranının kendi çağrıları için). */
   silentUnauthorized?: boolean;
+  /**
+   * İE#19 E12: isteği iptal etmek için AbortSignal. Arama kutusunda her tuş yeni
+   * bir istek doğuruyordu; yavaş dönen ESKİ bir yanıt, yeni yanıtın üzerine
+   * yazarak kullanıcıya yazdığından farklı sonuçlar gösterebiliyordu (yarış).
+   * Yeni istek açılırken eskisi iptal edilir.
+   */
+  signal?: AbortSignal;
+}
+
+/** İstek iptal edildi mi? (kullanıcı yazmaya devam etti — hata DEĞİLDİR) */
+export function isAborted(error: unknown): boolean {
+  return error instanceof ApiError && error.code === 'ABORTED';
 }
 
 /** Zarfın `meta` alanını da isteyen çağrılar için (sayfalama, filtre menüleri). */
@@ -96,8 +108,13 @@ async function requestWithMeta<T>(path: string, options: RequestOptions = {}): P
       headers,
       credentials: 'same-origin',
       body: options.body === undefined ? undefined : JSON.stringify(options.body),
+      signal: options.signal,
     });
-  } catch {
+  } catch (cause) {
+    // İptal, ağ hatası DEĞİLDİR: kullanıcıya "sunucuya ulaşılamadı" demek yanlış olur.
+    if (cause instanceof DOMException && cause.name === 'AbortError') {
+      throw new ApiError('ABORTED', 'İstek iptal edildi.', 0);
+    }
     throw new ApiError('NETWORK', errorMessages.NETWORK ?? 'Sunucuya ulaşılamadı.', 0);
   }
 

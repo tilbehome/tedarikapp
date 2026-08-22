@@ -16,6 +16,13 @@ use App\Core\Connection;
  * parti parti, kayıt bozmaz (kaynağı olmayan/indirilemeyen kayıt AYNEN kalır ve
  * raporlanır). Export ve paylaşım sayfası görselleri aynı /media kayıtlarından
  * okuduğu için bu denetim o yüzeyleri de kapsar.
+ *
+ * TERMİNAL LİSTE KURALI (İE#19 E8 · K37 §B4): `completed`/`cancelled` bir listenin
+ * ürünleri onarım kapsamı DIŞINDADIR. Onarım "aynı görseli geri getiriyorum" gibi
+ * masum görünür ama kapalı bir listenin BELGE GÖRÜNÜMÜNÜ değiştirir: dosya yolu
+ * değişir, revizyon içerikten türediği için (K57) belge yeni revizyon üretir ve
+ * firmaya gönderilmiş bir liste kendiliğinden farklılaşır. Donmuş kayıt donmuş
+ * kalır; atlananlar raporlanır, sessizce yutulmaz.
  */
 final class MediaIntegrity
 {
@@ -33,6 +40,7 @@ final class MediaIntegrity
      *     checked: int,
      *     missing: int,
      *     repaired: int,
+     *     skipped_terminal: int,
      *     failed: list<array{kind: string, id: int, product_id: int, reference: string, error: string}>,
      * }
      */
@@ -41,6 +49,7 @@ final class MediaIntegrity
         $checked = 0;
         $missing = 0;
         $repaired = 0;
+        $atlananTerminal = 0;
         $failed = [];
         $archiveOn = $this->media->mode() === MediaService::MODE_DOWNLOAD;
 
@@ -50,6 +59,11 @@ final class MediaIntegrity
                 continue;
             }
             $missing++;
+            if ($this->terminalListede((int) $row['id'])) {
+                $atlananTerminal++;
+
+                continue; // E8: kapalı listenin belgesi sessizce değişemez
+            }
             if ($missing > $limit) {
                 continue; // parti sınırı: kalan kayıplar sayılır ama bu turda onarılmaz
             }
@@ -80,6 +94,11 @@ final class MediaIntegrity
                 continue;
             }
             $missing++;
+            if ($this->terminalListede((int) $row['product_id'])) {
+                $atlananTerminal++;
+
+                continue; // E8
+            }
             if ($missing > $limit) {
                 continue;
             }
@@ -109,8 +128,23 @@ final class MediaIntegrity
             'checked' => $checked,
             'missing' => $missing,
             'repaired' => $repaired,
+            'skipped_terminal' => $atlananTerminal,
             'failed' => $failed,
         ];
+    }
+
+    /**
+     * E8: ürünün listesi terminal mi? (tek sorgu — parti başına ürün sayısı azdır)
+     */
+    private function terminalListede(int $productId): bool
+    {
+        $statement = $this->connection->pdo()->prepare(
+            'SELECT l.status FROM products p JOIN lists l ON l.id = p.list_id WHERE p.id = :id',
+        );
+        $statement->execute(['id' => $productId]);
+        $status = $statement->fetchColumn();
+
+        return is_string($status) && in_array($status, ListMutationPolicy::TERMINAL_STATUSES, true);
     }
 
     /**
@@ -123,6 +157,15 @@ final class MediaIntegrity
      */
     public function repairProduct(int $productId): array
     {
+        if ($this->terminalListede($productId)) {
+            return [
+                'repaired' => false,
+                'main_image' => null,
+                'error' => 'Ürünün listesi tamamlanmış/iptal edilmiş; kapalı listenin görselleri değiştirilemez '
+                    . '(devam etmek için listeyi kopyalayın).',
+            ];
+        }
+
         $statement = $this->connection->pdo()->prepare(
             'SELECT id, main_image, main_image_source FROM products WHERE id = :id',
         );

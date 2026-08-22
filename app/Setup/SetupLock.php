@@ -68,7 +68,19 @@ final class SetupLock
             try {
                 $stored = $this->readFromDatabaseStrict();
             } catch (Throwable) {
-                return self::STATE_UNKNOWN;
+                // İE#19 G1 DÜZELTMESİ — "okunamadı" İKİ FARKLI DURUMDUR:
+                //
+                //  (a) veritabanı yanıt vermiyor  → gerçekten bilinmiyor, fail-closed,
+                //  (b) veritabanı ayakta ama `settings` tablosu YOK → sistem henüz
+                //      KURULMAMIŞTIR. Bu, kurulumun normal ORTA HÂLİDİR: sihirbaz
+                //      config.php'yi yazmıştır (bağlantı artık var) ama migrate adımı
+                //      daha koşmamıştır. Bu hâli "bilinmiyor" sayıp kapıyı kapatmak,
+                //      kurulumu tam ortasında kilitler (CI disksiz simülasyonu bunu
+                //      yakaladı) ve K45'in "kurulum hiçbir koşulda bloklanmaz"
+                //      sözünü çiğnerdi.
+                //
+                // Ayrımı tek ucuz yoklama verir.
+                return $this->connectionResponds() ? self::STATE_UNLOCKED : self::STATE_UNKNOWN;
             }
 
             if ($stored !== null) {
@@ -77,6 +89,20 @@ final class SetupLock
         }
 
         return $this->readFromLegacyFile() !== null ? self::STATE_LOCKED : self::STATE_UNLOCKED;
+    }
+
+    /** Veritabanının kendisi yanıt veriyor mu? ("tablo yok" ile "sunucu yok" ayrımı) */
+    private function connectionResponds(): bool
+    {
+        if ($this->connection === null) {
+            return false;
+        }
+
+        try {
+            return $this->connection->pdo()->query('SELECT 1') !== false;
+        } catch (Throwable) {
+            return false;
+        }
     }
 
     /** @return array<string, mixed>|null */

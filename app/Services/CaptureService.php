@@ -122,14 +122,18 @@ final class CaptureService
     }
 
     /**
-     * Yükü verilen listeye ÜRÜN olarak açar (transaction çağıranda değil — burada).
+     * MEDYA HAZIRLIĞI — AĞ İŞİ, TRANSACTION DIŞINDA (İE#19 G6).
      *
-     * @param array<string, mixed> $payload doğrulanmış v2 yükü
+     * Görsel indirme saniyeler sürebilir; bunu transaction içine almak satır
+     * kilitlerini ağ süresince tutar ve paylaşımlı hostingde kilit zaman aşımı
+     * üretir. Bu yüzden ağ ÖNCE koşar, DB yazımı sonra tek atomik blokta yapılır.
+     *
+     * @param array<string, mixed> $payload
+     *
+     * @return array{main_image: string|null, main_source: string|null, gallery: list<string>, temp: string|null, path: string|null}
      */
-    public function createProduct(array $payload, int $listId, DateTimeImmutable $now): int
+    public function prepareMedia(array $payload): array
     {
-        /** @var array<string, mixed> $source */
-        $source = $payload['source'];
         /** @var array<string, mixed> $normalized */
         $normalized = $payload['normalized'];
         $images = is_array($normalized['images'] ?? null) ? array_values(array_filter($normalized['images'], 'is_string')) : [];
@@ -137,11 +141,17 @@ final class CaptureService
         // Ana görsel MediaService'ten geçer: SSRF denetimi her modda; arşiv modunda indirilir.
         $mainImage = null;
         $mainSource = null;
+        $temp = null;
+        $path = null;
         if ($images !== []) {
             $mainSource = array_shift($images);
             try {
-                $stored = $this->media->store($mainSource);
+                // E7: ertelenmiş yazım — dosya `.tmp` adında bekler, kalıcı ada
+                // ancak ürün satırı COMMIT olunca taşınır (yetim medya yok).
+                $stored = $this->media->store($mainSource, ertele: true);
                 $mainImage = $stored['url'];
+                $temp = $stored['temp'] ?? null;
+                $path = $stored['path'];
             } catch (MediaDeniedException $e) {
                 throw new CaptureException('Görsel adresi reddedildi: ' . $e->getMessage());
             } catch (MediaException) {
@@ -149,40 +159,108 @@ final class CaptureService
             }
         }
 
-        return (int) $this->connection->transaction(function () use ($payload, $source, $normalized, $listId, $now, $mainImage, $mainSource, $images): int {
-            $productId = $this->products->create($listId, [
-                'platform' => (string) $source['platform'],
-                'external_id' => isset($source['external_id']) ? (string) $source['external_id'] : null,
-                'name' => mb_substr(trim((string) $normalized['name']), 0, 300),
-                'name_original' => isset($payload['raw']['title']) && is_string($payload['raw']['title'])
-                    ? mb_substr($payload['raw']['title'], 0, 500)
-                    : null,
-                'url' => (string) $source['url'],
-                'vendor_name' => isset($source['seller_name']) ? mb_substr((string) $source['seller_name'], 0, 200) : null,
-                'vendor_url' => isset($source['seller_url']) && is_string($source['seller_url']) ? mb_substr($source['seller_url'], 0, 1000) : null,
-                'sku_matrix' => isset($normalized['sku_matrix']) && is_array($normalized['sku_matrix'])
-                    ? json_encode($normalized['sku_matrix'], JSON_UNESCAPED_UNICODE)
-                    : null,
-                'main_image' => $mainImage,
-                'main_image_source' => $mainSource,
-                'video_url' => isset($normalized['video_url']) && is_string($normalized['video_url']) ? $normalized['video_url'] : null,
-                'qty' => (int) ($payload['qty'] ?? 1),
-                'units_per_carton' => isset($payload['units_per_carton']) && is_int($payload['units_per_carton']) ? $payload['units_per_carton'] : null,
-                // İE#11 EK-3 (2): RAW blok OLDUĞU GİBİ ürüne yazılır (v2 TechnicalProfile'ın
-                // ham girdisi — docs/v2/02). Panel bunu göstermez; veri kaybolmaz.
-                'raw_attributes' => json_encode($payload['raw'] ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
-                'country_of_origin' => self::countryCode($normalized['country_of_origin'] ?? null),
-                'country_of_dispatch' => self::countryCode($normalized['country_of_dispatch'] ?? null),
-                'price_yuan' => (string) $normalized['price_yuan'],
-                'note' => isset($payload['note']) && is_string($payload['note']) ? mb_substr($payload['note'], 0, 2000) : null,
-            ], $now);
+        return [
+            'main_image' => $mainImage,
+            'main_source' => $mainSource,
+            'gallery' => $images,
+            'temp' => $temp,
+            'path' => $path,
+        ];
+    }
 
-            // Kalan görseller REMOTE galeri satırları — K47 arşive-taşıma hattı sonra indirir.
-            $this->products->addRemoteImages($productId, array_slice($images, 0, 20));
-            $this->lists->bumpRevision($listId, $now);
+    /**
+     * Yükü verilen listeye ÜRÜN olarak açar (transaction çağıranda değil — burada).
+     *
+     * GERİYE UYUM: tek başına çağrılabilir; İE#19 G6 sonrası uygulama yolu
+     * `CaptureApplier` üzerinden gider (kuyruk rezervasyonu + ürün + tarihçe
+     * TEK transaction).
+     *
+     * @param array<string, mixed> $payload doğrulanmış v2 yükü
+     */
+    public function createProduct(array $payload, int $listId, DateTimeImmutable $now): int
+    {
+        $media = $this->prepareMedia($payload);
 
-            return $productId;
-        });
+        try {
+            $productId = (int) $this->connection->transaction(
+                fn (): int => $this->insertProduct($payload, $listId, $media, $now),
+            );
+        } catch (\Throwable $e) {
+            $this->media->discard($this->mediaHandle($media));
+
+            throw $e;
+        }
+
+        $this->media->commit($this->mediaHandle($media));
+
+        return $productId;
+    }
+
+    /**
+     * MediaService::commit/discard'ın beklediği tutamak.
+     *
+     * @param array{main_image: string|null, main_source: string|null, gallery: list<string>, temp?: string|null, path?: string|null} $media
+     *
+     * @return array{mode: string, path: string|null, url: string, temp: string|null}
+     */
+    public function mediaHandle(array $media): array
+    {
+        return [
+            'mode' => 'download',
+            'path' => $media['path'] ?? null,
+            'url' => (string) ($media['main_image'] ?? ''),
+            'temp' => $media['temp'] ?? null,
+        ];
+    }
+
+    /**
+     * SAF DB YAZIMI — kendi transaction'ını AÇMAZ (çağıran atomik bloğu yönetir).
+     *
+     * @param array<string, mixed> $payload
+     * @param array{main_image: string|null, main_source: string|null, gallery: list<string>, temp?: string|null, path?: string|null} $media
+     */
+    public function insertProduct(array $payload, int $listId, array $media, DateTimeImmutable $now): int
+    {
+        /** @var array<string, mixed> $source */
+        $source = $payload['source'];
+        /** @var array<string, mixed> $normalized */
+        $normalized = $payload['normalized'];
+        $mainImage = $media['main_image'];
+        $mainSource = $media['main_source'];
+        $images = $media['gallery'];
+
+        $productId = $this->products->create($listId, [
+            'platform' => (string) $source['platform'],
+            'external_id' => isset($source['external_id']) ? (string) $source['external_id'] : null,
+            'name' => mb_substr(trim((string) $normalized['name']), 0, 300),
+            'name_original' => isset($payload['raw']['title']) && is_string($payload['raw']['title'])
+                ? mb_substr($payload['raw']['title'], 0, 500)
+                : null,
+            'url' => (string) $source['url'],
+            'vendor_name' => isset($source['seller_name']) ? mb_substr((string) $source['seller_name'], 0, 200) : null,
+            'vendor_url' => isset($source['seller_url']) && is_string($source['seller_url']) ? mb_substr($source['seller_url'], 0, 1000) : null,
+            'sku_matrix' => isset($normalized['sku_matrix']) && is_array($normalized['sku_matrix'])
+                ? json_encode($normalized['sku_matrix'], JSON_UNESCAPED_UNICODE)
+                : null,
+            'main_image' => $mainImage,
+            'main_image_source' => $mainSource,
+            'video_url' => isset($normalized['video_url']) && is_string($normalized['video_url']) ? $normalized['video_url'] : null,
+            'qty' => (int) ($payload['qty'] ?? 1),
+            'units_per_carton' => isset($payload['units_per_carton']) && is_int($payload['units_per_carton']) ? $payload['units_per_carton'] : null,
+            // İE#11 EK-3 (2): RAW blok OLDUĞU GİBİ ürüne yazılır (v2 TechnicalProfile'ın
+            // ham girdisi — docs/v2/02). Panel bunu göstermez; veri kaybolmaz.
+            'raw_attributes' => json_encode($payload['raw'] ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            'country_of_origin' => self::countryCode($normalized['country_of_origin'] ?? null),
+            'country_of_dispatch' => self::countryCode($normalized['country_of_dispatch'] ?? null),
+            'price_yuan' => (string) $normalized['price_yuan'],
+            'note' => isset($payload['note']) && is_string($payload['note']) ? mb_substr($payload['note'], 0, 2000) : null,
+        ], $now);
+
+        // Kalan görseller REMOTE galeri satırları — K47 arşive-taşıma hattı sonra indirir.
+        $this->products->addRemoteImages($productId, array_slice($images, 0, 20));
+        $this->lists->bumpRevision($listId, $now);
+
+        return $productId;
     }
 
     /** ISO 3166-1 alpha-2 doğrulaması — geçersizse null (uydurma menşe yazılmaz). */

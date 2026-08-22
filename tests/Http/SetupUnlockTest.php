@@ -146,18 +146,44 @@ final class SetupUnlockTest extends TestCase
         self::assertTrue($this->lock()->isLocked(), 'Bekleme sırasında kilit YERİNDE kalır.');
     }
 
-    public function testDogruAppKeyKilidiKaldirir(): void
+    /**
+     * İE#19 G2 — DAVRANIŞ DEĞİŞTİ: doğru kanıt kilidi KALDIRMAZ, BİLET verir.
+     *
+     * Eskiden kanıt karşılığında `settings` satırı siliniyordu ve sihirbaz o andan
+     * itibaren İNTERNETE açık kalıyordu: kanıt bir kez veriliyor, açıklık kalıcı
+     * oluyordu; kullanıcı sihirbazı yarıda bıraksa sistem kilitsiz kalıyordu.
+     * Artık kilit yerinde durur, 15 dakikalık ve istemciye bağlı bir bilet verilir.
+     */
+    public function testDogruAppKeyBILETVERIRKILITKALIR(): void
     {
         $response = $this->call('POST', '/api/setup/unlock', ['app_key' => $this->appKey]);
 
         self::assertSame(200, $response->getStatusCode());
         self::assertTrue($this->json($response)['data']['unlocked']);
-        self::assertFalse($this->lock()->isLocked(), 'Doğru kanıt kilidi kaldırır.');
+        self::assertTrue($this->json($response)['data']['ticket']);
+        self::assertTrue($this->lock()->isLocked(), 'Kilit SİLİNMİŞ — sihirbaz herkese açık kaldı.');
+        self::assertNotNull($this->biletCerezi($response), 'Bilet çerezi yazılmadı.');
 
         $count = (int) $this->pdo->query(
             "SELECT COUNT(*) AS c FROM activity_log WHERE action = 'setup_unlock'",
         )->fetch()['c'];
         self::assertSame(1, $count, 'Başarılı kaldırma da loglanır.');
+    }
+
+    /** Yanıttaki yeniden-kurulum bileti çerezi. */
+    private function biletCerezi(\Psr\Http\Message\ResponseInterface $response): ?string
+    {
+        foreach ($response->getHeader('Set-Cookie') as $header) {
+            if (!str_starts_with($header, \App\Setup\ReSetupTicket::COOKIE_NAME . '=')) {
+                continue;
+            }
+            $value = substr($header, strlen(\App\Setup\ReSetupTicket::COOKIE_NAME) + 1);
+            $end = strpos($value, ';');
+
+            return rawurldecode($end === false ? $value : substr($value, 0, $end));
+        }
+
+        return null;
     }
 
     // ─────────────── K45 amacı bozulmadı ───────────────
@@ -179,8 +205,9 @@ final class SetupUnlockTest extends TestCase
 
     public function testTemizKurulumSifirlaYazilmadan422Doner(): void
     {
-        // Kilidi kanıtla kaldır, adımı migrate'e getir (config mevcut → otomatik ilerler).
-        $this->call('POST', '/api/setup/unlock', ['app_key' => $this->appKey]);
+        // Kanıtla BİLET al (kilit yerinde kalır — G2), adımı migrate'e getir.
+        $bilet = $this->biletCerezi($this->call('POST', '/api/setup/unlock', ['app_key' => $this->appKey]));
+        self::assertNotNull($bilet);
         $state = new SetupState($this->session);
         $state->complete(SetupState::STEP_REQUIREMENTS);
         $state->complete(SetupState::STEP_DATABASE);
@@ -193,7 +220,8 @@ final class SetupUnlockTest extends TestCase
             ->createServerRequest('POST', '/api/setup/migrate', ['REMOTE_ADDR' => '203.0.113.7'])
             ->withParsedBody(['fresh' => true, 'app_key' => $this->appKey])
             ->withHeader('Content-Type', 'application/json')
-            ->withHeader(\App\Middleware\SetupCsrf::HEADER, $csrf);
+            ->withHeader(\App\Middleware\SetupCsrf::HEADER, $csrf)
+            ->withCookieParams([\App\Setup\ReSetupTicket::COOKIE_NAME => $bilet]);
         $app = SetupAppBuilder::build($this->tempRoot(), new NullLogger(), $this->session, $this->clock, setupLock: $this->lock(), appEnv: 'local');
         $response = $app->handle($request);
 

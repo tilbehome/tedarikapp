@@ -33,6 +33,8 @@ final class SystemRoutes
     ): void {
         $app->group('/api/system', static function (RouteCollectorProxy $group) use ($system): void {
             $group->get('/status', [$system, 'status']);
+            // İE#19 G4: bütünlük denetiminin İSİM İSİM listesi oturum arkasındadır.
+            $group->get('/integrity/detay', [$system, 'integrityDetail']);
             $group->get('/state-machine', [$system, 'stateMachine']);
             $group->post('/migrate', [$system, 'migrate']);
             // K46: kilit kaldırmanın admin-oturumu yolu (Auth + CSRF bu grupta).

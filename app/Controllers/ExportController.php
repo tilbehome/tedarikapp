@@ -182,7 +182,10 @@ final class ExportController extends ApiController
         if (!is_string($raw) || $raw === '' || ($listRow['share_token_hash'] ?? null) === null) {
             return null;
         }
-        if (preg_match('#^https?://[^\s]+/p/([0-9a-f]{64})$#', $raw, $eslesme) !== 1) {
+        // İE#18: kanonik önek `/liste/`, `/p/` takma addır — ikisi de kabul edilir.
+        // (Eskiden yalnız `/p/` eşleşiyordu; panel `/liste/` göndermeye başlayınca
+        // belgedeki QR sessizce kayboluyordu.)
+        if (preg_match('#^https?://[^\s]+/(?:liste|p)/([0-9a-f]{64})$#', $raw, $eslesme) !== 1) {
             return null;
         }
         // Verilen token GERÇEKTEN bu listenin linki mi? Hash'i karşılaştırılır.

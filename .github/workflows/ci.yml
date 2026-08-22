@@ -124,6 +124,64 @@ jobs:
           TEDARIKAPP_TEST_DB_PASS: root
         run: vendor/bin/phpunit --group mysql
 
+  mariadb-integration:
+    name: MariaDB 11.4 entegrasyon (İE#19 E3)
+    runs-on: ubuntu-latest
+    # ÖNERİ VE GEREKÇE (emirde istendiği gibi): tam matris her PR'da iki kat MySQL
+    # süresi demektir. Canlı sunucu MariaDB olabildiği için kapsam dışı bırakmak da
+    # olmaz. Dengeyi şöyle kuruyoruz: PR'larda MySQL 8.4 (hızlı geri bildirim),
+    # main'e MERGE'te ve `mariadb` etiketli PR'larda MariaDB 11.4. Böylece hiçbir
+    # değişiklik MariaDB görülmeden main'e giremez, PR turu da yavaşlamaz.
+    if: >-
+      github.ref == 'refs/heads/main' ||
+      contains(github.event.pull_request.labels.*.name, 'mariadb')
+
+    services:
+      mariadb:
+        image: mariadb:11.4
+        env:
+          MARIADB_ROOT_PASSWORD: root
+          MARIADB_DATABASE: tedarikapp_test
+        ports:
+          - 3307:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s
+          --health-timeout=3s
+          --health-retries=12
+
+    steps:
+      - name: Depoyu al
+        uses: actions/checkout@v7
+
+      - name: PHP 8.4 kur
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: bcmath, curl, fileinfo, gd, intl, mbstring, openssl, pdo_mysql, pdo_sqlite, sodium, zip
+          coverage: none
+          tools: none
+
+      - name: Composer önbelleği
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache
+          key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-
+
+      - name: Bağımlılıkları kur
+        run: |
+          n=0; until composer install --no-interaction --no-progress; do
+            n=$((n+1)); [ $n -ge 3 ] && exit 1; echo "codeload hatası — 90 sn sonra deneme $((n+1))/3"; sleep 90
+          done
+
+      - name: MariaDB üzerinde kritik sorgu + migration süiti
+        env:
+          TEDARIKAPP_TEST_DB_DSN: 'mysql:host=127.0.0.1;port=3307;dbname=tedarikapp_test;charset=utf8mb4'
+          TEDARIKAPP_TEST_DB_USER: root
+          TEDARIKAPP_TEST_DB_PASS: root
+        run: vendor/bin/phpunit --group mysql
+
   php81-uyum:
     name: PHP 8.1 uyum (K45 taban)
     runs-on: ubuntu-latest
@@ -219,10 +277,10 @@ jobs:
 
     steps:
       - name: Depoyu al
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7 (E4: SHA pin)
 
       - name: PHP 8.4 kur
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@b604ade2a87db23f8871b7182e69ec5e75effb45 # v2 (E4: SHA pin)
         with:
           php-version: '8.4'
           # DİKKAT: sodium BİLEREK yok — üretim sunucusu profili (K39/K41).
@@ -231,7 +289,7 @@ jobs:
           tools: none
 
       - name: Composer önbelleği
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4 (E4: SHA pin)
         with:
           path: ~/.composer/cache
           key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
@@ -250,7 +308,7 @@ jobs:
       # Zip'i CI ÜRETİR, AÇAR ve ÇALIŞTIRIR: /setup gerçekten text/html döner,
       # /api/setup/state 200, integrity ucu "eksik yok" der. Üçü yeşil olmadan release yok.
       - name: Node 22 kur (panel build release zip'e girer)
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7 (E4: SHA pin)
         with:
           node-version: '22'
           cache: npm
@@ -269,7 +327,10 @@ jobs:
           done
 
       - name: Release üret + zip doğrulaması (bin/release.php)
-        run: php bin/release.php --out=dist --version=ci-denetim
+        # E9: --panel-dal artık ZORUNLU. CI çıkarması pull_request olaylarında
+        # ayrık HEAD'tir; damga da "HEAD" yazar — beyan ile damga aynı kaynaktan
+        # okunur ve release.php commit eşleşmesini HEAD üzerinden doğrular.
+        run: php bin/release.php --out=dist --version=ci-denetim --panel-dal="$(git rev-parse --abbrev-ref HEAD)"
 
       - name: Zip'i aç ve AÇILIŞI doğrula (setup HTML + state 200 + integrity temiz)
         run: |
@@ -317,9 +378,9 @@ jobs:
         working-directory: extension
     steps:
       - name: Depoyu al
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7 (E4: SHA pin)
       - name: Node 22 kur
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7 (E4: SHA pin)
         with:
           node-version: '22'
           cache: npm
@@ -330,12 +391,19 @@ jobs:
         run: npx wxt prepare
       - name: Tip denetimi
         run: npm run typecheck
+      - name: Bağımlılık güvenlik kapısı (İE#19 E1)
+        # Eklenti ağacında 16 açık (5 kritik) birikmişti ve hiçbir job bunu
+        # GÖRMÜYORDU: panelde `npm audit` vardı, eklentide yoktu. Eklenti kullanıcının
+        # tarayıcısında, oturum açmış bir sayfada koşar — tedarik zinciri riski
+        # burada paneldekinden DÜŞÜK değil, YÜKSEKTİR. Kapı artık her PR'da koşar.
+        run: npm audit --audit-level=high
+
       - name: Fixture testleri (canlı istek YOK)
         run: npm test
       - name: Üretim bundle'ı + Store zip'i
         run: npm run zip
       - name: Zip'i artefakt olarak yükle
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4 (E4: SHA pin)
         with:
           name: eklenti-zip
           path: extension/dist/*.zip
@@ -494,17 +562,51 @@ jobs:
   gitleaks:
     name: Sır taraması (gitleaks)
     runs-on: ubuntu-latest
-    # İE#10.5 Blok 5: commit geçmişi dahil sır sızıntısı taraması — CLAUDE.md §5'in
-    # otomatik bekçisi. Bulgu = job kırmızı; yanlış pozitifler .gitleaksignore ile yönetilir.
+    # İE#10.5 Blok 5: sır sızıntısı taraması — CLAUDE.md §5'in otomatik bekçisi.
+    #
+    # İE#19 E2 — SAHTE YEŞİL KAPATILDI. Eylem, push olaylarında yalnız "yeni gelen"
+    # commit aralığını tarıyordu; force-push, ilk push ve bazı merge senaryolarında
+    # bu aralık BOŞ oluyor, log "0 commits scanned" yazıyor ve job YEŞİL dönüyordu.
+    # Yani en riskli anlarda tarama HİÇ KOŞMUYORDU ama panoda tik görünüyordu.
+    #
+    # Yeni kurulum üç şey yapar:
+    #   1. gitleaks ikilisi SÜRÜMÜ SABİT indirilir (eylem sürümü sürüklenmesi yok),
+    #   2. GEÇMİŞ taranır ve "commits scanned" sayısı LOG'DAN OKUNUR; 0 ise job KIRMIZI,
+    #   3. ÇALIŞMA AĞACI ayrıca taranır (--no-git): aralık ne olursa olsun her koşuda
+    #      en az bir gerçek tarama yapılmış olur.
     steps:
       - name: Depoyu al
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7 (E4: SHA pin)
         with:
           fetch-depth: 0
-      - name: gitleaks
-        uses: gitleaks/gitleaks-action@v3
+
+      - name: gitleaks kur (sürüm sabit)
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_SURUM: 8.28.0
+        run: |
+          curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_SURUM}/gitleaks_${GITLEAKS_SURUM}_linux_x64.tar.gz" -o /tmp/gitleaks.tgz
+          tar -xzf /tmp/gitleaks.tgz -C /tmp gitleaks
+          sudo install -m 0755 /tmp/gitleaks /usr/local/bin/gitleaks
+          gitleaks version
+
+      - name: Geçmiş taraması (boş aralık = KIRMIZI)
+        run: |
+          set -o pipefail
+          gitleaks detect --source . --redact --log-opts="--all" 2>&1 | tee /tmp/gitleaks-gecmis.log || DURUM=$?
+          # Bulgu varsa gitleaks 1 döner; onu aşağıda ayrıca değerlendiriyoruz.
+          taranan=$(grep -oE '[0-9]+ commits scanned' /tmp/gitleaks-gecmis.log | grep -oE '^[0-9]+' | tail -1)
+          echo "Taranan commit sayısı: ${taranan:-bilinmiyor}"
+          if [ -z "$taranan" ] || [ "$taranan" -eq 0 ]; then
+            echo "HATA (E2): tarama BOŞ aralıkta koştu — bu bir yeşil DEĞİL, taramanın hiç yapılmamasıdır."
+            exit 1
+          fi
+          if [ "${DURUM:-0}" -ne 0 ]; then
+            echo "HATA: gitleaks geçmişte bulgu bildirdi."
+            exit 1
+          fi
+
+      - name: Çalışma ağacı taraması (her koşuda gerçek tarama)
+        run: gitleaks detect --source . --no-git --redact
 
   panel:
     name: Panel (tsc + eslint + build)

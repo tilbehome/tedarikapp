@@ -55,7 +55,134 @@ final class PublicExportController
         private readonly SharePage $page,
         private readonly \App\Core\Clock $clock,
         private readonly \DateTimeZone $timezone,
+        // İE#17 G6: başarısız girişimler İÇ TEŞHİS için app_logs'a yazılır.
+        // activity_log'a DEĞİL — panel akışı sayaç satırlarıyla kirlenmesin
+        // (İE#13 rate-limiter dersi). İstemciye hiçbir şey sızmaz.
+        private readonly ?\Psr\Log\LoggerInterface $logger = null,
+        // İE#18 G6-e: anahtar kapısı EXPORT'TAN DOLAŞILARAK aşılamaz.
+        private readonly ?\App\Services\Share\ShareKeyService $anahtar = null,
     ) {
+    }
+
+    /**
+     * İE#18 G6-e — KAPI TUTARLILIĞI.
+     *
+     * Sayfa anahtar istiyorsa indirme uçları da ister. Aksi hâlde token'ı bilen
+     * biri sayfayı hiç açmadan `/export-link` → `/export` zincirini kullanıp
+     * kapıyı dolaşırdı. Çerez K58 imza modelinin YERİNE GEÇMEZ; imza yine
+     * zorunludur, çerez EK katmandır.
+     *
+     * @param array<string, mixed> $row
+     */
+    private function anahtarKapisiAcik(array $row, string $token, ServerRequestInterface $request, \DateTimeImmutable $now): bool
+    {
+        if ($this->anahtar === null || !$this->anahtar->kapiAcik($row)) {
+            return true; // kapı kapalı liste: eski davranış (token yeter)
+        }
+
+        $cerez = $request->getCookieParams()[\App\Services\Share\ShareKeyService::CEREZ_ADI] ?? null;
+
+        return $this->anahtar->cerezGecerli($token, $row, is_string($cerez) ? $cerez : null, $now);
+    }
+
+    /**
+     * İE#17 G6 — REDDİN NEDENİ YALNIZ SUNUCUDA.
+     *
+     * Yanıt gövdesi ve statüsü DEĞİŞMEZ (K51: istemci hiçbir dalda "neden"
+     * öğrenmez). Bu satır canlıda "indirme neden ölüyor?" sorusunu
+     * yanıtlayabilmek içindir: sebep kodu, token ÖNEKİ (tam token asla),
+     * biçim, dil ve KIRPILMIŞ IP.
+     */
+    private function redKaydi(
+        string $sebep,
+        string $token,
+        string $format,
+        string $dil,
+        ServerRequestInterface $request,
+    ): void {
+        $this->logger?->warning('Oturumsuz indirme reddedildi', [
+            'sebep' => $sebep,
+            'token_onek' => substr($token, 0, 8),
+            'format' => $format === '' ? '-' : $format,
+            'dil' => $dil === '' ? '-' : $dil,
+            'ip' => ShareDownload::kirpilmisIp(ClientIp::from($request)),
+        ]);
+    }
+
+    /**
+     * TAZE İMZA UCU — GET /p/{token}/export-link (İE#17 G4).
+     *
+     * SORUN: indirme bağlantıları sayfa AÇILIRKEN imzalanıyordu (ömür 15 dk).
+     * Firma sayfayı sabah açıp öğleden sonra indirmeye kalkınca imza ölmüş
+     * oluyor, sunucu sabit 404 dönüyor ve düğme "hazırlanıyor…"da kalıyordu.
+     * Bu uç, sayfayı YENİLEMEDEN taze bağlantı verir.
+     *
+     * GÜVENLİK: token'ı bilen kişi sayfayı yenileyerek ZATEN taze imza alabilir —
+     * uç saldırı yüzeyini genişletmez. İmza ÖMRÜ ve KAPSAMI değişmez (K58);
+     * kopya türü yolu YOKTUR, üretilen bağlantı daima firma kopyasıdır (A4).
+     * Ret dalları /p/{token} ile AYNI disiplindedir: hepsi sabit 404.
+     *
+     * @param array<string, string> $args
+     */
+    public function link(
+        ServerRequestInterface $request,
+        ResponseInterface $response,
+        array $args,
+    ): ResponseInterface {
+        $now = $this->clock->now();
+        $token = (string) ($args['token'] ?? '');
+        $query = $request->getQueryParams();
+        $format = strtolower(is_string($query['format'] ?? null) ? (string) $query['format'] : '');
+        $dil = strtolower(is_string($query['lang'] ?? null) ? (string) $query['lang'] : 'tr');
+
+        $notFound = function (string $sebep) use ($request, $response, $token, $format, $dil): ResponseInterface {
+            $this->redKaydi($sebep, $token, $format, $dil, $request);
+            $response->getBody()->write($this->page->renderNotFound());
+
+            return $response->withStatus(404)->withHeader('Content-Type', 'text/html; charset=utf-8');
+        };
+
+        if (preg_match('/^[0-9a-f]{64}$/', $token) !== 1) {
+            return $notFound('token');
+        }
+        if ($this->gate->blocked(ClientIp::from($request), $now)) {
+            return $notFound('hiz');
+        }
+        if (!in_array($format, ShareDownload::BICIMLER, true) || !in_array($dil, ShareDownload::DILLER, true)) {
+            return $notFound('bicim');
+        }
+
+        $row = $this->lists->findByShareHash(hash('sha256', $token));
+        if ($row === null) {
+            $this->gate->recordInvalid(ClientIp::from($request), $token, $now);
+
+            return $notFound('token');
+        }
+        if ($row['share_expires_at'] !== null
+            && Dates::fromStorage((string) $row['share_expires_at'], $this->timezone) <= $now) {
+            return $notFound('sure');
+        }
+        if (!$this->anahtarKapisiAcik($row, $token, $request, $now)) {
+            return $notFound('anahtar');
+        }
+        // Dakikalık üst sınır: uç imza üretim otomasyonuna dönüşmesin. SAATLİK
+        // indirme sayacı (20) burada TÜKETİLMEZ — o yalnız /export'ta işler.
+        if ($this->gate->linkBlocked($token, $now)) {
+            return $notFound('hiz');
+        }
+
+        $this->gate->recordLink($token, $format, $dil, $now);
+
+        $govde = json_encode(
+            ['ok' => true, 'data' => ['url' => $this->downloads->adres($token, $format, $dil, $now)]],
+            JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE,
+        );
+        $response->getBody()->write($govde === false ? '{"ok":false}' : $govde);
+
+        return $response
+            ->withHeader('Content-Type', 'application/json; charset=utf-8')
+            ->withHeader('Cache-Control', 'no-store')
+            ->withHeader('X-Robots-Tag', 'noindex, nofollow');
     }
 
     /** @param array<string, string> $args */
@@ -70,15 +197,17 @@ final class PublicExportController
         $format = strtolower(is_string($query['format'] ?? null) ? (string) $query['format'] : '');
         $dil = strtolower(is_string($query['lang'] ?? null) ? (string) $query['lang'] : 'tr');
 
-        // Sabit 404 — hiçbir dalda "neden" sızmaz.
-        $notFound = function () use ($response): ResponseInterface {
+        // Sabit 404 — hiçbir dalda "neden" İSTEMCİYE sızmaz; sebep yalnız
+        // sunucu logunda durur (G6).
+        $notFound = function (string $sebep) use ($request, $response, $token, $format, $dil): ResponseInterface {
+            $this->redKaydi($sebep, $token, $format, $dil, $request);
             $response->getBody()->write($this->page->renderNotFound());
 
             return $response->withStatus(404)->withHeader('Content-Type', 'text/html; charset=utf-8');
         };
 
         if (preg_match('/^[0-9a-f]{64}$/', $token) !== 1) {
-            return $notFound();
+            return $notFound('token');
         }
         if (!$this->downloads->dogrula(
             $token,
@@ -88,21 +217,25 @@ final class PublicExportController
             is_string($query['sig'] ?? null) ? (string) $query['sig'] : '',
             $now,
         )) {
-            return $notFound();
+            return $notFound('imza');
         }
 
         $row = $this->lists->findByShareHash(hash('sha256', $token));
         if ($row === null) {
-            return $notFound();
+            return $notFound('token');
         }
         if ($row['share_expires_at'] !== null
             && Dates::fromStorage((string) $row['share_expires_at'], $this->timezone) <= $now) {
-            return $notFound();
+            return $notFound('sure');
+        }
+        if (!$this->anahtarKapisiAcik($row, $token, $request, $now)) {
+            return $notFound('anahtar');
         }
 
         // Hız sınırı yalnız BURADA 429 döner: bağlantı geçerlidir, yalnız çok sık
         // kullanılmıştır — bu bilgi zaten bağlantıyı bilen kişiye aittir, sızıntı değil.
         if ($this->gate->downloadBlocked($token, $now)) {
+            $this->redKaydi('hiz', $token, $format, $dil, $request);
             $response->getBody()->write(
                 'Bu liste için indirme sınırına ulaşıldı (saatte 20). Lütfen bir süre sonra tekrar deneyin.',
             );
@@ -114,7 +247,7 @@ final class PublicExportController
 
         $renderer = $this->renderers[$format] ?? null;
         if ($renderer === null) {
-            return $notFound();
+            return $notFound('bicim');
         }
 
         $productRows = $this->products->forList((int) $row['id']);
@@ -137,7 +270,7 @@ final class PublicExportController
         try {
             $bytes = $renderer->render($snapshot);
         } catch (ExportException) {
-            return $notFound();
+            return $notFound('uretim');
         }
 
         $this->gate->recordDownload(

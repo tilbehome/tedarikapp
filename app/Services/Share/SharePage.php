@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Share;
 
+use App\Core\AppVersion;
 use App\Services\Export\TemplateV2;
 use App\Services\ProductDetails;
 use App\Services\Translation\ValueSet;
@@ -62,6 +63,14 @@ final class SharePage
     ): string {
         $e = static fn (mixed $value): string => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
 
+        // İE#17 G1 — VARLIK SÜRÜMLEME: canlı kusurun kökü buydu. Bağlantılar
+        // sürümsüzdü; zip açılımı dosya tarihlerini koruduğu için tarayıcının
+        // sezgisel önbelleği v0.11.0'ın p-style.css'ini "taze" sayıyor, İE#15
+        // kuralları (.tgrp/.pmenu/.qrm/.ynot) hiç yüklenmiyordu — paylaş menüsü
+        // akışa dökülüyor, yazdırma uyarısı görünmez kalıyordu. Sürüm TEK
+        // KAYNAKTAN gelir: AppVersion::VALUE (bin/release.php her pakette damgalar).
+        $surum = $e(AppVersion::VALUE);
+
         $satirlar = '';
         $galeriler = [];
         $sira = 0;
@@ -77,8 +86,16 @@ final class SharePage
 
         $origin = $canonicalUrl !== '' ? (string) preg_replace('#(^https?://[^/]+).*#', '$1', $canonicalUrl) : '';
         $totals = $list['totals'];
-        $antetSatiri = TemplateV2::headerLine($documentHeader, $list) . " · Çin'den DDP Sipariş Listesi";
+
+        // İE#18 G2 — HERO BİLGİ MİMARİSİ (PDF antediyle AYNI):
+        //   sol : marka etiketi + liste adı + TEK SATIR meta (boş alan basılmaz)
+        //   sağ : BELGE (kod + Rev) · KUR (kilitli/güncel + ¥/$) · GÜNCELLEME
+        $markaEtiketi = is_string($documentHeader['company'] ?? null) && $documentHeader['company'] !== ''
+            ? mb_strtoupper((string) $documentHeader['company'], 'UTF-8')
+            : 'TEDARİKAPP';
+        $antetSatiri = $this->metaSatiri($documentHeader, $list);
         $kurEtiketi = ($list['rate_locked_at'] ?? null) !== null ? 'KUR · KİLİTLİ' : 'KUR · GÜNCEL';
+        $revizyonHarfi = TemplateV2::revisionLabel(max(1, (int) ($list['revision'] ?? 0) + 1));
 
         $araclar = $this->araclar($list, $sira, $canonicalUrl, $token, $dil, $now, $e);
         $lightboxVerisi = htmlspecialchars(
@@ -109,7 +126,7 @@ final class SharePage
 <meta name="twitter:description" content="' . $e($this->onizlemeMetni($list, $sira)) . '">' . ($canonicalUrl !== '' ? '
 <meta property="og:url" content="' . $e($canonicalUrl) . '">' : '') . '
 <meta property="og:image" content="' . $e($origin) . '/panel/og-image.png">
-<link rel="stylesheet" href="/p-style.css">
+<link rel="stylesheet" href="/p-style.css?v=' . $surum . '">
 </head>
 <body data-galeriler="' . $lightboxVerisi . '" data-liste="' . $e($list['id']) . '">
 <div class="page">
@@ -119,14 +136,18 @@ final class SharePage
       <div class="hb">
         <img src="/panel/apple-touch-icon.png" alt="" width="46" height="46">
         <div>
+          <div class="hmarka">' . $e($markaEtiketi) . '</div>
           <div class="ht">' . $e($list['name']) . '</div>
           <div class="hs">' . $e($antetSatiri) . '</div>
         </div>
       </div>
       <div class="hm">
-        <div><b>BELGE</b><span>' . $e($this->belgeKodu($list)) . '</span></div>
-        <div><b>' . $e($kurEtiketi) . '</b><span>¥ ' . $e($list['yuan_rate']) . ' · $ ' . $e($list['usd_rate']) . '</span></div>
-        <div><b>GÜNCELLEME</b><span>' . $e($this->tarih((string) $list['updated_at'])) . '</span></div>
+        <div><b>BELGE</b><span>' . $e($this->belgeKodu($list)) . '</span>
+          <span class="alt">Rev ' . $e($revizyonHarfi) . '</span></div>
+        <div><b>' . $e($kurEtiketi) . '</b><span>¥ ' . $e($list['yuan_rate']) . '</span>
+          <span class="alt">$ ' . $e($list['usd_rate']) . '</span></div>
+        <div><b>GÜNCELLEME</b><span>' . $e($this->tarih((string) $list['updated_at'], 'd.m.Y')) . '</span>
+          <span class="alt">' . $e($this->tarih((string) $list['updated_at'], 'H:i')) . '</span></div>
       </div>
     </div>
 
@@ -137,7 +158,11 @@ final class SharePage
       <div class="kpi"><b>TOPLAM MİKTAR</b><span>' . $e($totals['qty']) . '</span></div>
       <div class="kpi"><b>MAL BEDELİ</b><span><span class="u">¥</span> ' . $e($totals['yuan']) . '</span></div>
       <div class="kpi"><b>MAL BEDELİ</b><span><span class="u">₺</span> ' . $e($totals['yuan_tl']) . '</span></div>
-      <div class="kpi"><b>DDP · KDV DAHİL</b><span><span class="u">₺</span> ' . $e($totals['ddp_tl']) . '</span></div>
+      <div class="kpi"><b>DDP · KDV DAHİL</b><span>'
+        . (self::pozitif($totals['ddp_tl'] ?? null)
+            ? '<span class="u">₺</span> ' . $e($totals['ddp_tl'])
+            : '—')
+        . '</span></div>
     </div>
 
     <div class="twrap"><table>
@@ -209,7 +234,7 @@ final class SharePage
     </div>
   </div>
 </div>
-<script src="/p-share.js" defer></script>
+<script src="/p-share.js?v=' . $surum . '" defer></script>
 </body>
 </html>';
     }
@@ -249,9 +274,12 @@ final class SharePage
 
         if ($this->downloads !== null && $token !== '' && $now !== null) {
             foreach ([['xlsx', 'Excel'], ['pdf', 'PDF'], ['csv', 'CSV']] as [$bicim, $etiket]) {
+                // İE#17 G5: href imzalı KALIR (JS'siz kullanıcı için aşamalı
+                // geliştirme); JS varsa tıklama anında taze imza alınır.
                 $html .= '<a class="tb" href="' . $e($this->downloads->adres($token, $bicim, $dil, $now))
-                    . '" data-indir="' . $e($etiket) . '" download>' . ShareIcons::indir()
-                    . '<span>' . $e($etiket) . '</span></a>';
+                    . '" data-indir="' . $e($etiket) . '"'
+                    . ' data-format="' . $e($bicim) . '" data-lang="' . $e($dil) . '" download>'
+                    . ShareIcons::indir() . '<span>' . $e($etiket) . '</span></a>';
             }
         }
         $html .= '<button type="button" class="tb" data-yazdir>' . ShareIcons::yazdir() . '<span>Yazdır</span></button>'
@@ -304,7 +332,7 @@ final class SharePage
         foreach (ShareTexts::DILLER as $secenek) {
             $adres = $token === ''
                 ? '#'
-                : '/p/' . $token . ($secenek === 'tr' ? '' : '?lang=' . $secenek);
+                : '/liste/' . $token . ($secenek === 'tr' ? '' : '?lang=' . $secenek);
             $html .= '<a href="' . $e($adres) . '"' . ($secenek === $aktif ? ' class="secili" aria-current="true"' : '')
                 . '>' . $e(ShareTexts::dilAdi($secenek)) . '</a>';
         }
@@ -355,6 +383,10 @@ final class SharePage
      */
     public function renderNotFound(): string
     {
+        // 404 sayfası da AYNI stil dosyasını kullanır — sürümsüz kalırsa bayat
+        // önbellek burada da kurumsal görünümü bozar (İE#17 G1).
+        $surum = htmlspecialchars(AppVersion::VALUE, ENT_QUOTES, 'UTF-8');
+
         return '<!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -363,7 +395,7 @@ final class SharePage
 <meta name="robots" content="noindex, nofollow">
 <title>Bağlantı geçerli değil — Tedarikapp</title>
 <link rel="icon" type="image/svg+xml" href="/panel/favicon.svg">
-<link rel="stylesheet" href="/p-style.css">
+<link rel="stylesheet" href="/p-style.css?v=' . $surum . '">
 </head>
 <body>
 <main class="hata-sayfasi">
@@ -436,10 +468,14 @@ final class SharePage
                 . '<span class="d"></span>' . $e($rozet) . '</span></span></td>
             <td class="mut c not-hucre"><span class="lab">NOT</span><span class="val">' . $this->hucre($product['note'] ?? null, $e) . '</span></td>
             <td class="c"><span class="lab">MİKTAR</span><span class="val"><b>' . $e($product['qty']) . '</b></span></td>
-            <td class="n"><span class="lab">VİTRİN FİYATI</span><span class="val">¥ ' . $e($product['price_yuan']) . '</span></td>
-            <td class="n"><span class="lab">₺ KARŞILIĞI</span><span class="val">₺ ' . $e($product['price_yuan_tl']) . '</span></td>
-            <td class="n mut"><span class="lab">DDP $</span><span class="val">$ ' . $e($product['price_ddp_usd']) . '</span></td>
-            <td class="n mut"><span class="lab">DDP ₺</span><span class="val">₺ ' . $e($product['price_ddp_tl']) . '</span></td>
+            <td class="n"><span class="lab">VİTRİN FİYATI</span><span class="val">'
+                . $this->para($product['price_yuan'] ?? null, '¥', $e) . '</span></td>
+            <td class="n"><span class="lab">₺ KARŞILIĞI</span><span class="val">'
+                . $this->para($product['price_yuan_tl'] ?? null, '₺', $e) . '</span></td>
+            <td class="n mut"><span class="lab">DDP $</span><span class="val">'
+                . $this->para($product['price_ddp_usd'] ?? null, '$', $e) . '</span></td>
+            <td class="n mut"><span class="lab">DDP ₺</span><span class="val">'
+                . $this->para($product['price_ddp_tl'] ?? null, '₺', $e) . '</span></td>
             <td><div class="ops">' . $git
                 . '<button type="button" class="op-det" data-detay>Detaylar ' . ShareIcons::asagiOk() . '</button>'
                 . '</div></td>
@@ -511,22 +547,45 @@ final class SharePage
             $sag .= '<div class="nt">Not: ' . $e($product['note']) . '</div>';
         }
 
-        $galeriHtml = '';
-        if (count($galeri) > 1) {
-            $kucukler = '';
-            foreach ($galeri as $index => $url) {
-                $kucukler .= '<img src="' . $e($url) . '" alt="" loading="lazy" data-galeri="' . $galeriIndex
-                    . '" data-sira="' . $index . '">';
-            }
-            $galeriHtml = '<div class="gl"><div class="dh">GALERİ <span class="zh">图库</span></div>'
-                . '<div class="gr">' . $kucukler . '</div></div>';
-        }
+        // İE#17 G10 (PM kararı, 21 Ağu): detay panelindeki GALERİ ŞERİDİ KALDIRILDI.
+        // Lightbox galeri ana görsel tıklamasıyla ÇALIŞMAYA DEVAM EDER — panelde
+        // ikinci bir küçük resim şeridi tutmanın bilgi değeri yoktu, yer kaplıyordu.
 
         return '<tr class="dt"><td colspan="14"><div class="din">
             ' . $bilgiler . '
             <div class="sag">' . $sag . '</div>
-            ' . $galeriHtml . '
         </div></td></tr>';
+    }
+
+    /**
+     * İE#17 G3 — GİRİLMEMİŞ FİYAT BASILMAZ.
+     *
+     * Yerleşik sözleşme: fiyat POZİTİF DEĞİLSE girilmemiştir (ListPresenter::profit
+     * aynı sözleşmeyle çalışır). Eskiden "$ 0.00" basılıyordu; firma bunu "DDP
+     * bedeli sıfır" diye okuyabilir — yokluğu sıfır göstermek yanlış bilgidir.
+     * Boş hücre, hücrenin kendi boşluk diliyle gösterilir; PARA SİMGESİ de basılmaz.
+     *
+     * Karar SUNUM katmanındadır: DB şeması ve ListPresenter alan sözleşmesi
+     * değişmez (G3-e).
+     *
+     * @param callable(mixed): string $e
+     */
+    private function para(mixed $tutar, string $simge, callable $e): string
+    {
+        if (!self::pozitif($tutar)) {
+            return '<span class="yok"></span>';
+        }
+
+        return $e($simge) . ' ' . $e($tutar);
+    }
+
+    /**
+     * Biçimlenmiş para metni girilmiş mi? Kural TemplateV2'dedir — Excel, PDF,
+     * CSV ve bu sayfa AYNI kaynaktan beslenir (tek yerde değişsin).
+     */
+    public static function pozitif(mixed $tutar): bool
+    {
+        return TemplateV2::girilmis($tutar);
     }
 
     /**
@@ -613,13 +672,42 @@ final class SharePage
         return TemplateV2::documentCode((int) $list['id'], (int) date('Y'), 'A');
     }
 
-    private function tarih(string $iso): string
+    private function tarih(string $iso, string $bicim = 'd.m.Y H:i'): string
     {
         try {
-            return (new \DateTimeImmutable($iso))->format('d.m.Y H:i');
+            return (new \DateTimeImmutable($iso))->format($bicim);
         } catch (\Throwable) {
             return $iso;
         }
+    }
+
+    /**
+     * İE#18 G2 — TEK SATIR META: firma · web · e-posta · dönem · kopya türü ·
+     * tedarikçi. Ayraç TEK TİP ("·"); BOŞ ALAN BASILMAZ (antet ayarları eksikse
+     * satır kısalır, "· ·" gibi boşluk artığı oluşmaz).
+     *
+     * @param array{company?: string|null, web?: string|null, email?: string|null, prepared_by?: string|null} $antet
+     * @param array<string, mixed> $list
+     */
+    private function metaSatiri(array $antet, array $list): string
+    {
+        $parcalar = [
+            $antet['company'] ?? null,
+            $antet['web'] ?? null,
+            $antet['email'] ?? null,
+            $list['period'] ?? null,
+            'Firma kopyası',
+            $list['supplier_name'] ?? null,
+        ];
+
+        $temiz = [];
+        foreach ($parcalar as $parca) {
+            if (is_string($parca) && trim($parca) !== '') {
+                $temiz[] = trim($parca);
+            }
+        }
+
+        return implode(' · ', $temiz);
     }
 
     /**
@@ -693,11 +781,15 @@ final class SharePage
         if ($liste === []) {
             return null;
         }
-        // İE#14 A3: belge/satır özeti ilk 3 + "… (N seçenek)".
-        $ilk = implode(' · ', array_slice($liste, 0, ValueSet::LIMIT));
+        // İE#17 G8-b: satır hücresinde YALNIZ kompakt rozet ("40 seçenek").
+        // Tam liste detay panelindeki VARYASYONLAR bölümündedir.
+        if ($this->values !== null) {
+            return $this->values->ozet($liste);
+        }
+        if (count($liste) === 1 && mb_strlen($liste[0]) <= 40) {
+            return $liste[0];
+        }
 
-        return count($liste) > ValueSet::LIMIT
-            ? $ilk . ' … (' . count($liste) . ' seçenek)'
-            : $ilk;
+        return count($liste) . ' seçenek';
     }
 }

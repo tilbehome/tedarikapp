@@ -18,6 +18,7 @@ final class SharePageLinksTest extends AuthTestCase
 {
     private string $csrf = '';
     private string $token = '';
+    private int $listId = 0;
 
     protected function setUp(): void
     {
@@ -27,7 +28,7 @@ final class SharePageLinksTest extends AuthTestCase
         $this->call('POST', '/api/auth/totp', ['code' => $this->totpCodeFor($user['secret'])]);
         $this->csrf = (string) $this->json($this->call('GET', '/api/auth/me'))['data']['csrf_token'];
 
-        $listId = (int) $this->json($this->write('POST', '/api/lists', [
+        $this->listId = $listId = (int) $this->json($this->write('POST', '/api/lists', [
             'name' => 'Paylaşım kanalları',
             'period' => 'Eylül 2026',
         ]))['data']['id'];
@@ -53,7 +54,14 @@ final class SharePageLinksTest extends AuthTestCase
 
     private function sayfa(string $sorgu = ''): string
     {
-        $response = $this->call('GET', '/p/' . $this->token . $sorgu);
+        // İE#18 G6: kapı varsayılan AÇIK — sayfa anahtarla açılır.
+        $response = $this->call(
+            'GET',
+            '/liste/' . $this->token . $sorgu,
+            null,
+            [],
+            $this->paylasimCerezi($this->token, $this->listId, $this->csrf),
+        );
         self::assertSame(200, $response->getStatusCode());
 
         return (string) $response->getBody();
@@ -112,7 +120,8 @@ final class SharePageLinksTest extends AuthTestCase
 
         foreach (['xlsx', 'pdf', 'csv'] as $bicim) {
             self::assertMatchesRegularExpression(
-                '/href="\/p\/[0-9a-f]{64}\/export\?format=' . $bicim . '&amp;lang=tr&amp;exp=\d+&amp;sig=[A-Za-z0-9_-]{32}"/',
+                // İE#18 G5: kanonik ön ek /liste (eski /p yalnız alias).
+                '/href="\/liste\/[0-9a-f]{64}\/export\?format=' . $bicim . '&amp;lang=tr&amp;exp=\d+&amp;sig=[A-Za-z0-9_-]{32}"/',
                 $html,
                 $bicim . ' bağlantısı imzalı olmalı.',
             );
@@ -183,6 +192,7 @@ final class SharePageLinksTest extends AuthTestCase
         self::assertStringNotContainsString('onclick=', $html);
         self::assertStringNotContainsString('<style', $html);
         self::assertStringNotContainsString('<script>', $html);
-        self::assertStringContainsString('<script src="/p-share.js" defer></script>', $html);
+        // İE#17 G1: varlık adresleri artık ?v=<sürüm> taşır (bayat önbellek kusuru).
+        self::assertMatchesRegularExpression('#<script src="/p-share\.js\?v=[^"]+" defer></script>#', $html);
     }
 }

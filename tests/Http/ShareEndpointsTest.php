@@ -60,10 +60,12 @@ final class ShareEndpointsTest extends AuthTestCase
 
     public function testPaylasimSayfasiGirissizAcilirVeNoindexTasir(): void
     {
-        ['token' => $token] = $this->seedShared();
+        ['list' => $listId, 'token' => $token] = $this->seedShared();
+        // İE#18 G6: kapı varsayılan AÇIK — anahtar çerezi oturum kapanmadan alınır.
+        $cerez = $this->paylasimCerezi($token, $listId, $this->csrf);
         $this->call('POST', '/api/auth/logout', [], [Csrf::HEADER => $this->csrf]);
 
-        $response = $this->call('GET', '/p/' . $token);
+        $response = $this->call('GET', '/liste/' . $token, null, [], $cerez);
 
         self::assertSame(200, $response->getStatusCode());
         self::assertStringContainsString('noindex', $response->getHeaderLine('X-Robots-Tag'));
@@ -150,7 +152,13 @@ final class ShareEndpointsTest extends AuthTestCase
         $url = (string) $this->json($this->write('POST', '/api/lists/' . $listId . '/share'))['data']['share_url'];
         $token = substr($url, (int) strrpos($url, '/') + 1);
 
-        $html = (string) $this->call('GET', '/p/' . $token)->getBody();
+        $html = (string) $this->call(
+            'GET',
+            '/liste/' . $token,
+            null,
+            [],
+            $this->paylasimCerezi($token, $listId, $this->csrf),
+        )->getBody();
 
         self::assertStringNotContainsString('<script>alert(1)', $html, 'Liste adı escape edilmeli.');
         self::assertStringNotContainsString('<img src=x onerror', $html, 'Ürün adındaki HAM etiket sayfaya sızmamalı.');
