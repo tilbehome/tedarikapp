@@ -316,3 +316,27 @@ içindeki `CGIPassAuth On` satırı Extract sırasında ezilmiş olabilir (cgi-f
 Pakette `bin/goc-ilan.php` bulunur. Göç iptal edildiği için **kullanılmaz** ve
 temiz kurulumda çalıştırılmasına gerek yoktur; bir sonraki sürümde paketten
 çıkarılacaktır.
+
+---
+
+## GÜNCELLEME (v0.12.x → v1.0.0-rc1) — sihirbazın 7. durumu
+
+Temiz kurulum YAPMAYIN; bu bir **sürüm yükseltmesidir** ve veriye dokunmaz.
+
+1. **Yedek:** panel > Ayarlar > Yedekler > "Yedek al" (ya da cron'un gecelik yedeği
+   duruyorsa o yeter — tarihini kontrol edin).
+2. **Paketi yükleyin:** yeni zip'i File Manager ile subdomain köküne yükleyip
+   **Extract** edin. Mevcut dosyaların ÜZERİNE yazar; `config.php`, `storage/` ve
+   `public/media/` paket içinde OLMADIĞI için korunur.
+3. **`/setup` adresini açın.** Sihirbaz teşhis koşar ve **"Yeni sürüm yüklenmiş —
+   veritabanı güncellenmeli"** der (7. durum). Ekranda önceki sürüm, yeni sürüm ve
+   kaç migration koşacağı yazar.
+4. **Sahipliğinizi doğrulayın** (yönetici e-postası + şifre; hesapta 2FA varsa kod).
+5. **"Güncellemeyi çalıştır"** deyin. Bekleyen migration'lar koşar, sürüm kaydı
+   tazelenir. Veri korunur, kilit silinmez.
+6. **Doğrulayın:** teşhisi yeniden çalıştırın — "Sağlıklı kurulum bulundu" ve
+   bekleyen migration 0 olmalı.
+
+**⟲ Ters giderse:** güncelleme yarıda kalırsa hiçbir şey silinmez; sorunu giderip
+aynı düğmeye tekrar basabilirsiniz (migration'lar idempotenttir). Sihirbaz açılmıyorsa
+runbook'un d bölümündeki "Ters giderse" satırlarına bakın.
