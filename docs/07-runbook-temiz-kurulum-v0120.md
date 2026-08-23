@@ -18,9 +18,9 @@
 |---|---|
 | Sürüm | **v0.12.1-beta** (v1.0 adı İE#21 kapanışına saklı) |
 | Zip | `dist/tedarikapp-v0.12.1-beta.zip` |
-| Boyut | 30,58 MB · 2.163 dosya (+ `MANIFEST.txt`) |
-| SHA-256 | `2778c3277f1e0aba4f9d6e38c4dffb306aa54eef25bede445d4efd80edac9304` |
-| Panel damgası | `v3-faz1 @ 32f7771` · **temiz çalışma kopyası** |
+| Boyut | 30,60 MB · 2.165 dosya (+ `MANIFEST.txt`) |
+| SHA-256 | `d8f66b5223e9aa804cdb38fa63e4229663360d1d8fe9ee663f591d0290120be4` |
+| Panel damgası | `v3-faz1 @ 930501f` · **temiz çalışma kopyası** |
 | Migration | 26 dosya (`0001`–`0026`) — boş veritabanına sıra ile uygulanır |
 | Sözlükler | `config/sozluk-zh-tr.php` · `config/sozluk-en-tr.php` **pakette** |
 | Vendor | üretim kipi (`--no-dev`; `phpunit` yok) |
@@ -109,7 +109,7 @@ cPanel → **Dosya Yöneticisi** → subdomain kökü
 ## c) YENİ PAKETİN YÜKLENMESİ
 
 1. **Yükleme:** Dosya Yöneticisi → subdomain kökü → **Upload** →
-   `tedarikapp-v0.12.1-beta.zip`. Yükleme bitince dosya boyutunun **30,58 MB**
+   `tedarikapp-v0.12.1-beta.zip`. Yükleme bitince dosya boyutunun **30,60 MB**
    olduğunu listede doğrulayın (yarım yüklenen zip bozuk açılır).
 2. **Açma:** zip'e sağ tık → **Extract** → hedef yol **subdomain kökünün
    kendisi** olmalı (örn. `/home/<kullanici>/tedarikapp.tilbehometoptan.com`).
