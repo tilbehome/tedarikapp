@@ -56,7 +56,7 @@ tam mockup uyarlaması ayrı bir dilim olarak raporlanacak.
 
 | # | Konu | Durum | Kanıt |
 |---|---|---|---|
-| B1 | Keşif havuzu | ☐ | şartname: `docs/v3/V3-YOL-HARITASI.md` §7.2 |
+| B1 | Keşif havuzu | ✅ | API+ekran · `KesifHavuzuTest` (17) · E2E-PNL-01/02/03/07/08/09/10/13/15 · migration 0030 |
 | B2 | Liste detay komuta merkezi | ☐ | referans: `liste-ici.png` |
 | B3 | Ürün çekmecesi | ☐ | referans: `urun-duzenleme-alani.png` |
 | B4 | Gelen kutusu cilaları | ☐ | referans: `gelen-kutusu*.png` |

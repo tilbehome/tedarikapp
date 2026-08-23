@@ -63,7 +63,8 @@ const tumGruplar: MenuGrubu[] = [
     baslik: 'ÇALIŞMA',
     ogeler: [
       { to: '/', label: 'Panorama', icon: LayoutDashboard, hazir: true, bolum: 'Çalışma' },
-      { to: '/kesif', label: 'Keşif', icon: Compass, hazir: false, bolum: 'Çalışma' },
+      // İE#21 B1: Keşif havuzu YAYINDA — havuz/kümeleme/karşılaştırma çalışıyor.
+      { to: '/kesif', label: 'Keşif', icon: Compass, hazir: true, bolum: 'Çalışma' },
       { to: '/gelen-kutusu', label: 'Gelen Kutusu', icon: Inbox, hazir: true, rozet: 'gelenKutusu', bolum: 'Çalışma' },
       { to: '/listeler', label: 'Listeler', icon: ListChecks, hazir: true, bolum: 'Çalışma' },
     ],

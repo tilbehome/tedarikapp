@@ -19,6 +19,7 @@ import TrashScreen from './screens/TrashScreen';
 import ActivityScreen from './screens/ActivityScreen';
 import ArsivScreen from './screens/ArsivScreen';
 import BilesenlerScreen from './screens/BilesenlerScreen';
+import KesifScreen from './screens/KesifScreen';
 
 /**
  * Rota haritası ve oturum koruması.
@@ -81,6 +82,7 @@ export default function App() {
     <Routes>
       <Route element={<Kabuk />}>
         <Route path="/" element={<HomeScreen />} />
+        <Route path="/kesif" element={<KesifScreen />} />
         <Route path="/listeler" element={<ListsScreen />} />
         <Route path="/listeler/:id" element={<ListDetailScreen />} />
         <Route path="/listeler/:id/urun/yeni" element={<ProductFormScreen />} />

@@ -358,6 +358,13 @@ final class AppBuilder
             $settingsController,
             $inboxController,
             $categoryController,
+            // İE#21 B1: Keşif havuzu uçları.
+            new \App\Controllers\KesifController(
+                $connection,
+                new SettingsRepository($connection),
+                $services->activity,
+                $services->clock,
+            ),
             $activityController,
             $listController,
             $productController,

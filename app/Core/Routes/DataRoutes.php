@@ -40,6 +40,7 @@ final class DataRoutes
         SettingsController $settingsController,
         \App\Controllers\InboxController $inboxController,
         CategoryController $categoryController,
+        \App\Controllers\KesifController $kesifController,
         ActivityController $activityController,
         ListController $listController,
         ProductController $productController,
@@ -66,7 +67,7 @@ final class DataRoutes
             ->add(new Csrf($services->session, $responseFactory))
             ->add(new Auth($services, $responseFactory));
 
-        $app->group('/api', static function (RouteCollectorProxy $group) use ($settingsController, $categoryController, $translationController): void {
+        $app->group('/api', static function (RouteCollectorProxy $group) use ($settingsController, $categoryController, $translationController, $kesifController): void {
             $group->get('/settings', [$settingsController, 'show']);
             $group->put('/settings/rates', [$settingsController, 'updateRates']);
             $group->get('/settings/rates/history', [$settingsController, 'rateHistory']);
@@ -86,6 +87,14 @@ final class DataRoutes
             // İE#11: eklenti token yönetimi (Faz 3 rozeti kalktı).
             $group->post('/settings/extension-token', [$settingsController, 'extensionTokenCreate']);
             $group->delete('/settings/extension-token', [$settingsController, 'extensionTokenRevoke']);
+
+            // İE#21 B1: KEŞİF HAVUZU — listeye girmemiş ürünleri de kapsayan
+            // istihbarat yüzeyi. Filtreler VE ile birleşir, sayfalama zorunludur.
+            $group->get('/kesif', [$kesifController, 'index']);
+            $group->get('/kesif/gorunumler', [$kesifController, 'views']);
+            $group->post('/kesif/gorunumler', [$kesifController, 'saveView']);
+            $group->delete('/kesif/gorunumler/{ad}', [$kesifController, 'deleteView']);
+            $group->post('/kesif/karsilastir', [$kesifController, 'compare']);
 
             $group->get('/categories', [$categoryController, 'index']);
             $group->post('/categories', [$categoryController, 'store']);

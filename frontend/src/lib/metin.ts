@@ -30,17 +30,15 @@ const ADLI_ENTITYLER: Record<string, string> = {
 };
 
 /** Görünmez karakterler: 1688 değerleri sık sık NBSP ve sıfır genişlikli boşluk taşır. */
-const GORUNMEZLER = /[ ​﻿]/g;
+const GORUNMEZLER = /[\u00A0\u200B\uFEFF]/g;
 
 export function metniNormalize(ham: string): string {
   if (ham === '') return '';
 
   const cozulmus = ham
     // Sayısal entity: &#8250; ve &#x203A; — ikisi de aynı karakteri verir.
-    .replace(/&#x([0-9a-f]+);/gi, (_, onaltilik: string) =>
-      String.fromCodePoint(Number.parseInt(onaltilik, 16)),
-    )
-    .replace(/&#(\d+);/g, (_, onluk: string) => String.fromCodePoint(Number.parseInt(onluk, 10)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, onaltilik: string) => String.fromCodePoint(Number(`0x${onaltilik}`)))
+    .replace(/&#(\d+);/g, (_, onluk: string) => String.fromCodePoint(Number(onluk)))
     .replace(/&([a-z]+);/gi, (tam, ad: string) => ADLI_ENTITYLER[ad.toLowerCase()] ?? tam);
 
   return cozulmus.replace(GORUNMEZLER, ' ').replace(/\s+/g, ' ').trim();

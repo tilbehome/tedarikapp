@@ -181,21 +181,21 @@
     },
     "E2E-PNL-01": {
       "baslik": "Kategori + skor bandı + platform AND birleşimi",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "tests/Http/KesifHavuzuTest.php",
+      "test": "testE2E_PNL_01_UcFiltreVEileBirlesir"
     },
     "E2E-PNL-02": {
       "baslik": "TR sorgu ZH yağlık kayıtlarını bulur",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "tests/Http/KesifHavuzuTest.php",
+      "test": "testE2E_PNL_02_TurkceSorguCinceKaydiBulur"
     },
     "E2E-PNL-03": {
       "baslik": "TR sorgu ZH ayakkabı kutusu kayıtlarını bulur",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "tests/Http/KesifHavuzuTest.php",
+      "test": "testE2E_PNL_03_OlcuVeTurkceKarakterNormalize"
     },
     "E2E-PNL-04": {
       "baslik": "Skor kısıtı DM-003 > DM-007",
@@ -217,27 +217,27 @@
     },
     "E2E-PNL-07": {
       "baslik": "同款 yağlık kümesi açılımı",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "tests/Http/KesifHavuzuTest.php",
+      "test": "testE2E_PNL_07_AyniUrunKumesiTekKartta"
     },
     "E2E-PNL-08": {
       "baslik": "同款 ayakkabı kutusu kümesi ve eksik veri işareti",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "tests/Http/KesifHavuzuTest.php",
+      "test": "testE2E_PNL_08_KumesizUrunKENDIBASINAKUMEDIR"
     },
     "E2E-PNL-09": {
       "baslik": "Karşılaştırma matrisi 2–6 ürün",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "tests/Http/KesifHavuzuTest.php",
+      "test": "testE2E_PNL_09_IkiIleAltiUrunKarsilastirilir"
     },
     "E2E-PNL-10": {
       "baslik": "Yedinci karşılaştırma ürünü reddedilir",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "tests/Http/KesifHavuzuTest.php",
+      "test": "testE2E_PNL_10_YedinciUrunREDDEDILIR"
     },
     "E2E-PNL-11": {
       "baslik": "Altı sütunlu matrisin görsel ve dokunsal okunabilirliği",
@@ -253,9 +253,9 @@
     },
     "E2E-PNL-13": {
       "baslik": "Boş sonuç durumu ve filtreyi temizleme",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "tests/Http/KesifHavuzuTest.php",
+      "test": "testE2E_PNL_13_BosSonucVeFiltreTemizleme"
     },
     "E2E-PNL-14": {
       "baslik": "Sanal kaydırmada 100 ürünün tekilliği",
@@ -266,8 +266,8 @@
     "E2E-PNL-15": {
       "baslik": "Eksik metrikte skor GİZLİ",
       "durum": "kapsandi",
-      "dosya": "tests/Services/SkorKalibrasyonTest.php",
-      "test": "testYETERSIZSINYALDESKORGIZLENIR"
+      "dosya": "tests/Http/KesifHavuzuTest.php",
+      "test": "testE2E_PNL_15_EksikMetriktekiSkorGIZLI"
     },
     "E2E-PNL-16": {
       "baslik": "J/K ile deste odağı, mutasyonsuz gezinme",
