@@ -86,7 +86,10 @@ final class SkorHesaplayiciTest extends TestCase
 
         self::assertNull($sonuc['skor'], 'Veri yokken skor üretiliyor — uydurma.');
         self::assertNotNull($sonuc['neden']);
-        self::assertStringContainsString('GİZLİ', $sonuc['neden']);
+        // İE#21 C3: mesaj artık NEYİN eksik olduğunu sayıyor ("veri yetersiz —
+        // eksik: …"). "GİZLİ" kelimesi kullanıcıya bir şey anlatmıyordu.
+        self::assertStringContainsString('veri yetersiz', $sonuc['neden']);
+        self::assertStringContainsString('satıcı karnesi', $sonuc['neden']);
     }
 
     public function testILANIOLMAYANURUNSKORALMAZ(): void
@@ -120,7 +123,10 @@ final class SkorHesaplayiciTest extends TestCase
         self::assertGreaterThan(0, $sonuc['skor']);
         self::assertLessThanOrEqual(100, $sonuc['skor']);
         self::assertArrayHasKey('satis', $sonuc['bilesenler'], 'Bileşen dökümü ürün detayında gösterilecek.');
-        self::assertSame(35, $sonuc['bilesenler']['satis']['agirlik']);
+        // Ağırlıklar İE#21 C3 kalibrasyon sınavıyla yeniden dengelendi
+        // (satış 35→30; açılan 5 puan ivme bileşenine gitti).
+        self::assertSame(30, $sonuc['bilesenler']['satis']['agirlik']);
+        self::assertArrayHasKey('ivme', $sonuc['bilesenler'], 'İvme bileşeni dökümde görünmeli.');
     }
 
     public function testKIYASPLATFORMICINDEDIR(): void

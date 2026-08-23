@@ -78,6 +78,10 @@ final class Migrator
             ['column' => ['listings', 'skor']],
             ['column' => ['translation_cache', 'guven']],
         ],
+        // İE#21 C3: ivme bileşeni için toplam satış.
+        '0029_ilan_satis_toplam' => [
+            ['column' => ['listings', 'satis_toplam']],
+        ],
         // İE#21 B11: kuyruk sertleştirme — kira token'ı, açık kira bitişi, hata sınıfı.
         '0028_kuyruk_sertlestirme' => [
             ['column' => ['jobs', 'kilit_token']],
