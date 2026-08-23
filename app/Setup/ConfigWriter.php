@@ -66,11 +66,19 @@ final class ConfigWriter
      *
      * @param array{host: string, port: int, name: string, user: string, pass: string} $database
      *
+     * @param string|null $mevcutAppKey KORUNACAK anahtar (İE#20 D2-REV §8: yalnız
+     *                                   veritabanı bilgileri düzeltiliyorsa APP_KEY
+     *                                   AYNI KALMALIDIR — değişirse 2FA gizli
+     *                                   anahtarları ve API anahtarları çözülemez hâle
+     *                                   gelir, yani düzeltme bir veri kaybına döner)
+     *
      * @return array{content: string, app_key: string}
      */
-    public function generate(#[SensitiveParameter] array $database): array
+    public function generate(#[SensitiveParameter] array $database, ?string $mevcutAppKey = null): array
     {
-        $appKey = self::generateAppKey();
+        $appKey = $mevcutAppKey !== null && preg_match('/^[0-9a-f]{64}$/i', $mevcutAppKey) === 1
+            ? strtolower($mevcutAppKey)
+            : self::generateAppKey();
 
         $content = "<?php\n\n"
             . "/**\n"

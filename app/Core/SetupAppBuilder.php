@@ -90,6 +90,9 @@ final class SetupAppBuilder
         }
         $state = new SetupState($session);
         $controller = new SetupController($basePath, $state, $lock, $clock, $configWriter);
+        // D2-REV: teşhis + onarım merkezi. Normal akıştan ayrı bir kontrolcüdür —
+        // gerekçe sınıfın başlığında.
+        $repair = new \App\Controllers\SetupRepairController($basePath, $state, $lock, $clock, $configWriter);
 
         // Sihirbaz sayfası ve varlıkları (kilit denetimi bunlara da uygulanır).
         $app->get('/setup', self::viewAction($basePath . '/setup/views/wizard.html', 'text/html; charset=utf-8'));
@@ -100,13 +103,28 @@ final class SetupAppBuilder
         // sihirbaz ekrandaki onaylı düğmeden çağırır.
         $app->post('/api/setup/unlock', [$controller, 'unlock']);
 
+        // D2-REV: TEŞHİS ve SAHİPLİK uçları kilitliyken de açıktır (SetupGuard izin
+        // listesinde). Teşhis salt okunurdur ve sır döndürmez; sahiplik ucu zaten
+        // kanıt ister. Bu ikisi kapalı olsaydı bozuk bir sistemde kullanıcının
+        // elinde yalnız 403 metni kalırdı — D2-REV'in çözmeye çalıştığı şey buydu.
+        $app->get('/api/setup/situation', [$repair, 'situation']);
+        // Durum DEĞİŞTİREN onarım uçlarında CSRF korumasi grup dışında da uygulanır:
+        // sahiplik kanıtı ilk savunmadır, CSRF ikincisidir; birini diğerinin yerine
+        // koymayız.
+        $app->post('/api/setup/verify-owner', [$repair, 'verifyOwner'])
+            ->add(new SetupCsrf($state, $responseFactory));
+        $app->post('/api/setup/config-repair', [$repair, 'configRepair'])
+            ->add(new SetupCsrf($state, $responseFactory));
+        $app->post('/api/setup/config-repair/verify', [$repair, 'verifyRepair'])
+            ->add(new SetupCsrf($state, $responseFactory));
+
         // K43: kurulum bütünlüğü — MANIFEST.txt'e göre eksik/bozuk dosya listesi.
         // Kurulumdan ÖNCE de çalışır; sihirbazın gereksinim adımı bunu gösterir. Sır içermez.
         $app->get('/api/system/integrity', static function (ServerRequestInterface $request, ResponseInterface $response) use ($basePath): ResponseInterface {
             return Response::success($response, (new \App\Services\IntegrityChecker($basePath))->check());
         });
 
-        $app->group('/api/setup', static function (RouteCollectorProxy $group) use ($controller): void {
+        $app->group('/api/setup', static function (RouteCollectorProxy $group) use ($controller, $repair): void {
             $group->get('/state', [$controller, 'state']);
             $group->get('/requirements', [$controller, 'requirements']);
             $group->get('/diagnostics', [$controller, 'diagnostics']);
@@ -117,6 +135,7 @@ final class SetupAppBuilder
             $group->post('/admin', [$controller, 'admin']);
             $group->post('/admin/verify', [$controller, 'verifyAdmin']);
             $group->post('/finish', [$controller, 'finish']);
+            $group->post('/update', [$repair, 'update']);
         })
             // K45: HTTPS kapısı KALDIRILDI (Ürün Sahibi talimatı — kurulum hiçbir koşulda bloklanmaz).
             ->add(new SetupCsrf($state, $responseFactory));

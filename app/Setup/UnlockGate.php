@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Setup;
 
+use App\Auth\PasswordHasher;
 use App\Core\Connection;
 use App\Core\Dates;
 use App\Services\ActivityLog;
@@ -102,6 +103,51 @@ final class UnlockGate
         }
 
         return null;
+    }
+
+    /**
+     * BİRİNCİL SAHİPLİK YOLU (İE#20 D2-REV): yönetici e-postası + şifresi.
+     *
+     * APP_KEY yolu doğruydu ama insanlık dışıydı: kullanıcıyı File Manager'a
+     * gönderip 64 haneli bir diziyi kopyalatıyordu. Sistemi kuran kişi kendi
+     * şifresini zaten biliyor; kanıt olarak ondan güçlüsü de yok. APP_KEY yolu
+     * KALDIRILMADI — veritabanı okunabiliyor ama hesap erişilemiyor olabilir
+     * (şifre unutuldu, 2FA cihazı kayıp); o zaman dosya sahipliği tek kanıttır.
+     *
+     * 2FA burada SORULMAZ: bu bir oturum açma değil, sahiplik kanıtıdır ve
+     * kurulum sihirbazı oturum üretmez. Şifre + hız sınırı yeterlidir.
+     *
+     * @param Connection|null $connection hedef veritabanı (config kayıpken sihirbazın
+     *                                    yeni girilen bilgilerle açtığı bağlantı)
+     */
+    public function adminProofValid(
+        ?string $email,
+        #[SensitiveParameter] ?string $password,
+        ?Connection $connection = null,
+    ): bool {
+        if (!is_string($email) || !is_string($password) || trim($email) === '' || $password === '') {
+            return false;
+        }
+
+        $pdo = ($connection ?? $this->connection)->pdo();
+
+        try {
+            $statement = $pdo->prepare('SELECT password_hash FROM users WHERE email = :email');
+            $statement->execute(['email' => trim(strtolower($email))]);
+            $hash = $statement->fetchColumn();
+        } catch (\Throwable) {
+            return false;
+        }
+
+        if (!is_string($hash) || $hash === '') {
+            // Kullanıcı yoksa da HASH DOĞRULAMASI KOŞULUR: aksi hâlde yanıt süresi
+            // "bu e-posta kayıtlı mı" sorusunu sızdırırdı (kullanıcı sayımı).
+            password_verify($password, '$2y$12$' . str_repeat('x', 53));
+
+            return false;
+        }
+
+        return (new PasswordHasher())->verify($password, $hash);
     }
 
     public function recordFailure(string $ip, DateTimeImmutable $now): void

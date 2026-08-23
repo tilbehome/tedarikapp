@@ -5,6 +5,42 @@ Her release'te bu dosya güncellenir (docs/07 bölüm 4). Kategoriler: Eklendi /
 
 ## [Yayınlanmadı]
 
+## [0.12.1-beta] — 23 Ağustos 2026 (kurulum teşhis + onarım merkezi)
+
+### Eklendi (İE#20 D2-REV — sihirbaz artık her arızayı kendi içinde çözer)
+- **Teşhis motoru:** `/setup` açılışta dosya bütünlüğü · `config.php` · veritabanı ·
+  tablolar · migration defteri · sürüm okur ve **sekiz durumdan** birini adıyla
+  söyler: kurulum yok · sağlıklı · yarım · ayar dosyası kayıp/bozuk · paket dosyası
+  eksik · migration yarım · sürüm uyuşmazlığı · veritabanına erişilemiyor. Üstte
+  durum rozeti, altında yalnız o duruma uyan seçenekler; her ekranda **"Teşhisi
+  yeniden çalıştır"**.
+- **Ayar dosyası onarımı:** `config.php` kaybolduğunda/bozulduğunda DB bilgileri
+  sihirbazdan yeniden alınır. Dosyada APP_KEY duruyorsa **KORUNUR** (şifreli veriler
+  açılmaya devam eder); kalmadıysa yeni anahtar üretilir ve kaybın ne demek olduğu
+  ekranda açıkça yazılır.
+- **Güncelleme akışı:** dosyalar yeni, şema eskiyse "Güncellemeyi çalıştır" —
+  bekleyen migration'lar koşar, sürüm kaydı (`system.app_version`) tazelenir.
+  Bundan sonra **her sürüm güncellemesinin resmî yolu budur**.
+- **Sahiplik doğrulama yönetici şifresiyle:** birincil yol artık e-posta + şifre;
+  APP_KEY yolu katlanır bölümde, dosyanın nereden açılacağı tarifiyle birlikte.
+  İkisi de aynı artan beklemeye tabidir ve sabit hata mesajı döner (K51).
+- **Dosya bütünlüğü ekranı:** eksik/bozuk dosyalar isim isim listelenir. Sihirbaz
+  dosya **indirmez** — paketi yükleyip "yeniden tara" denir.
+
+### Değişti
+- `SetupGuard` fail-closed davranışı korunuyor ama **teşhis penceresi** açıldı:
+  veritabanı okunamazken de sihirbaz sayfası, salt-okunur teşhis ucu ve kanıtlı
+  config onarımı çalışır; yazan/yıkan hiçbir uç geçmez.
+- Kurulum tamamlanınca kurulu sürüm `settings` tablosuna yazılır.
+
+### Düzeltildi (İE#20 D3 — saha vakası)
+- **Tarayıcı otomatik doldurma sabotajı:** Chrome, Ayarlar > Çeviri'deki "Model"
+  kutusuna kayıtlı e-postayı basıyordu (`model="…@gmail.com"` → sağlayıcı 400).
+  Serbest metin ayar alanları üç katmanla korundu (tanınmaz alan adı · standart
+  ipuçları · odaklanana kadar salt-okunur), e-posta alanlarına doğru
+  `autocomplete` türü verildi ve Model alanına kaydetmeden önce "@" akıl kontrolü
+  eklendi.
+
 ## [0.12.0-beta] — 23 Ağustos 2026 (V3 Dilim 2 · TEMİZ KURULUM paketi)
 
 > Bu paket **temiz kuruluma** çıkar: canlıdaki v0.11.4 kurulumu ve TÜM verisi

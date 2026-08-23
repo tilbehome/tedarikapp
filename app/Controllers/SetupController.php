@@ -761,6 +761,10 @@ final class SetupController
             }
             $settings->set('LOG_DRIVER', 'db'); // K33/K44: üretimde log daima DB
             $settings->set('TZ', 'Europe/Istanbul');
+            // D2-REV: KURULU SÜRÜM kaydı. Teşhis motoru "dosyalar yeni, şema eski"
+            // ayrımını buna bakarak yapar; kayıt olmadan bir güncellemeyi yarım
+            // kalmış bir kurulumdan ayırt etmenin yolu yoktur.
+            $settings->set(\App\Setup\SetupSituation::SETTING_VERSION, \App\Core\AppVersion::VALUE);
         } catch (Throwable) {
             // Ayar yazılamazsa kurulum durmaz; Config dosya/varsayılanla çalışır.
         }

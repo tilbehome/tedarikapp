@@ -1,4 +1,4 @@
-# TEMİZ KURULUM RUNBOOK'U — v0.12.0-beta
+# TEMİZ KURULUM RUNBOOK'U — v0.12.1-beta
 
 > **Karar (Ürün Sahibi, 23 Ağustos 2026):** canlıdaki v0.11.4 kurulumu ve TÜM
 > verisi silinir, sistem **sıfırdan** kurulur. Amaç çift: temiz veri zemini +
@@ -16,8 +16,8 @@
 
 | | |
 |---|---|
-| Sürüm | **v0.12.0-beta** (v1.0 adı İE#21 kapanışına saklı) |
-| Zip | `dist/tedarikapp-v0.12.0-beta.zip` |
+| Sürüm | **v0.12.1-beta** (v1.0 adı İE#21 kapanışına saklı) |
+| Zip | `dist/tedarikapp-v0.12.1-beta.zip` |
 | Boyut | 30,58 MB · 2.163 dosya (+ `MANIFEST.txt`) |
 | SHA-256 | `2778c3277f1e0aba4f9d6e38c4dffb306aa54eef25bede445d4efd80edac9304` |
 | Panel damgası | `v3-faz1 @ 32f7771` · **temiz çalışma kopyası** |
@@ -109,7 +109,7 @@ cPanel → **Dosya Yöneticisi** → subdomain kökü
 ## c) YENİ PAKETİN YÜKLENMESİ
 
 1. **Yükleme:** Dosya Yöneticisi → subdomain kökü → **Upload** →
-   `tedarikapp-v0.12.0-beta.zip`. Yükleme bitince dosya boyutunun **30,58 MB**
+   `tedarikapp-v0.12.1-beta.zip`. Yükleme bitince dosya boyutunun **30,58 MB**
    olduğunu listede doğrulayın (yarım yüklenen zip bozuk açılır).
 2. **Açma:** zip'e sağ tık → **Extract** → hedef yol **subdomain kökünün
    kendisi** olmalı (örn. `/home/<kullanici>/tedarikapp.tilbehometoptan.com`).
@@ -149,39 +149,59 @@ cPanel → **Dosya Yöneticisi** → subdomain kökü
 ## d) KURULUM SİHİRBAZI (web'den)
 
 Tarayıcıdan **https://tedarikapp.tilbehometoptan.com** adresine gidin.
-`config.php` olmadığı için sihirbaz kendiliğinden açılır. **HTTPS zorunludur**;
-`http://` ile açarsanız sihirbaz reddeder.
+
+> **v0.12.1 ile değişen şey (D2-REV):** sihirbaz artık açılışta **TAM TEŞHİS**
+> koşuyor — dosyalar, ayar dosyası, veritabanı, tablolar, migration defteri ve
+> sürüm. Üstte bir **durum rozeti** ("Teşhis: … bulundu") ve altında yalnız o
+> duruma uyan seçenekler çıkıyor. Bu yüzden bu bölümün eski "ters giderse"
+> satırlarının çoğu buradan KALKTI: artık ekranda karşılığı var.
+>
+> Sekiz durumun hepsi sihirbazın İÇİNDEN çözülür: kurulum yok · sağlıklı kurulum ·
+> yarım kurulum · ayar dosyası kayıp/bozuk · paket dosyaları eksik · migration
+> yarım · sürüm uyuşmazlığı (güncelleme) · veritabanına erişilemiyor.
+> Her ekranda **"Teşhisi yeniden çalıştır"** düğmesi vardır.
+
+**Bizim senaryomuzda** (b adımında her şey silindi) teşhis "**Kurulum bulunamadı**"
+diyecek ve doğrudan normal akışa girecektir:
 
 | Adım | Ne yapılır | Ne girilir |
 |---|---|---|
-| **1. Gereksinimler** | Otomatik denetim: PHP sürümü/eklentileri, HTTPS, `public/media` ve `storage` yazma izni | — · Kırmızı satır varsa düzeltip **Yeniden denetle** |
+| **1. Gereksinimler** | PHP sürümü/eklentileri, HTTPS, `public/media` ve `storage` yazma izni | Kırmızı satır varsa düzeltip **Yeniden denetle** |
 | **2. Veritabanı** | Bağlantı testi | (a) adımında indirdiğiniz **eski `config.php`**'deki `DB_HOST` (`localhost`), `DB_PORT` (`3306`), `DB_NAME`, `DB_USER`, `DB_PASS` |
-| **3. Ayarlar (config.php)** | Panel adresi sorulur, APP_KEY **kriptografik üretilir** | Panel adresi: `https://tedarikapp.tilbehometoptan.com` |
-| **3b. Dosyayı siz kaydedin** | Sihirbaz `config.php` içeriğini ekranda gösterir (sunucu yazamıyor) | **İçeriği kopyala** → Dosya Yöneticisi → kökte **`config.php`** adıyla yeni dosya → yapıştır → kaydet → sihirbazda **"Kaydettim, doğrula"** |
-| **4. Tablolar** | **Tabloları oluştur** — 26 migration sırayla koşar | Eski tablolar hâlâ duruyorsa: kutuya birebir **`SIFIRLA`** yazıp **Temiz kurulum** düğmesini kullanın |
-| **5. Yönetici + 2FA** | Hesap açılır, QR kod çıkar | Kullanıcı adı + **güçlü** şifre; QR'ı Google Authenticator/Authy ile okutup 6 haneli kodu girin |
-| **6. Kurtarma kodları** | Tek seferlik kodlar gösterilir | **Ekran görüntüsü değil, kâğıda/parola yöneticisine** kaydedin — bir daha gösterilmez |
-| **7. Bitti** | Sihirbaz kendini kalıcı kilitler | Panel girişine yönlenir |
+| **3. Ayarlar** | Panel adresi sorulur, APP_KEY kriptografik üretilir | `https://tedarikapp.tilbehometoptan.com` |
+| **3b. Dosyayı siz kaydedin** | Sunucu yazamadığı için içerik ekranda gösterilir | **İçeriği kopyala** → File Manager → kökte **`config.php`** → yapıştır → kaydet → **"Kaydettim, doğrula"** |
+| **4. Tablolar** | **Tabloları oluştur** — 26 migration sırayla koşar | Eski tablo kaldıysa: kutuya **`SIFIRLA`** + **Temiz kurulum** |
+| **5. Yönetici + 2FA** | Hesap açılır, QR çıkar | Kullanıcı adı + güçlü şifre; QR'ı Authenticator ile okutup 6 haneli kodu girin |
+| **6. Kurtarma kodları** | Tek seferlik kodlar | **Kâğıda/parola yöneticisine** kaydedin — bir daha gösterilmez |
+| **7. Bitti** | Sihirbaz kilitlenir, sürüm kaydı yazılır | Panele yönlenir |
 
-**⟲ Ters giderse:**
-- *Sihirbaz açılmıyor, "Kurulum zaten tamamlanmış" diyor:* `settings` tablosunda
-  eski kilit kalmıştır. phpMyAdmin → `settings` → `setup_locked` satırını silin
-  (ya da b2/Yol 2 ile tabloları düşürün) ve sayfayı yenileyin.
-- *2. adımda "bağlanılamadı":* `DB_HOST` `localhost` olmalı (127.0.0.1 değil);
-  kullanıcı adı ve DB adı cPanel'de **öneki dahil** yazılır
-  (`kullanici_tedarik` gibi). cPanel → MySQL Veritabanları'ndan kullanıcının o
-  veritabanına **ALL PRIVILEGES** ile bağlı olduğunu doğrulayın.
-- *3b'de "APP_KEY uyuşmuyor":* dosyayı kaydederken içerik kırpılmıştır. Dosyayı
-  silip **İçeriği kopyala**dan yeniden yapıştırın; başında `<?php`, sonunda
-  `];` olduğundan emin olun. Sihirbaz sekmesini KAPATMAYIN — yeni sekme yeni
-  bir APP_KEY üretir.
-- *4. adımda "tablo zaten var":* yarım kurulum kalıntısıdır → **SIFIRLA** kutusu
-  + **Temiz kurulum** düğmesi.
-- *5. adımda QR okunmuyor:* ekrandaki metin anahtarı ("secret") uygulamaya elle
-  girin. Telefon saatinin **otomatik saat** ayarında olması şarttır; TOTP saat
-  kaymasına duyarlıdır.
+### Sihirbaz başka bir durum bulursa
 
----
+| Rozet | Ne demek | Ekrandaki yol |
+|---|---|---|
+| **Sağlıklı kurulum bulundu** | Kilit var, tablolar tam | "Panele git" **veya** sahiplik doğrulaması + "Temiz kurulum" |
+| **Yarım kalmış kurulum** | Ayar dosyası var, kilit yok | "Kaldığım adımdan devam et" / "Temiz kurulum" |
+| **Ayar dosyası kayıp/bozuk** | `config.php` yok ya da alanları eksik | "Ayar dosyasını yeniden oluştur" — DB bilgileri yeniden sorulur |
+| **Paket dosyaları eksik** | MANIFEST'e göre eksik/bozuk dosya | Liste ekranda; paketi yeniden yükleyip **"Paketi yükledim — yeniden tara"** |
+| **Veritabanı tabloları eksik** | Migration yarım | "Bekleyenleri tamamla" / "Temiz kurulum" |
+| **Yeni sürüm yüklenmiş** | Dosyalar yeni, şema eski | "Güncellemeyi çalıştır" — **her sürüm güncellemesinin resmî yolu budur** |
+| **Veritabanına erişilemiyor** | Bağlantı kurulamıyor | Hata sınıflandırılır (yanlış şifre / sunucu yok / DB yok) ve ilgili alana odaklı düzeltme formu açılır |
+
+### Sahiplik doğrulama
+
+Kurulu bir sisteme dokunan her yol önce kimlik sorar. **Birincil yol yönetici
+e-postası + şifresidir** (2FA sorulmaz — bu bir oturum açma değil, sahiplik
+kanıtıdır). Şifrenize erişemiyorsanız aynı ekranda katlanır **"APP_KEY ile
+doğrula"** bölümü vardır ve dosyanın nereden açılacağını tarif eder. Doğrulama,
+bu tarayıcıya özel **15 dakikalık** bir bilet verir; kurulum kilidi silinmez.
+Yanlış denemeler artan beklemeye tabidir ve hepsi işlem günlüğüne yazılır.
+
+**⟲ Ters giderse (sihirbazın çözemediği tek şey):**
+- *Sihirbaz sayfası hiç açılmıyor (500 / beyaz ekran):* bu bir PHP/paket
+  sorunudur, teşhis kodu çalışamıyor demektir. cPanel → **MultiPHP Manager** →
+  subdomain → **PHP 8.3**. Düzelmezse paketi yeniden Extract edin.
+- *Veri kurtarma:* sihirbaz veri KURTARMAZ. Yedekten dönüş phpMyAdmin →
+  **İçe Aktar (Import)** ile (a) adımındaki `.sql` dosyasından yapılır.
 
 ## e) KURULUM SONRASI KONTROL LİSTESİ
 

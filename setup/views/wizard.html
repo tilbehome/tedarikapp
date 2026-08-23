@@ -45,6 +45,130 @@
       dosyasında durur; dosyayı okuyabilen = sistemin sahibi. Yanlış denemeler artan beklemeye tabidir.</p>
   </section>
 
+
+  <!-- D2-REV: TEŞHİS + ONARIM MERKEZİ — açılışta ilk gösterilen ekran budur.
+       Sihirbaz artık "kilit var mı?" diye değil, "sistemde ne buldum?" diye başlar. -->
+  <section class="card" id="panel-teshis" hidden>
+    <div class="rozet-satiri">
+      <span class="rozet" id="teshis-rozet">Teşhis</span>
+      <h2 id="teshis-baslik">Sistem inceleniyor…</h2>
+    </div>
+    <p class="muted" id="teshis-aciklama"></p>
+
+    <div class="report" id="teshis-detay"></div>
+
+    <div id="teshis-migration" hidden>
+      <h3>Migration durumu</h3>
+      <div class="report" id="teshis-migration-tablo"></div>
+    </div>
+
+    <div id="teshis-dosyalar" hidden>
+      <h3>Eksik / bozuk dosyalar</h3>
+      <div class="report" id="teshis-dosya-liste"></div>
+      <p class="muted">Sihirbaz dosya İNDİRMEZ. Paketi (zip) cPanel &gt; File Manager ile
+        uygulama köküne yeniden yükleyip <strong>Extract</strong> edin, sonra bu sayfaya dönüp
+        "Paketi yükledim — yeniden tara" deyin.</p>
+    </div>
+
+    <div class="actions" id="teshis-secenekler"></div>
+
+    <div class="actions">
+      <button type="button" class="ghost" id="teshis-yenile">Teşhisi yeniden çalıştır</button>
+    </div>
+  </section>
+
+  <!-- Sahiplik doğrulama — sağlıklı kurulumda ve config kaybında AYNI EKRANDA -->
+  <section class="card" id="panel-sahiplik" hidden>
+    <h2>Sahipliğinizi doğrulayın</h2>
+    <p class="muted">Bu işlem kurulu bir sisteme dokunuyor. Devam etmek için yönetici
+      hesabınızla kimliğinizi doğrulayın. Doğrulama, bu tarayıcıya özel
+      <strong>15 dakikalık</strong> bir yeniden kurulum bileti verir; kurulum kilidi silinmez.</p>
+    <form id="sahiplik-form" class="form" novalidate>
+      <label>Yönetici e-postası
+        <input name="email" type="email" autocomplete="username" autocapitalize="none" spellcheck="false" required>
+      </label>
+      <label>Şifre
+        <input name="sifre" type="password" autocomplete="current-password" required>
+      </label>
+      <div class="actions">
+        <button type="submit">Doğrula ve devam et</button>
+        <button type="button" class="ghost" id="sahiplik-vazgec">Vazgeç</button>
+      </div>
+    </form>
+    <details id="sahiplik-appkey">
+      <summary>Şifreme erişemiyorum — APP_KEY ile doğrulayayım</summary>
+      <p class="muted">APP_KEY, sunucudaki <code>config.php</code> dosyasının içindedir
+        (WordPress'teki <code>wp-config.php</code> gibi). cPanel &gt; <strong>File Manager</strong> →
+        uygulama kökü → <code>config.php</code> → sağ tık <strong>Edit</strong> →
+        <code>'APP_KEY' =&gt; '…'</code> satırındaki 64 haneli değeri kopyalayın.</p>
+      <label>APP_KEY
+        <input id="sahiplik-app-key" autocomplete="off" data-autofill="kapali" placeholder="64 haneli anahtar">
+      </label>
+      <div class="actions">
+        <button type="button" class="ghost" id="sahiplik-appkey-gonder">APP_KEY ile doğrula</button>
+      </div>
+    </details>
+  </section>
+
+  <!-- Yıkıcı onay — temiz kurulum -->
+  <section class="card danger" id="panel-yikici" hidden>
+    <h2>Temiz kurulum — geri dönüşü yok</h2>
+    <p class="muted">Veritabanındaki <strong>TÜM tablolar silinir</strong> ve sistem sıfırdan
+      kurulur. Sihirbaz veri KURTARMAZ: geri dönüş yalnız yedektendir. Son yedeğiniz
+      <code>storage/backups/</code> klasöründedir — devam etmeden önce indirdiğinizden emin olun.</p>
+    <div class="form">
+      <label>Onay — kutuya birebir <strong>SIFIRLA</strong> yazın
+        <input id="yikici-onay" autocomplete="off" data-autofill="kapali" placeholder="SIFIRLA">
+      </label>
+      <div class="actions">
+        <button type="button" id="yikici-calistir" disabled>Tabloları sıfırla ve kur</button>
+        <button type="button" class="ghost" id="yikici-vazgec">Vazgeç</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Ayar dosyası onarımı (durum 4 ve 8) -->
+  <section class="card" id="panel-config-onar" hidden>
+    <h2>Veritabanı bilgileri</h2>
+    <p class="muted" id="config-onar-not"></p>
+    <form id="config-onar-form" class="form" novalidate>
+      <label>Sunucu <input name="host" value="localhost" autocomplete="off" data-autofill="kapali" required></label>
+      <label>Port <input name="port" value="3306" inputmode="numeric" autocomplete="off" data-autofill="kapali"></label>
+      <label>Veritabanı adı <input name="name" autocomplete="off" data-autofill="kapali" required></label>
+      <label>Kullanıcı adı <input name="user" autocomplete="off" data-autofill="kapali" required></label>
+      <label>Şifre <input name="pass" type="password" autocomplete="new-password"></label>
+      <div id="config-onar-kanit" hidden>
+        <label>Sahiplik kanıtı — config.php içindeki APP_KEY
+          <input name="app_key" autocomplete="off" data-autofill="kapali" placeholder="64 haneli anahtar">
+        </label>
+      </div>
+      <div class="actions">
+        <button type="submit">Bağlantıyı test et ve ayar dosyasını üret</button>
+        <button type="button" class="ghost" id="config-onar-vazgec">Vazgeç</button>
+      </div>
+    </form>
+    <div id="config-onar-manuel" hidden>
+      <h3>config.php dosyasını siz kaydedin</h3>
+      <p class="muted" id="config-onar-yonerge"></p>
+      <pre class="key" id="config-onar-icerik" style="white-space:pre-wrap"></pre>
+      <div class="actions">
+        <button type="button" class="ghost" id="config-onar-kopyala">İçeriği kopyala</button>
+        <button type="button" id="config-onar-dogrula">Kaydettim, doğrula</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Güncelleme (durum 7) -->
+  <section class="card" id="panel-guncelle" hidden>
+    <h2>Sürüm güncellemesi</h2>
+    <p class="muted" id="guncelle-ozet"></p>
+    <div class="actions">
+      <button type="button" id="guncelle-calistir">Güncellemeyi çalıştır</button>
+      <button type="button" class="ghost" id="guncelle-vazgec">Vazgeç</button>
+    </div>
+    <div class="report" id="guncelle-sonuc" hidden></div>
+  </section>
+
   <!-- K42: adım başarısız olduğunda teşhis — dostane mesaj alert'te, teknik detay burada -->
   <section class="card diag" id="diag-box" hidden>
     <h3>Sorun tanılaması</h3>

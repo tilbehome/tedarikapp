@@ -5,6 +5,7 @@ import { useAsync, messageOf } from '../../lib/useAsync';
 import { ErrorNote, Field, Skeleton } from '../../components/ui';
 import { useToast } from '../../components/Toast';
 import EylemDugmesi from '../../components/EylemDugmesi';
+import { epostaGibiMi, otomatikDoldurmaKapali, useAutofillKalkani } from '../../lib/autofill';
 
 /**
  * AYARLAR > ÇEVİRİ (İE#20 C4).
@@ -26,8 +27,12 @@ export default function CeviriAyarlari() {
   // D1: test sonucu EKRANDA kalır. Toast baloncuğu kaçırılabilir; bir hata
   // mesajının (ör. "model_not_found") okunup model alanına yansıtılması gerekir.
   const [test, setTest] = useState<{ basarili: boolean; mesaj: string } | null>(null);
+  // D3: tarayıcı otomatik doldurmasına karşı kalkan (gerekçe: lib/autofill.ts).
+  const modelKalkani = useAutofillKalkani();
+  const dillerKalkani = useAutofillKalkani();
 
   const veri = durum.data;
+  const modelEpostaGibi = veri ? epostaGibiMi(veri.model_ham) : false;
 
   const kaydet = async (event: FormEvent) => {
     event.preventDefault();
@@ -98,11 +103,22 @@ export default function CeviriAyarlari() {
                   Değeri kutuya yazmak yanlış olurdu: kullanıcı onu kendi seçimi
                   sanır ve sağlayıcı değiştirdiğinde varsayılan artık izlemez. */}
               <input
+                {...otomatikDoldurmaKapali('llm-model')}
+                {...modelKalkani}
                 className="field-input"
                 value={veri.model_ham}
                 placeholder={veri.varsayilan_model}
                 onChange={(event) => guncelle({ model_ham: event.target.value })}
+                aria-invalid={modelEpostaGibi}
               />
+              {modelEpostaGibi ? (
+                <p className="mt-1 flex items-start gap-1.5 text-xs text-warn">
+                  <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
+                  Bu bir e-posta adresi gibi görünüyor. Model adları "@" içermez —
+                  tarayıcı bu kutuyu otomatik doldurmuş olabilir. Boş bırakırsanız
+                  varsayılan model ({veri.varsayilan_model}) kullanılır.
+                </p>
+              ) : null}
             </Field>
           </div>
 
@@ -117,9 +133,10 @@ export default function CeviriAyarlari() {
             <div className="flex items-center gap-2">
               <KeyRound className="h-4 w-4 text-ink-3" aria-hidden />
               <input
+                {...otomatikDoldurmaKapali('llm-anahtar')}
                 className="field-input"
                 type="password"
-                autoComplete="off"
+                autoComplete="new-password"
                 placeholder={veri.anahtar_tanimli ? '•••••••• (değiştirmek için yazın)' : 'sk-…'}
                 value={anahtar}
                 onChange={(event) => setAnahtar(event.target.value)}
@@ -129,6 +146,8 @@ export default function CeviriAyarlari() {
 
           <Field label="Hedef diller" hint="Virgülle ayırın. Yeni dil eklemek bir ayar değişikliğidir.">
             <input
+              {...otomatikDoldurmaKapali('hedef-diller')}
+              {...dillerKalkani}
               className="field-input"
               value={veri.hedef_diller.join(', ')}
               onChange={(event) =>
