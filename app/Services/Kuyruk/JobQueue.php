@@ -104,21 +104,57 @@ final class JobQueue
     {
         $pdo = $this->connection->pdo();
         $zaman = Dates::toStorage($now);
-        $kilitEskisi = Dates::toStorage($now->modify('-' . self::KILIT_OMRU_SANIYE . ' seconds'));
 
-        // Aday: çalışma zamanı gelmiş bekleyen iş VEYA kilidi eskimiş "çalışıyor" iş.
+        // ADAY SEÇİMİ — TÜR ADALETİ (İE#21 B11).
+        //
+        // Eski sıra "öncelik, zaman, id" idi. 500 çeviri işi kuyruğa girdiğinde
+        // aralarına düşen tek bir skor işi, 500 çeviri bitene kadar bekliyordu:
+        // kuyruk teknik olarak çalışıyor ama bir iş TÜRÜ açlıktan ölüyordu.
+        //
+        // Çözüm dönüşümlü seçimdir: bu turda HANGİ TÜR en uzun süredir iş
+        // almadıysa ondan alınır. Öncelik hâlâ üstündür — adalet, önceliğin
+        // yerine geçmez, EŞİT öncelikler arasında paylaştırır.
+        $sira = $pdo->prepare(
+            "SELECT tur, MIN(oncelik) AS en_yuksek
+             FROM jobs
+             WHERE (durum = :bekliyor AND calisacak_at <= :simdi)
+                OR (durum = :calisiyor AND kilit_bitis IS NOT NULL AND kilit_bitis <= :kira_bitti)
+             GROUP BY tur",
+        );
+        $sira->execute([
+            'bekliyor' => self::BEKLIYOR,
+            'calisiyor' => self::CALISIYOR,
+            'simdi' => $zaman,
+            'kira_bitti' => $zaman,
+        ]);
+        /** @var list<array<string, mixed>> $turler */
+        $turler = $sira->fetchAll();
+        if ($turler === []) {
+            return null;
+        }
+
+        $enYuksekOncelik = min(array_map(static fn (array $r): int => (int) $r['en_yuksek'], $turler));
+        $adaylar = array_values(array_filter(
+            $turler,
+            static fn (array $r): bool => (int) $r['en_yuksek'] === $enYuksekOncelik,
+        ));
+        $tur = (string) $adaylar[$this->siradakiTurIndeksi(count($adaylar))]['tur'];
+
         $aday = $pdo->prepare(
             "SELECT id FROM jobs
-             WHERE (durum = :bekliyor AND calisacak_at <= :simdi)
-                OR (durum = :calisiyor AND kilitlendi_at IS NOT NULL AND kilitlendi_at <= :kilit_eskisi)
+             WHERE tur = :tur AND (
+                   (durum = :bekliyor AND calisacak_at <= :simdi)
+                OR (durum = :calisiyor AND kilit_bitis IS NOT NULL AND kilit_bitis <= :kira_bitti)
+             )
              ORDER BY oncelik ASC, calisacak_at ASC, id ASC
              LIMIT 1",
         );
         $aday->execute([
+            'tur' => $tur,
             'bekliyor' => self::BEKLIYOR,
             'calisiyor' => self::CALISIYOR,
             'simdi' => $zaman,
-            'kilit_eskisi' => $kilitEskisi,
+            'kira_bitti' => $zaman,
         ]);
         $id = $aday->fetchColumn();
         if ($id === false) {
@@ -132,13 +168,20 @@ final class JobQueue
         // olduğu için MySQL yerel prepare kullanır ve tekrar eden adı HY093 ile
         // reddeder — canlıda 500, testte (emülasyonlu) sessizce çalışır. Bu yüzden
         // her tekrar AYRI ADLA yazılır.
+        // B11: her sahiplenme BENZERSİZ bir token üretir. Kirası dolup devralınan
+        // işin eski sahibi uyandığında token'ı artık eşleşmez ve sonucu YAZAMAZ —
+        // iki kez koşan bir işin sonucunu birinin diğerini ezerek yazması böyle
+        // engellenir.
+        $token = bin2hex(random_bytes(16));
+
         $al = $pdo->prepare(
             "UPDATE jobs
-             SET durum = :calisiyor, kilit_sahibi = :sahip, kilitlendi_at = :kilit_at,
+             SET durum = :calisiyor, kilit_sahibi = :sahip, kilit_token = :token,
+                 kilitlendi_at = :kilit_at, kilit_bitis = :kira_bitis,
                  deneme = deneme + 1, updated_at = :guncelleme_at
              WHERE id = :id AND (
                    (durum = :bekliyor AND calisacak_at <= :simdi)
-                OR (durum = :calisiyor2 AND kilitlendi_at IS NOT NULL AND kilitlendi_at <= :kilit_eskisi)
+                OR (durum = :calisiyor2 AND kilit_bitis IS NOT NULL AND kilit_bitis <= :kira_bitti)
              )",
         );
         $al->execute([
@@ -146,10 +189,12 @@ final class JobQueue
             'calisiyor2' => self::CALISIYOR,
             'bekliyor' => self::BEKLIYOR,
             'sahip' => mb_substr($isleyiciKimligi, 0, 64),
+            'token' => $token,
             'kilit_at' => $zaman,
+            'kira_bitis' => Dates::toStorage($now->modify('+' . self::KILIT_OMRU_SANIYE . ' seconds')),
             'guncelleme_at' => $zaman,
             'simdi' => $zaman,
-            'kilit_eskisi' => $kilitEskisi,
+            'kira_bitti' => $zaman,
             'id' => (int) $id,
         ]);
 
@@ -164,20 +209,67 @@ final class JobQueue
         return is_array($is) ? $is : null;
     }
 
-    public function basarili(int $id, DateTimeImmutable $now): void
+    /**
+     * Dönüşümlü tür seçimi için sayaç — süreç ömründe artar.
+     *
+     * Kalıcı olması gerekmez: her cron turu birkaç iş işler ve tur içinde
+     * dönüşüm yeterlidir. Veritabanında sayaç tutmak, her sahiplenmeye fazladan
+     * bir yazma eklerdi.
+     */
+    private int $turSayaci = 0;
+
+    private function siradakiTurIndeksi(int $turSayisi): int
+    {
+        return $turSayisi > 0 ? $this->turSayaci++ % $turSayisi : 0;
+    }
+
+    /**
+     * KİRA UZATMA (İE#21 B11) — uzun süren iş devralınmasın.
+     *
+     * İşleyici uzun bir turda (50 ürünlük çeviri) bunu periyodik çağırır. Token
+     * eşleşmezse false döner: iş ARTIK BİZİM DEĞİLDİR ve işleyici durmalıdır.
+     */
+    public function kalpAtisi(int $id, string $token, DateTimeImmutable $now): bool
     {
         $statement = $this->connection->pdo()->prepare(
-            'UPDATE jobs SET durum = :durum, hata = NULL, kilit_sahibi = NULL, kilitlendi_at = NULL,
+            'UPDATE jobs SET kilit_bitis = :kira_bitis, updated_at = :simdi
+             WHERE id = :id AND kilit_token = :token AND durum = :calisiyor',
+        );
+        $statement->execute([
+            'kira_bitis' => Dates::toStorage($now->modify('+' . self::KILIT_OMRU_SANIYE . ' seconds')),
+            'simdi' => Dates::toStorage($now),
+            'id' => $id,
+            'token' => $token,
+            'calisiyor' => self::CALISIYOR,
+        ]);
+
+        return $statement->rowCount() === 1;
+    }
+
+    /**
+     * @param string $token sahiplenmede verilen kira token'ı; boşsa doğrulama
+     *                      YAPILMAZ (eski çağrılar ve elle müdahale için)
+     */
+    public function basarili(int $id, DateTimeImmutable $now, string $token = ''): void
+    {
+        $kosul = $token === '' ? '' : ' AND kilit_token = :token';
+        $statement = $this->connection->pdo()->prepare(
+            'UPDATE jobs SET durum = :durum, hata = NULL, hata_sinifi = NULL, kilit_sahibi = NULL,
+                    kilit_token = NULL, kilitlendi_at = NULL, kilit_bitis = NULL,
                     bitti_at = :bitti_at, updated_at = :guncelleme_at
-             WHERE id = :id',
+             WHERE id = :id' . $kosul,
         );
         $zaman = Dates::toStorage($now);
-        $statement->execute([
+        $parametreler = [
             'durum' => self::BITTI,
             'bitti_at' => $zaman,
             'guncelleme_at' => $zaman,
             'id' => $id,
-        ]);
+        ];
+        if ($token !== '') {
+            $parametreler['token'] = $token;
+        }
+        $statement->execute($parametreler);
     }
 
     /**
@@ -186,13 +278,24 @@ final class JobQueue
      * Artan bekleme (backoff) bilinçlidir: geçici bir ağ hatasında hemen tekrar
      * denemek aynı hatayı alır ve deneme haklarını saniyeler içinde tüketir.
      */
-    public function basarisiz(int $id, string $hata, DateTimeImmutable $now): void
-    {
+    public function basarisiz(
+        int $id,
+        string $hata,
+        DateTimeImmutable $now,
+        string $sinif = HataSinifi::GECICI,
+        ?int $saglayiciBeklemesi = null,
+        string $token = '',
+    ): void {
         $pdo = $this->connection->pdo();
-        $oku = $pdo->prepare('SELECT deneme, max_deneme FROM jobs WHERE id = :id');
+        $oku = $pdo->prepare('SELECT deneme, max_deneme, kilit_token FROM jobs WHERE id = :id');
         $oku->execute(['id' => $id]);
         $satir = $oku->fetch();
         if (!is_array($satir)) {
+            return;
+        }
+
+        // B11: kirası devralınmış işin ESKİ sahibi sonucu yazamaz.
+        if ($token !== '' && (string) ($satir['kilit_token'] ?? '') !== $token) {
             return;
         }
 
@@ -200,33 +303,32 @@ final class JobQueue
         $max = (int) $satir['max_deneme'];
         $hata = mb_substr($hata, 0, 2000);
 
-        if ($deneme >= $max) {
-            $statement = $pdo->prepare(
-                'UPDATE jobs SET durum = :durum, hata = :hata, kilit_sahibi = NULL, kilitlendi_at = NULL,
-                        bitti_at = :bitti_at, updated_at = :guncelleme_at
-                 WHERE id = :id',
-            );
-            $zaman = Dates::toStorage($now);
-            $statement->execute([
-                'durum' => self::OLU,
-                'hata' => $hata,
-                'bitti_at' => $zaman,
-                'guncelleme_at' => $zaman,
-                'id' => $id,
-            ]);
+        // KALICI hata TEKRAR DENENMEZ: aynı sonucu üç kez üretmek kuyruğu meşgul
+        // eder ve gerçek arızayı üç kat gecikmeyle görünür kılar.
+        if ($sinif === HataSinifi::KALICI) {
+            $this->oldur($id, $hata, $now, $sinif);
 
             return;
         }
 
-        $bekleme = min(3600, 60 * (2 ** max(0, $deneme - 1)));
+        if ($deneme >= $max) {
+            $this->oldur($id, $hata, $now, $sinif);
+
+            return;
+        }
+
+        // JITTER'LI GERİ ÇEKİLME + 429'a SAYGI (gerekçe: HataSinifi).
+        $bekleme = HataSinifi::bekleme($sinif, $deneme, $saglayiciBeklemesi);
         $statement = $pdo->prepare(
-            'UPDATE jobs SET durum = :durum, hata = :hata, kilit_sahibi = NULL, kilitlendi_at = NULL,
+            'UPDATE jobs SET durum = :durum, hata = :hata, hata_sinifi = :sinif, kilit_sahibi = NULL,
+                    kilit_token = NULL, kilitlendi_at = NULL, kilit_bitis = NULL,
                     calisacak_at = :sonra, updated_at = :simdi
              WHERE id = :id',
         );
         $statement->execute([
             'durum' => self::BEKLIYOR,
             'hata' => $hata,
+            'sinif' => $sinif,
             'sonra' => Dates::toStorage($now->modify('+' . $bekleme . ' seconds')),
             'simdi' => Dates::toStorage($now),
             'id' => $id,
@@ -241,10 +343,15 @@ final class JobQueue
      * denemekle düzelmez: aynı sonucu üç kez üretir, kuyruğu meşgul eder ve
      * gerçek arızayı üç kat gecikmeyle görünür kılar.
      */
-    public function oldur(int $id, string $hata, DateTimeImmutable $now): void
-    {
+    public function oldur(
+        int $id,
+        string $hata,
+        DateTimeImmutable $now,
+        string $sinif = HataSinifi::KALICI,
+    ): void {
         $statement = $this->connection->pdo()->prepare(
-            'UPDATE jobs SET durum = :durum, hata = :hata, kilit_sahibi = NULL, kilitlendi_at = NULL,
+            'UPDATE jobs SET durum = :durum, hata = :hata, hata_sinifi = :sinif, kilit_sahibi = NULL,
+                    kilit_token = NULL, kilitlendi_at = NULL, kilit_bitis = NULL,
                     bitti_at = :bitti_at, updated_at = :guncelleme_at
              WHERE id = :id',
         );
@@ -252,18 +359,71 @@ final class JobQueue
         $statement->execute([
             'durum' => self::OLU,
             'hata' => mb_substr($hata, 0, 2000),
+            'sinif' => $sinif,
             'bitti_at' => $zaman,
             'guncelleme_at' => $zaman,
             'id' => $id,
         ]);
     }
 
+    /**
+     * ÖLÜ MEKTUP: "VAZGEÇ" (İE#21 B11).
+     *
+     * Ölü işi kuyruktan SİLER. "Yeniden dene" ile birlikte panelin iki eyleminden
+     * biridir; üçüncüsü olan "düzelt", yükü değiştirip yeniden kuyruğa almaktır
+     * (`yukuDuzelt`). Silme yalnız ÖLÜ işlere uygulanır: bekleyen ya da çalışan
+     * bir işi silmek, kuyruğu sessizce eksiltmek olurdu.
+     *
+     * @return bool gerçekten silindi mi (olmayan/ölü olmayan iş için false)
+     */
+    public function vazgec(int $id): bool
+    {
+        $statement = $this->connection->pdo()->prepare(
+            'DELETE FROM jobs WHERE id = :id AND durum = :durum',
+        );
+        $statement->execute(['id' => $id, 'durum' => self::OLU]);
+
+        return $statement->rowCount() === 1;
+    }
+
+    /**
+     * ÖLÜ MEKTUP: "DÜZELT" — yükü değiştirip yeniden kuyruğa alır.
+     *
+     * Bazı başarısızlıklar veri hatasındandır (yanlış ürün kimliği, eksik alan).
+     * Bunlar için tek çare işi silip elle yeniden yaratmaktı; yani denetim izi
+     * kopuyordu. Düzeltme aynı satırda kalır: kaç kez denendiği, ne hata aldığı
+     * ve kimin düzelttiği aynı kayıtta görünür.
+     *
+     * @param array<string, mixed> $yeniYuk
+     */
+    public function yukuDuzelt(int $id, array $yeniYuk, DateTimeImmutable $now): bool
+    {
+        $statement = $this->connection->pdo()->prepare(
+            'UPDATE jobs SET yuk = :yuk, durum = :durum, deneme = 0, hata = NULL, hata_sinifi = NULL,
+                    kilit_sahibi = NULL, kilit_token = NULL, kilitlendi_at = NULL, kilit_bitis = NULL,
+                    bitti_at = NULL, calisacak_at = :calisacak_at, updated_at = :guncelleme_at
+             WHERE id = :id AND durum = :olu',
+        );
+        $zaman = Dates::toStorage($now);
+        $statement->execute([
+            'yuk' => json_encode($yeniYuk, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            'durum' => self::BEKLIYOR,
+            'calisacak_at' => $zaman,
+            'guncelleme_at' => $zaman,
+            'id' => $id,
+            'olu' => self::OLU,
+        ]);
+
+        return $statement->rowCount() === 1;
+    }
+
     /** Ölü rafındaki işi yeniden kuyruğa alır (panel "yeniden dene"). */
     public function dirilt(int $id, DateTimeImmutable $now): void
     {
         $statement = $this->connection->pdo()->prepare(
-            'UPDATE jobs SET durum = :durum, deneme = 0, hata = NULL, kilit_sahibi = NULL,
-                    kilitlendi_at = NULL, bitti_at = NULL, calisacak_at = :calisacak_at, updated_at = :guncelleme_at
+            'UPDATE jobs SET durum = :durum, deneme = 0, hata = NULL, hata_sinifi = NULL, kilit_sahibi = NULL,
+                    kilit_token = NULL, kilitlendi_at = NULL, kilit_bitis = NULL, bitti_at = NULL,
+                    calisacak_at = :calisacak_at, updated_at = :guncelleme_at
              WHERE id = :id',
         );
         $zaman = Dates::toStorage($now);
@@ -278,7 +438,11 @@ final class JobQueue
     /**
      * Kuyruk sağlığı — panel "Sistem durumu" ekranının veri kaynağı.
      *
-     * @return array{bekleyen: int, calisan: int, olu: int, en_eski_bekleyen_dakika: int|null, turler: array<string, int>}
+     * @return array{
+     *     bekleyen: int, calisan: int, olu: int, en_eski_bekleyen_dakika: int|null,
+     *     turler: array<string, int>, saatlik_biten: int, saatlik_olen: int,
+     *     hata_orani_yuzde: int, yeniden_denenen: int
+     * }
      */
     public function saglik(DateTimeImmutable $now): array
     {
@@ -314,12 +478,46 @@ final class JobQueue
             $turler[(string) $satir['tur']] = (int) $satir['adet'];
         }
 
+        // ── B11 METRİKLERİ ───────────────────────────────────────────────────
+        // "Kuyruk çalışıyor mu?" sorusunun cevabı sayılarla verilir. Üçü de
+        // SON 1 SAATE bakar: gün boyu ortalaması, yarım saattir devam eden bir
+        // arızayı gizler.
+        $birSaatOnce = Dates::toStorage($now->modify('-1 hour'));
+
+        $sonSaat = static function (string $durum) use ($pdo, $birSaatOnce): int {
+            $statement = $pdo->prepare(
+                'SELECT COUNT(*) FROM jobs WHERE durum = :durum AND bitti_at IS NOT NULL AND bitti_at >= :esik',
+            );
+            $statement->execute(['durum' => $durum, 'esik' => $birSaatOnce]);
+
+            return (int) $statement->fetchColumn();
+        };
+
+        $bitenSaatlik = $sonSaat(self::BITTI);
+        $olenSaatlik = $sonSaat(self::OLU);
+        $toplamSaatlik = $bitenSaatlik + $olenSaatlik;
+
+        // Yeniden denemeye düşmüş (hatalı ama hâlâ hayatta) işler de hata oranına
+        // girer: yalnız ölenlere bakmak, üç kez patlayıp dördüncüde tutan bir
+        // sağlayıcıyı "sağlıklı" gösterirdi.
+        $bekleyenHatali = $pdo->prepare(
+            'SELECT COUNT(*) FROM jobs WHERE durum = :durum AND hata IS NOT NULL',
+        );
+        $bekleyenHatali->execute(['durum' => self::BEKLIYOR]);
+
         return [
             'bekleyen' => $say(self::BEKLIYOR),
             'calisan' => $say(self::CALISIYOR),
             'olu' => $say(self::OLU),
             'en_eski_bekleyen_dakika' => $enEski,
             'turler' => $turler,
+            // B11 metrikleri — Ayarlar > Kuyruk durumu bunları basar.
+            'saatlik_biten' => $bitenSaatlik,
+            'saatlik_olen' => $olenSaatlik,
+            'hata_orani_yuzde' => $toplamSaatlik > 0
+                ? (int) round($olenSaatlik / $toplamSaatlik * 100)
+                : 0,
+            'yeniden_denenen' => (int) $bekleyenHatali->fetchColumn(),
         ];
     }
 
@@ -363,7 +561,10 @@ final class JobQueue
     public function oluIsler(int $limit = 50): array
     {
         $statement = $this->connection->pdo()->prepare(
-            'SELECT id, tur, anahtar, hata, deneme, updated_at FROM jobs
+            // İE#21 B11: `yuk` ve `hata_sinifi` da döner — panel "Düzelt" eylemi
+            // mevcut yükü göstermeden düzeltme isteyemez, kullanıcı neyi
+            // değiştireceğini bilemezdi.
+            'SELECT id, tur, anahtar, yuk, hata, hata_sinifi, deneme, updated_at FROM jobs
              WHERE durum = :durum ORDER BY updated_at DESC LIMIT :limit',
         );
         $statement->bindValue('durum', self::OLU);

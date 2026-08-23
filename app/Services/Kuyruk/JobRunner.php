@@ -36,6 +36,21 @@ final class JobRunner
     }
 
     /**
+     * Uzun süren bir işin kirasını uzatır (İE#21 B11).
+     *
+     * İşleyiciler bunu iş satırıyla birlikte çağırır: `$kosucu->kalpAtisi($is, $now)`.
+     * false dönerse iş ARTIK BİZİM DEĞİLDİR (kira devralınmış) ve işleyici durmalıdır.
+     *
+     * @param array<string, mixed> $is
+     */
+    public function kalpAtisi(array $is, DateTimeImmutable $now): bool
+    {
+        $token = is_string($is['kilit_token'] ?? null) ? (string) $is['kilit_token'] : '';
+
+        return $token !== '' && $this->kuyruk->kalpAtisi((int) $is['id'], $token, $now);
+    }
+
+    /**
      * @param callable(array<string, mixed>, array<string, mixed>): void $isleyici
      *        (yük, iş satırı) alır; hata fırlatırsa iş başarısız sayılır
      */
@@ -92,16 +107,34 @@ final class JobRunner
             /** @var array<string, mixed> $yuk */
             $yuk = is_string($is['yuk'] ?? null) ? (json_decode((string) $is['yuk'], true) ?: []) : [];
 
+            // B11: sahiplenmede verilen kira token'ı sonuç yazarken KANIT olur.
+            // Kirası dolup devralınan işin eski sahibi buraya geldiğinde token'ı
+            // eşleşmez ve sonucu yazamaz — çift koşan işin sonuçları birbirini ezmez.
+            $token = is_string($is['kilit_token'] ?? null) ? (string) $is['kilit_token'] : '';
+
             try {
                 $isleyici($yuk, $is);
-                $this->kuyruk->basarili((int) $is['id'], $now);
+                $this->kuyruk->basarili((int) $is['id'], $now, $token);
                 $basarili++;
             } catch (Throwable $hata) {
-                $this->kuyruk->basarisiz((int) $is['id'], $hata->getMessage(), $now);
+                // B11: hata SINIFLANDIRILIR — kalıcı hata tekrar denenmez, hız
+                // sınırında sağlayıcının istediği süre beklenir, geçici hatada
+                // jitter'lı geri çekilme uygulanır (gerekçe: HataSinifi).
+                ['sinif' => $sinif, 'bekleme' => $saglayiciBeklemesi] = HataSinifi::siniflandir($hata);
+
+                $this->kuyruk->basarisiz(
+                    (int) $is['id'],
+                    $hata->getMessage(),
+                    $now,
+                    $sinif,
+                    $saglayiciBeklemesi,
+                    $token,
+                );
                 $basarisiz++;
                 $this->logger->error('Kuyruk işi başarısız', [
                     'tur' => $tur,
                     'id' => (int) $is['id'],
+                    'sinif' => $sinif,
                     'hata' => $hata->getMessage(),
                 ]);
             }

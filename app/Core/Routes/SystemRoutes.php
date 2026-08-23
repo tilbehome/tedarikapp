@@ -38,6 +38,9 @@ final class SystemRoutes
             // İE#20 C3: kuyruk sağlığı + ölü işi yeniden deneme.
             $group->get('/queue', [$system, 'queue']);
             $group->post('/queue/{id}/retry', [$system, 'queueRetry']);
+            // İE#21 B11: ölü mektup eylemlerinin kalan ikisi — vazgeç ve düzelt.
+            $group->post('/queue/{id}/discard', [$system, 'queueDiscard']);
+            $group->post('/queue/{id}/fix', [$system, 'queueFix']);
             $group->get('/state-machine', [$system, 'stateMachine']);
             $group->post('/migrate', [$system, 'migrate']);
             // K46: kilit kaldırmanın admin-oturumu yolu (Auth + CSRF bu grupta).

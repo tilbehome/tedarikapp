@@ -34,8 +34,12 @@ final class JobQueueTest extends TestCase
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         ]);
-        $migration = require dirname(__DIR__, 2) . '/migrations/0024_create_jobs.php';
-        $migration->up($this->pdo);
+        // Şema GERÇEK migration'lardan kurulur — elle yazılmış bir test şeması,
+        // üretimden sapınca testi yeşil ama sistemi kırık bırakır.
+        foreach (['0024_create_jobs', '0028_kuyruk_sertlestirme'] as $ad) {
+            $migration = require dirname(__DIR__, 2) . '/migrations/' . $ad . '.php';
+            $migration->up($this->pdo);
+        }
 
         $this->kuyruk = new JobQueue(Connection::fromCallable(fn (): PDO => $this->pdo));
         $this->simdi = new DateTimeImmutable('2026-08-22 12:00:00');

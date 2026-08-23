@@ -155,7 +155,19 @@ export interface KuyrukDurumuVerisi {
   olu: number;
   en_eski_bekleyen_dakika: number | null;
   turler: Record<string, number>;
-  olu_isler: { id: number; tur: string; anahtar: string | null; hata: string | null; deneme: number }[];
+  /** İE#21 B11 metrikleri — "kuyruk çalışıyor mu" sorusunun sayısal cevabı. */
+  saatlik_biten?: number;
+  saatlik_olen?: number;
+  hata_orani_yuzde?: number;
+  yeniden_denenen?: number;
+  olu_isler: {
+    id: number;
+    tur: string;
+    anahtar: string | null;
+    hata: string | null;
+    deneme: number;
+    yuk?: unknown;
+  }[];
   uyari: string | null;
 }
 
@@ -309,6 +321,10 @@ export const system = {
   /** İE#20 C3: kuyruk sağlığı — panel Sistem durumu bölümü. */
   kuyruk: (signal?: AbortSignal) => api.get<KuyrukDurumuVerisi>('/api/system/queue', { signal }),
   kuyrukYenidenDene: (id: number) => api.post<{ queued: boolean }>(`/api/system/queue/${id}/retry`),
+  /** İE#21 B11: ölü mektup eylemlerinin kalan ikisi. */
+  kuyrukVazgec: (id: number) => api.post<{ silindi: boolean }>(`/api/system/queue/${id}/discard`),
+  kuyrukDuzelt: (id: number, yuk: Record<string, unknown>) =>
+    api.post<{ duzeltildi: boolean }>(`/api/system/queue/${id}/fix`, { yuk }),
 
   status: () => api.get<SystemStatus>('/api/system/status'),
   /** İzinli durum geçişleri — arayüz kendi kopyasını TUTMAZ (İE#8 §2). */

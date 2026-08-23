@@ -1,4 +1,4 @@
-import { AlertTriangle, CheckCircle2, ListChecks, RotateCcw } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ListChecks, PencilLine, RotateCcw, Trash2 } from 'lucide-react';
 import { system as systemApi } from '../../api/endpoints';
 import { useAsync, messageOf } from '../../lib/useAsync';
 import { ErrorNote, Skeleton } from '../../components/ui';
@@ -48,6 +48,23 @@ export default function KuyrukDurumu() {
             />
           </div>
 
+          {/* B11: ikinci satır ölçüm — bir saatlik pencere. Gün ortalaması,
+              yarım saattir süren bir arızayı gizler. */}
+          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <Kutu etiket="Son 1 saat · biten" deger={veri.saatlik_biten ?? 0} />
+            <Kutu etiket="Son 1 saat · ölen" deger={veri.saatlik_olen ?? 0} vurgu={(veri.saatlik_olen ?? 0) > 0} />
+            <Kutu
+              etiket="Hata oranı"
+              deger={`%${veri.hata_orani_yuzde ?? 0}`}
+              vurgu={(veri.hata_orani_yuzde ?? 0) >= 30}
+            />
+            <Kutu
+              etiket="Yeniden denenen"
+              deger={veri.yeniden_denenen ?? 0}
+              vurgu={(veri.yeniden_denenen ?? 0) > 0}
+            />
+          </div>
+
           {veri.uyari ? (
             <p className="mt-3 flex items-start gap-2 rounded-lg bg-warn-bg p-2 text-xs text-warn">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
@@ -86,6 +103,53 @@ export default function KuyrukDurumu() {
                       <span className="inline-flex items-center gap-1">
                         <RotateCcw className="h-3.5 w-3.5" aria-hidden />
                         Yeniden dene
+                      </span>
+                    </EylemDugmesi>
+                    {/* B11: "düzelt" — yükü değiştirip yeniden kuyruğa alır.
+                        Denetim izi KOPMAZ: aynı satırda kalır, kaç kez denendiği
+                        ve ne hata aldığı görünmeye devam eder. */}
+                    <EylemDugmesi
+                      className="btn-ghost !min-h-8 !px-2 !text-xs"
+                      mesgulEtiketi="Kaydediliyor"
+                      onEylem={async () => {
+                        const mevcut = JSON.stringify(is.yuk ?? {}, null, 0);
+                        const girilen = window.prompt(
+                          'İşin yükünü düzeltin (JSON). Örn. {"urun_id": 12}',
+                          mevcut,
+                        );
+                        if (girilen === null) return;
+                        let yuk: Record<string, unknown>;
+                        try {
+                          yuk = JSON.parse(girilen) as Record<string, unknown>;
+                        } catch {
+                          push('Geçerli bir JSON girin.', 'error');
+                          return;
+                        }
+                        await systemApi.kuyrukDuzelt(is.id, yuk);
+                        durum.reload();
+                        push('Yük düzeltildi, iş yeniden kuyruğa alındı.');
+                      }}
+                      onHata={(hata) => push(messageOf(hata), 'error')}
+                    >
+                      <span className="inline-flex items-center gap-1">
+                        <PencilLine className="h-3.5 w-3.5" aria-hidden />
+                        Düzelt
+                      </span>
+                    </EylemDugmesi>
+                    <EylemDugmesi
+                      className="btn-ghost !min-h-8 !px-2 !text-xs text-err"
+                      mesgulEtiketi="Siliniyor"
+                      onEylem={async () => {
+                        if (!window.confirm('Bu iş kuyruktan SİLİNECEK. Geri alınamaz. Devam?')) return;
+                        await systemApi.kuyrukVazgec(is.id);
+                        durum.reload();
+                        push('Ölü iş silindi.');
+                      }}
+                      onHata={(hata) => push(messageOf(hata), 'error')}
+                    >
+                      <span className="inline-flex items-center gap-1">
+                        <Trash2 className="h-3.5 w-3.5" aria-hidden />
+                        Vazgeç
                       </span>
                     </EylemDugmesi>
                   </li>

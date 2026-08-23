@@ -78,6 +78,11 @@ final class Migrator
             ['column' => ['listings', 'skor']],
             ['column' => ['translation_cache', 'guven']],
         ],
+        // İE#21 B11: kuyruk sertleştirme — kira token'ı, açık kira bitişi, hata sınıfı.
+        '0028_kuyruk_sertlestirme' => [
+            ['column' => ['jobs', 'kilit_token']],
+            ['column' => ['jobs', 'kilit_bitis']],
+        ],
         // İE#21 B12: sürümlü çeviri belleği — satırın hangi koşullarda üretildiği.
         '0027_ceviri_bellegi_surumu' => [
             ['column' => ['translation_cache', 'surum']],
