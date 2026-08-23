@@ -427,6 +427,20 @@ final class SetupRepairController
 
     private function connectionOrNull(): ?Connection
     {
+        // KİLİDİN bağlantısı varsa O kullanılır: kilit, bilet ve throttle aynı
+        // veritabanında yaşamalıdır (K46) — ikinci bir bağlantı açmak hem israf
+        // hem de "hangi DB doğru" sorusunu doğurur.
+        $lockConnection = $this->lock->connection();
+        if ($lockConnection !== null) {
+            try {
+                $lockConnection->pdo()->query('SELECT 1');
+
+                return $lockConnection;
+            } catch (Throwable) {
+                return null;
+            }
+        }
+
         if (!$this->configWriter->configured()) {
             return null;
         }
