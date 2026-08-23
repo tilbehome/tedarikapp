@@ -78,6 +78,11 @@ final class Migrator
             ['column' => ['listings', 'skor']],
             ['column' => ['translation_cache', 'guven']],
         ],
+        // İE#21 B1: Keşif havuzu — küme anahtarı ve normalize arama alanı.
+        '0030_kesif_havuzu' => [
+            ['column' => ['listings', 'kume_anahtari']],
+            ['column' => ['products', 'arama_normal']],
+        ],
         // İE#21 C3: ivme bileşeni için toplam satış.
         '0029_ilan_satis_toplam' => [
             ['column' => ['listings', 'satis_toplam']],
