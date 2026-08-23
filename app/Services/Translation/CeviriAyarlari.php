@@ -43,18 +43,37 @@ final class CeviriAyarlari
     ) {
     }
 
+    /**
+     * Yapılandırılmamış sistemin sağlayıcısı (İE#20 D1).
+     *
+     * VARSAYILAN DEEPSEEK'TİR. Gerekçe: bu iş TİCARİ KATALOG ÇEVİRİSİDİR — yüksek
+     * hacimli, düşük yaratıcılık gerektiren, maliyete duyarlı bir yük. DeepSeek bu
+     * profilde belirgin biçimde ucuzdur ve varsayılanın kullanıcının cebini
+     * koruması gerekir; pahalı bir varsayılan, "denedim, kotayı yaktı" deneyimidir.
+     * Kullanıcı Ayarlar > Çeviri'den istediği sağlayıcıya geçebilir.
+     */
     public function saglayici(): string
     {
         $deger = trim((string) ($this->settings->get(self::KEY_SAGLAYICI) ?? ''));
 
-        return $deger === '' ? LlmTranslator::SAGLAYICI_OPENAI : $deger;
+        return $deger === '' ? LlmTranslator::SAGLAYICI_DEEPSEEK : $deger;
     }
 
+    /** İstekte KULLANILAN model: ayar boşsa sağlayıcının varsayılanı. */
     public function model(): string
     {
-        $deger = trim((string) ($this->settings->get(self::KEY_MODEL) ?? ''));
+        $ham = $this->modelHam();
 
-        return $deger === '' ? LlmTranslator::varsayilanModel($this->saglayici()) : $deger;
+        return $ham === '' ? LlmTranslator::varsayilanModel($this->saglayici()) : $ham;
+    }
+
+    /**
+     * Ayarda YAZAN değer (boş olabilir) — panel "boş mu, yazılmış mı" ayrımını
+     * bilmeden gri yer tutucu gösteremez. `model()` etkin değeri, bu ham değeri verir.
+     */
+    public function modelHam(): string
+    {
+        return trim((string) ($this->settings->get(self::KEY_MODEL) ?? ''));
     }
 
     /**
@@ -169,13 +188,17 @@ final class CeviriAyarlari
     /**
      * Panele dönen özet — SIR İÇERMEZ.
      *
-     * @return array{saglayici: string, model: string, hedef_diller: list<string>, acik: bool, anahtar_tanimli: bool, anahtar_onizleme: string|null, saglayicilar: list<string>}
+     * @return array{saglayici: string, model: string, model_ham: string, varsayilan_model: string, hedef_diller: list<string>, acik: bool, anahtar_tanimli: bool, anahtar_onizleme: string|null, saglayicilar: list<string>}
      */
     public function ozet(): array
     {
         return [
             'saglayici' => $this->saglayici(),
+            // `model` ETKİN değerdir (istekte bu kullanılır); `model_ham` ayarda
+            // yazandır (boş olabilir) ve panel yer tutucusunu buna göre gösterir.
             'model' => $this->model(),
+            'model_ham' => $this->modelHam(),
+            'varsayilan_model' => LlmTranslator::varsayilanModel($this->saglayici()),
             'hedef_diller' => $this->hedefDiller(),
             'acik' => $this->acikMi(),
             'anahtar_tanimli' => $this->anahtarVarMi(),

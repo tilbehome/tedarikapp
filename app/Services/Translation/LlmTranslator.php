@@ -79,12 +79,33 @@ final class LlmTranslator implements TranslatorInterface
         return $this->glossary->all($sourceLang);
     }
 
+    /**
+     * Sağlayıcı başına VARSAYILAN MODEL KİMLİĞİ (İE#20 D1).
+     *
+     * BAYAT KİMLİK SESSİZ ARIZADIR: geçersiz bir model adı sağlayıcıdan
+     * `model_not_found` döndürür; `translateProduct()` bunu yakalayıp yedek katmana
+     * düşer ve kullanıcı hiçbir hata GÖRMEZ — "çeviri neden zayıf?" sorusunun cevabı
+     * hiçbir ekranda yoktur. Bu yüzden kimlikler tarihli olarak doğrulanır ve
+     * doğrulama kaynağı burada yazılıdır.
+     *
+     * DOĞRULAMA (22 Ağu 2026):
+     *  • openai    → `gpt-5.6-terra` — OpenAI API model belgelerinde "zekâ/maliyet
+     *    dengesi" için önerilen güncel kimlik (developers.openai.com/api/docs/models).
+     *    Önceki değer `gpt-4.1-mini` bu ailenin öncesindendi.
+     *  • anthropic → `claude-sonnet-4-6` (PM bildirimi). Önceki `claude-sonnet-5`
+     *    GEÇERLİ BİR KİMLİK DEĞİLDİ.
+     *  • deepseek  → `deepseek-v4-flash` (PM bildirimi). `deepseek-chat` Temmuz
+     *    2026'da emekli edildi.
+     *
+     * Kullanıcı Ayarlar > Çeviri'den başka bir model yazabilir; buradaki değerler
+     * yalnız BOŞ ayarın karşılığıdır.
+     */
     public static function varsayilanModel(string $saglayici): string
     {
         return match ($saglayici) {
-            self::SAGLAYICI_ANTHROPIC => 'claude-sonnet-5',
-            self::SAGLAYICI_DEEPSEEK => 'deepseek-chat',
-            default => 'gpt-4.1-mini',
+            self::SAGLAYICI_ANTHROPIC => 'claude-sonnet-4-6',
+            self::SAGLAYICI_OPENAI => 'gpt-5.6-terra',
+            default => 'deepseek-v4-flash',
         };
     }
 

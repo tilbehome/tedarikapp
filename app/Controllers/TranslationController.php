@@ -10,6 +10,7 @@ use App\Services\Translation\TranslationService;
 use App\Services\Translation\TranslatorInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Throwable;
 
 /**
  * Çeviri ÖNERİSİ ucu (İE#13 C4 — K54).
@@ -88,9 +89,12 @@ final class TranslationController extends ApiController
         if ($saglayici !== '') {
             $this->ceviriAyarlari->saglayiciKaydet($saglayici);
         }
-        $model = $this->str($body, 'model');
-        if ($model !== '') {
-            $this->ceviriAyarlari->modelKaydet($model);
+        // D1: model alanı BOŞALTILABİLMELİDİR — boş değer "sağlayıcının varsayılanına
+        // dön" demektir ve panel bunu gri yer tutucuyla gösterir. Eskiden boş değer
+        // yok sayılıyordu; kullanıcı yanlış yazdığı bir model adını SİLEMİYORDU.
+        // Ayrım anahtarın VARLIĞIDIR: gönderilmediyse dokunulmaz, gönderildiyse yazılır.
+        if (array_key_exists('model', $body)) {
+            $this->ceviriAyarlari->modelKaydet($this->str($body, 'model'));
         }
         if (is_array($diller)) {
             /** @var list<string> $temizDiller */
@@ -116,6 +120,75 @@ final class TranslationController extends ApiController
         $this->izBirak($request, 'ceviri_ayari', 'Çeviri ayarları güncellendi');
 
         return Response::success($response, $this->ceviriAyarlari->ozet());
+    }
+
+    /**
+     * POST /api/settings/translation/test — BAĞLANTIYI TEST ET (İE#20 D1).
+     *
+     * Bu uç, çeviri akışının aksine **YEDEK KATMANA DÜŞMEZ**. Gerekçe: normal
+     * çeviride sağlayıcı hatası kullanıcının işini durdurmamalı, o yüzden sessizce
+     * sözlük+makine katmanına düşülür. Ama TEST DÜĞMESİNİN İŞİ tam da o hatayı
+     * göstermektir — yedeğe düşerse düğme "çalışıyor" der ve yanlış model adı,
+     * süresi dolmuş anahtar ya da kota sorunu HİÇ GÖRÜNMEZ. Kullanıcı sonra
+     * "çeviriler neden zayıf?" diye sorar ve cevabı hiçbir ekranda bulunmaz.
+     *
+     * Bu yüzden burada `LlmIstemci` DOĞRUDAN çağrılır ve sağlayıcının hata metni
+     * (model_not_found, 401, 429 …) kullanıcıya AYNEN iletilir. Yanıt 200'dür ve
+     * sonucu gövde taşır: test bir arıza değil, bir ÖLÇÜMDÜR.
+     */
+    public function translationTest(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        if ($this->ceviriAyarlari === null) {
+            return Response::error($response, 'SERVER_ERROR', 'Çeviri ayarları yapılandırılmamış.', 500);
+        }
+
+        $ayarlar = $this->ceviriAyarlari;
+        $saglayici = $ayarlar->saglayici();
+        $model = $ayarlar->model();
+        $anahtar = $ayarlar->anahtar();
+
+        if ($anahtar === null) {
+            return Response::success($response, [
+                'basarili' => false,
+                'saglayici' => $saglayici,
+                'model' => $model,
+                'hata' => 'API anahtarı tanımlı değil. Anahtarı girip kaydettikten sonra tekrar deneyin.',
+            ]);
+        }
+
+        $baslangic = microtime(true);
+        try {
+            // Küçük ve belirlenimci bir istek: amaç çeviri kalitesi değil,
+            // "kimlik + model + ağ" üçlüsünün çalıştığını görmek.
+            $yanit = (new \App\Services\Translation\LlmIstemci(15))->sor(
+                $saglayici,
+                $anahtar,
+                $model,
+                'Yalnızca geçerli JSON döndür. Başka hiçbir şey yazma.',
+                '{"görev":"bağlantı testi","yanıt_şeması":{"durum":"tamam"}}',
+            );
+        } catch (Throwable $hata) {
+            $this->izBirak($request, 'ceviri_test', 'Bağlantı testi BAŞARISIZ: ' . $saglayici . '/' . $model);
+
+            return Response::success($response, [
+                'basarili' => false,
+                'saglayici' => $saglayici,
+                'model' => $model,
+                // Sağlayıcının söylediği AYNEN aktarılır: "model_not_found" gibi bir
+                // metin, kullanıcının model adını düzeltmesi için gereken tek ipucudur.
+                'hata' => $hata->getMessage(),
+            ]);
+        }
+
+        $this->izBirak($request, 'ceviri_test', 'Bağlantı testi başarılı: ' . $saglayici . '/' . $model);
+
+        return Response::success($response, [
+            'basarili' => true,
+            'saglayici' => $saglayici,
+            'model' => $model,
+            'sure_ms' => (int) round((microtime(true) - $baslangic) * 1000),
+            'ornek_yanit' => mb_substr(trim($yanit), 0, 200),
+        ]);
     }
 
     /**

@@ -107,7 +107,12 @@ export const exports = {
 /** İE#20 C4 — Ayarlar > Çeviri. API anahtarı ASLA dönmez; yalnız maskeli önizleme. */
 export interface CeviriAyarlariOzeti {
   saglayici: string;
+  /** İstekte KULLANILAN model (ayar boşsa sağlayıcının varsayılanı). */
   model: string;
+  /** Ayarda YAZAN değer — boşsa panel gri yer tutucu gösterir (D1). */
+  model_ham: string;
+  /** Ayar boşken etkin olacak ad; yer tutucu metni budur. */
+  varsayilan_model: string;
   hedef_diller: string[];
   acik: boolean;
   anahtar_tanimli: boolean;
@@ -119,6 +124,20 @@ export const ceviri = {
   ayarlar: (signal?: AbortSignal) => api.get<CeviriAyarlariOzeti>('/api/settings/translation', { signal }),
   ayarlariKaydet: (body: Record<string, unknown>) =>
     api.put<CeviriAyarlariOzeti>('/api/settings/translation', body),
+  /**
+   * D1: bağlantı testi. YEDEĞE DÜŞMEZ — sağlayıcının hatası (model_not_found,
+   * 401, 429 …) olduğu gibi döner. Yanıt 200'dür; sonucu `basarili` söyler.
+   */
+  baglantiTesti: () =>
+    api.post<{
+      basarili: boolean;
+      saglayici: string;
+      model: string;
+      hata?: string;
+      sure_ms?: number;
+      ornek_yanit?: string;
+    }>('/api/settings/translation/test'),
+
   /** Çevrilmemiş ürünleri KUYRUĞA alır — ekran beklemez (C4). */
   topluCevir: (listId?: number) =>
     api.post<{ kuyruga_alinan: number; mesaj: string }>(

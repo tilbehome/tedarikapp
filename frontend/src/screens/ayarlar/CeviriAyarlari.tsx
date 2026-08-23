@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { KeyRound, Languages, Sparkles } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, KeyRound, Languages, PlugZap, Sparkles } from 'lucide-react';
 import { ceviri as ceviriApi } from '../../api/endpoints';
 import { useAsync, messageOf } from '../../lib/useAsync';
 import { ErrorNote, Field, Skeleton } from '../../components/ui';
@@ -23,6 +23,9 @@ export default function CeviriAyarlari() {
   const durum = useAsync((signal) => ceviriApi.ayarlar(signal), []);
   const [anahtar, setAnahtar] = useState('');
   const [kaydediliyor, setKaydediliyor] = useState(false);
+  // D1: test sonucu EKRANDA kalır. Toast baloncuğu kaçırılabilir; bir hata
+  // mesajının (ör. "model_not_found") okunup model alanına yansıtılması gerekir.
+  const [test, setTest] = useState<{ basarili: boolean; mesaj: string } | null>(null);
 
   const veri = durum.data;
 
@@ -34,7 +37,7 @@ export default function CeviriAyarlari() {
     try {
       await ceviriApi.ayarlariKaydet({
         saglayici: veri.saglayici,
-        model: veri.model,
+        model: veri.model_ham,
         hedef_diller: veri.hedef_diller,
         acik: veri.acik,
         ...(anahtar.trim() ? { anahtar: anahtar.trim() } : {}),
@@ -87,11 +90,18 @@ export default function CeviriAyarlari() {
                 ))}
               </select>
             </Field>
-            <Field label="Model" hint="Boş bırakılırsa sağlayıcının varsayılanı kullanılır">
+            <Field
+              label="Model"
+              hint={`Boş bırakılırsa sağlayıcının varsayılanı kullanılır: ${veri.varsayilan_model}`}
+            >
+              {/* D1: alan BOŞKEN etkin varsayılan gri yer tutucu olarak görünür.
+                  Değeri kutuya yazmak yanlış olurdu: kullanıcı onu kendi seçimi
+                  sanır ve sağlayıcı değiştirdiğinde varsayılan artık izlemez. */}
               <input
                 className="field-input"
-                value={veri.model}
-                onChange={(event) => guncelle({ model: event.target.value })}
+                value={veri.model_ham}
+                placeholder={veri.varsayilan_model}
+                onChange={(event) => guncelle({ model_ham: event.target.value })}
               />
             </Field>
           </div>
@@ -148,6 +158,27 @@ export default function CeviriAyarlari() {
 
             <EylemDugmesi
               className="btn-ghost"
+              mesgulEtiketi="Test ediliyor"
+              onEylem={async () => {
+                setTest(null);
+                const sonuc = await ceviriApi.baglantiTesti();
+                setTest({
+                  basarili: sonuc.basarili,
+                  mesaj: sonuc.basarili
+                    ? `${sonuc.saglayici} · ${sonuc.model} yanıt verdi (${sonuc.sure_ms} ms).`
+                    : `${sonuc.saglayici} · ${sonuc.model} — ${sonuc.hata ?? 'bilinmeyen hata'}`,
+                });
+              }}
+              onHata={(hata) => setTest({ basarili: false, mesaj: messageOf(hata) })}
+            >
+              <span className="inline-flex items-center gap-2">
+                <PlugZap className="h-4 w-4" aria-hidden />
+                Bağlantıyı test et
+              </span>
+            </EylemDugmesi>
+
+            <EylemDugmesi
+              className="btn-ghost"
               mesgulEtiketi="Kuyruğa alınıyor"
               onEylem={async () => {
                 const sonuc = await ceviriApi.topluCevir();
@@ -161,6 +192,24 @@ export default function CeviriAyarlari() {
               </span>
             </EylemDugmesi>
           </div>
+
+          {test ? (
+            <p
+              className={`flex items-start gap-2 rounded-lg p-2 text-xs ${
+                test.basarili ? 'bg-ok-bg text-ok' : 'bg-err-bg text-err'
+              }`}
+              role="status"
+            >
+              {test.basarili ? (
+                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+              ) : (
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+              )}
+              {/* Sağlayıcının hata metni AYNEN gösterilir: "model_not_found"
+                  kullanıcının model adını düzeltmesi için gereken tek ipucudur. */}
+              {test.mesaj}
+            </p>
+          ) : null}
 
           <p className="text-xs text-ink-3">
             Toplu çeviri kuyruğa alınır ve arka planda koşar; ilerlemeyi aşağıdaki

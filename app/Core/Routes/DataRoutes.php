@@ -78,6 +78,8 @@ final class DataRoutes
             // İE#20 C4: Ayarlar > Çeviri (sağlayıcı, anahtar, model, hedef diller).
             $group->get('/settings/translation', [$translationController, 'translationSettings']);
             $group->put('/settings/translation', [$translationController, 'translationSettingsSave']);
+            // İE#20 D1: bağlantı testi — YEDEĞE DÜŞMEZ, sağlayıcının hatasını gösterir.
+            $group->post('/settings/translation/test', [$translationController, 'translationTest']);
 
             // İE#11: eklenti token yönetimi (Faz 3 rozeti kalktı).
             $group->post('/settings/extension-token', [$settingsController, 'extensionTokenCreate']);
