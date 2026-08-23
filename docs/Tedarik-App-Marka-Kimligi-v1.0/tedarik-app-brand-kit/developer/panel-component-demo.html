@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Tedarik App - Bileşen Örneği</title>
+  <link rel="stylesheet" href="../design-system/tokens.css">
+  <style>
+    *{box-sizing:border-box}body{margin:0;background:var(--ta-bg);color:var(--ta-text);font-family:var(--ta-font-ui)}
+    main{max-width:1180px;margin:48px auto;padding:0 24px}.bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
+    h1{font-size:30px;margin:0}.actions{display:flex;gap:10px}.btn{height:40px;border-radius:10px;padding:0 18px;border:1px solid var(--ta-border);background:var(--ta-surface);font:600 14px var(--ta-font-ui);color:var(--ta-text);cursor:pointer}
+    .btn.primary{background:var(--ta-orange-500);border-color:var(--ta-orange-500);color:#fff}.card{background:var(--ta-surface);border:1px solid var(--ta-border);border-radius:14px;box-shadow:var(--ta-shadow-1);overflow:hidden}
+    table{width:100%;border-collapse:separate;border-spacing:0;font-size:14px}th{height:48px;text-align:left;background:#1F2530;color:#fff;font-weight:650;padding:0 16px}td{height:58px;padding:0 16px;border-bottom:1px solid var(--ta-border);border-right:1px solid var(--ta-border)}th+th{border-left:1px solid #3a414d}td:last-child{border-right:0}tr:last-child td{border-bottom:0}
+    .num{text-align:right;font-variant-numeric:tabular-nums}.badge{display:inline-flex;align-items:center;gap:7px;height:28px;padding:0 10px;border-radius:999px;font-size:12px;font-weight:700}.badge.review{color:#7C3AED;background:#F3EFFF}.badge.approved{color:#0E9F6E;background:#E8F8F2}.dot{width:7px;height:7px;border-radius:50%;background:currentColor}
+    .product{display:flex;align-items:center;gap:12px}.thumb{width:38px;height:38px;border-radius:8px;background:#FFE4CF;border:1px solid #FFD0AD}.muted{color:var(--ta-text-muted);font-size:12px;margin-top:3px}
+  </style>
+</head>
+<body>
+  <main>
+    <div class="bar"><div><div class="muted">TEDARİK LİSTESİ</div><h1>Yeni ürün araştırması</h1></div><div class="actions"><button class="btn">Dışa Aktar</button><button class="btn primary">Ürün Ekle</button></div></div>
+    <section class="card">
+      <table>
+        <thead><tr><th>Ürün</th><th>Kaynak</th><th class="num">Birim Fiyat</th><th class="num">MOQ</th><th>Durum</th></tr></thead>
+        <tbody>
+          <tr><td><div class="product"><div class="thumb"></div><div><strong>Cam yağlık seti</strong><div class="muted">500 ml · 2 püskürtme modu</div></div></div></td><td>1688</td><td class="num">¥ 18.60</td><td class="num">120 adet</td><td><span class="badge review"><span class="dot"></span>İnceleniyor</span></td></tr>
+          <tr><td><div class="product"><div class="thumb"></div><div><strong>Silikon mutfak seti</strong><div class="muted">12 parça · sıcak beyaz</div></div></div></td><td>Alibaba</td><td class="num">$ 4.80</td><td class="num">240 adet</td><td><span class="badge approved"><span class="dot"></span>Onaylandı</span></td></tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+</body>
+</html>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500">
+  <rect width="800" height="500" rx="32" fill="#FFFDF8"/>
+  <circle cx="400" cy="218" r="138" fill="#FFF0E4"/>
+  <path d="m270 210 130-74 130 74-130 74z" fill="#FFB000"/>
+  <path d="m270 210 130 74v130l-100-58c-19-11-30-31-30-53z" fill="#FF6B00"/>
+  <path d="m530 210-130 74v130l100-58c19-11 30-31 30-53z" fill="#FF4D3D"/>
+  <path d="M350 104h100v46h-28v38h24l-46 50-46-50h24v-38h-28z" fill="#1F2530"/>
+  <text x="400" y="457" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="24" font-weight="700" fill="#1F2530">Henüz aktarılmış ürün yok</text>
+</svg>

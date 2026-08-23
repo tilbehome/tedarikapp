@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="96" viewBox="0 0 1600 96">
+  <rect width="1600" height="96" fill="#FFFDF8"/>
+  <rect width="1600" height="4" fill="#FF6B00"/>
+  <text x="48" y="59" font-family="DejaVu Sans, Arial, sans-serif" font-size="18" font-weight="700" fill="#1F2530">Tedarik <tspan fill="#FF6B00">App</tspan></text>
+  <text x="238" y="59" font-family="DejaVu Sans, Arial, sans-serif" font-size="16" fill="#6B7280">Bu liste, ürün ve sipariş kararını kolaylaştırmak için hazırlanmıştır.</text>
+  <text x="1552" y="59" text-anchor="end" font-family="DejaVu Sans Mono, monospace" font-size="16" fill="#6B7280">TA-0001 · SAYFA 1 / 1</text>
+</svg>

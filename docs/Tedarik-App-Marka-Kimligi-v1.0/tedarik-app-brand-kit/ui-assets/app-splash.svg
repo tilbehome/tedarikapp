@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900">
+  <rect width="1440" height="900" fill="#FFF8F1"/>
+  <circle cx="0" cy="900" r="390" fill="#FFB000" opacity=".22"/>
+  <circle cx="1440" cy="0" r="420" fill="#FF4D3D" opacity=".18"/>
+  <g transform="translate(515 170) scale(.8)">
+    <rect x="16" y="16" width="480" height="480" rx="112" fill="#FF6B00"/>
+    <path d="M104 240 208 180l48 28-106 62z" fill="#FFB000"/>
+    <path d="m408 240-104-60-48 28 106 62z" fill="#FF4D3D"/>
+    <path d="M150 270 256 328l106-58v98c0 18-10 34-25 43l-57 33c-15 9-33 9-48 0l-57-33c-15-9-25-25-25-43z" fill="#1F2530"/>
+    <path d="M170 78h172v64h-52v66h42l-76 82-76-82h42v-66h-52z" fill="#FFFFFF"/>
+  </g>
+  <text x="720" y="690" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="72" font-weight="700" fill="#1F2530">Tedarik <tspan fill="#FF6B00">App</tspan></text>
+  <text x="720" y="752" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="24" font-weight="600" letter-spacing="6" fill="#6B7280">AKILLI TEDARİK YÖNETİMİ</text>
+</svg>

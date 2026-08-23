@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="800" viewBox="0 0 1280 800">
+  <rect width="1280" height="800" fill="#FFF8F1"/>
+  <rect x="32" y="32" width="1216" height="736" rx="24" fill="#FFFDF8" stroke="#E7D9CA" stroke-width="2"/>
+  <g transform="translate(70 64) scale(.12)">
+    <rect x="16" y="16" width="480" height="480" rx="112" fill="#FF6B00"/>
+    <path d="M104 240 208 180l48 28-106 62z" fill="#FFB000"/>
+    <path d="m408 240-104-60-48 28 106 62z" fill="#FF4D3D"/>
+    <path d="M150 270 256 328l106-58v98c0 18-10 34-25 43l-57 33c-15 9-33 9-48 0l-57-33c-15-9-25-25-25-43z" fill="#1F2530"/>
+    <path d="M170 78h172v64h-52v66h42l-76 82-76-82h42v-66h-52z" fill="#FFFFFF"/>
+  </g>
+  <text x="144" y="104" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" font-weight="700" fill="#1F2530">Tedarik <tspan fill="#FF6B00">App</tspan></text>
+  <rect x="70" y="142" width="1140" height="560" rx="14" fill="#FFFFFF" stroke="#D8DDE5" stroke-width="2" stroke-dasharray="12 10"/>
+  <text x="640" y="410" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="28" font-weight="700" fill="#6B7280">GERÇEK EKRAN GÖRÜNTÜSÜNÜ BURAYA YERLEŞTİRİN</text>
+  <text x="640" y="456" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="18" fill="#8B9098">Mağazaya bu şablonu değil, ürünün gerçek deneyimini gösteren tam ekran görüntüyü yükleyin.</text>
+  <rect x="1010" y="718" width="200" height="28" rx="14" fill="#FFE2CC"/>
+  <text x="1110" y="738" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="13" font-weight="700" fill="#C54E00">1280 x 800 SAFE FRAME</text>
+</svg>

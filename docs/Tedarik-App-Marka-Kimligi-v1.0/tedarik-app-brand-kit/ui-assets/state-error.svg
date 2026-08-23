@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="320" viewBox="0 0 512 320">
+  <rect width="512" height="320" rx="28" fill="#FFFDF8"/>
+  <circle cx="256" cy="142" r="102" fill="#FFF0EF"/>
+  <path d="m168 142 88-50 88 50-88 50z" fill="#FFB000"/>
+  <path d="m168 142 88 50v82l-64-37c-15-9-24-24-24-42z" fill="#FF6B00"/>
+  <path d="m344 142-88 50v82l64-37c15-9 24-24 24-42z" fill="#FF4D3D"/>
+  <circle cx="334" cy="86" r="46" fill="#D92D20"/>
+  <path d="m318 70 32 32m0-32-32 32" fill="none" stroke="#FFFFFF" stroke-width="11" stroke-linecap="round"/>
+  <text x="256" y="302" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="22" font-weight="700" fill="#1F2530">Aktarım tamamlanamadı</text>
+</svg>
