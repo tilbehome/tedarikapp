@@ -58,6 +58,10 @@ try {
 
     // ── GERİ DÖNÜŞ ───────────────────────────────────────────────────────────
     if ($geriAl) {
+        if (!tabloVar($pdo, 'listings')) {
+            echo "Hedef tablolar zaten yok — geri alınacak bir şey bulunmuyor.\n";
+            exit(0);
+        }
         if (!$uygula) {
             echo "GERİ DÖNÜŞ PROVASI: --geri-al ile birlikte --uygula verilmedi, hiçbir şey silinmedi.\n";
             echo 'Silinecek: ' . (int) $pdo->query('SELECT COUNT(*) FROM listings')->fetchColumn()
@@ -74,6 +78,10 @@ try {
 
     // ── DOĞRULAMA ────────────────────────────────────────────────────────────
     if ($dogrula) {
+        if (!tabloVar($pdo, 'listings')) {
+            fwrite(STDERR, "Hedef tablolar yok — doğrulanacak göç yapılmamış.\n");
+            exit(2);
+        }
         $sonuc = dogrulamaKos($pdo);
         echo $jsonMu
             ? json_encode($sonuc, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR) . "\n"
@@ -82,14 +90,33 @@ try {
     }
 
     // ── GÖÇ (prova veya uygulama) ────────────────────────────────────────────
-    $platformlar = [];
-    foreach ($pdo->query('SELECT id, kod FROM platforms')->fetchAll(PDO::FETCH_ASSOC) ?: [] as $satir) {
-        $platformlar[(string) $satir['kod']] = (int) $satir['id'];
+    //
+    // PROVA ŞEMA İSTEMEZ (İE#20 göç kapısı dersi): hedef tablolar (`platforms`,
+    // `listings`) henüz YOKKEN de prova raporu üretilebilmelidir. Aksi hâlde
+    // "ne olacağını göster" adımı, kendisi için şema değişikliği talep ederdi —
+    // yani onay ALINMADAN önce canlı şemaya dokunmak gerekirdi. Bu, kapının
+    // amacını tersine çevirirdi.
+    //
+    // Tablolar yoksa: mevcut ilan sıfır sayılır, platform eşlemesi boş kalır ve
+    // rapor "kaç ilan AÇILACAK" sorusunu yine tam yanıtlar. `--uygula` ise
+    // tablolar olmadan çalışmaz ve bunu AÇIKÇA söyler.
+    $hedefSemaVar = tabloVar($pdo, 'platforms') && tabloVar($pdo, 'listings');
+
+    if ($uygula && !$hedefSemaVar) {
+        throw new RuntimeException(
+            'Hedef tablolar yok (platforms/listings). Önce şema güncellemesi koşulmalı: php bin/migrate.php',
+        );
     }
 
+    $platformlar = [];
     $mevcutIlanlar = [];
-    foreach ($pdo->query('SELECT product_id FROM listings')->fetchAll(PDO::FETCH_COLUMN) ?: [] as $pid) {
-        $mevcutIlanlar[(int) $pid] = true;
+    if ($hedefSemaVar) {
+        foreach ($pdo->query('SELECT id, kod FROM platforms')->fetchAll(PDO::FETCH_ASSOC) ?: [] as $satir) {
+            $platformlar[(string) $satir['kod']] = (int) $satir['id'];
+        }
+        foreach ($pdo->query('SELECT product_id FROM listings')->fetchAll(PDO::FETCH_COLUMN) ?: [] as $pid) {
+            $mevcutIlanlar[(int) $pid] = true;
+        }
     }
 
     $urunler = $pdo->query(
@@ -188,6 +215,7 @@ try {
 
     $rapor = [
         'mod' => $uygula ? 'UYGULANDI' : 'PROVA (hiçbir şey yazılmadı)',
+        'hedef_sema_var' => $hedefSemaVar,
         'urun_toplam' => count($urunler),
         'ilan_acilacak' => $acilacak,
         'zaten_ilani_var' => $atlanan,
@@ -200,6 +228,10 @@ try {
         echo json_encode($rapor, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR), "\n";
     } else {
         echo "=== ÜRÜN → İLAN GÖÇÜ · " . $rapor['mod'] . " ===\n";
+        if (!$hedefSemaVar) {
+            echo "ŞEMA  : hedef tablolar HENÜZ YOK (platforms/listings) — bu rapor\n";
+            echo "        yalnız NE OLACAĞINI gösterir; şemaya DOKUNULMADI.\n";
+        }
         printf("Ürün toplam        : %d\n", $rapor['urun_toplam']);
         printf("Açılacak ilan      : %d\n", $rapor['ilan_acilacak']);
         printf("Zaten ilanı var    : %d (atlandı — idempotans)\n", $rapor['zaten_ilani_var']);
@@ -233,6 +265,28 @@ try {
 }
 
 exit($cikisKodu);
+
+/** Tablo var mı? (MySQL + SQLite ortak) */
+function tabloVar(PDO $pdo, string $tablo): bool
+{
+    try {
+        if ($pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite') {
+            $statement = $pdo->prepare("SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = ?");
+            $statement->execute([$tablo]);
+
+            return (int) $statement->fetchColumn() > 0;
+        }
+
+        $statement = $pdo->prepare(
+            'SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = ?',
+        );
+        $statement->execute([$tablo]);
+
+        return (int) $statement->fetchColumn() > 0;
+    } catch (Throwable) {
+        return false;
+    }
+}
 
 /**
  * Göç sonrası doğrulama: SAYIM + ÖRNEKLEM.

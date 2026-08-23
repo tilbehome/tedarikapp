@@ -194,6 +194,34 @@ final class UrunIlanAyrimiTest extends TestCase
         self::assertSame($urunOnce, (int) $this->pdo->query('SELECT COUNT(*) FROM products')->fetchColumn());
     }
 
+    public function testPROVAHEDEFSEMAOLMADANCALISIR(): void
+    {
+        // GÖÇ KAPISI DERSİ: prova, kendisi için şema değişikliği İSTEYEMEZ.
+        // İsteseydi "ne olacağını göster" adımı, onay alınmadan önce canlı şemaya
+        // dokunmayı gerektirirdi — kapının amacı tersine dönerdi. Bu yüzden
+        // `goc-ilan.php` hedef tabloların varlığını DENETLER ve yoksa prova yine
+        // tam rapor üretir.
+        $kaynak = (string) file_get_contents(dirname(__DIR__, 2) . '/bin/goc-ilan.php');
+
+        self::assertStringContainsString('$hedefSemaVar', $kaynak, 'Prova şema denetimi yok.');
+        self::assertStringContainsString(
+            'PROVA ŞEMA İSTEMEZ',
+            $kaynak,
+            'Kararın gerekçesi kaynakta yazılı olmalı.',
+        );
+    }
+
+    public function testUYGULAMASEMAYOKKENACIKCAREDDEDILIR(): void
+    {
+        // Prova şemasız çalışır ama YAZMAK çalışmaz: yarım şemaya yazmaya
+        // kalkmak, anlaşılmaz bir SQL hatasıyla durmak demektir. Ret AÇIK olmalı
+        // ve ne yapılacağını söylemeli.
+        $kaynak = (string) file_get_contents(dirname(__DIR__, 2) . '/bin/goc-ilan.php');
+
+        self::assertStringContainsString('if ($uygula && !$hedefSemaVar)', $kaynak);
+        self::assertStringContainsString('php bin/migrate.php', $kaynak, 'Ret mesajı çözümü söylemeli.');
+    }
+
     /**
      * Göç mantığının test içi ikizi — `bin/goc-ilan.php` ile AYNI kuralları izler.
      *
