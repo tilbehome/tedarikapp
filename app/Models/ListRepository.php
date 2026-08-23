@@ -41,7 +41,7 @@ final class ListRepository
     }
 
     /**
-     * @param array{visibility?: string, status?: string, q?: string} $filters
+     * @param array{visibility?: string, status?: string, q?: string, haric_id?: int} $filters
      *
      * @return list<array<string, mixed>>
      */
@@ -67,6 +67,15 @@ final class ListRepository
             $sql .= ' AND (name LIKE :q_ad OR supplier_name LIKE :q_tedarikci)';
             $params['q_ad'] = '%' . $filters['q'] . '%';
             $params['q_tedarikci'] = '%' . $filters['q'] . '%';
+        }
+
+        // İE#21 B4 (PM şartı): SİSTEM listesi hiçbir listelemede görünmez — liste
+        // ekranı, liste seçicileri ve Panorama'daki "aktif liste" sayısı dahil.
+        // Hariç tutmayı SORGUYA koymak, her çağıranın hatırlamasına bırakmaktan
+        // güvenlidir: tek bir yer unutulursa havuz oradan sızar.
+        if (isset($filters['haric_id']) && (int) $filters['haric_id'] > 0) {
+            $sql .= ' AND id <> :haric_id';
+            $params['haric_id'] = (int) $filters['haric_id'];
         }
 
         $sql .= ' ORDER BY created_at DESC, id DESC';

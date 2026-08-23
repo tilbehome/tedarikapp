@@ -50,6 +50,9 @@ final class CaptureApplier
         private readonly ListMutationPolicy $policy,
         private readonly ActivityLog $activity,
         private readonly ?MediaService $media = null,
+        // İE#21 B3 (saha bulgusu): ürün≠ilan ayrımı veri akışında da yaşasın —
+        // her yakalama ürünün yanında İLAN kaydını da açar.
+        private readonly ?\App\Services\Ilan\IlanYazici $ilanlar = null,
     ) {
     }
 
@@ -111,6 +114,10 @@ final class CaptureApplier
 
                 // (3) kuyruk satırı ürüne bağlanır
                 $this->inbox->markAssigned($inboxId, $productId, $now);
+
+                // (3b) İLAN kaydı — aynı transaction içinde: ilansız ürün, Keşif'te
+                // skorsuz ve kaynaksız görünür (İE#21 B3 bulgusu).
+                $this->ilaniAc($productId, $payload, $now);
 
                 // (4) İLK DURUM VE AKTİVİTE İZİ (G6): eklentiden gelen ürünler
                 // tarihçesiz doğuyordu — panelde "bu ürün nereden geldi?" sorusunun
@@ -210,6 +217,7 @@ final class CaptureApplier
 
                 $productId = $this->capture->insertProduct($payload, $listId, $media, $now);
                 $this->inbox->markAssigned($inboxId, $productId, $now);
+                $this->ilaniAc($productId, $payload, $now);
                 $this->products->recordStatusChange(
                     $productId,
                     null,
@@ -282,5 +290,25 @@ final class CaptureApplier
             'status' => (string) $ilk['status'],
             'idempotent_replay' => true,
         ];
+    }
+
+    /**
+     * İlan kaydını açar. Yazıcı bağlanmamışsa (eski testler, dar bağlam) sessizce
+     * atlanır — yakalamanın kendisi ilan kaydına BAĞIMLI DEĞİLDİR; ilan bir
+     * zenginleştirmedir ve onun eksikliği ürünün kaydını engellememelidir.
+     *
+     * @param array<string, mixed> $payload
+     */
+    private function ilaniAc(int $productId, array $payload, DateTimeImmutable $now): void
+    {
+        if ($this->ilanlar === null) {
+            return;
+        }
+
+        $kademeler = $payload['normalized']['price_tiers'] ?? null;
+        /** @var list<array<string, mixed>>|null $kademeler */
+        $kademeler = is_array($kademeler) ? array_values(array_filter($kademeler, 'is_array')) : null;
+
+        $this->ilanlar->yaz($productId, $now, $kademeler);
     }
 }

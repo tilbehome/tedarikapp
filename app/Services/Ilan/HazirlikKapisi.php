@@ -57,6 +57,31 @@ final class HazirlikKapisi
         return $eksik;
     }
 
+    /**
+     * Eksiklerin ALAN + ETİKET dökümü — panelin uyarı çipleri bunu kullanır.
+     *
+     * Panele yalnız etiket göndermek yetmezdi: çipe tıklayıp süzmek için kararlı
+     * bir kimlik gerekir ve etiket metni bir gün değişebilir. Alan adı kimliktir,
+     * etiket görünen yüzdür; ikisi de TEK KAYNAKTAN (bu sınıf) çıkar, böylece
+     * panelde ikinci bir "eksik" tanımı yaşamaz.
+     *
+     * @param array<string, mixed> $urun
+     *
+     * @return list<array{alan: string, etiket: string}>
+     */
+    public static function eksikDokumu(array $urun): array
+    {
+        $dokum = [];
+
+        foreach (self::ALANLAR as $alan => $etiket) {
+            if (!self::dolu($urun, $alan)) {
+                $dokum[] = ['alan' => $alan, 'etiket' => $etiket];
+            }
+        }
+
+        return $dokum;
+    }
+
     /** @param array<string, mixed> $urun */
     public static function hazirOlabilirMi(array $urun): bool
     {

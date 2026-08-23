@@ -164,6 +164,10 @@ final class ListPresenter
             'units_per_carton' => $this->nullableInt($row['units_per_carton']),
             'tracking_no' => $this->nullableString($row['tracking_no']),
             'status' => (string) $row['status'],
+            // İE#20 C8 / İE#21 B2: HAZIR kapısı panele de görünür — hangi ürünün
+            // nesi eksik olduğunu kullanıcı satırda okur, tahmin etmez.
+            'hazir' => (bool) ($row['hazir'] ?? false),
+            'hazir_eksikleri' => \App\Services\Ilan\HazirlikKapisi::eksikDokumu($row),
             'note' => $this->nullableString($row['note']),
             'images' => $this->products->images((int) $row['id']),
             'created_at' => Dates::toIso((string) $row['created_at'], $this->timezone),

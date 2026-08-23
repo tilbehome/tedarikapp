@@ -37,6 +37,21 @@ inşa etmek hem israf hem de iki farklı arayüz mirası bırakır.
 **Kabul turunda** paylaşım sayfası mevcut + düzeltmeli hâliyle sınanır;
 bu iki kareyle **birebirlik aranmaz**.
 
+## ⚠ AŞAMA ÇUBUĞU v1.0'DA 5B DURUM MAKİNESİYLE KURULUR (PM kararı, 23 Ağu 2026)
+
+`liste-ici.png` karesindeki aşama çubuğu, listenin V3-C/V3-D'de kazanacağı
+aşamaları da (Üretim, Sevkiyat, Teslim vb.) gösterir. **v1.0'da çubuk yalnız
+5B durum makinesiyle kurulur:**
+
+`Taslak → İletildi → Sipariş Verildi → Tamamlandı` (+ İptal)
+
+Sonraki fazların aşamaları çubukta **PASİF "Yakında"** olarak görünür; tıklanmaz,
+vaat edilmez. Gerekçe: çalışmayan bir adımı canlı adım gibi göstermek kullanıcıya
+olmayan bir yetenek sözü verir ve İE#21 C1 kapsam sınırıyla çelişir. Durum
+etiketlerinin tek kaynağı `config/durumlar.json`'dur (K80) — çubuk da oradan okur.
+
+Tam aşama çubuğu, aşamaları gerçekten var eden fazla birlikte gelir (V3-C/V3-D).
+
 ## Son iki dosya hakkında (İE#21 C2)
 
 `paylasim-sayfasi.png` ve `paylasim-sayfasi-detay.png` bu klasöre UUID adlarıyla

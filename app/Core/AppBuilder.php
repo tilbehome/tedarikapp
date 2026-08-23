@@ -241,6 +241,7 @@ final class AppBuilder
             $services->clock,
             new \App\Services\Share\ShareKeyService($lists, (string) $config->get('APP_KEY', '')),
             $config,
+            new \App\Services\Inbox\SistemListesi($settingsRepository),
         );
 
         // İE#11 Faz 3: eklenti uçları — Bearer + CORS allowlist + hız sınırı (ExtensionAuth).
@@ -255,6 +256,9 @@ final class AppBuilder
             $products,
             new \App\Services\ListMutationPolicy(),
             $services->activity,
+            // Medya bağımlılığı bilinçli olarak boş bırakılır (yakalama medyayı
+            // kendi hazırlar); ilan yazıcı adıyla geçilir ki sıra karışmasın.
+            ilanlar: new \App\Services\Ilan\IlanYazici($connection),
         );
         $extensionController = new \App\Controllers\ExtensionController($captureService, $inboxRepository, $lists, $services->clock, $basePath, $captureApplier);
         $extensionAuth = new \App\Middleware\ExtensionAuth(

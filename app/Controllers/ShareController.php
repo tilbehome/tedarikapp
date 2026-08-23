@@ -31,6 +31,8 @@ final class ShareController extends ApiController
         private readonly ?\App\Services\Share\ShareKeyService $anahtar = null,
         // İE#19 E5: dışa verilen adresler settings.APP_URL'den üretilir (Host'tan DEĞİL).
         private readonly ?\App\Core\Config $appConfig = null,
+        // İE#21 B4 (PM şartı b): sistem listesi PAYLAŞILAMAZ.
+        private readonly ?\App\Services\Inbox\SistemListesi $sistem = null,
     ) {
     }
 
@@ -156,6 +158,12 @@ final class ShareController extends ApiController
         $row = $listId === null ? null : $this->lists->find($listId);
         if ($row === null) {
             return Response::error($response, 'NOT_FOUND', 'Liste bulunamadı.', 404);
+        }
+
+        // Keşif Havuzu bir araştırma havuzudur; firmaya "sipariş listesi" diye
+        // gitmesi sessiz bir felaket olurdu. Kapı sunucudadır (İE#21 B4).
+        if ($this->sistem !== null && $this->sistem->sistemMi((int) $row['id'])) {
+            return Response::error($response, 'SYSTEM_LIST', $this->sistem->redMesaji('paylaşılamaz'), 422);
         }
 
         $body = $this->body($request);

@@ -56,8 +56,8 @@ tam mockup uyarlaması ayrı bir dilim olarak raporlanacak.
 
 | # | Konu | Durum | Kanıt |
 |---|---|---|---|
-| B1 | Keşif havuzu | ✅ | API+ekran · `KesifHavuzuTest` (17) · E2E-PNL-01/02/03/07/08/09/10/13/15 · migration 0030 |
-| B2 | Liste detay komuta merkezi | ☐ | referans: `liste-ici.png` |
+| B1 | Keşif havuzu | ✅ | API+ekran · `KesifHavuzuTest` (17) · E2E-PNL-01/02/03/07/08/09/10/13/15 · migration 0030 · sistem listesi korumaları `SistemListesiKorumasiTest` (8) |
+| B2 | Liste detay komuta merkezi | ◐ | aşama çubuğu (5B) ✅ · özet şerit ✅ · uyarı çipleri→süzgeç ✅ · satır içi miktar ✅ · HAZIR kapısı satırda ✅ — `AsamaCubugu.test.tsx` (8) · `UyariCipleri.test.tsx` (5) · `MiktarHucresi.test.tsx` (9) · `eksikler.test.ts` (5) · toplu eylem çubuğu ZATEN VAR · sütun/gruplama/yoğunluk denetimleri ☐ |
 | B3 | Ürün çekmecesi | ☐ | referans: `urun-duzenleme-alani.png` |
 | B4 | Gelen kutusu — deste modu | ◐ | deste modu ✅ (`DesteModuTest` 9 + `DesteModu.test.tsx` 8) · entity çözümü ✅ · E2E-PNL-16/17/18/19 · kural motoru + zenginleştirme paneli ☐ |
 | B5 | Kur: güncel kuru getir + taslak tazeleme | ✅ | `KurTazelemeTest` (8) · `KurKaynagiTest` (8) · K76 |

@@ -72,6 +72,9 @@ export const products = {
   create: (listId: number, body: Record<string, unknown>) =>
     api.post<Product>(`/api/lists/${listId}/products`, body),
   update: (id: number, body: Record<string, unknown>) => api.patch<Product>(`/api/products/${id}`, body),
+  /** C8 HAZIR kapısı: eksik varsa sunucu 422 ile reddeder (İE#21 B2). */
+  setHazir: (id: number, hazir: boolean) =>
+    api.patch<{ hazir: boolean; eksikler: string[] }>(`/api/products/${id}/hazir`, { hazir }),
   setStatus: (id: number, status: ProductStatus) =>
     api.patch<Product>(`/api/products/${id}/status`, { status }),
   remove: (id: number) => api.delete<void>(`/api/products/${id}`),

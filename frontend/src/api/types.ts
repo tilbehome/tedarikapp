@@ -69,6 +69,12 @@ export interface ProductImage {
   sort: number;
 }
 
+/** C8 HAZIR kapısının eksik dökümü — alan kimliktir, etiket görünen yüzdür. */
+export interface UrunEksigi {
+  alan: string;
+  etiket: string;
+}
+
 export interface Product {
   id: number;
   list_id: number;
@@ -100,6 +106,10 @@ export interface Product {
   units_per_carton: number | null;
   tracking_no: string | null;
   status: ProductStatus;
+  /** C8: ürün "HAZIR" işaretlendi mi? */
+  hazir: boolean;
+  /** C8: HAZIR olmasına engel eksikler (boşsa kapı açıktır). */
+  hazir_eksikleri: UrunEksigi[];
   note: string | null;
   images: ProductImage[];
   created_at: string;

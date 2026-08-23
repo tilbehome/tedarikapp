@@ -3,6 +3,11 @@ import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, Download, ImageOff, Plus, Search, Share2, Trash2 } from 'lucide-react';
 import { exports as exportsApi, lists as listsApi, products as productsApi, share as shareApi } from '../api/endpoints';
 import CiktiSecenekleri, { paylasimAdresiAnahtari } from './liste/CiktiSecenekleri';
+import AsamaCubugu from './liste/AsamaCubugu';
+import OzetSeridi from './liste/OzetSeridi';
+import UyariCipleri from './liste/UyariCipleri';
+import MiktarHucresi from './liste/MiktarHucresi';
+import { type EksikAlan, eksikAlanlar, eksikEtiketleri } from '../lib/eksikler';
 import type { ListStatus, Product, ProductStatus } from '../api/types';
 import { useAsync, messageOf } from '../lib/useAsync';
 import { count, dateTime, money, rate } from '../lib/format';
@@ -35,6 +40,8 @@ export default function ListDetailScreen() {
   const [shareOpen, setShareOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<ProductStatus | ''>('');
+  // Uyarı çipi süzgeci: "2 üründe kategori eksik" çipine basınca yalnız o ürünler.
+  const [uyariFiltresi, setUyariFiltresi] = useState<EksikAlan | null>(null);
   const [sort, setSort] = useState<{ key: SortKey; asc: boolean }>({ key: 'sort_no', asc: true });
   const [selected, setSelected] = useState<number[]>([]);
   const [busyId, setBusyId] = useState<number | null>(null);
@@ -65,8 +72,11 @@ export default function ListDetailScreen() {
           return direction * numericCollator.compare(String(a.sort_no), String(b.sort_no));
       }
     });
-    return rows;
-  }, [productState.data, sort]);
+    return uyariFiltresi === null ? rows : rows.filter((row) => eksikAlanlar(row).includes(uyariFiltresi));
+  }, [productState.data, sort, uyariFiltresi]);
+
+  /** Çipler ve özet TÜM listeye bakar — süzgeç açıkken sayılar küçülmemeli. */
+  const tumUrunler = useMemo(() => productState.data ?? [], [productState.data]);
 
   const refresh = () => {
     listState.reload();
@@ -80,6 +90,32 @@ export default function ListDetailScreen() {
       refresh();
       push(`"${product.name}" → ${productStatusLabels[next]}`);
     } catch (caught) {
+      push(messageOf(caught), 'error');
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const changeQty = async (product: Product, qty: number) => {
+    try {
+      await productsApi.update(product.id, { qty });
+      refresh();
+      push(`"${product.name}" miktarı ${count(qty)} oldu.`);
+    } catch (caught) {
+      push(messageOf(caught), 'error');
+      // Hücrenin eski değerine dönebilmesi için hata YUKARI verilir.
+      throw caught;
+    }
+  };
+
+  const toggleHazir = async (product: Product) => {
+    setBusyId(product.id);
+    try {
+      const sonuc = await productsApi.setHazir(product.id, !product.hazir);
+      refresh();
+      push(sonuc.hazir ? `"${product.name}" HAZIR işaretlendi.` : `"${product.name}" hazır işareti kaldırıldı.`);
+    } catch (caught) {
+      // Kapı sunucudadır: eksik varsa gerekçesi mesajda gelir (C8).
       push(messageOf(caught), 'error');
     } finally {
       setBusyId(null);
@@ -169,19 +205,31 @@ export default function ListDetailScreen() {
 
       {shareOpen ? <SharePanel listId={listId} tokenPrefix={list.share_token_prefix} onChanged={refresh} /> : null}
 
-      {allowedListStatuses.length > 0 && (
-        <div className="card mb-4 flex flex-wrap items-center gap-2 p-3 text-sm">
-          <span className="text-ink-2">Liste durumunu ilerlet:</span>
-          {allowedListStatuses.map((next) => (
-            <button key={next} type="button" className="btn-ghost" onClick={() => void changeListStatus(next)}>
-              {listStatusLabels[next]}
-            </button>
-          ))}
-          {list.status === 'draft' && (
-            <span className="text-xs text-ink-3">"İletildi" seçildiğinde kur bu listeye kilitlenir.</span>
-          )}
+      {/* İE#21 B2: komuta merkezi — aşama çubuğu (5B) · özet şerit · uyarı çipleri. */}
+      <AsamaCubugu
+        durum={list.status}
+        izinliGecisler={allowedListStatuses}
+        kurKilitli={list.rate_locked_at !== null}
+        onGecis={(next) => void changeListStatus(next)}
+      />
+
+      {/* İptal, çubuğun dışında bir çıkıştır: ayrı ve sessiz durur. */}
+      {allowedListStatuses.includes('cancelled') && (
+        <div className="mb-4 text-right">
+          <button type="button" className="btn-ghost !text-xs" onClick={() => void changeListStatus('cancelled')}>
+            Listeyi iptal et
+          </button>
         </div>
       )}
+
+      <OzetSeridi liste={list} urunler={tumUrunler} />
+
+      <UyariCipleri
+        urunler={tumUrunler}
+        secili={uyariFiltresi}
+        kurKilitli={list.rate_locked_at !== null}
+        onSec={setUyariFiltresi}
+      />
 
       <div className="mb-4 flex flex-col gap-3 sm:flex-row">
         <label className="relative flex-1">
@@ -304,6 +352,7 @@ export default function ListDetailScreen() {
                     <th className="px-3 py-3 text-right">$ DDP</th>
                     <SortHeader label="₺ Satır" sortKey="line_total_yuan_tl" sort={sort} onSort={setSort} align="right" />
                     <SortHeader label="Durum" sortKey="status" sort={sort} onSort={setSort} />
+                    <th className="px-3 py-3">Hazır</th>
                     <th className="w-12 px-3 py-3" />
                   </tr>
                 </thead>
@@ -333,9 +382,17 @@ export default function ListDetailScreen() {
                           {product.name}
                         </Link>
                         {product.detail && <span className="block truncate text-xs text-ink-3">{product.detail}</span>}
+                        <SatirUyarilari urun={product} />
                       </td>
                       <td className="px-3 py-2 text-ink-2">{categoryName(product.category_id)}</td>
-                      <td className="px-3 py-2 text-right">{count(product.qty)}</td>
+                      <td className="px-3 py-2 text-right">
+                        <MiktarHucresi
+                          deger={product.qty}
+                          etiket={product.name}
+                          kapali={list.status === 'completed' || list.status === 'cancelled'}
+                          onKaydet={(yeni) => changeQty(product, yeni)}
+                        />
+                      </td>
                       <td className="px-3 py-2 text-right">¥{money(product.price_yuan)}</td>
                       <td className="px-3 py-2 text-right">¥{money(product.line_total_yuan)}</td>
                       <td className="px-3 py-2 text-right">₺{money(product.price_yuan_tl)}</td>
@@ -346,6 +403,13 @@ export default function ListDetailScreen() {
                           status={product.status}
                           busy={busyId === product.id}
                           onChange={(next) => void changeStatus(product, next)}
+                        />
+                      </td>
+                      <td className="px-3 py-2">
+                        <HazirDugmesi
+                          urun={product}
+                          mesgul={busyId === product.id}
+                          onDegistir={() => void toggleHazir(product)}
                         />
                       </td>
                       <td className="px-3 py-2">
@@ -374,7 +438,7 @@ export default function ListDetailScreen() {
                     <td className="px-3 py-3" />
                     <td className="px-3 py-3 text-right">${money(list.totals.ddp_usd)}</td>
                     <td className="px-3 py-3 text-right">₺{money(list.totals.yuan_tl)}</td>
-                    <td className="px-3 py-3" colSpan={2} />
+                    <td className="px-3 py-3" colSpan={3} />
                   </tr>
                 </tfoot>
               </table>
@@ -397,6 +461,53 @@ export default function ListDetailScreen() {
 
       <ExportHistory listId={listId} refreshKey={list.revision + (list.last_export?.created_at ?? '')} />
     </>
+  );
+}
+
+/**
+ * HAZIR DÜĞMESİ (İE#21 B2 · C8 kalite kapısı).
+ *
+ * Kapının kararı sunucudadır: eksik alan varsa `PATCH /hazir` 422 ile reddeder.
+ * Panel bu yüzden düğmeyi eksik üründe KAPATMAZ — kullanıcı basar, gerekçeyi
+ * okur. Kapatsaydık "neden basamıyorum?" sorusu cevapsız kalırdı.
+ */
+function HazirDugmesi({ urun, mesgul, onDegistir }: { urun: Product; mesgul: boolean; onDegistir: () => void }) {
+  const eksik = eksikEtiketleri(urun);
+
+  return (
+    <button
+      type="button"
+      disabled={mesgul}
+      onClick={onDegistir}
+      aria-pressed={urun.hazir}
+      data-testid="hazir-dugmesi"
+      title={eksik.length > 0 ? `Eksik: ${eksik.join(' · ')}` : undefined}
+      className={`badge ${urun.hazir ? 'bg-ok-soft text-ok ring-ok/20' : 'bg-g50 text-ink-3 ring-line'}`}
+    >
+      {urun.hazir ? 'HAZIR' : eksik.length > 0 ? `${count(eksik.length)} eksik` : 'İşaretle'}
+    </button>
+  );
+}
+
+/**
+ * SATIR UYARILARI (İE#21 B2) — hangi ürünün nesi eksik, satırda görünür.
+ *
+ * Üstteki çipler "kaç üründe" der; satırdaki rozetler "bu üründe ne" der. İkisi
+ * aynı kelimeyi kullanır (`EKSIK_ETIKETLERI`), yoksa kullanıcı iki ayrı sorun
+ * olduğunu sanar.
+ */
+function SatirUyarilari({ urun }: { urun: Product }) {
+  const eksik = eksikEtiketleri(urun);
+  if (eksik.length === 0) return null;
+
+  return (
+    <span className="mt-0.5 flex flex-wrap gap-1" data-testid="satir-uyarilari">
+      {eksik.map((etiket) => (
+        <span key={etiket} className="badge bg-warn-soft text-warn ring-warn/20">
+          {etiket} yok
+        </span>
+      ))}
+    </span>
   );
 }
 

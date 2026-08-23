@@ -417,5 +417,34 @@ abstract class AuthTestCase extends TestCase
                 created_at TEXT NOT NULL
             )',
         );
+
+        $this->ilanSemasi();
+    }
+
+    /**
+     * İLAN TARAFI GERÇEK MİGRATION'LARDAN KURULUR (İE#21 B3 dersi).
+     *
+     * Taban şema elle yazılmıştır ve C2'den (ürün≠ilan) önceki dünyayı yansıtır.
+     * Yakalama artık ilan kaydı da açtığı için `platforms`/`listings` tabloları
+     * HER HTTP testinde bulunmalı: yoksa testler üretimde olmayan bir dünyayı
+     * sınar ve "no such table: platforms" gibi hatalar ancak canlıda görünürdü.
+     *
+     * Elle kopyalamak yerine migration dosyaları koşulur — şema tek kaynaktan
+     * gelir ve ileride bir kolon eklendiğinde testler kendiliğinden izler.
+     */
+    private function ilanSemasi(): void
+    {
+        foreach ([
+            '0022_create_platforms',
+            '0023_create_listings',
+            '0025_add_listings_skor',
+            '0026_arama_ve_kalite',
+            '0029_ilan_satis_toplam',
+            '0030_kesif_havuzu',
+        ] as $ad) {
+            /** @var \App\Core\Migration $migration */
+            $migration = require dirname(__DIR__, 2) . '/migrations/' . $ad . '.php';
+            $migration->up($this->pdo);
+        }
     }
 }
