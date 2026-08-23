@@ -217,6 +217,25 @@ export const inbox = {
   },
   detail: (id: number) => api.get<InboxDetail>(`/api/inbox/${id}`),
   /** `names`: yalnız kullanıcının "Kullan" dediği çeviri önerileri (K54). */
+  /**
+   * İE#21 B4 — DESTE MODU: tek yakalama, tek hedef, tek geçiş.
+   * Yanıt geri alma bilgisini taşır; çöpe atma geri ALINAMAZ ve bunu söyler.
+   */
+  deste: (id: number, hedef: 'cop' | 'havuz' | 'liste', listId?: number) =>
+    api.post<{
+      hedef: 'cop' | 'havuz' | 'liste';
+      inbox_id: number;
+      liste_id?: number;
+      urun_id?: number | null;
+      geri_alinabilir: boolean;
+    }>('/api/inbox/deste', { id, hedef, ...(listId ? { list_id: listId } : {}) }),
+
+  desteGeriAl: (urunId: number, inboxId: number) =>
+    api.post<{ geri_alindi: boolean; neden?: string }>('/api/inbox/deste/geri-al', {
+      urun_id: urunId,
+      inbox_id: inboxId,
+    }),
+
   assign: (ids: number[], listId: number, names: Record<number, string> = {}) =>
     api.post<{ moved: number; failed: { id: number; error: string }[] }>('/api/inbox/assign', {
       ids,

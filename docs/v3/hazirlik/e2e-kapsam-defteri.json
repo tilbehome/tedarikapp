@@ -271,27 +271,27 @@
     },
     "E2E-PNL-16": {
       "baslik": "J/K ile deste odağı, mutasyonsuz gezinme",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "frontend/src/screens/inbox/DesteModu.test.tsx",
+      "test": "E2E-PNL-16"
     },
     "E2E-PNL-17": {
       "baslik": "Space ile seçim aç/kapa",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "frontend/src/screens/inbox/DesteModu.test.tsx",
+      "test": "E2E-PNL-17"
     },
     "E2E-PNL-18": {
       "baslik": "Ok tuşlarıyla Çöpe/Havuza/Listeye üçlüsü",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "tests/Http/DesteModuTest.php",
+      "test": "testE2E_PNL_18_SagOkLISTEYEGONDERIR"
     },
     "E2E-PNL-19": {
       "baslik": "Son deste eylemini geri alma",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "tests/Http/DesteModuTest.php",
+      "test": "testE2E_PNL_19_SonEylemGERIALINIR"
     },
     "E2E-PNL-20": {
       "baslik": "Kural rozeti ve kural eylemini geri alma",

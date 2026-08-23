@@ -6,14 +6,17 @@ namespace App\Controllers;
 
 use App\Core\ClientIp;
 use App\Core\Clock;
+use App\Core\Connection;
 use App\Core\Dates;
 use App\Core\Response;
 use App\Models\InboxRepository;
 use App\Models\ListRepository;
+use App\Models\SettingsRepository;
 use App\Services\ActivityLog;
 use App\Services\CaptureApplier;
 use App\Services\CaptureException;
 use App\Services\CaptureService;
+use App\Services\Inbox\DesteEylemi;
 use App\Services\ListImmutableException;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -35,7 +38,22 @@ final class InboxController extends ApiController
         private readonly Clock $clock,
         private readonly \DateTimeZone $timezone,
         private readonly ?CaptureApplier $applier = null,
+        // İE#21 B4 (deste modu): havuz listesi ve geri alma bunları ister.
+        // Opsiyoneldir — eski test kurulumları kırılmaz, deste uçları yoklarsa
+        // açık hata verir (sessizce yanlış çalışmaktansa).
+        private readonly ?Connection $connection = null,
+        private readonly ?\App\Models\ProductRepository $products = null,
+        private readonly ?SettingsRepository $settingsDeposu = null,
     ) {
+    }
+
+    private function desteEylemi(): DesteEylemi
+    {
+        if ($this->connection === null || $this->settingsDeposu === null) {
+            throw new \LogicException('Deste modu bağımlılıkları enjekte edilmedi (AppBuilder kompozisyonu).');
+        }
+
+        return new DesteEylemi($this->lists, $this->settingsDeposu);
     }
 
     /** Uygulayıcı zorunludur; opsiyonel parametre yalnız eski test kurulumları içindir. */
@@ -249,6 +267,161 @@ final class InboxController extends ApiController
      *
      * @param array<string, string> $args
      */
+    /**
+     * POST /api/inbox/deste — DESTE MODU tek eylemi (İE#21 B4 · E2E-PNL-18).
+     *
+     * Üç hedef, üç tuş: sol ok çöpe · aşağı ok havuza · sağ ok listeye.
+     * Her çağrı TEK ürünü taşır ve TEK veritabanı geçişi üretir; deste modunun
+     * hızı buradan gelir — toplu uçları tek tek çağırmak her tuşta bir doğrulama
+     * turu ve gereksiz gecikme demekti.
+     *
+     * Yanıt GERİ ALMA bilgisini taşır (E2E-PNL-19): panel "Geri al" düğmesini
+     * bununla kurar.
+     */
+    public function deck(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        $body = $this->body($request);
+        $hedef = (string) ($body['hedef'] ?? '');
+        $id = $body['id'] ?? null;
+
+        if (!is_int($id) || $id < 1) {
+            return Response::error($response, 'VALIDATION', 'Doğrulama hatası', 422, [
+                'id' => 'Geçerli bir yakalama kimliği gerekir.',
+            ]);
+        }
+        if (!in_array($hedef, [DesteEylemi::HEDEF_COP, DesteEylemi::HEDEF_HAVUZ, DesteEylemi::HEDEF_LISTE], true)) {
+            return Response::error($response, 'VALIDATION', 'Doğrulama hatası', 422, [
+                'hedef' => 'Hedef "cop", "havuz" ya da "liste" olabilir.',
+            ]);
+        }
+
+        $kayit = $this->inbox->find($id);
+        if ($kayit === null) {
+            return Response::error($response, 'NOT_FOUND', 'Yakalama bulunamadı.', 404);
+        }
+
+        $now = $this->clock->now();
+        $deste = $this->desteEylemi();
+
+        // ── ÇÖPE ────────────────────────────────────────────────────────────
+        if ($hedef === DesteEylemi::HEDEF_COP) {
+            $this->inbox->delete($id);
+
+            return Response::success($response, [
+                'hedef' => $hedef,
+                'inbox_id' => $id,
+                // Çöpe atılan yakalama GERİ ALINAMAZ (kayıt silinir); panel bu
+                // yüzden geri al düğmesini göstermez. Yanlışlıkla silinen ürün
+                // kaynak sayfadan yeniden yakalanır — sahte bir "geri al" vaadi
+                // vermek, veriyi geri getirmediği anda güveni kırardı.
+                'geri_alinabilir' => false,
+            ]);
+        }
+
+        // ── HAVUZA / LİSTEYE ────────────────────────────────────────────────
+        $listeId = $hedef === DesteEylemi::HEDEF_HAVUZ
+            ? $deste->havuzListesi($now)
+            : (is_int($body['list_id'] ?? null) ? (int) $body['list_id'] : 0);
+
+        if ($listeId < 1) {
+            return Response::error($response, 'VALIDATION', 'Doğrulama hatası', 422, [
+                'list_id' => 'Listeye taşımak için hedef liste seçin.',
+            ]);
+        }
+
+        // Taşıma mevcut `assign` yolunu KULLANIR: doğrulama, çeviri onayı ve
+        // mükerrer kontrolü orada yaşar; ikinci bir kopya iki ayrı davranış demekti.
+        $istek = $request->withParsedBody([
+            'list_id' => $listeId,
+            'ids' => [$id],
+            'names' => $body['names'] ?? null,
+        ]);
+
+        // TEMİZ GÖVDE: `assign()` kendi JSON'unu yazar. Aynı yanıt nesnesini hem
+        // ona hem de bize verirsek iki JSON alt alta yazılır ve gövde bozulur
+        // (testte "Syntax error" olarak görüldü). İç çağrı kendi akışını alır.
+        $icYanit = $response->withBody((new \Slim\Psr7\Factory\StreamFactory())->createStream());
+        $sonuc = $this->assign($istek, $icYanit);
+
+        if ($sonuc->getStatusCode() !== 200) {
+            return $sonuc;
+        }
+
+        /** @var array<string, mixed> $govde */
+        $govde = json_decode((string) $sonuc->getBody(), true, 512, JSON_THROW_ON_ERROR);
+        $tasinan = (int) ($govde['data']['moved'] ?? 0);
+
+        // TAŞINAMADIYSA SESSİZ GEÇİLMEZ: deste modunda kullanıcı bir tuşa basıp
+        // sıradaki karta geçer; başarısızlık görünmezse ürün "işlendi" sanılır
+        // ve Gelen Kutusu'nda kalmaya devam eder.
+        if ($tasinan < 1) {
+            $hatalar = is_array($govde['data']['failed'] ?? null) ? $govde['data']['failed'] : [];
+            $ilk = is_array($hatalar[0] ?? null) ? (string) ($hatalar[0]['error'] ?? '') : '';
+
+            return Response::error(
+                $response,
+                'VALIDATION',
+                $ilk !== '' ? $ilk : 'Yakalama taşınamadı.',
+                422,
+            );
+        }
+
+        // Ürün kimliği yakalama kaydından okunur: `assign` toplu bir uçtur ve
+        // özet döner; deste modu ise TEK ürünle çalışır ve geri alma için o
+        // ürünün kimliğini bilmek zorundadır.
+        $guncel = $this->inbox->find($id);
+        $urunId = is_array($guncel) && $guncel['assigned_product_id'] !== null
+            ? (int) $guncel['assigned_product_id']
+            : 0;
+
+        return Response::success($response, [
+            'hedef' => $hedef,
+            'inbox_id' => $id,
+            'liste_id' => $listeId,
+            'urun_id' => $urunId > 0 ? $urunId : null,
+            'geri_alinabilir' => $urunId > 0,
+        ]);
+    }
+
+    /**
+     * POST /api/inbox/deste/geri-al — son deste eylemini tersine çevirir.
+     *
+     * Ürün silinir ve yakalama Gelen Kutusu'na DÖNER. İkinci çağrı ETKİSİZDİR
+     * (E2E-PNL-19): ürün zaten yoksa "geri alındı" demek, kullanıcıya olmayan bir
+     * iş yapılmış gibi gösterir ve sayaçları bozar.
+     */
+    public function deckUndo(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        $body = $this->body($request);
+        $urunId = $body['urun_id'] ?? null;
+        $inboxId = $body['inbox_id'] ?? null;
+
+        if (!is_int($urunId) || !is_int($inboxId)) {
+            return Response::error($response, 'VALIDATION', 'Doğrulama hatası', 422, [
+                'body' => 'urun_id ve inbox_id zorunlu.',
+            ]);
+        }
+
+        if ($this->products === null || $this->connection === null) {
+            throw new \LogicException('Deste modu bağımlılıkları enjekte edilmedi.');
+        }
+
+        $urun = $this->products->find($urunId);
+        if ($urun === null) {
+            // İkinci tetik: etkisiz ve AÇIKÇA söylenir.
+            return Response::success($response, ['geri_alindi' => false, 'neden' => 'Zaten geri alınmış.']);
+        }
+
+        $now = $this->clock->now();
+        $this->connection->transaction(function () use ($urunId, $inboxId, $now): void {
+            $this->products->softDelete($urunId, $now);
+            $this->inbox->markPending($inboxId);
+        });
+
+        return Response::success($response, ['geri_alindi' => true, 'inbox_id' => $inboxId]);
+    }
+
+    /** @param array<string, string> $args */
     public function destroy(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
         $id = $this->intArg($args, 'id');

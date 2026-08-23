@@ -197,6 +197,23 @@ final class InboxRepository
         $statement->execute(['product_id' => $productId, 'at' => Dates::toStorage($now), 'id' => $id]);
     }
 
+    /**
+     * GERİ ALMA (İE#21 B4 · E2E-PNL-19): atanmış kaydı yeniden BEKLEYENE çevirir.
+     *
+     * Ürün bağı da kopar — kayıt geri geldiğinde artık var olmayan bir ürüne
+     * işaret ediyorsa, panel "atandı ama ürünü yok" gibi tutarsız bir hâl gösterir.
+     */
+    public function markPending(int $id): void
+    {
+        $statement = $this->connection->pdo()->prepare(
+            // `inbox_items`te `updated_at` YOKTUR (0019); zaman damgası
+            // `assigned_at` alanındadır ve geri almada temizlenir.
+            "UPDATE inbox_items SET status = 'pending', assigned_product_id = NULL, assigned_at = NULL
+             WHERE id = :id AND status = 'assigned'",
+        );
+        $statement->execute(['id' => $id]);
+    }
+
     public function delete(int $id): void
     {
         $statement = $this->connection->pdo()->prepare('DELETE FROM inbox_items WHERE id = :id');

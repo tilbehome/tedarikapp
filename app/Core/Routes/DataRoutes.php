@@ -155,6 +155,9 @@ final class DataRoutes
             // İE#11 Görev D: Gelen Kutusu.
             $group->get('/inbox', [$inboxController, 'index']);
             $group->post('/inbox/assign', [$inboxController, 'assign']);
+            // İE#21 B4: DESTE MODU — tek tuş, tek geçiş, geri alınabilir.
+            $group->post('/inbox/deste', [$inboxController, 'deck']);
+            $group->post('/inbox/deste/geri-al', [$inboxController, 'deckUndo']);
             // İE#13 B1: toplu silme — sabit yol, {id} deseninden ÖNCE tanımlanır.
             $group->post('/inbox/delete', [$inboxController, 'bulkDelete']);
             $group->get('/inbox/{id}', [$inboxController, 'show']);

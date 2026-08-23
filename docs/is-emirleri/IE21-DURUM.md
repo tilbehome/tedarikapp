@@ -59,7 +59,7 @@ tam mockup uyarlaması ayrı bir dilim olarak raporlanacak.
 | B1 | Keşif havuzu | ✅ | API+ekran · `KesifHavuzuTest` (17) · E2E-PNL-01/02/03/07/08/09/10/13/15 · migration 0030 |
 | B2 | Liste detay komuta merkezi | ☐ | referans: `liste-ici.png` |
 | B3 | Ürün çekmecesi | ☐ | referans: `urun-duzenleme-alani.png` |
-| B4 | Gelen kutusu cilaları | ☐ | referans: `gelen-kutusu*.png` |
+| B4 | Gelen kutusu — deste modu | ◐ | deste modu ✅ (`DesteModuTest` 9 + `DesteModu.test.tsx` 8) · entity çözümü ✅ · E2E-PNL-16/17/18/19 · kural motoru + zenginleştirme paneli ☐ |
 | B5 | Kur: güncel kuru getir + taslak tazeleme | ✅ | `KurTazelemeTest` (8) · `KurKaynagiTest` (8) · K76 |
 | B6 | Paylaş penceresi anahtar bloğu | ☐ | |
 | B7 | Kilit ekranı | ☐ | referans: `erisim-anahtar-ekrani.png` |

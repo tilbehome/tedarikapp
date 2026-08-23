@@ -336,6 +336,10 @@ final class AppBuilder
             $services->clock,
             $services->timezone,
             $captureApplier,
+            // İE#21 B4: deste modu (havuz listesi + geri alma).
+            $connection,
+            $products,
+            new SettingsRepository($connection),
         );
 
         // İE#10.5 Blok 6: rota kayıtları modül dosyalarında — AppBuilder yalnız kompozisyon kökü.

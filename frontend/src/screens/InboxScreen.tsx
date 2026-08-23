@@ -8,6 +8,7 @@ import { EmptyState, ErrorNote, PageHeader, Skeleton } from '../components/ui';
 import { useToast } from '../components/Toast';
 import InboxRow from './inbox/InboxRow';
 import InboxDetailDrawer from './inbox/InboxDetailDrawer';
+import DesteModu, { type DesteHedefi, type DesteSonucu } from './inbox/DesteModu';
 
 /**
  * E3 — Gelen Kutusu v2 (İE#13 Blok B).
@@ -36,6 +37,8 @@ export default function InboxScreen() {
   const listsState = useAsync(() => listsApi.all({ visibility: 'active' }), []);
 
   const [selected, setSelected] = useState<number[]>([]);
+  // İE#21 B4: deste modu — 40 ürünü 2 dakikada elemek için tek kart, tek tuş.
+  const [desteAcik, setDesteAcik] = useState(false);
   const [adlar, setAdlar] = useState<Record<number, string>>({});
   const [targetList, setTargetList] = useState<number | '' | 'YENI'>('');
   const [yeniListeAdi, setYeniListeAdi] = useState('');
@@ -43,6 +46,47 @@ export default function InboxScreen() {
   const [busy, setBusy] = useState(false);
 
   const items = state.data?.data ?? [];
+
+  /**
+   * Deste modunun tek eylemi. Hedef liste seçili değilse "Listeye" tuşu kapalıdır
+   * (bileşen bunu `hedefListeAdi` ile bilir) — sessizce yanlış listeye taşımaktansa
+   * düğmeyi kapatmak dürüsttür.
+   */
+  const desteEylemi = async (hedef: DesteHedefi, kart: { id: number }): Promise<DesteSonucu | null> => {
+    try {
+      const sonuc = await inboxApi.deste(
+        kart.id,
+        hedef,
+        hedef === 'liste' && typeof targetList === 'number' ? targetList : undefined,
+      );
+      state.reload();
+      push(
+        hedef === 'cop' ? 'Yakalama silindi.' : hedef === 'havuz' ? 'Havuza alındı.' : 'Listeye taşındı.',
+      );
+
+      return {
+        inbox_id: sonuc.inbox_id,
+        urun_id: sonuc.urun_id ?? null,
+        hedef: sonuc.hedef,
+        geri_alinabilir: sonuc.geri_alinabilir,
+      };
+    } catch (hata) {
+      push(messageOf(hata), 'error');
+
+      return null;
+    }
+  };
+
+  const desteGeriAl = async (sonuc: DesteSonucu) => {
+    if (sonuc.urun_id === null) return;
+    try {
+      const cevap = await inboxApi.desteGeriAl(sonuc.urun_id, sonuc.inbox_id);
+      state.reload();
+      push(cevap.geri_alindi ? 'Geri alındı.' : (cevap.neden ?? 'Zaten geri alınmış.'));
+    } catch (hata) {
+      push(messageOf(hata), 'error');
+    }
+  };
   const meta = state.data?.meta ?? {};
   const total = Number(meta.total ?? items.length);
   const perPage = Number(meta.per_page ?? 20);
@@ -275,10 +319,32 @@ export default function InboxScreen() {
           >
             Seçilenleri sil
           </EylemDugmesi>
+
+          {/* İE#21 B4: deste modu — tek kart, tek tuş, 40 ürün 2 dakika. */}
+          <button
+            type="button"
+            className={desteAcik ? 'btn-primary' : 'btn-ghost'}
+            onClick={() => setDesteAcik((a) => !a)}
+            disabled={items.length === 0}
+          >
+            {desteAcik ? 'Listeye dön' : 'Deste modu'}
+          </button>
         </div>
       </div>
 
-      {state.loading ? (
+      {desteAcik ? (
+        <DesteModu
+          kartlar={items}
+          hedefListeAdi={
+            typeof targetList === 'number'
+              ? (listsState.data ?? []).find((l) => l.id === targetList)?.name ?? null
+              : null
+          }
+          onEylem={desteEylemi}
+          onGeriAl={desteGeriAl}
+          onKapat={() => setDesteAcik(false)}
+        />
+      ) : state.loading ? (
         <Skeleton rows={3} />
       ) : state.error ? (
         <ErrorNote message={state.error} onRetry={state.reload} />
