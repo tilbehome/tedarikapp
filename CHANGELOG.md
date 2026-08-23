@@ -4,7 +4,41 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/) · Sürümleme: SemVe
 Her release'te bu dosya güncellenir (docs/07 bölüm 4). Kategoriler: Eklendi / Değişti / Düzeltildi / Kaldırıldı / Güvenlik.
 
 ## [Yayınlanmadı]
-### Eklendi (İE#11 · K53 — Faz 3: Chrome eklentisi + Gelen Kutusu)
+
+## [0.12.0-beta] — 23 Ağustos 2026 (V3 Dilim 2 · TEMİZ KURULUM paketi)
+
+> Bu paket **temiz kuruluma** çıkar: canlıdaki v0.11.4 kurulumu ve TÜM verisi
+> silinip sistem sıfırdan kurulur (Ürün Sahibi kararı, 23 Ağu 2026 — canlıdaki
+> iş verisi test verisiydi). Bu yüzden **veri göçü yoktur**; migration'lar boş
+> veritabanına 0001'den sıra ile uygulanır. Sürüm adı bilinçli olarak
+> `-beta`dır: v1.0 adı İE#21 kapanışına saklıdır.
+
+### Eklendi (İE#20 Bölüm C — V3 Dilim 2)
+- **Ürün ≠ İlan ayrımı (K67):** `platforms`, `listings`, `listing_price_tiers`
+  tabloları (migration 0022–0023). Ürün bir iş kalemidir; ilan bir kaynaktır.
+- **İş kuyruğu (K69):** `jobs` tablosu + cron işleyicisi (0024) — çeviri gibi ağır
+  işler istek içinde koşmaz. Kuyruk sağlığı ekranı panelde.
+- **Çeviri katman 2 (K70):** LLM çevirisi; **TR ve EN aynı istekte** üretilir ve
+  ikisi birden önbelleğe yazılır. Hedef dil listesi ayardır, şema değil.
+- **Dil seçici:** ZH (orijinal) · TR · EN — üçü de her zaman görünür.
+- **İlan güven skoru (K68):** 0025.
+- **Çift dilli arama + sayfalama:** `products.arama_metni` + FULLTEXT (0026).
+- **HAZIR kalite kapısı (K72):** sunucuda zorlanır; eksik alanlı ürün hazır değildir.
+- **Dayanıklılık (K9/C9):** revizyon sözleşmesi, kopya bütünlüğü, `sort_no` yarış
+  koruması, `products.surum` ile kayıp yazma koruması.
+
+### Eklendi (İE#20 Bölüm A — İE#19 tamamı, v0.11.5 içeriği)
+- Kurulum sertleştirmesi (fail-closed kilit), yeniden kurulum bileti (K63),
+  yakalamanın tek atomik blokta uygulanması (K64), kanonik adresler + maliyet
+  etiketleme (K65), belgelenmiş migration değişiklik kapısı (K66).
+
+### Değişti
+- Varsayılan LLM sağlayıcı DeepSeek; varsayılan model adları güncellendi
+  (`deepseek-v4-flash` · `claude-sonnet-4-6` · `gpt-5.6-terra`). Ayarlar >
+  Çeviri'deki **Bağlantıyı test et**, sağlayıcının hatasını GÖRÜNÜR yazar ve
+  asla sessizce yedeğe düşmez.
+
+### Eklendi (İE#11 · K53 — Faz 3: Chrome eklentisi + Gelen Kutusu · bu paketle yayınlandı)
 - **Chrome eklentisi (WXT + TypeScript, MV3):** 1688 ürün sayfasında popup ile yakalama — önizleme (görsel, ad, fiyat kademeleri, varyasyon sayısı), hedef seçici (Gelen Kutusu varsayılan + listeler), adet/koli/not, K25 mükerrer uyarısı. Parser saf fonksiyon; **birincil kaynak `context.result.global.globalData.model`** (rapor §13), ikincil `detailModel`/`data.*` dalları; seçiciler backend'den gelen VERİDİR (K53). 11 fixture testi — canlı 1688 isteği yok.
 - **Capture sözleşmesi v2 (K32):** üç blok `source`/`raw`/`normalized`; `capture_id` idempotansı; doğrulanamayan gövde RAW olarak kuyruğa (`inbox_items`, migration 0019); RAW blok ürünün `raw_attributes`'ına, menşe özniteliği varsa `country_of_origin`'a yazılır.
 - **Gelen Kutusu:** kuyruk ekranı (çoklu seçim, listeye taşı, sil), Ana Ekran sayacı, menüdeki "Yakında" kalktı.
