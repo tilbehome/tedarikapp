@@ -89,6 +89,8 @@ final class PublicRoutes
         // geçersiz/iptal/süresi dolmuş token ve hız sınırı aşımı AYNI 404'ü döndürür.
         // İE#14 A3: paylaşım sayfası da sözlükten geçen değerleri gösterir.
         // İE#15 A1: indirme bağlantılarını sayfa üretilirken İMZALAR.
+        // İE#21 B13: durum etiketleri TEK KAYNAKTAN (config/durumlar.json).
+        \App\Services\Export\TemplateV2::sozlukBagla($basePath);
         $shareDownload = new \App\Services\Share\ShareDownload((string) $config->get('APP_KEY', ''));
         $sharePage = new SharePage(
             \App\Services\Translation\ValueSetFabrikasi::kur($connection, $config, $basePath),

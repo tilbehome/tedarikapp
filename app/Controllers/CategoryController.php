@@ -36,6 +36,43 @@ final class CategoryController extends ApiController
         return Response::success($response, $this->categories->all());
     }
 
+    /**
+     * POST /api/categories/import — TOPLU İÇE AKTARIM (İE#21 B10), idempotent.
+     *
+     * Gövde: `{"kategoriler": [...]}` — düz liste, nesne listesi ya da ağaç
+     * (biçim toleransının gerekçesi KategoriIceAktarim sınıf başlığındadır).
+     *
+     * İdempotanlık bir kolaylık değil, bir GÜVENLİKTİR: içe aktarımı iki kez
+     * koşan kullanıcı kategorileri ikiye katlamamalıdır; kategoriler ürünlere
+     * bağlıdır ve mükerrer kayıt raporları sessizce böler.
+     */
+    public function import(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        $body = $this->body($request);
+        $veri = $body['kategoriler'] ?? $body['categories'] ?? null;
+        if (!is_array($veri) || $veri === []) {
+            return Response::error($response, 'VALIDATION', 'Doğrulama hatası', 422, [
+                'kategoriler' => 'İçe aktarılacak kategori listesi boş olamaz.',
+            ]);
+        }
+
+        $sonuc = (new \App\Services\KategoriIceAktarim($this->categories))->calistir($veri);
+
+        $this->log(
+            $request,
+            'categories_imported',
+            null,
+            sprintf('%d eklendi, %d zaten vardı', $sonuc['eklenen'], $sonuc['atlanan']),
+        );
+
+        return Response::success($response, [
+            'eklenen' => $sonuc['eklenen'],
+            'atlanan' => $sonuc['atlanan'],
+            'toplam' => count($sonuc['adlar']),
+            'uyarilar' => $sonuc['uyarilar'],
+        ]);
+    }
+
     /** POST /api/categories */
     public function store(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
@@ -174,7 +211,7 @@ final class CategoryController extends ApiController
         return null;
     }
 
-    private function log(ServerRequestInterface $request, string $action, int $id, string $detail): void
+    private function log(ServerRequestInterface $request, string $action, ?int $id, string $detail): void
     {
         $this->activity->record(
             'category',

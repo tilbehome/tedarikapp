@@ -211,6 +211,8 @@ final class AppBuilder
         // İE#10 Blok 1-3: export motoru — dosya diske YAZILMAZ, snapshot'tan akıtılır (K25/K33/K44).
         // İE#14 A2/A3: sözlük (K56 Katman 1) export ve paylaşım hattında da kullanılır —
         // varyasyon/öznitelik DEĞERLERİ belirlenimci biçimde Türkçeleşir (ağa çıkmadan).
+        // İE#21 B13: durum etiketleri TEK KAYNAKTAN (config/durumlar.json).
+        \App\Services\Export\TemplateV2::sozlukBagla($basePath);
         $glossary = new \App\Services\Translation\Glossary($basePath . '/config', $basePath . '/storage');
         // İE#21 B9/B12: değerler artık ÖNBELLEKTEN de okunur (kuyruğun ürettiği
         // LLM çevirisi) ve anahtar SÜRÜMLÜDÜR. Kurulum tek yerde (fabrika).

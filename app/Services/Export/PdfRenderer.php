@@ -67,7 +67,7 @@ final class PdfRenderer implements ExportRenderer
             $icKopya = (($snapshot['options']['copy'] ?? 'firma') === 'ic');
             $mpdf->SetHTMLFooter(
                 '<div style="border-top:0.2mm solid #e2e8f0;padding-top:1mm;font-size:7pt;color:#64748b;text-align:center">'
-                . 'Tedarikapp — Ürün Tedarik Asistanı · Ürün adı kaynak platformdaki ilana köprülüdür'
+                . 'TedarikApp — Ürün Tedarik Asistanı · Ürün adı kaynak platformdaki ilana köprülüdür'
                 . ($icKopya ? ' · <b style="color:#92400e">İÇ KOPYA — firmaya gönderilmez</b>' : '')
                 . ' · Sayfa {PAGENO}/{nbpg}</div>',
             );

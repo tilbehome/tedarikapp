@@ -5,6 +5,16 @@
  * yaşar. Ekranlarda ham enum görünmesi hata sayılır (docs/09 §6 çeviri tablosu).
  */
 
+/**
+ * DURUM ETİKETLERİ — TEK KAYNAK `config/durumlar.json` (İE#21 B13).
+ *
+ * Buradaki değerler o dosyanın Türkçe sütununun AYNISIDIR. Kopya olması bilinçli
+ * bir ödünçtür: panel derlemesi repo kökündeki `config/` klasörüne erişemez
+ * (Vite kökü `frontend/`), JSON'u paketin içine kopyalamak da derleme adımını
+ * karmaşıklaştırırdı. Sapma riski TESTLE kapatılmıştır: `DurumSozluguTest`
+ * (PHP) bu dosyayı okuyup JSON ile karşılaştırır ve fark varsa KIRMIZI yanar.
+ * Yani iki liste var ama İKİSİNİN AYRI DÜŞMESİ mümkün değil.
+ */
 export const productStatusLabels = {
   to_order: 'Verilecek',
   ordered: 'Verildi',

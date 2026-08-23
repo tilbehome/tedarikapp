@@ -21,7 +21,7 @@ import KomutPaleti from './KomutPaleti';
  * KISAYOLLAR (kanon §9): Ctrl+K komut paleti · Ctrl+B menü daraltma ·
  * "/" arama odağı (paleti açar) · Esc kapatır.
  *
- * SAYFA BAŞLIĞI anlamlıdır: "Ekran · Bölüm — Tedarikapp" (D1.4) — sekmeler
+ * SAYFA BAŞLIĞI anlamlıdır: "Ekran · Bölüm — TedarikApp" (D1.4) — sekmeler
  * arasında hangi ekranda olduğunuz başlıktan okunur.
  */
 export default function Kabuk() {
@@ -37,7 +37,7 @@ export default function Kabuk() {
   const [bolum, ekran] = ekranAdi(konum.pathname);
 
   useEffect(() => {
-    document.title = `${ekran} · ${bolum} — Tedarikapp`;
+    document.title = `${ekran} · ${bolum} — TedarikApp`;
   }, [bolum, ekran]);
 
   useEffect(() => {

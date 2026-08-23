@@ -125,19 +125,19 @@ final class SharePage
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<meta name="description" content="Tedarikapp (Ürün Tedarik Asistanı) ile paylaşılan sipariş listesi — salt okunur görünüm.">
-<title>' . $e($list['name']) . ' — Tedarikapp</title>
+<meta name="description" content="TedarikApp (Ürün Tedarik Asistanı) ile paylaşılan sipariş listesi — salt okunur görünüm.">
+<title>' . $e($list['name']) . ' — TedarikApp</title>
 <link rel="icon" type="image/svg+xml" href="/panel/favicon.svg">
 <link rel="apple-touch-icon" sizes="180x180" href="/panel/apple-touch-icon.png">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="Tedarikapp">
+<meta property="og:site_name" content="TedarikApp">
 <meta property="og:locale" content="tr_TR">
-<meta property="og:title" content="' . $e($list['name']) . ' — Tedarikapp">
+<meta property="og:title" content="' . $e($list['name']) . ' — TedarikApp">
 <!-- İE#15 F2: önizlemede liste adı, ürün sayısı ve dönem görünür; FİYAT/TUTAR ASLA.
      Link önizlemesi sohbet uygulamalarında herkese açılır — özel veri oraya sızmaz. -->
 <meta property="og:description" content="' . $e($this->onizlemeMetni($list, $sira)) . '">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="' . $e($list['name']) . ' — Tedarikapp">
+<meta name="twitter:title" content="' . $e($list['name']) . ' — TedarikApp">
 <meta name="twitter:description" content="' . $e($this->onizlemeMetni($list, $sira)) . '">' . ($canonicalUrl !== '' ? '
 <meta property="og:url" content="' . $e($canonicalUrl) . '">' : '') . '
 <meta property="og:image" content="' . $e($origin) . '/panel/og-image.png">
@@ -208,7 +208,7 @@ final class SharePage
 
   <div class="legal">
     Sipariş şartları: Teslim DDP · Kur, liste iletildiğinde kilitlenir · Fiyatlar DDP teslim, KDV DAHİLDİR<br>
-    Tedarikapp — Ürün Tedarik Asistanı · Görsele tıkla: galeri · Boş alan — ile gösterilir
+    TedarikApp — Ürün Tedarik Asistanı · Görsele tıkla: galeri · Boş alan — ile gösterilir
   </div>
 </div>
 <div class="lbx" id="lbx">
@@ -414,20 +414,20 @@ final class SharePage
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>Bağlantı geçerli değil — Tedarikapp</title>
+<title>Bağlantı geçerli değil — TedarikApp</title>
 <link rel="icon" type="image/svg+xml" href="/panel/favicon.svg">
 <link rel="stylesheet" href="/p-style.css?v=' . $surum . '">
 </head>
 <body>
 <main class="hata-sayfasi">
     <section class="hata-karti">
-        <img class="hata-marka" src="/panel/favicon.svg" alt="Tedarikapp" width="64" height="64">
+        <img class="hata-marka" src="/panel/favicon.svg" alt="TedarikApp" width="64" height="64">
         <h1>Bu bağlantı artık geçerli değil</h1>
         <p>Paylaşım bağlantısı kaldırılmış, yenilenmiş veya süresi dolmuş olabilir.
         Listeyi sizinle paylaşan kişiden <strong>güncel bağlantıyı</strong> isteyebilirsiniz.</p>
         <p class="hata-ipucu">Bağlantıyı elle yazdıysanız eksiksiz kopyaladığınızdan emin olun.</p>
     </section>
-    <footer class="alt">Tedarikapp — Ürün Tedarik Asistanı</footer>
+    <footer class="alt">TedarikApp — Ürün Tedarik Asistanı</footer>
 </main>
 </body>
 </html>';

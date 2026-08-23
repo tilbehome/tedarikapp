@@ -186,9 +186,13 @@ final class TemplateV2Test extends TestCase
 
         self::assertSame('1688.com', $sheet->getCell('H11')->getValue(), 'Kaynak rozeti platformu yazar.');
         self::assertSame('Taobao', $sheet->getCell('H12')->getValue(), 'Şablon PLATFORM BAĞIMSIZ.');
-        // İki satırlı durum rozetleri (dar sütun).
-        self::assertSame("● Sipariş\nVerildi", $sheet->getCell('I11')->getValue());
-        self::assertSame("● İptal\nEdildi", $sheet->getCell('I12')->getValue());
+        // İE#21 B8-2/B13: rozet metni artık TEK KAYNAKTAN gelir (config/durumlar.json,
+        // docs/04 §5B kazanır). Eski metinler ("Sipariş Verildi", "İptal Edildi")
+        // panelin kullandığı 5B adlarından FARKLIYDI; belge ile ekran aynı duruma
+        // farklı kelimeler diyordu. Etiketler kısaldığı için ikinci satıra gerek
+        // kalmadı — sarma (WrapText) uzun etiketler için duruyor.
+        self::assertSame('● Verildi', $sheet->getCell('I11')->getValue());
+        self::assertSame('● İptal', $sheet->getCell('I12')->getValue());
         self::assertSame('FFFEE2E2', $sheet->getStyle('I12')->getFill()->getStartColor()->getARGB());
         self::assertTrue($sheet->getStyle('I11')->getAlignment()->getWrapText());
     }

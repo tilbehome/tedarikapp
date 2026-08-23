@@ -1,9 +1,10 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { ChevronDown, LogOut, Moon, Package, Plus, Sun, SunMoon } from 'lucide-react';
+import { ChevronDown, LogOut, Moon, Plus, Sun, SunMoon } from 'lucide-react';
 import { menuGruplari, type MenuOgesi } from '../../lib/menu';
 import { grubuCevir, useKabukDurumu } from '../../lib/kabukDurumu';
 import { temaDondur, temaEtiketleri, useTema } from '../../lib/tema';
 import { useSession } from '../../store/session';
+import markaAmblem from '../../assets/marka-amblem.svg';
 
 /**
  * SOL MENÜ (İE#16 D1.5 — prototip birebir).
@@ -39,16 +40,25 @@ export default function YanMenu({
         daraltilmis ? 'w-[68px]' : 'w-[264px]'
       }`}
     >
-      {/* ── Marka bloğu ── */}
+      {/* ── Marka bloğu (İE#21 B13 — HİBRİT KİMLİK) ──
+           Amblem TURUNCUDUR (marka kiti), arayüzün teması LACİVERT KALIR.
+           İkisi çelişmez: turuncu ürünün imzasıdır ve tek bir yerde durur;
+           lacivert çalışma yüzeyinin rengidir ve her yerdedir. Amblemi de
+           lacivert yapmak markayı görünmez kılardı, arayüzü turuncuya
+           çevirmek ise günlerce bakılan bir ekranı yorucu hâle getirirdi. */}
       <div className="flex h-14 items-center gap-2.5 border-b border-line px-3">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-navy text-white">
-          <Package size={19} aria-hidden />
-        </span>
+        <img
+          src={markaAmblem}
+          alt=""
+          width={36}
+          height={36}
+          className="size-9 shrink-0 rounded-xl"
+        />
         {!daraltilmis && (
           <span className="min-w-0">
             <span className="block text-[10px] font-semibold tracking-[0.14em] text-ink-3">TİLBE HOME</span>
             <span className="flex items-center gap-1.5 text-base font-bold tracking-tight text-ink">
-              tedarikapp
+              TedarikApp
               <i className="not-italic rounded-md bg-g100 px-1.5 py-0.5 text-[10px] font-semibold text-ink-3">
                 {import.meta.env.VITE_SURUM ?? '1.0'}
               </i>

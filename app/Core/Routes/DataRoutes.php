@@ -89,6 +89,8 @@ final class DataRoutes
 
             $group->get('/categories', [$categoryController, 'index']);
             $group->post('/categories', [$categoryController, 'store']);
+            // İE#21 B10: toplu içe aktarım — idempotent (aynı ad iki kez eklenmez).
+            $group->post('/categories/import', [$categoryController, 'import']);
             $group->patch('/categories/{id}', [$categoryController, 'update']);
             $group->delete('/categories/{id}', [$categoryController, 'destroy']);
         })

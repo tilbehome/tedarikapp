@@ -451,7 +451,7 @@ final class XlsxRenderer implements ExportRenderer
         $sheet->mergeCells('B' . $altRow . ':' . $sonSutun . $altRow);
         $sheet->setCellValueExplicit(
             'B' . $altRow,
-            'Tedarikapp — Ürün Tedarik Asistanı · Ürün adı ve görsel, kaynak platformdaki ilana köprülüdür '
+            'TedarikApp — Ürün Tedarik Asistanı · Ürün adı ve görsel, kaynak platformdaki ilana köprülüdür '
             . '(tüm platformlar) · ▶ rozetli görsel = ürün videosu (dijital kopyada)'
             . ($icKopya ? ' · İÇ KOPYA — firmaya gönderilmez' : ''),
             DataType::TYPE_STRING,
