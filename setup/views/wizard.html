@@ -90,6 +90,12 @@
       <label>Şifre
         <input name="sifre" type="password" autocomplete="current-password" required>
       </label>
+      <!-- B14: yalnız hesapta 2FA tanımlıysa görünür. Herkese kod kutusu koymak,
+           2FA kullanmayan kullanıcıyı olmayan bir kodu aramaya iterdi. -->
+      <label id="sahiplik-kod-alani" hidden>Doğrulama kodu (2FA)
+        <input name="kod" inputmode="numeric" autocomplete="one-time-code" maxlength="8"
+               placeholder="6 haneli kod">
+      </label>
       <div class="actions">
         <button type="submit">Doğrula ve devam et</button>
         <button type="button" class="ghost" id="sahiplik-vazgec">Vazgeç</button>

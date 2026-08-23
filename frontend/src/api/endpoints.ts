@@ -291,6 +291,18 @@ export const settings = {
     }>('/api/settings/rates', body),
   rateHistory: (currency?: string) =>
     api.get<RateHistoryEntry[]>(`/api/settings/rates/history${currency ? `?currency=${currency}` : ''}`),
+  /**
+   * İE#21 B5: TCMB'den güncel kur ÖNERİSİ. KAYDETMEZ — panel formu doldurur,
+   * kullanıcı onaylayınca kaydedilir (K4: kur bir ticari karardır).
+   */
+  suggestRates: (signal?: AbortSignal) =>
+    api.get<{
+      yuan_tl: string;
+      usd_tl: string;
+      kaynak: string;
+      tarih: string | null;
+      mevcut: { yuan_tl: string; usd_tl: string };
+    }>('/api/settings/rates/suggest', { signal }),
 };
 
 export const system = {

@@ -302,6 +302,15 @@ final class LlmTranslator implements TranslatorInterface
                             ? trim((string) $dilCevirisi['attributes'][$anahtar])
                             : '';
 
+                    // İE#21 B9: ÖZNİTELİK DEĞERİ DE ÖNBELLEĞE YAZILIR. Eskiden yalnız
+                    // ad/kategori yazılıyordu; değerler her belge üretiminde yeniden
+                    // sorulmak zorunda kalırdı — ama belge hattı ağa çıkmaz (K61),
+                    // yani pratikte HİÇ çevrilmiyorlardı. Okuma tarafı (ValueSet)
+                    // tam da bu satırları arar.
+                    if ($sozlukten === null && $llmDeger !== '') {
+                        $this->onbellegeYaz($hamDeger, $llmDeger, $kaynakDil, $dil);
+                    }
+
                     $cevrilenOzellikler[(string) $anahtar] = $sozlukten ?? ($llmDeger !== '' ? $llmDeger : $hamDeger);
                 }
                 $alanlar['attributes'] = $cevrilenOzellikler;
@@ -325,17 +334,29 @@ final class LlmTranslator implements TranslatorInterface
         return $sonuc;
     }
 
+    /**
+     * İE#21 B12: anahtar SÜRÜMLÜDÜR — sağlayıcı/model/prompt/sözlük/normalizasyon
+     * değişince eski satır kendiliğinden geçersizleşir (gerekçe: CeviriSurumu).
+     */
+    private function surumAnahtari(): string
+    {
+        return CeviriSurumu::kur($this->ayarlar, $this->glossary)->anahtar();
+    }
+
     private function onbellegeYaz(string $kaynak, string $ceviri, string $kaynakDil, string $hedefDil): void
     {
+        $surum = $this->surumAnahtari();
+
         try {
             $this->cache->store(
-                TranslationCacheRepository::hash($kaynak, $kaynakDil, $hedefDil),
+                TranslationCacheRepository::hash($kaynak, $kaynakDil, $hedefDil, $surum),
                 $kaynak,
                 $ceviri,
                 $this->name(),
                 $kaynakDil,
                 $hedefDil,
                 $this->clock->now(),
+                $surum,
             );
         } catch (Throwable $hata) {
             // Önbellek yazımı BAŞARISIZ olsa da çeviri geçerlidir; yalnız bir

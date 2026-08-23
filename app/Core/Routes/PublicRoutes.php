@@ -91,9 +91,7 @@ final class PublicRoutes
         // İE#15 A1: indirme bağlantılarını sayfa üretilirken İMZALAR.
         $shareDownload = new \App\Services\Share\ShareDownload((string) $config->get('APP_KEY', ''));
         $sharePage = new SharePage(
-            new \App\Services\Translation\ValueSet(
-                new \App\Services\Translation\Glossary($basePath . '/config', $basePath . '/storage'),
-            ),
+            \App\Services\Translation\ValueSetFabrikasi::kur($connection, $config, $basePath),
             $shareDownload,
         );
         $shareGate = new ShareGate($connection);
@@ -169,6 +167,9 @@ final class PublicRoutes
                 $token,
                 $dil,
                 $now,
+                // İE#21 B8-4: sahip görünümü = panelde oturumu AÇIK olan kişi.
+                // Aynı adresi firma da açar; ikisini ayıran tek şey oturumdur.
+                $services->session->isLoggedIn(),
             );
             $response->getBody()->write($html);
 

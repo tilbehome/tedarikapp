@@ -122,6 +122,9 @@ final class SetupRepairController
                 is_string($body['email'] ?? null) ? $body['email'] : null,
                 is_string($body['sifre'] ?? null) ? $body['sifre'] : null,
                 $connection,
+                // İE#21 B14: hesapta 2FA etkinse kod da istenir.
+                is_string($body['kod'] ?? null) ? $body['kod'] : null,
+                $this->totp(),
             );
 
         if (!$gecerli) {
@@ -252,6 +255,8 @@ final class SetupRepairController
                     is_string($body['email'] ?? null) ? $body['email'] : null,
                     is_string($body['sifre'] ?? null) ? $body['sifre'] : null,
                     $hedef,
+                    is_string($body['kod'] ?? null) ? $body['kod'] : null,
+                    $this->totp(),
                 );
                 if (!$gecerli) {
                     $gate->recordFailure($ip, $now);
@@ -401,6 +406,45 @@ final class SetupRepairController
     }
 
     // ─────────────────────────── yardımcılar ───────────────────────────
+
+    /**
+     * TOTP doğrulayıcı (İE#21 B14).
+     *
+     * Config yüklenemiyorsa (config.php bozuk — onarım akışı) null döner ve 2FA'lı
+     * hesap geçemez. Bu bilinçlidir: şifresi çözülemeyen bir gizli anahtarla 2FA
+     * doğrulaması yapılamaz, o hâlde kanıt APP_KEY yoluna düşer.
+     */
+    private function totp(): ?\App\Auth\TotpService
+    {
+        try {
+            $config = Config::load($this->basePath);
+
+            return new \App\Auth\TotpService($config, new \App\Core\Encrypter($config), $this->clock);
+        } catch (Throwable) {
+            return null;
+        }
+    }
+
+    /**
+     * POST /api/setup/owner-check — "bu hesapta 2FA var mı?" (İE#21 B14).
+     *
+     * Arayüz kod alanını GEREKTİĞİNDE gösterir: her hesaba kod kutusu koymak,
+     * 2FA kullanmayan kullanıcıyı olmayan bir kodu aramaya iter.
+     */
+    public function ownerCheck(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        $connection = $this->connectionOrNull();
+        if ($connection === null) {
+            return Response::success($response, ['iki_adimli' => false]);
+        }
+
+        $gate = new UnlockGate($connection, $this->basePath, new DateTimeZone(date_default_timezone_get()));
+        $email = $this->body($request)['email'] ?? null;
+
+        return Response::success($response, [
+            'iki_adimli' => $gate->ikiAdimliGerekliMi(is_string($email) ? $email : null, $connection),
+        ]);
+    }
 
     private function rateLimited(ResponseInterface $response, int $retryAfter): ResponseInterface
     {

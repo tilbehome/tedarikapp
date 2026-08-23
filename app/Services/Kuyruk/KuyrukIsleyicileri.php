@@ -99,11 +99,17 @@ final class KuyrukIsleyicileri
 
             // K54: sonuç ÖNERİDİR. Kuyruk işi de ürün alanlarına YAZMAZ; yalnız
             // önbelleği doldurur, böylece panel/belge anında ve AĞSIZ okur (K61).
+            //
+            // İE#21 B9 — DEĞERLER DE SORULUR. Burası `attributes: []` gönderiyordu:
+            // yani LLM'e yalnız ürün ADI soruluyor, marka/renk/malzeme/varyasyon
+            // hiç çevrilmiyordu. Sayfada ham Çince kalmasının kök nedeni buydu.
+            $degerler = \App\Services\Translation\CevrilecekDegerler::topla($urun);
+
             $cevirmen->translateProduct([
                 'name' => (string) $urun['name'],
                 'category' => null,
                 'source_lang' => Glossary::detect((string) ($urun['name_original'] ?? $urun['name'])),
-                'attributes' => [],
+                'attributes' => $degerler,
             ]);
         });
 

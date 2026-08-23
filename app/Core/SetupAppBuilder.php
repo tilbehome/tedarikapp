@@ -113,6 +113,9 @@ final class SetupAppBuilder
         // koymayız.
         $app->post('/api/setup/verify-owner', [$repair, 'verifyOwner'])
             ->add(new SetupCsrf($state, $responseFactory));
+        // B14: arayüz 2FA kod alanını yalnız GEREKİYORSA gösterir.
+        $app->post('/api/setup/owner-check', [$repair, 'ownerCheck'])
+            ->add(new SetupCsrf($state, $responseFactory));
         $app->post('/api/setup/config-repair', [$repair, 'configRepair'])
             ->add(new SetupCsrf($state, $responseFactory));
         $app->post('/api/setup/config-repair/verify', [$repair, 'verifyRepair'])

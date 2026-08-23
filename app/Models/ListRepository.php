@@ -108,6 +108,44 @@ final class ListRepository
     }
 
     /**
+     * KİLİTLENMEMİŞ listelerin kurunu güncel ayara TAZELER (İE#21 B5).
+     *
+     * SAHA BULGUSU VE KÖK NEDEN: `lists.yuan_rate` liste OLUŞTURULURKEN ayardan
+     * kopyalanıyordu ve bir daha okunmuyordu. K4 "kur listeye KİLİTLENİR" der ama
+     * kilit anı listenin İLETİLDİĞİ andır — o ana kadar taslak, güncel kuru İZLEMELİDİR
+     * (aynı dosyada `LIST_DRAFT`e dönüşte kilidin açılması da bu niyeti söyler).
+     * Kopya tazelenmeyince canlıda taslak listeler 7,04/41,50 ile donup kaldı: antette
+     * eski kur, ₺ karşılıklarında eski çarpan.
+     *
+     * NEDEN OKUMA ANINDA DEĞİL DE YAZMA ANINDA: kuru okuyan tek yol yok — panel,
+     * paylaşım sayfası, Excel, PDF ve export snapshot'ı hepsi kolonu okuyor. Okuma
+     * anında çözseydik bu yolların BİRİNİ atlamak sapmayı geri getirirdi. Kolonu
+     * kaynakta doğru tutmak, tek değişiklikle hepsini düzeltir.
+     *
+     * REVİZYON İLERLEMEZ (K71): revizyon, firmaya GİDEN belgenin değiştiğini söyler;
+     * kilitlenmemiş liste henüz gitmemiştir. `updated_at` de dokunulmaz — kur tazeleme
+     * kullanıcı düzenlemesi değildir ve "son güncelleme" damgasını yalanlamamalıdır.
+     *
+     * @return int etkilenen liste sayısı
+     */
+    public function kilitsizKurlariTazele(string $yuanRate, string $usdRate): int
+    {
+        $statement = $this->connection->pdo()->prepare(
+            'UPDATE lists SET yuan_rate = :yuan_rate, usd_rate = :usd_rate
+             WHERE rate_locked_at IS NULL AND deleted_at IS NULL
+               AND (yuan_rate <> :yuan_kiyas OR usd_rate <> :usd_kiyas)',
+        );
+        $statement->execute([
+            'yuan_rate' => $yuanRate,
+            'usd_rate' => $usdRate,
+            'yuan_kiyas' => $yuanRate,
+            'usd_kiyas' => $usdRate,
+        ]);
+
+        return $statement->rowCount();
+    }
+
+    /**
      * Kısmi güncelleme — yalnızca verilen alanlar yazılır.
      *
      * @param array<string, mixed> $fields

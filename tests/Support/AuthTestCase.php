@@ -388,6 +388,7 @@ abstract class AuthTestCase extends TestCase
                 source_text TEXT NOT NULL,
                 suggested_text TEXT NOT NULL,
                 provider TEXT NOT NULL,
+                surum TEXT NULL,
                 created_at TEXT NOT NULL
             )',
         );

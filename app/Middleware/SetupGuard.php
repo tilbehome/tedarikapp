@@ -99,7 +99,8 @@ final class SetupGuard implements MiddlewareInterface
         $path = $request->getUri()->getPath();
         if ($this->diagnosisAllowed($request)
             || str_ends_with($path, '/api/setup/unlock')
-            || str_ends_with($path, '/api/setup/verify-owner')) {
+            || str_ends_with($path, '/api/setup/verify-owner')
+            || str_ends_with($path, '/api/setup/owner-check')) {
             return $handler->handle($request);
         }
 

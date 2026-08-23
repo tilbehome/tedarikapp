@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Setup;
 
 use App\Auth\PasswordHasher;
+use App\Auth\TotpService;
 use App\Core\Connection;
 use App\Core\Dates;
 use App\Services\ActivityLog;
@@ -114,8 +115,12 @@ final class UnlockGate
      * KALDIRILMADI — veritabanı okunabiliyor ama hesap erişilemiyor olabilir
      * (şifre unutuldu, 2FA cihazı kayıp); o zaman dosya sahipliği tek kanıttır.
      *
-     * 2FA burada SORULMAZ: bu bir oturum açma değil, sahiplik kanıtıdır ve
-     * kurulum sihirbazı oturum üretmez. Şifre + hız sınırı yeterlidir.
+     * İE#21 B14 — 2FA ARTIK SORULUR (hesapta ETKİNSE). Önceki gerekçe ("bu bir
+     * oturum açma değil") yarım doğruydu: işlem oturum üretmiyor ama YIKICI bir
+     * yola (temiz kurulum) kapı açıyor. Panele girmek için iki faktör isteyip
+     * veritabanını silmek için tek faktör istemek, korumayı en zayıf halkasından
+     * delmek olurdu. 2FA tanımlı DEĞİLSE kod sorulmaz — olmayan bir faktörü
+     * dayatmak kullanıcıyı kilitler.
      *
      * @param Connection|null $connection hedef veritabanı (config kayıpken sihirbazın
      *                                    yeni girilen bilgilerle açtığı bağlantı)
@@ -124,6 +129,8 @@ final class UnlockGate
         ?string $email,
         #[SensitiveParameter] ?string $password,
         ?Connection $connection = null,
+        ?string $totpKodu = null,
+        ?TotpService $totp = null,
     ): bool {
         if (!is_string($email) || !is_string($password) || trim($email) === '' || $password === '') {
             return false;
@@ -132,14 +139,16 @@ final class UnlockGate
         $pdo = ($connection ?? $this->connection)->pdo();
 
         try {
-            $statement = $pdo->prepare('SELECT password_hash FROM users WHERE email = :email');
+            $statement = $pdo->prepare('SELECT password_hash, totp_secret FROM users WHERE email = :email');
             $statement->execute(['email' => trim(strtolower($email))]);
-            $hash = $statement->fetchColumn();
+            $satir = $statement->fetch();
         } catch (\Throwable) {
             return false;
         }
 
-        if (!is_string($hash) || $hash === '') {
+        $hash = is_array($satir) && is_string($satir['password_hash'] ?? null) ? $satir['password_hash'] : '';
+
+        if ($hash === '') {
             // Kullanıcı yoksa da HASH DOĞRULAMASI KOŞULUR: aksi hâlde yanıt süresi
             // "bu e-posta kayıtlı mı" sorusunu sızdırırdı (kullanıcı sayımı).
             password_verify($password, '$2y$12$' . str_repeat('x', 53));
@@ -147,7 +156,41 @@ final class UnlockGate
             return false;
         }
 
-        return (new PasswordHasher())->verify($password, $hash);
+        if (!(new PasswordHasher())->verify($password, $hash)) {
+            return false;
+        }
+
+        // B14: hesapta 2FA tanımlıysa kod ZORUNLUDUR.
+        $secret = is_array($satir) && is_string($satir['totp_secret'] ?? null) ? $satir['totp_secret'] : '';
+        if ($secret === '') {
+            return true;
+        }
+        if ($totp === null) {
+            // Doğrulayıcı verilmemişse 2FA'lı hesap GEÇEMEZ (fail-closed): eksik
+            // bağımlılık bir korumayı sessizce devre dışı bırakmamalı.
+            return false;
+        }
+
+        return is_string($totpKodu) && $totpKodu !== '' && $totp->verify($secret, trim($totpKodu));
+    }
+
+    /** Bu e-postanın hesabında 2FA tanımlı mı? (arayüz kod alanını buna göre gösterir) */
+    public function ikiAdimliGerekliMi(?string $email, ?Connection $connection = null): bool
+    {
+        if (!is_string($email) || trim($email) === '') {
+            return false;
+        }
+
+        try {
+            $statement = ($connection ?? $this->connection)->pdo()
+                ->prepare('SELECT totp_secret FROM users WHERE email = :email');
+            $statement->execute(['email' => trim(strtolower($email))]);
+            $secret = $statement->fetchColumn();
+        } catch (\Throwable) {
+            return false;
+        }
+
+        return is_string($secret) && $secret !== '';
     }
 
     public function recordFailure(string $ip, DateTimeImmutable $now): void

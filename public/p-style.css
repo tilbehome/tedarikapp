@@ -378,6 +378,10 @@ td.not-hucre .val { font-style: italic; }
 }
 
 @media print {
+  /* IE#21 B9: "ceviri bekliyor" rozeti BASKIDA cikmaz — firmaya giden
+     belgede sistem ic durumu gorunmez. */
+  .cb { display: none !important; }
+
   /* Sabit yerleşim + genişlik kilidi: tarayıcı sütunları içeriğe göre şişiremez. */
   .twrap { overflow: visible !important; }
   table { table-layout: fixed !important; width: 100% !important; min-width: 0 !important; }
@@ -444,3 +448,21 @@ td.not-hucre .val { font-style: italic; }
 .eks > summary:hover { color:var(--t2); border-color:var(--ln); }
 .eks > summary:focus-visible { outline:2px solid var(--blue); outline-offset:2px; }
 .eks > .sg, .eks > .vr { margin-top:10px; }
+
+/* IE#21 B9 — CEVIRI BEKLIYOR isareti.
+   Sessiz melez yasak: cevrilememis deger ham basilir ama isaretlenir.
+   Rozet SOLGUN ve KUCUKTUR: bir hata degil, bir "henuz" bildirimidir;
+   dikkati degerin kendisinden calmamali. */
+.cb {
+  display: inline-block;
+  margin-left: 4px;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: #FFF4DF;
+  color: #92400E;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: .01em;
+  vertical-align: 1px;
+  white-space: nowrap;
+}

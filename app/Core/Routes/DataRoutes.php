@@ -70,6 +70,8 @@ final class DataRoutes
             $group->get('/settings', [$settingsController, 'show']);
             $group->put('/settings/rates', [$settingsController, 'updateRates']);
             $group->get('/settings/rates/history', [$settingsController, 'rateHistory']);
+            // İE#21 B5: güncel kur ÖNERİSİ — okur, döner, KAYDETMEZ (K4).
+            $group->get('/settings/rates/suggest', [$settingsController, 'suggestRates']);
             // İE#13 F1: belge antedi (çıktı üst bandı) — boş alan basılmaz.
             $group->put('/settings/document-header', [$settingsController, 'updateDocumentHeader']);
             // İE#14 A2 (K56 Katman 1): Ayarlar > Terminoloji — dosya tabanlı sözlük.

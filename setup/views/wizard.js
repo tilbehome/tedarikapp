@@ -530,6 +530,17 @@
 
     $('sahiplik-vazgec').addEventListener('click', function () { teshisCiz(teshis); });
 
+    // B14: e-posta yazılınca hesapta 2FA olup olmadığı sorulur ve kod alanı
+    // yalnız gerekiyorsa açılır. Sorgu SIR SIZDIRMAZ: yalnız "kod gerekir mi"
+    // bilgisini döner, hesabın var olup olmadığını değil (yoksa da false döner).
+    $('sahiplik-form').email.addEventListener('blur', function (event) {
+      var eposta = event.target.value.trim();
+      if (!eposta) { $('sahiplik-kod-alani').hidden = true; return; }
+      api('POST', '/api/setup/owner-check', { email: eposta }).then(function (data) {
+        $('sahiplik-kod-alani').hidden = !data.iki_adimli;
+      }).catch(function () { /* sorgu başarısızsa alan gizli kalır; kod yine gönderilebilir */ });
+    });
+
     $('sahiplik-form').addEventListener('submit', function (event) {
       event.preventDefault();
       clearAlert();
@@ -537,7 +548,8 @@
       sahiplikGonder({
         yontem: 'admin',
         email: form.email.value.trim(),
-        sifre: form.sifre.value
+        sifre: form.sifre.value,
+        kod: form.kod ? form.kod.value.trim() : ''
       }, form.querySelector('button[type="submit"]'));
     });
 

@@ -9,6 +9,7 @@ use App\Core\Clock;
 use App\Core\Connection;
 use App\Core\Dates;
 use App\Core\Response;
+use App\Models\ListRepository;
 use App\Models\SettingsRepository;
 use App\Services\ActivityLog;
 use App\Services\InputValidator;
@@ -221,6 +222,14 @@ final class SettingsController extends ApiController
                     $this->recordRate($change['currency'], $change['value'], $now);
                 }
 
+                // İE#21 B5: kilitlenmemiş listeler güncel kuru İZLER. Aynı transaction
+                // içindedir — kur değişip listeler eski kurda kalırsa panel ile belge
+                // birbirini yalanlar ve hangisinin doğru olduğu anlaşılmaz.
+                $tazelenen = (new ListRepository($this->connection))->kilitsizKurlariTazele(
+                    $this->settings->yuanRate(),
+                    $this->settings->usdRate(),
+                );
+
                 $this->activity->record(
                     'settings',
                     null,
@@ -228,7 +237,7 @@ final class SettingsController extends ApiController
                     implode(', ', array_map(
                         static fn (array $c): string => $c['currency'] . '=' . $c['from'] . '→' . $c['value'],
                         $changes,
-                    )),
+                    )) . ($tazelenen > 0 ? sprintf(' · %d kilitlenmemiş liste tazelendi', $tazelenen) : ''),
                     ClientIp::from($request),
                     $now,
                     ActivityLog::ACTOR_ADMIN,
@@ -245,6 +254,39 @@ final class SettingsController extends ApiController
                 static fn (array $c): array => ['currency' => $c['currency'], 'from' => $c['from'], 'to' => $c['value']],
                 $changes,
             )),
+        ]);
+    }
+
+    /**
+     * GET /api/settings/rates/suggest — TCMB'den güncel kur ÖNERİSİ (İE#21 B5).
+     *
+     * KAYDETMEZ. Yanıt panele gider, panel FORMU doldurur, kullanıcı "Kaydet"
+     * derse kur değişir (K4: kur bir ticari karardır, kendiliğinden değişmez).
+     * Kaynağa ulaşılamazsa hata GÖRÜNÜR — sessizce eski değerle devam edilmez.
+     */
+    public function suggestRates(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        $sonuc = (new \App\Services\Kur\KurKaynagi())->getir($this->clock->now());
+
+        if ($sonuc['ok'] !== true) {
+            return Response::error(
+                $response,
+                'UPSTREAM_UNAVAILABLE',
+                isset($sonuc['hata']) ? (string) $sonuc['hata'] : 'Kur kaynağına ulaşılamadı.',
+                502,
+            );
+        }
+
+        return Response::success($response, [
+            'yuan_tl' => $this->money->formatRate((string) $sonuc['yuan_tl']),
+            'usd_tl' => $this->money->formatRate((string) $sonuc['usd_tl']),
+            'kaynak' => $sonuc['kaynak'] ?? 'TCMB',
+            'tarih' => $sonuc['tarih'] ?? null,
+            // Panel bunu "şu an kayıtlı olan" ile karşılaştırıp değişimi gösterir.
+            'mevcut' => [
+                'yuan_tl' => $this->money->formatRate($this->settings->yuanRate()),
+                'usd_tl' => $this->money->formatRate($this->settings->usdRate()),
+            ],
         ]);
     }
 

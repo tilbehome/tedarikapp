@@ -43,6 +43,15 @@ final class SharePage
     }
 
     /**
+     * O İSTEĞİN dilindeki değer kümesi (İE#21 B9).
+     *
+     * Nesne kurulumda tek dille (tr) kurulur ama sayfa üç dilde basılabilir.
+     * Render başında dile göre klonlanır; "çeviri bekliyor" sayacı da o dile
+     * aittir — Türkçe eksikleri İngilizce sayfada rozetlenmemelidir.
+     */
+    private ?ValueSet $aktifDegerler = null;
+
+    /**
      * @param array<string, mixed> $list ListPresenter::list çıktısı
      * @param list<array<string, mixed>> $products ListPresenter::productsOf çıktısı
      * @param array<int, string> $categoryNames
@@ -60,8 +69,14 @@ final class SharePage
         string $token = '',
         string $dil = 'tr',
         ?\DateTimeImmutable $now = null,
+        // İE#21 B8-4: PAYLAŞ düğmesi YALNIZ sahibin görünümünde çıkar. Firma
+        // kopyasında paylaşma eylemi anlamsızdır (zaten paylaşılmış bir sayfadır)
+        // ve linki üçüncü kişilere dağıtmaya davet eder — erişim anahtarı kapısını
+        // (K62) fiilen delen şey budur.
+        bool $sahipGorunumu = false,
     ): string {
         $e = static fn (mixed $value): string => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+        $this->aktifDegerler = $this->values?->withDil($dil);
 
         // İE#17 G1 — VARLIK SÜRÜMLEME: canlı kusurun kökü buydu. Bağlantılar
         // sürümsüzdü; zip açılımı dosya tarihlerini koruduğu için tarayıcının
@@ -97,7 +112,7 @@ final class SharePage
         $kurEtiketi = ($list['rate_locked_at'] ?? null) !== null ? 'KUR · KİLİTLİ' : 'KUR · GÜNCEL';
         $revizyonHarfi = TemplateV2::revisionLabel(max(1, (int) ($list['revision'] ?? 0) + 1));
 
-        $araclar = $this->araclar($list, $sira, $canonicalUrl, $token, $dil, $now, $e);
+        $araclar = $this->araclar($list, $sira, $canonicalUrl, $token, $dil, $now, $e, $sahipGorunumu);
         $lightboxVerisi = htmlspecialchars(
             json_encode($galeriler, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '[]',
             ENT_QUOTES,
@@ -269,6 +284,7 @@ final class SharePage
         string $dil,
         ?\DateTimeImmutable $now,
         callable $e,
+        bool $sahipGorunumu = false,
     ): string {
         $html = '<div class="tgrp" role="group" aria-label="Çıktılar">';
 
@@ -284,6 +300,11 @@ final class SharePage
         }
         $html .= '<button type="button" class="tb" data-yazdir>' . ShareIcons::yazdir() . '<span>Yazdır</span></button>'
             . '</div>';
+
+        // B8-4: firma görünümünde araç çubuğu ÇIKTILARLA biter.
+        if (!$sahipGorunumu) {
+            return $html;
+        }
 
         $link = $canonicalUrl !== '' ? $canonicalUrl : '';
         $mesaj = ShareTexts::mesaj($dil, [
@@ -430,8 +451,8 @@ final class SharePage
 
         // İE#14 A4: kategori panelden ya da kırıntı yolundan gelir; hiçbiri yoksa
         // hücre BOŞ kalır — "Kategorisiz" damgası basılmaz.
-        $kategori = ProductDetails::kategori($product, $categoryNames, $this->values);
-        $detay = ProductDetails::detay($product, $this->values);
+        $kategori = ProductDetails::kategori($product, $categoryNames, $this->aktifDegerler);
+        $detay = ProductDetails::detay($product, $this->aktifDegerler);
 
         $gorsel = $galeri === []
             ? '<span class="pi"><span class="yok-gorsel">görsel<br>yok</span></span>'
@@ -496,14 +517,20 @@ final class SharePage
     {
         // İE#14 A6: dolu alanlar üstte; boşlar katlanmış "Eksik bilgileri göster (N)"
         // içinde. Hepsi boşsa ÜRÜN BİLGİLERİ bölümü hiç basılmaz.
-        ['dolu' => $dolu, 'bos' => $bos] = ProductFacts::grouped($product, $this->values);
+        ['dolu' => $dolu, 'bos' => $bos] = ProductFacts::grouped($product, $this->aktifDegerler);
 
         $bilgiler = '';
         if ($dolu !== []) {
             $izgara = '';
             foreach ($dolu as [$tr, $cjk, $deger]) {
+                // İE#21 B9 — SESSİZ MELEZ YASAK: çevrilememiş değer ham basılır ama
+                // İŞARETLENİR. Okuyucu "bu neden Çince?" diye sormaz; sistemin işi
+                // bitirmediğini görür ve sayfayı yenileyince yerini çevirisi alır.
+                $bekliyor = $this->aktifDegerler?->bekliyorMu($deger) === true;
                 $izgara .= '<div><b>' . $e($tr) . ' <span class="zh">' . $e($cjk) . '</span></b>'
-                    . '<span>' . $e($deger) . '</span></div>';
+                    . '<span>' . $e($deger)
+                    . ($bekliyor ? ' <span class="cb" title="Çevirisi kuyrukta">çeviri bekliyor</span>' : '')
+                    . '</span></div>';
             }
 
             $eksik = '';
@@ -532,7 +559,10 @@ final class SharePage
             $gizli = array_slice($varyasyonlar, ValueSet::LIMIT, 40);
             $sag .= '<div class="dh">VARYASYONLAR <span class="zh">规格</span></div><div class="vr">';
             foreach ($gorunen as $varyasyon) {
-                $sag .= '<div><span>' . $e($varyasyon) . '</span><b></b></div>';
+                $bekliyor = $this->aktifDegerler?->bekliyorMu($varyasyon) === true;
+                $sag .= '<div><span>' . $e($varyasyon)
+                    . ($bekliyor ? ' <span class="cb" title="Çevirisi kuyrukta">çeviri bekliyor</span>' : '')
+                    . '</span><b></b></div>';
             }
             $sag .= '</div>';
             if ($gizli !== []) {
@@ -771,7 +801,7 @@ final class SharePage
         }
 
         // İE#14 A3: değerler A2 hattının belirlenimci katmanından geçer (灰色 → Gri).
-        return $this->values !== null ? $this->values->values($out) : $out;
+        return $this->aktifDegerler !== null ? $this->aktifDegerler->values($out) : $out;
     }
 
     /** @param array<string, mixed> $product */
@@ -783,8 +813,8 @@ final class SharePage
         }
         // İE#17 G8-b: satır hücresinde YALNIZ kompakt rozet ("40 seçenek").
         // Tam liste detay panelindeki VARYASYONLAR bölümündedir.
-        if ($this->values !== null) {
-            return $this->values->ozet($liste);
+        if ($this->aktifDegerler !== null) {
+            return $this->aktifDegerler->ozet($liste);
         }
         if (count($liste) === 1 && mb_strlen($liste[0]) <= 40) {
             return $liste[0];

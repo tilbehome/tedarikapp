@@ -78,6 +78,10 @@ final class Migrator
             ['column' => ['listings', 'skor']],
             ['column' => ['translation_cache', 'guven']],
         ],
+        // İE#21 B12: sürümlü çeviri belleği — satırın hangi koşullarda üretildiği.
+        '0027_ceviri_bellegi_surumu' => [
+            ['column' => ['translation_cache', 'surum']],
+        ],
         '0026_arama_ve_kalite' => [
             ['column' => ['products', 'arama_metni']],
             ['column' => ['products', 'hazir']],

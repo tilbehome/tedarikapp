@@ -212,7 +212,9 @@ final class AppBuilder
         // İE#14 A2/A3: sözlük (K56 Katman 1) export ve paylaşım hattında da kullanılır —
         // varyasyon/öznitelik DEĞERLERİ belirlenimci biçimde Türkçeleşir (ağa çıkmadan).
         $glossary = new \App\Services\Translation\Glossary($basePath . '/config', $basePath . '/storage');
-        $valueSet = new \App\Services\Translation\ValueSet($glossary);
+        // İE#21 B9/B12: değerler artık ÖNBELLEKTEN de okunur (kuyruğun ürettiği
+        // LLM çevirisi) ve anahtar SÜRÜMLÜDÜR. Kurulum tek yerde (fabrika).
+        $valueSet = \App\Services\Translation\ValueSetFabrikasi::kur($connection, $config, $basePath);
 
         $exportRenderers = [
             'csv' => new \App\Services\Export\CsvRenderer(),

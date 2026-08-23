@@ -21,9 +21,23 @@ final class TranslationCacheRepository
     {
     }
 
-    public static function hash(string $text, string $sourceLang, string $targetLang): string
-    {
-        return hash('sha256', $sourceLang . '|' . $targetLang . '|' . $text);
+    /**
+     * Önbellek anahtarı.
+     *
+     * İE#21 B12: anahtara ÜRETİM KOŞULLARININ sürümü katılır (sağlayıcı, model,
+     * prompt, sözlük, normalizasyon — bkz. CeviriSurumu). Sürüm verilmezse eski
+     * davranış korunur; bu, sürüm bilmeyen çağıranların (eski kayıtları okuyan
+     * raporlar) çalışmaya devam etmesi içindir, YENİ yazımlarda sürüm ZORUNLUDUR.
+     */
+    public static function hash(
+        string $text,
+        string $sourceLang,
+        string $targetLang,
+        string $surum = '',
+    ): string {
+        $govde = $sourceLang . '|' . $targetLang . '|' . $text;
+
+        return hash('sha256', $surum === '' ? $govde : $surum . '|' . $govde);
     }
 
     /** @return array{suggested_text: string, provider: string}|null */
@@ -54,11 +68,12 @@ final class TranslationCacheRepository
         string $sourceLang,
         string $targetLang,
         DateTimeImmutable $now,
+        string $surum = '',
     ): void {
         $statement = $this->connection->pdo()->prepare(
             'INSERT INTO translation_cache
-                (source_hash, source_lang, target_lang, source_text, suggested_text, provider, created_at)
-             VALUES (:hash, :source_lang, :target_lang, :source_text, :suggested_text, :provider, :created_at)',
+                (source_hash, source_lang, target_lang, source_text, suggested_text, provider, surum, created_at)
+             VALUES (:hash, :source_lang, :target_lang, :source_text, :suggested_text, :provider, :surum, :created_at)',
         );
 
         try {
@@ -69,6 +84,10 @@ final class TranslationCacheRepository
                 'source_text' => mb_substr($sourceText, 0, 1000),
                 'suggested_text' => mb_substr($suggestedText, 0, 1000),
                 'provider' => $provider,
+                // Satırın hangi koşullarda üretildiği KAYITTA da durur: anahtar
+                // tek yönlüdür, "bu çeviri hangi modelle yapıldı" sorusunu
+                // yanıtlayamaz. Sürüm kolonu bunu sorgulanabilir kılar.
+                'surum' => $surum,
                 'created_at' => Dates::toStorage($now),
             ]);
         } catch (\PDOException $exception) {

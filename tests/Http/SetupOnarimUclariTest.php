@@ -279,8 +279,54 @@ final class SetupOnarimUclariTest extends TestCase
         self::assertGreaterThanOrEqual(400, $response->getStatusCode());
     }
 
+    // ─────────────────────── B14: 2FA ───────────────────────
+
+    public function testIkiAdimliHesapKODSUZGECEMEZ(): void
+    {
+        // Panele girmek için iki faktör isteyip veritabanını silmek için tek
+        // faktör istemek, korumayı en zayıf halkasından delmek olurdu.
+        $this->kuruluSistem();
+        $this->kullaniciTablosu('sahip@ornek.com', 'DogruSifre12345', totp: true);
+
+        $response = $this->call('POST', '/api/setup/verify-owner', [
+            'yontem' => 'admin',
+            'email' => 'sahip@ornek.com',
+            'sifre' => 'DogruSifre12345',
+        ]);
+
+        self::assertSame(403, $response->getStatusCode(), 'Şifre doğru ama 2FA kodu yok');
+    }
+
+    public function testIkiAdimliOLMAYANHesapKodSORULMAZ(): void
+    {
+        // Olmayan bir faktörü dayatmak kullanıcıyı kilitler.
+        $this->kuruluSistem();
+        $this->kullaniciTablosu('sahip@ornek.com', 'DogruSifre12345');
+
+        $response = $this->call('POST', '/api/setup/verify-owner', [
+            'yontem' => 'admin',
+            'email' => 'sahip@ornek.com',
+            'sifre' => 'DogruSifre12345',
+        ]);
+
+        self::assertSame(200, $response->getStatusCode(), (string) $response->getBody());
+    }
+
+    public function testOwnerCheckKODGEREKIRMISoyler(): void
+    {
+        $this->kuruluSistem();
+        $this->kullaniciTablosu('sahip@ornek.com', 'DogruSifre12345', totp: true);
+
+        $var = $this->json($this->call('POST', '/api/setup/owner-check', ['email' => 'sahip@ornek.com']));
+        $yok = $this->json($this->call('POST', '/api/setup/owner-check', ['email' => 'baska@ornek.com']));
+
+        self::assertTrue($var['data']['iki_adimli']);
+        // Olmayan hesap da false döner: uç hesabın VARLIĞINI sızdırmaz.
+        self::assertFalse($yok['data']['iki_adimli']);
+    }
+
     /** activity_log + users tabloları — throttle ve kanıt bunları okur. */
-    private function kullaniciTablosu(string $email, string $sifre): void
+    private function kullaniciTablosu(string $email, string $sifre, bool $totp = false): void
     {
         $this->pdo->exec('CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT, '
             . 'password_hash TEXT, totp_secret TEXT, created_at TEXT, updated_at TEXT)');
@@ -292,9 +338,15 @@ final class SetupOnarimUclariTest extends TestCase
             . 'actor_type TEXT, actor_id INTEGER, request_id TEXT, user_agent TEXT, created_at TEXT)');
 
         $statement = $this->pdo->prepare(
-            'INSERT INTO users (email, password_hash, created_at, updated_at) '
-            . "VALUES (:email, :hash, '2026-08-23 10:00:00', '2026-08-23 10:00:00')",
+            'INSERT INTO users (email, password_hash, totp_secret, created_at, updated_at) '
+            . "VALUES (:email, :hash, :totp, '2026-08-23 10:00:00', '2026-08-23 10:00:00')",
         );
-        $statement->execute(['email' => $email, 'hash' => (new PasswordHasher())->hash($sifre)]);
+        $statement->execute([
+            'email' => $email,
+            'hash' => (new PasswordHasher())->hash($sifre),
+            // Gerçek bir şifreli secret gerekmiyor: kapı "secret VAR MI" diye bakar
+            // ve varsa kod ister. Kodun doğruluğu TotpServiceTest'in işidir.
+            'totp' => $totp ? 'sifreli-secret' : null,
+        ]);
     }
 }

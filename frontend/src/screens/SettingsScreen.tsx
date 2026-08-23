@@ -1,12 +1,13 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronRight, ShieldCheck } from 'lucide-react';
+import { ChevronRight, Download, ShieldCheck } from 'lucide-react';
 import { settings as settingsApi, system as systemApi } from '../api/endpoints';
 import { useAsync, messageOf } from '../lib/useAsync';
 import { count, dateTime, rate } from '../lib/format';
 import { mediaModeLabels } from '../locales/tr';
 import { ErrorNote, Field, PageHeader, Skeleton } from '../components/ui';
 import { useToast } from '../components/Toast';
+import EylemDugmesi from '../components/EylemDugmesi';
 import IslemDurumu from '../components/IslemDurumu';
 import { useUzunIslem } from '../lib/useUzunIslem';
 import BelgeAntedi from './ayarlar/BelgeAntedi';
@@ -17,7 +18,7 @@ import KuyrukDurumu from './ayarlar/KuyrukDurumu';
  * E8 — Ayarlar: kurlar (tarihçeli), kategoriler, güvenlik, sistem durumu.
  *
  * Kur METİN olarak gönderilir ve METİN olarak gösterilir; panel dönüştürme yapmaz.
- * Kur değişimi yalnızca `draft` listelerin görünen TL'sini etkiler — kilitli
+ * Kur değişimi kilitlenmemiş listelerin KOLONUNU tazeler (İE#21 B5) — kilitli
  * listeler etkilenmez (K4); bu kural ekranda da yazılıdır.
  */
 export default function SettingsScreen() {
@@ -30,6 +31,9 @@ export default function SettingsScreen() {
   const [usd, setUsd] = useState('');
   const [fields, setFields] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
+  // B5: getirilen öneri KAYDEDİLMEZ, forma yazılır ve burada rozetlenir —
+  // kullanıcı neyin nereden geldiğini görmeden "Kaydet" dememeli.
+  const [oneri, setOneri] = useState<{ kaynak: string; tarih: string | null } | null>(null);
 
   useEffect(() => {
     const data = settingsState.data;
@@ -40,6 +44,23 @@ export default function SettingsScreen() {
     setYuan(data.yuan_tl);
     setUsd(data.usd_tl);
   }, [settingsState.data]);
+
+  /** TCMB'den güncel kuru FORMA doldurur. Kaydetme kullanıcının işidir. */
+  const kuruGetir = async () => {
+    setFields({});
+    try {
+      const sonuc = await settingsApi.suggestRates();
+      setYuan(sonuc.yuan_tl);
+      setUsd(sonuc.usd_tl);
+      setOneri({ kaynak: sonuc.kaynak, tarih: sonuc.tarih });
+      push(`${sonuc.kaynak} kuru forma dolduruldu. Kaydetmek için "Kurları güncelle" deyin.`);
+    } catch (caught) {
+      // Görünür hata (emir §B5): sessizce eski değerle devam edilmez.
+      setOneri(null);
+      push(messageOf(caught), 'error');
+      throw caught;
+    }
+  };
 
   const save = async (event: FormEvent) => {
     event.preventDefault();
@@ -52,6 +73,7 @@ export default function SettingsScreen() {
       });
       settingsState.reload();
       historyState.reload();
+      setOneri(null);
       // 3b (K48 ek): aynı değerle basmak tarihçeye yazmaz — bildirim de bunu söyler.
       if (result.changes.length === 0) {
         push(`Kurlar zaten güncel (${rate(result.yuan_tl)} / ${rate(result.usd_tl)}).`);
@@ -59,7 +81,10 @@ export default function SettingsScreen() {
         const parts = result.changes.map(
           (change) => `${change.currency === 'CNY' ? 'Yuan' : 'Dolar'} ${rate(change.from)} → ${rate(change.to)}`,
         );
-        push(`${parts.join(', ')} güncellendi. Kilitli listeler etkilenmedi.`);
+        push(
+          `${parts.join(', ')} güncellendi. Kilitlenmemiş listeler yeni kuru izler; ` +
+            'kilitli listeler etkilenmedi.',
+        );
       }
     } catch (caught) {
       push(messageOf(caught), 'error');
@@ -90,13 +115,28 @@ export default function SettingsScreen() {
                 <input className="field-input" inputMode="decimal" value={usd} onChange={(event) => setUsd(event.target.value)} />
               </Field>
             </div>
+            {oneri ? (
+              <p className="flex items-start gap-1.5 rounded-lg bg-info-soft p-2 text-xs text-info">
+                <Download className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
+                {oneri.kaynak} kuru forma dolduruldu{oneri.tarih ? ` (${oneri.tarih} bülteni)` : ''}. Henüz
+                KAYDEDİLMEDİ — kontrol edip "Kurları güncelle" deyin.
+              </p>
+            ) : null}
             <p className="text-xs text-ink-3">
-              Yeni kur yalnızca <strong>Taslak</strong> listelere işler. "İletildi" durumuna geçmiş listelerin kuru kilitlidir ve
-              değişmez.
+              Yeni kur <strong>kilitlenmemiş</strong> listelere işler ve onların ₺ karşılıkları anında güncellenir.
+              "İletildi" durumuna geçmiş listelerin kuru kilitlidir ve değişmez.
             </p>
-            <button type="submit" className="btn-primary" disabled={busy}>
-              {busy ? 'Kaydediliyor…' : 'Kurları güncelle'}
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <button type="submit" className="btn-primary" disabled={busy}>
+                {busy ? 'Kaydediliyor…' : 'Kurları güncelle'}
+              </button>
+              <EylemDugmesi className="btn-ghost" mesgulEtiketi="Getiriliyor" onEylem={kuruGetir}>
+                <span className="inline-flex items-center gap-2">
+                  <Download className="h-4 w-4" aria-hidden />
+                  Güncel kuru getir
+                </span>
+              </EylemDugmesi>
+            </div>
           </form>
         )}
       </section>
