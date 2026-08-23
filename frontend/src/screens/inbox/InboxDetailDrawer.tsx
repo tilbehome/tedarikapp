@@ -5,6 +5,7 @@ import { useAsync } from '../../lib/useAsync';
 import { dateTime } from '../../lib/format';
 import { ErrorNote, Skeleton } from '../../components/ui';
 import InboxThumb from './InboxThumb';
+import { metniNormalize } from '../../lib/metin';
 
 /**
  * E3 detay çekmecesi (İE#13 B3): yakalanan ham veriyi okunur hâlde gösterir —
@@ -70,7 +71,7 @@ export default function InboxDetailDrawer({ id, onClose }: { id: number; onClose
                 <section>
                   <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-ink-3">Orijinal başlık</h3>
                   {/* K54: orijinal (Çince) başlık her koşulda korunur ve burada görünür. */}
-                  <p className="text-sm text-ink-2">{detail.raw_title}</p>
+                  <p className="text-sm text-ink-2">{metniNormalize(detail.raw_title)}</p>
                 </section>
               ) : null}
 
@@ -96,7 +97,11 @@ export default function InboxDetailDrawer({ id, onClose }: { id: number; onClose
                   <ul className="text-sm">
                     {detail.sku_matrix.map((sku, index) => (
                       <li key={`${sku.label}-${index}`} className="flex justify-between gap-3 border-b border-line-soft py-1">
-                        <span className="min-w-0 truncate text-ink-2">{sku.label}</span>
+                        {/* B4 saha bulgusu: kaynak sayfadaki değer ZATEN entity taşır
+                            ("黑色&gt;12"); React metni escape eder ama entity'yi çözmez.
+                            Çözüm sunum katmanındadır — ham veri sözleşme gereği
+                            değiştirilmeden saklanır (K32). */}
+                        <span className="min-w-0 truncate text-ink-2">{metniNormalize(sku.label)}</span>
                         <span className="shrink-0 font-medium">{sku.price_yuan ? `¥${sku.price_yuan}` : '—'}</span>
                       </li>
                     ))}
@@ -110,8 +115,8 @@ export default function InboxDetailDrawer({ id, onClose }: { id: number; onClose
                   <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
                     {Object.entries(detail.attributes).map(([key, value]) => (
                       <div key={key} className="contents">
-                        <dt className="truncate text-ink-3">{key}</dt>
-                        <dd className="truncate">{value}</dd>
+                        <dt className="truncate text-ink-3">{metniNormalize(key)}</dt>
+                        <dd className="truncate">{metniNormalize(String(value))}</dd>
                       </div>
                     ))}
                   </dl>

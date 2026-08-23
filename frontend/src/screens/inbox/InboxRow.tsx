@@ -5,6 +5,7 @@ import { translate as translateApi, type InboxItem } from '../../api/endpoints';
 import { messageOf } from '../../lib/useAsync';
 import { dateTime } from '../../lib/format';
 import InboxThumb from './InboxThumb';
+import { metniNormalize } from '../../lib/metin';
 
 /** Çince/Japonca/Korece karakter var mı? Zaten Türkçe başlık için çeviri istenmez. */
 const cjk = /[㐀-䶿一-鿿豈-﫿぀-ヿ가-힯]/;
@@ -50,7 +51,8 @@ export default function InboxRow({ item, secili, onSec, onAc, onTasi, onSil, sec
     }
   };
 
-  const gosterilenAd = secilenAd ?? item.name ?? '(adsız yakalama)';
+  // B4: yakalanan ad da entity taşıyabilir — sunumda çözülür (bkz. lib/metin.ts).
+  const gosterilenAd = metniNormalize(secilenAd ?? item.name ?? '') || '(adsız yakalama)';
 
   return (
     <li className="card flex items-start gap-3 p-3">

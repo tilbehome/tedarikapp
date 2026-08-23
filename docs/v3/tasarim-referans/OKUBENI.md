@@ -20,6 +20,23 @@ mimarisi, sütun düzeni, durum dili ve etkileşim sırası bağlayıcıdır.
 | `paylasim-sayfasi.png` | Paylaşım sayfası — detay paneli KAPALI | İE#21 B8 |
 | `paylasim-sayfasi-detay.png` | Paylaşım sayfası — detay paneli AÇIK | İE#21 B8 |
 
+## ⚠ PAYLAŞIM SAYFASI GÖRSELLERİ v1.0'DA KISMİ UYGULANIR (PM kararı, 23 Ağu 2026)
+
+`paylasim-sayfasi.png` ve `paylasim-sayfasi-detay.png` karelerindeki arayüz —
+sekmeli detay paneli (Ürün bilgileri / Varyasyonlar / Medya / Kaynak), üç sütunlu
+bilgi ızgarası, "Talep notu" kutusu — **v1.0'da uygulanmaz.**
+
+**v1.0 kapsamı:** İE#21 B8'de SAYILI yedi madde (4 düzeltme + 3 ince ayar) +
+bugün canlıda çalışan detay açılımının KORUNMASI. Mevcut "Ürün bilgileri +
+varyasyon açılımı" yeterli tabandır.
+
+**Tam uyarlama V3-C'ye ertelendi.** Gerekçe: firma yüzü V3-C Firma Döngüsü'nde
+tedarikçi portalıyla birlikte zaten baştan ele alınacak; aynı yüzeyi iki kez
+inşa etmek hem israf hem de iki farklı arayüz mirası bırakır.
+
+**Kabul turunda** paylaşım sayfası mevcut + düzeltmeli hâliyle sınanır;
+bu iki kareyle **birebirlik aranmaz**.
+
 ## Son iki dosya hakkında (İE#21 C2)
 
 `paylasim-sayfasi.png` ve `paylasim-sayfasi-detay.png` bu klasöre UUID adlarıyla

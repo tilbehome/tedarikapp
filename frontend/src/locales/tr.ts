@@ -88,5 +88,5 @@ export const errorMessages: Record<string, string> = {
 
 export const mediaModeLabels = {
   download: 'Görseller sunucuda arşivleniyor',
-  hotlink: 'Arşivleme kapalı — görseller 1688 bağlantısından gösteriliyor',
+  hotlink: 'Arşivleme kapalı — görseller kaynak sitedeki bağlantıdan gösteriliyor',
 } as const;

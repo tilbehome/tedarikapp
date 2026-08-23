@@ -2,15 +2,15 @@
 
 ## Başlık
 
-**Tedarik App - Ürün Aktarım Yardımcısı**
+**TedarikApp — Ürün Aktarım Yardımcısı**
 
 ## Kısa açıklama
 
-1688, Alibaba ve desteklenen tedarik sitelerindeki ürün verilerini Tedarik App paneline düzenli ve güvenli biçimde aktarın.
+Desteklenen tedarik sitelerindeki ürün verilerini TedarikApp paneline düzenli ve güvenli biçimde aktarın.
 
 ## Açıklama
 
-Tedarik App Chrome eklentisi, desteklenen ürün sayfalarındaki görsel, varyant, fiyat, MOQ, satıcı ve ürün ayrıntılarını çalışma panelinize aktarmanızı kolaylaştırır.
+TedarikApp Chrome eklentisi, desteklenen ürün sayfalarındaki görsel, varyant, fiyat, MOQ, satıcı ve ürün ayrıntılarını çalışma panelinize aktarmanızı kolaylaştırır.
 
 ### Temel özellikler
 
@@ -21,7 +21,7 @@ Tedarik App Chrome eklentisi, desteklenen ürün sayfalarındaki görsel, varyan
 - Ürünü mevcut ya da yeni tedarik listesine ekleme
 - Aktarım sonucunu panelde doğrudan açma
 
-Eklenti yalnız kullanıcı tarafından başlatılan ürün aktarım işlemleri için çalışır. Toplanan veriler Tedarik App hesabınıza gönderilir ve paneldeki tedarik sürecinde kullanılır.
+Eklenti yalnız kullanıcı tarafından başlatılan ürün aktarım işlemleri için çalışır. Toplanan veriler TedarikApp hesabınıza gönderilir ve paneldeki tedarik sürecinde kullanılır.
 
 ## Görsel teslim ölçüleri
 

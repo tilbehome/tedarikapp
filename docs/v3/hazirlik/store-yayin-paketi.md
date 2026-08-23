@@ -2,10 +2,18 @@
 
 **Yayın modeli:** Liste dışı (`unlisted`), linki olan kullanıcı kurar  
 **Hedef kullanıcı:** TedarikApp paneli bulunan tek kullanıcı / kurum içi kullanıcı  
-**Tek amaç:** Kullanıcının görüntülediği desteklenen 1688 ürün sayfasındaki ürün verilerini, yalnız kullanıcı komutuyla kullanıcının kendi TedarikApp paneline aktarmak  
+**Tek amaç:** Kullanıcının görüntülediği DESTEKLENEN TEDARİK SİTESİ ürün sayfasındaki ürün verilerini, yalnız kullanıcı komutuyla kullanıcının kendi TedarikApp paneline aktarmak  
 **Kaynak sınırı:** Bu metin canlı mağaza veya 1688 isteği yapılmadan hazırlanmıştır. Güncel politika/arayüz teyidi gereken maddeler `[DOĞRULA]` olarak işaretlenmiştir.
 
 ---
+
+> **ADLANDIRMA KARARI (Ürün Sahibi, 23 Ağustos 2026).** Eklenti adı ve açıklamaları
+> **platform bağımsızdır**: "1688" ne adda ne de tanıtım metninde geçer. Gerekçe ürün
+> stratejisidir — platform kaydı (K67/F37) ile 1688 yalnız İLK uygulanan kaynaktır;
+> adı bir siteye bağlamak hem yanlış bir söz verir hem de ikinci kaynak eklendiğinde
+> mağaza metnini baştan yazdırır. **Teknik metinlerde 1688 AYNEN KALIR** — host izni,
+> parser adı, fikstür ve kapsam beyanı gerçeği anlatır ve mağaza incelemesi tam da o
+> gerçeğin izinlerle örtüşmesine bakar. Yani: KİMLİK genel, KAPSAM BEYANI somut.
 
 ## 1. Mağaza metinleri
 
@@ -13,15 +21,15 @@
 
 #### Ad
 
-`TedarikApp — 1688 Ürün Aktarıcı`
+`TedarikApp — Ürün Aktarıcı`
 
 #### Kısa açıklama — 128 karakter
 
-> 1688 ürünlerini kullanıcı onayıyla kendi TedarikApp panelinize aktarır; araştırma ve liste hazırlamayı hızlandırır.
+> Desteklenen tedarik sitelerindeki ürünleri kullanıcı onayıyla kendi TedarikApp panelinize aktarır; araştırma ve liste hazırlamayı hızlandırır.
 
 #### Uzun açıklama
 
-TedarikApp — 1688 Ürün Aktarıcı, görüntülediğiniz desteklenen 1688 ürün detay sayfasındaki ürün bilgilerini kendi TedarikApp panelinize aktarmanıza yardımcı olan kurum içi bir araçtır.
+TedarikApp — Ürün Aktarıcı, görüntülediğiniz desteklenen tedarik sitesi ürün detay sayfasındaki ürün bilgilerini kendi TedarikApp panelinize aktarmanıza yardımcı olan kurum içi bir araçtır.
 
 Eklenti; ürün başlığı, kaynak bağlantısı ve ürün kimliği, fiyat/MOQ bilgileri, varyantlar, görseller, video bilgisi varsa medya işareti, satıcı sinyalleri, paket/koli bilgileri ve sayfada bulunan diğer desteklenen ürün alanlarını önizler. Veri okuma ve panele gönderme işlemi yalnız sizin açık eyleminizle başlar. Eklenti, desteklenen ürün sayfasını açtığınız anda kendiliğinden ürün göndermez.
 
@@ -50,7 +58,7 @@ Düzeltildi
 
 Uyumluluk / Notlar
 - TedarikApp panel gereksinimi: [PANEL-SÜRÜMÜ]
-- Desteklenen 1688 sayfa türleri: [KAPSAM]
+- Desteklenen sayfa türleri: [KAPSAM]
 - Bilinen sınırlamalar: [YOK / AÇIKLAMA]
 
 Gizlilik ve izin değişikliği
@@ -61,15 +69,15 @@ Gizlilik ve izin değişikliği
 
 #### Name
 
-`TedarikApp — 1688 Product Importer`
+`TedarikApp — Product Importer`
 
 #### Short description — 115 characters
 
-> Sends 1688 product data to your own TedarikApp panel on request, speeding up product research and list preparation.
+> Sends product data from supported sourcing sites to your own TedarikApp panel on request, speeding up product research and list preparation.
 
 #### Long description
 
-TedarikApp — 1688 Product Importer is an internal tool that helps you send product information from a supported 1688 product detail page you are viewing to your own TedarikApp panel.
+TedarikApp — Product Importer is an internal tool that helps you send product information from a supported sourcing-site product detail page you are viewing to your own TedarikApp panel.
 
 The extension previews supported page data such as the product title, source URL and product ID, price and MOQ information, variants, images, an available-video indicator, seller signals, package/carton details, and other supported product fields present on the page. Reading and sending begin only after your explicit action. Merely opening a supported product page does not automatically send the product to the panel.
 
@@ -98,7 +106,7 @@ Fixed
 
 Compatibility / Notes
 - Required TedarikApp panel version: [PANEL-VERSION]
-- Supported 1688 page types: [SCOPE]
+- Supported page types: [SCOPE]
 - Known limitations: [NONE / DESCRIPTION]
 
 Privacy and permission changes
@@ -120,7 +128,7 @@ Privacy and permission changes
 
 #### Kapsam
 
-Bu politika, TedarikApp — 1688 Ürün Aktarıcı Chrome eklentisinin veri kullanımını açıklar. Eklenti, kullanıcının görüntülediği desteklenen 1688 ürün sayfasındaki ürün verilerini, yalnız kullanıcının başlattığı işlemle kullanıcının kendi TedarikApp paneline göndermek için tasarlanmıştır.
+Bu politika, TedarikApp — Ürün Aktarıcı Chrome eklentisinin veri kullanımını açıklar. Eklenti, kullanıcının görüntülediği desteklenen tedarik sitesi ürün sayfasındaki ürün verilerini, yalnız kullanıcının başlattığı işlemle kullanıcının kendi TedarikApp paneline göndermek için tasarlanmıştır.
 
 #### Toplamadıklarımız
 
@@ -248,7 +256,7 @@ If this policy changes, the effective date will be updated. Privacy or data-use 
 | Sıra | Süre | Başvuru ekranında yapılacak işlem | Girilecek değer / kontrol |
 |---:|---:|---|---|
 | 1 | 0:30 | Geliştirici hesabında yeni öğe oluştur ve ZIP'i yükle. | Paket kökünde `manifest.json`; sürüm hedef v1.0 için onaylı değer. `[DOĞRULA: yüklenen ZIP ve manifest sürümü]` |
-| 2 | 0:30 | Ürün adını ve varsayılan dili seç. | TR ad: `TedarikApp — 1688 Ürün Aktarıcı`; varsayılan dil: Türkçe. EN yerelleştirmesini ayrıca ekle. `[DOĞRULA: mağaza panelindeki yerelleştirme akışı]` |
+| 2 | 0:30 | Ürün adını ve varsayılan dili seç. | TR ad: `TedarikApp — Ürün Aktarıcı`; varsayılan dil: Türkçe. EN yerelleştirmesini ayrıca ekle. `[DOĞRULA: mağaza panelindeki yerelleştirme akışı]` |
 | 3 | 0:30 | Kategoriyi seç. | `Üretkenlik / Productivity` önerilir. `[DOĞRULA: güncel kategori adı ve mevcut seçenek]` |
 | 4 | 1:00 | Kısa ve uzun açıklamaları gir. | Bu belgedeki TR/EN metinleri; panel gereksinimi ve yalnız kullanıcı tetiklemesi ifadeleri korunacak. |
 | 5 | 1:00 | İkonu yükle. | 128×128 px, kare PNG; şeffaflık/kenar boşluğu ve küçük boyutta okunabilirlik kontrolü. Manifestteki ikonla aynı marka. |

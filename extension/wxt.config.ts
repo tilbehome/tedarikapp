@@ -16,8 +16,8 @@ export default defineConfig({
   srcDir: '.',
   outDir: 'dist',
   manifest: {
-    name: 'Tedarikapp — Ürün Yakalama',
-    description: "1688 ürün sayfasından tek tıkla Tedarikapp'e ürün gönderin.",
+    name: 'TedarikApp — Ürün Yakalama',
+    description: "Desteklenen tedarik sitelerindeki ürün sayfasından tek tıkla TedarikApp'e ürün gönderin.",
     default_locale: undefined,
     // `scripting`: İE#13 A2 — kurulum/güncelleme anında AÇIK 1688 sekmelerine
     // content script enjeksiyonu (host izni yine yalnız detail.1688.com).
