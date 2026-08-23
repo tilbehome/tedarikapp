@@ -5,6 +5,51 @@ Her release'te bu dosya güncellenir (docs/07 bölüm 4). Kategoriler: Eklendi /
 
 ## [Yayınlanmadı]
 
+## [1.0.0-rc1] — 23 Ağustos 2026 (İE#21 · Faz 1 kapanış ADAYI)
+
+> **v1.0 HENÜZ İLAN EDİLMEDİ.** Bu bir ADAY sürümdür: Ürün Sahibi + PM kabul turu
+> (`docs/v3/hazirlik/kabul-turu-v1.md`, 85 dk) koşulmadan v1.0 adı kullanılmaz.
+> Kapsam durumu madde madde: `docs/is-emirleri/IE21-DURUM.md`.
+
+### Eklendi
+- **Skor v1 kalibre edildi (C3):** 38 insan kararına karşı sınav — bant isabeti
+  %82 (eşik %80), sıralama ihlali 0, "gizli" %100. Sınav dört model kusuru buldu
+  ve dördü de düzeltildi: ticari sinyali olmayan ürün artık skor ALMAZ · satış
+  memnuniyetle ölçeklenir (çok satıp beğenilmemek iade demektir) · satıcı karnesi
+  0–1 aralığına sıkıştı (16 yıllık satıcı 2 yıllığın 8 katı puan alamaz) ·
+  **ivme** bileşeni eklendi (30 günlük satış / toplam) · **kapsam kapağı**: iş
+  kapsamı dışındaki ürün metrikleri ne olursa olsun üst banda çıkamaz.
+- **Kur (B5):** "Güncel kuru getir" — TCMB bülteninden okur, forma yazar, KAYDETMEZ.
+- **Çeviri tam kapsam (B9):** değerler de çevrilir; çevrilemeyen "çeviri bekliyor"
+  rozeti alır, sessiz melez yasak.
+- **Sürümlü çeviri belleği (B12):** anahtar sağlayıcı/model/prompt/sözlük/
+  normalizasyon sürümünü taşır.
+- **Kuyruk sertleştirme (B11):** kira token'ı, kalp atışı, retry sınıfları,
+  ölü mektup eylemleri (yeniden dene · düzelt · vazgeç), metrikler.
+- **Kategori (B10):** idempotent içe aktarma ucu + 8B ağacı (64 kategori) +
+  `bin/kategori-yukle.php` + kırıntı/terim eşlemeli kategori tahmini.
+- **Marka (B13):** kit `docs/marka/`'da · favicon seti · panel amblemi turuncu
+  (tema lacivert) · durum etiketleri TEK KAYNAK (`config/durumlar.json`).
+- **Store paketi (A9):** `bin/store-paketi.php` — manifesti politika maddelerine
+  karşı denetler, eksikte paket ÜRETMEZ; görseller ve metinler tek klasörde.
+- **E2E kapsam defteri (A7/B15):** 81 senaryonun kodda karşılığı ölçülür ve
+  "kapsandı" denip yazılmamış senaryo kırmızı yanar.
+
+### Düzeltildi
+- **Kur taslak listelere işlemiyordu (B5):** `lists.yuan_rate` oluşturmada
+  kopyalanıp bir daha okunmuyordu; kilitlenmemiş listeler artık güncel kuru izler.
+- **Firma görünümünde "Paylaş" düğmesi (B8-4)** kaldırıldı.
+- **Belge ile panel farklı durum adları kullanıyordu (B8-2):** "Bekleme
+  Listesinde" → "Verilecek"; tek kaynak docs/04 §5B.
+- **Gelen Kutusu'nda HTML entity (B4):** "黑色&gt;12" artık çözülerek basılır.
+- **Sihirbaz sahiplik doğrulamasında 2FA (B14)** — hesapta etkinse kod istenir.
+
+### Bilinen eksikler (v1.0 ilanı öncesi kapatılacak)
+- Eklenti v2 sayfa içi arayüz (A1–A5, A8) · Keşif havuzu (B1) · liste detay
+  komuta merkezi (B2) · ürün çekmecesi (B3) · Gelen Kutusu deste modu (B4) ·
+  paylaş penceresi (B6) · kilit ekranı cilası (B7) · belge antet/filigran
+  şablonları (B13) · E2E senaryolarının 71'i.
+
 ## [0.12.1-beta] — 23 Ağustos 2026 (kurulum teşhis + onarım merkezi)
 
 ### Eklendi (İE#20 D2-REV — sihirbaz artık her arızayı kendi içinde çözer)

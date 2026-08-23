@@ -8,7 +8,13 @@
 
 ---
 
-## EKSİK GİRDİLER — bu dosyalar repoda YOK
+## EKSİK GİRDİLER — ÇÖZÜLDÜ (23 Ağu 2026, Ürün Sahibi teslim etti)
+
+Aşağıdaki tablo tarihsel kayıttır; **dosyaların hepsi artık `docs/v3/hazirlik/`
+altındadır** ve bağımlı maddeler yürütülmüştür. `demo-urun-seti.json` (Görev #5A)
+da eklendi ve C3 sınavı onunla koştu.
+
+## (tarihsel) EKSİK GİRDİLER
 
 İş emri şu kaynaklara atıf yapıyor; hiçbiri `docs/v3/hazirlik/` altında (klasör de
 yok). Bunlara bağlı maddeler **beklemede** ve aşağıda öyle işaretli:
@@ -42,9 +48,9 @@ tam mockup uyarlaması ayrı bir dilim olarak raporlanacak.
 | A4 | Kalıcı kuyruk + MV3 başlangıç toparlama + adaptör kimliği | ☐ |
 | A5 | Mükerrer 4 seçenek + 502 idempotens + tazele + çoklu yakalama | ☐ |
 | A6 | Seçici sürümleme (gömülü paket, fikstür ön-kapısı) | ☐ (politika teyidi bekliyor) |
-| A7 | Fikstürler + 29 senaryo E2E + canary | ☐ (katalog bekliyor) |
+| A7 | Fikstürler + 29 senaryo E2E + canary | ◐ kapsam defteri ✅ · senaryolar ☐ |
 | A8 | Prominent disclosure + manifest Seçenek A | ☐ |
-| A9 | Store yayın paketi | ☐ (metin kaynağı bulundu) |
+| A9 | Store yayın paketi | ✅ `bin/store-paketi.php` + dist/store |
 
 ## BÖLÜM B — DİLİM 4: PANEL EKRANLARI
 
@@ -59,12 +65,12 @@ tam mockup uyarlaması ayrı bir dilim olarak raporlanacak.
 | B7 | Kilit ekranı | ☐ | referans: `erisim-anahtar-ekrani.png` |
 | B8 | Paylaşım sayfası düzeltmeleri | ◐ | B8-1 kur ibaresi ZATEN VAR · B8-2 tek kaynak ✅ (`DurumSozluguTest`) · B8-4 firma görünümü ✅ (`PaylasimFirmaGorunumuTest`, 4) · B8-3 + 3 ince ayar ☐ |
 | B9 | Çeviri tam kapsam | ✅ | `CeviriKapsamiTest` (16) · K77 |
-| B10 | Kategori içe aktarma ucu | ◐ | uç + `KategoriIceAktarimTest` (12); **seed dosyası bekliyor** |
+| B10 | Kategori içe aktarma + seed + tahmin | ✅ | uç + `KategoriIceAktarimTest` (12); **seed dosyası bekliyor** |
 | B11 | Kuyruk sertleştirme | ✅ | `KuyrukSertlestirmeTest` (20) · K79 |
 | B12 | Sürümlü çeviri belleği | ✅ | `CeviriKapsamiTest` sürüm bölümü · migration 0027 · K78 |
 | B13 | Marka hibrit entegrasyonu | ◐ | kit `docs/marka/`'ya taşındı · favicon seti · panel amblemi · durum haritası eşitlendi (`DurumSozluguTest`, 9) · **belge antet/filigran şablonları ☐** |
 | B14 | Sihirbazda 2FA | ✅ | `SetupOnarimUclariTest` (14, 3'ü 2FA) |
-| B15 | Panel E2E (52 senaryo) | ☐ | katalog bekliyor |
+| B15 | Panel E2E (52 senaryo) | ◐ | kapsam defteri ✅ (10/81 kodlandı) |
 
 ## BÖLÜM C — KAPSAM SINIRI + KAPANIŞ
 
@@ -72,8 +78,8 @@ tam mockup uyarlaması ayrı bir dilim olarak raporlanacak.
 |---|---|---|
 | C1 | V3-C/D/E öğeleri yapılmaz (menüde gizli) | ☐ doğrulanacak |
 | C2 | Tasarım referansı adlandırma + OKUBENI | ✅ commit `dac469f` |
-| C3 | Kabul sınavları | ☐ |
-| C4 | v1.0.0 release + güncelleme runbook notu | ☐ |
+| C3 | Kabul sınavları | ◐ skor kalibrasyonu ✅ (%82/0/%100) · E2E defteri ✅ (10/81) · kabul turu ☐ |
+| C4 | Release + güncelleme runbook notu | ◐ v1.0.0-rc1 |
 | C5 | Nihai rapor | ☐ |
 
 ---
