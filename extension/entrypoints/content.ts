@@ -3,7 +3,7 @@
  *
  * MAIN world: `window.context`e doğrudan erişim (rapor A.0 — en temiz yol).
  * İki iş: (1) popup istediğinde sayfa verisini toplayıp döndürmek, (2) sayfaya
- * "Tedarikapp'e Gönder" düğmesi basmak (düğme popup'ı açamaz — MV3 kısıtı — bunun
+ * "TedarikApp'e Gönder" düğmesi basmak (düğme popup'ı açamaz — MV3 kısıtı — bunun
  * yerine yakalama isteğini rozetle işaretler; kullanıcı eklenti simgesine tıklar).
  */
 

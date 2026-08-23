@@ -1,6 +1,6 @@
 /**
  * Sayfa içi mini panel (İE#13 A1): detail.1688.com sayfasının sağ altına sabit
- * "Tedarikapp'e Ekle" düğmesi + tıklanınca açılan yakalama paneli.
+ * "TedarikApp'e Ekle" düğmesi + tıklanınca açılan yakalama paneli.
  *
  * İZOLASYON: tüm arayüz KAPALI shadow DOM içindedir — 1688'in CSS'i içeri, bizim
  * stilimiz dışarı sızmaz ve sayfa scriptleri panele DOM üzerinden erişemez.
@@ -28,7 +28,7 @@ export function mountMiniPanel(readPage: () => Promise<PageData>): void {
   const tetik = document.createElement('button');
   tetik.type = 'button';
   tetik.className = 'tdk-tetik';
-  tetik.textContent = "＋ Tedarikapp'e Ekle";
+  tetik.textContent = "＋ TedarikApp'e Ekle";
 
   const panel = document.createElement('div');
   panel.className = 'tdk-panel';
@@ -37,7 +37,7 @@ export function mountMiniPanel(readPage: () => Promise<PageData>): void {
   const baslik = document.createElement('div');
   baslik.className = 'tdk-baslik';
   const marka = document.createElement('strong');
-  marka.textContent = 'Tedarikapp';
+  marka.textContent = 'TedarikApp';
   const durum = document.createElement('span');
   durum.className = 'tdk-durum';
   const kapat = document.createElement('button');
@@ -70,7 +70,7 @@ export function mountMiniPanel(readPage: () => Promise<PageData>): void {
     // Mini panelde token girilmez (sayfa yüzeyine sır alanı konmaz — K34):
     // kullanıcı tarayıcı çubuğundaki eklenti simgesine yönlendirilir.
     onNeedSettings: (sebep) => {
-      uyari.textContent = `${sebep} Bağlantıyı tarayıcı çubuğundaki Tedarikapp simgesinden kurun.`;
+      uyari.textContent = `${sebep} Bağlantıyı tarayıcı çubuğundaki TedarikApp simgesinden kurun.`;
       uyari.hidden = false;
       form.element.hidden = true;
     },

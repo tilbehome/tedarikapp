@@ -1,0 +1,495 @@
+{
+  "_aciklama": "E2E KAPSAM DEFTERİ (İE#21 A7/B15). Katalogdaki her senaryonun kodda karşılığı var mı? \"kapsandi\" işaretli her satırın dosyası ve test adı DOĞRULANIR (tests/Support/E2eKatalogTest.php). Bu defter bir ilerleme çizelgesi değil, bir DENETİM aracıdır: kapsandı denip yazılmamış senaryo kırmızı yanar.",
+  "_kaynaklar": [
+    "docs/v3/hazirlik/eklenti-e2e-senaryo-katalogu.md",
+    "docs/v3/hazirlik/panel-e2e-senaryo-katalogu.md"
+  ],
+  "senaryolar": {
+    "E2E-EKL-01": {
+      "baslik": "Ürün sayfası değilse düğme yok",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-EKL-02": {
+      "baslik": "Kapalı durum ve tembel başlangıç",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-EKL-03": {
+      "baslik": "Kapalıdan okunuyor durumuna tek geçiş",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-EKL-04": {
+      "baslik": "Okunuyor durumunda çift tıklama koruması",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-EKL-05": {
+      "baslik": "Tam yakalama ile önizleme",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-EKL-06": {
+      "baslik": "Koşullu fiyat uyarısı",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-EKL-07": {
+      "baslik": "Çok varyantlı SKU bütünlüğü",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-EKL-08": {
+      "baslik": "Özel MOQ ve stok yok uyarısı",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-EKL-09": {
+      "baslik": "Pozitif ve negatif video kararı",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-EKL-10": {
+      "baslik": "Kısmi okuma ve kontrollü devam",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-EKL-11": {
+      "baslik": "Okuma hatası ve tekrar tara",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-EKL-12": {
+      "baslik": "Önizlemeden gönderime geçiş ve kilit",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-EKL-13": {
+      "baslik": "Başarılı gönderim ve panel bağlantısı",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-EKL-14": {
+      "baslik": "Ağ kopması ve veri koruma",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-EKL-15": {
+      "baslik": "HTTP 502, tekrar gönder ve idempotency",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-EKL-16": {
+      "baslik": "Mükerrer durumu ve dört seçeneğin görünmesi",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-EKL-17": {
+      "baslik": "Mükerrerde mevcut ürünü aç",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-EKL-18": {
+      "baslik": "Mükerreri başka listeye ekle",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-EKL-19": {
+      "baslik": "Mükerrerde mevcut kaydı güncelle",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-EKL-20": {
+      "baslik": "Mükerrer işlemini iptal",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-EKL-21": {
+      "baslik": "Geçersiz token ve bağlantıyı yenileme",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-EKL-22": {
+      "baslik": "Hedef liste yükleme ve son seçimi hatırlama",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-EKL-23": {
+      "baslik": "SPA offer değişiminde eski önizlemeyi temizleme",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-EKL-24": {
+      "baslik": "İlk kullanım prominent disclosure",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-EKL-25": {
+      "baslik": "Klavye, odak ve Esc turu",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-EKL-26": {
+      "baslik": "Yerleşim, çakışma ve Shadow DOM izolasyonu",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-EKL-27": {
+      "baslik": "Token, cookie ve oturum verisi sızıntı testi",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-EKL-28": {
+      "baslik": "GTİP/TAREKS kapsam dışı kalır",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-EKL-29": {
+      "baslik": "Paneli kapatıp aynı önizlemeyi yeniden açma",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-PNL-01": {
+      "baslik": "Kategori + skor bandı + platform AND birleşimi",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-PNL-02": {
+      "baslik": "TR sorgu ZH yağlık kayıtlarını bulur",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-PNL-03": {
+      "baslik": "TR sorgu ZH ayakkabı kutusu kayıtlarını bulur",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-PNL-04": {
+      "baslik": "Skor kısıtı DM-003 > DM-007",
+      "durum": "kapsandi",
+      "dosya": "tests/Services/SkorKalibrasyonTest.php",
+      "test": "testKALIBRASYONSINAVI"
+    },
+    "E2E-PNL-05": {
+      "baslik": "Skor kısıtı DM-038 > DM-034",
+      "durum": "kapsandi",
+      "dosya": "tests/Services/SkorKalibrasyonTest.php",
+      "test": "testKALIBRASYONSINAVI"
+    },
+    "E2E-PNL-06": {
+      "baslik": "Skor kısıtı DM-023 > DM-025",
+      "durum": "kapsandi",
+      "dosya": "tests/Services/SkorKalibrasyonTest.php",
+      "test": "testKALIBRASYONSINAVI"
+    },
+    "E2E-PNL-07": {
+      "baslik": "同款 yağlık kümesi açılımı",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-PNL-08": {
+      "baslik": "同款 ayakkabı kutusu kümesi ve eksik veri işareti",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-PNL-09": {
+      "baslik": "Karşılaştırma matrisi 2–6 ürün",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-PNL-10": {
+      "baslik": "Yedinci karşılaştırma ürünü reddedilir",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-PNL-11": {
+      "baslik": "Altı sütunlu matrisin görsel ve dokunsal okunabilirliği",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-PNL-12": {
+      "baslik": "Kaydedilmiş görünüm ve URL durumunun çift yönlü eşliği",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-PNL-13": {
+      "baslik": "Boş sonuç durumu ve filtreyi temizleme",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-PNL-14": {
+      "baslik": "Sanal kaydırmada 100 ürünün tekilliği",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-PNL-15": {
+      "baslik": "Eksik metrikte skor GİZLİ",
+      "durum": "kapsandi",
+      "dosya": "tests/Services/SkorKalibrasyonTest.php",
+      "test": "testYETERSIZSINYALDESKORGIZLENIR"
+    },
+    "E2E-PNL-16": {
+      "baslik": "J/K ile deste odağı, mutasyonsuz gezinme",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-PNL-17": {
+      "baslik": "Space ile seçim aç/kapa",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-PNL-18": {
+      "baslik": "Ok tuşlarıyla Çöpe/Havuza/Listeye üçlüsü",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-PNL-19": {
+      "baslik": "Son deste eylemini geri alma",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-PNL-20": {
+      "baslik": "Kural rozeti ve kural eylemini geri alma",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-PNL-21": {
+      "baslik": "Oturum grubunda toplu işlem atomikliği",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-PNL-22": {
+      "baslik": "Eksik ürün uyarı rozetleri",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-PNL-23": {
+      "baslik": "Filtre veya sayfa değişiminde seçim sıfırlama",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-PNL-24": {
+      "baslik": "Çift tık mükerrer işlem üretmez",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-PNL-25": {
+      "baslik": "Satır içi düzenleme ve Enter akışı",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-PNL-26": {
+      "baslik": "Geçersiz satır içi değer kaydedilmez",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-PNL-27": {
+      "baslik": "Eksik CBM ürünü HAZIR olamaz",
+      "durum": "kapsandi",
+      "dosya": "tests/Http/KaliteKapisiUcTest.php",
+      "test": "testEKSIKURUNHAZIRISARETLENEMEZ"
+    },
+    "E2E-PNL-28": {
+      "baslik": "Boş liste tamamlanamaz",
+      "durum": "kapsandi",
+      "dosya": "tests/Http/KaliteKapisiUcTest.php",
+      "test": "testBOSLISTETAMAMLANABILIRDEGIL"
+    },
+    "E2E-PNL-29": {
+      "baslik": "Uyarı çipi ilgili eksik alana filtreler",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-PNL-30": {
+      "baslik": "İletildi sonrası kur kilidi",
+      "durum": "kapsandi",
+      "dosya": "tests/Services/KurTazelemeTest.php",
+      "test": "testKilitliListeASLADEGISMEZ"
+    },
+    "E2E-PNL-31": {
+      "baslik": "Toplu işlem çubuğu ve canlı toplam",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-PNL-32": {
+      "baslik": "İzin verilen aşama geçişleri",
+      "durum": "kapsandi",
+      "dosya": "tests/Services/StateMachineTest.php",
+      "test": "testUrunGecisMatrisiTamdir"
+    },
+    "E2E-PNL-33": {
+      "baslik": "Aşama atlama reddi",
+      "durum": "kapsandi",
+      "dosya": "tests/Services/StateMachineTest.php",
+      "test": "testUrunDurumAtlamaYasak"
+    },
+    "E2E-PNL-34": {
+      "baslik": "Revizyon numarası tek artar ve önceki sürüm korunur",
+      "durum": "kapsandi",
+      "dosya": "tests/Http/RevisionSequenceTest.php",
+      "test": "testUrunFiyatiDegisince_RevBirARTAR"
+    },
+    "E2E-PNL-35": {
+      "baslik": "Paylaş penceresinde link + anahtar birlikte görünür ve kopyalanır",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-PNL-36": {
+      "baslik": "Anahtar yenileme ve eski anahtarın 401 olması",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-PNL-37": {
+      "baslik": "Paylaşım sayfası TR/EN/ZH komple tek dil",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-PNL-38": {
+      "baslik": "Karışık dil sızıntısı KIRMIZI",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-PNL-39": {
+      "baslik": "K55 orijinal satır üç dilde aynen korunur",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-PNL-40": {
+      "baslik": "Excel/PDF başlık-durum-dipnot dili",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-PNL-41": {
+      "baslik": "Kilit ekranının dar görünüm ve %200 yakınlaştırma kullanımı",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-PNL-42": {
+      "baslik": "Doğru anahtar içerik açar",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-PNL-43": {
+      "baslik": "Yanlış anahtar sabit hata ve hız sınırı",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-PNL-44": {
+      "baslik": "JavaScript'siz kilit formu yolu",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-PNL-45": {
+      "baslik": "Tazeleme sayacı tek istek üretir",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-PNL-46": {
+      "baslik": "WhatsApp köprüsü numara ve metni doğru kodlar",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-PNL-47": {
+      "baslik": "Çeviri sağlayıcısını kaydetme ve anahtar maskeleme",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-PNL-48": {
+      "baslik": "Çeviri bağlantı testi hatası görünür",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-PNL-49": {
+      "baslik": "Kur getir → onayla → kaydet",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-PNL-50": {
+      "baslik": "Geçerli sözlük CSV içe aktarımı",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-PNL-51": {
+      "baslik": "Hatalı sözlük CSV mevcut veriyi bozmaz",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    },
+    "E2E-PNL-52": {
+      "baslik": "Hedef dil listesi değişimi ve bağımlı UI",
+      "durum": "bekliyor",
+      "dosya": "",
+      "test": ""
+    }
+  }
+}
