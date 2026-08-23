@@ -19,8 +19,8 @@
 | Sürüm | **v0.12.1-beta** (v1.0 adı İE#21 kapanışına saklı) |
 | Zip | `dist/tedarikapp-v0.12.1-beta.zip` |
 | Boyut | 30,60 MB · 2.165 dosya (+ `MANIFEST.txt`) |
-| SHA-256 | `d8f66b5223e9aa804cdb38fa63e4229663360d1d8fe9ee663f591d0290120be4` |
-| Panel damgası | `v3-faz1 @ 930501f` · **temiz çalışma kopyası** |
+| SHA-256 | `bedb182ed1a2db7ce793ea55176c68757dd4352ffcd9c5e3f0e42353495d4e28` |
+| Panel damgası | `v3-faz1 @ eeb25f8` · **temiz çalışma kopyası** |
 | Migration | 26 dosya (`0001`–`0026`) — boş veritabanına sıra ile uygulanır |
 | Sözlükler | `config/sozluk-zh-tr.php` · `config/sozluk-en-tr.php` **pakette** |
 | Vendor | üretim kipi (`--no-dev`; `phpunit` yok) |
