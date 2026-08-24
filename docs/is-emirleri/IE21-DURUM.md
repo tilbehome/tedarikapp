@@ -89,3 +89,12 @@ tam mockup uyarlaması ayrı bir dilim olarak raporlanacak.
 **Tamamlanan:** B5, B9, B11, B12, B14, C2 · **kısmi:** B8, B10, B13
 **Yeni test:** 77 (8+8+16+20+12+9+4) · **yeni karar:** K76–K80
 **Yeni migration:** 0027 (çeviri belleği sürümü), 0028 (kuyruk sertleştirme)
+
+---
+
+## İŞ EMRİ #22'YE DEVREDİLEN NOTLAR (PM, 24 Ağu 2026)
+
+- **Test süresi:** `tests/Http` yerel koşumda 26 dakikaya çıktı (396 test, tek
+  süreç, SQLite bellek şeması). Çözüm CI'da paralelleştirme veya grup ayrımıdır
+  (örn. `capture`, `setup`, `paylasim`, `liste` süitleri ayrı job). **rc2 SONRASI**
+  ele alınacak — v1.0 kapanışını geciktirmemek PM kararıdır.
