@@ -11,6 +11,7 @@ import EylemDugmesi from '../components/EylemDugmesi';
 import IslemDurumu from '../components/IslemDurumu';
 import { useUzunIslem } from '../lib/useUzunIslem';
 import BelgeAntedi from './ayarlar/BelgeAntedi';
+import PaylasimIletisimi from './ayarlar/PaylasimIletisimi';
 import CeviriAyarlari from './ayarlar/CeviriAyarlari';
 import KuyrukDurumu from './ayarlar/KuyrukDurumu';
 
@@ -142,7 +143,10 @@ export default function SettingsScreen() {
       </section>
 
       {settingsState.data ? (
-        <BelgeAntedi mevcut={settingsState.data.document_header} onSaved={settingsState.reload} />
+        <>
+          <BelgeAntedi mevcut={settingsState.data.document_header} onSaved={settingsState.reload} />
+          <PaylasimIletisimi mevcut={settingsState.data.share_contact_phone} onSaved={settingsState.reload} />
+        </>
       ) : null}
 
       {/* İE#20 C4/C3: çeviri sağlayıcı ayarları ve kuyruk sağlığı. */}

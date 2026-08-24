@@ -312,6 +312,14 @@ export const share = {
   key: (listId: number) => api.get<{ key: string; enabled: boolean }>(`/api/lists/${listId}/share-key`),
   rotateKey: (listId: number) =>
     api.post<{ key: string; enabled: boolean }>(`/api/lists/${listId}/share-key`, {}),
+  /**
+   * İE#21 EK-4 (B7): kilit ekranındaki "Yeni anahtar iste" köprüsünün numarası.
+   * Boş değer düğmeyi kapatır.
+   */
+  updateContact: (phone: string) =>
+    api.put<{ share_contact_phone: string | null }>('/api/settings/share-contact', {
+      share_contact_phone: phone,
+    }),
   toggleKey: (listId: number, enabled: boolean) =>
     api.patch<{ enabled: boolean }>(`/api/lists/${listId}/share-key`, { enabled }),
 };

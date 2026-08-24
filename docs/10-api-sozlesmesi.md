@@ -162,6 +162,7 @@ modelinin yerine geçmez, üstüne eklenir.
 | Uç | Açıklama |
 |---|---|
 | `POST /liste/{token}/anahtar` (ve `/p/` alias) | **İE#18 G6 (K62)** — erişim anahtarı doğrulama. Gövde `{anahtar}` (6 hane, büyük/küçük duyarsız). Doğru → `303` + HttpOnly/SameSite=Lax **imzalı çerez** (kapsam o token, ömür 12 saat) + kanonik adrese dönüş. Yanlış → `401` + kilit ekranı ("Anahtar hatalı"; kaç deneme kaldığı SÖYLENMEZ). Token+IP başına **dakikada 5** deneme; aşımda **sabit 404** (K51) + app_logs kaydı |
+| `PUT /api/settings/share-contact` | İE#21 EK-4 — kilit ekranındaki "Yeni anahtar iste" köprüsünün WhatsApp numarası: `{share_contact_phone}`. Boş değer düğmeyi kapatır; 8 haneden kısa numara 422 (ülke kodu şart). Numara ayar tablosunda yaşar (K44) |
 | `GET /api/lists/{id}/share-text?lang=tr\|en\|zh` | İE#21 B6 — kanal metni: `{dil, dil_adi, mesaj, konu}`. `mesaj` içinde `{link}` yer tutucusu OLDUĞU GİBİ döner; tam adresi panel doldurur (token istek satırına düşmez — K51). Geçersiz dil `tr`ye düşer |
 | `GET /api/lists/{id}/share-key` | Panel (oturumlu): `{key, enabled}` — anahtarı gösterir |
 | `POST /api/lists/{id}/share-key` | Anahtarı YENİLER; eski anahtar ve onunla alınmış çerezler ANINDA geçersizleşir |

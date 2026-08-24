@@ -172,6 +172,8 @@ export interface Settings {
   extension_token_preview: string | null;
   media_mode: 'download' | 'hotlink' | null;
   media_writable: boolean | null;
+  /** İE#21 EK-4: kilit ekranındaki anahtar talebi köprüsünün numarası (boş olabilir). */
+  share_contact_phone: string | null;
   /** İE#13 F1: çıktı ve paylaşım sayfası üst bandındaki firma kimliği. */
   document_header: {
     company: string | null;
