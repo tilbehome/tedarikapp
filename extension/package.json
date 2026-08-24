@@ -1,8 +1,8 @@
 {
   "name": "tedarikapp-eklenti",
-  "description": "Tedarikapp — 1688'den tek tıkla ürün yakalama (Faz 3, K53)",
+  "description": "Tedarikapp — desteklenen tedarik sitelerinden tek tıkla ürün yakalama (v2: sayfa içi panel, kalıcı kuyruk, seçici sürümleme)",
   "private": true,
-  "version": "1.2.1",
+  "version": "2.0.0",
   "type": "module",
   "scripts": {
     "dev": "wxt",
