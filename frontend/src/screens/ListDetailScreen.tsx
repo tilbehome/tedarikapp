@@ -2,12 +2,13 @@ import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, Download, ImageOff, Plus, Search, Share2, Trash2 } from 'lucide-react';
 import { exports as exportsApi, lists as listsApi, products as productsApi, share as shareApi } from '../api/endpoints';
-import CiktiSecenekleri, { paylasimAdresiAnahtari } from './liste/CiktiSecenekleri';
+import CiktiSecenekleri from './liste/CiktiSecenekleri';
 import AsamaCubugu from './liste/AsamaCubugu';
 import OzetSeridi from './liste/OzetSeridi';
 import UyariCipleri from './liste/UyariCipleri';
 import UrunTablosu from './liste/UrunTablosu';
 import UrunCekmecesi from './liste/UrunCekmecesi';
+import PaylasPenceresi from './liste/PaylasPenceresi';
 import TabloDenetimleri from './liste/TabloDenetimleri';
 import { tercihOku, tercihYaz, type TabloTercihi } from '../lib/tabloTercihi';
 import { type EksikAlan, eksikAlanlar } from '../lib/eksikler';
@@ -41,6 +42,9 @@ export default function ListDetailScreen() {
   const machine = useReference((state) => state.machine);
 
   const [shareOpen, setShareOpen] = useState(false);
+  // Paylaşım adresi bellekte (shareUrlCache) yaşar; bu sayaç yalnız pencereyi
+  // yeniden çizmek için artar — adresi state'e kopyalamak iki gerçek yaratırdı.
+  const [shareTick, setShareTick] = useState(0);
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<ProductStatus | ''>('');
   // Uyarı çipi süzgeci: "2 üründe kategori eksik" çipine basınca yalnız o ürünler.
@@ -216,7 +220,23 @@ export default function ListDetailScreen() {
         }
       />
 
-      {shareOpen ? <SharePanel listId={listId} tokenPrefix={list.share_token_prefix} onChanged={refresh} /> : null}
+      {shareOpen ? (
+        <PaylasPenceresi
+          key={shareTick}
+          listId={listId}
+          tokenPrefix={list.share_token_prefix}
+          adres={shareUrlCache.get(listId) ?? null}
+          onAdres={(yeni) => {
+            if (yeni === null) shareUrlCache.delete(listId);
+            else shareUrlCache.set(listId, yeni);
+            // Adres bellekte tutulur; pencere yeniden çizilsin diye durum tazelenir.
+            setShareTick((sayac) => sayac + 1);
+          }}
+          onDegisti={refresh}
+          onKapat={() => setShareOpen(false)}
+          anahtarBlogu={<ErisimAnahtari listId={listId} />}
+        />
+      ) : null}
 
       {/* İE#21 B2: komuta merkezi — aşama çubuğu (5B) · özet şerit · uyarı çipleri. */}
       <AsamaCubugu
@@ -410,115 +430,13 @@ export default function ListDetailScreen() {
 }
 
 /**
- * İE#10 Blok 4 — paylaşım paneli: link üret/yenile/iptal + hızlı paylaşım (K20:
- * WhatsApp wa.me, e-posta mailto, kopyala). Tam token YALNIZ üretim yanıtında
- * görünür; sayfa yenilenince yalnız önek kalır — link o an kopyalanmalıdır.
- */
-/**
- * İE#10.5 ek (a): tam link yalnız üretim yanıtında gelir; veri tazelemesi ekranı
- * yeniden kurunca kaybolmamalı — oturum ömürlü bellek önbelleğinde tutulur
- * (sayfa YENİLENİRSE kaybolur, bu bilinçli: link kalıcı saklanmaz — K51).
+ * İE#10.5 ek (a): tam paylaşım adresi yalnız üretim yanıtında gelir; veri
+ * tazelemesi ekranı yeniden kurunca kaybolmamalı — oturum ömürlü bellek
+ * önbelleğinde tutulur (sayfa YENİLENİRSE kaybolur, bu bilinçli: adres kalıcı
+ * bir yere yazılmaz — K51). Pencerenin kendisi `PaylasPenceresi`nde (İE#21 B6).
  */
 const shareUrlCache = new Map<number, string>();
 
-function SharePanel({ listId, tokenPrefix, onChanged }: { listId: number; tokenPrefix: string | null; onChanged: () => void }) {
-  const push = useToast((state) => state.push);
-  const [busy, setBusy] = useState(false);
-  const [url, setUrlState] = useState<string | null>(shareUrlCache.get(listId) ?? null);
-  const setUrl = (value: string | null) => {
-    if (value === null) {
-      shareUrlCache.delete(listId);
-    } else {
-      shareUrlCache.set(listId, value);
-    }
-    setUrlState(value);
-  };
-
-  const create = async () => {
-    setBusy(true);
-    try {
-      const result = await shareApi.create(listId);
-      setUrl(result.share_url);
-      // F6: QR için tam adres GEREKİR ama sunucuda saklanmaz (K51). Sekme ömrü kadar
-      // sessionStorage'da tutulur; sekme kapanınca silinir, kalıcı bir yere yazılmaz.
-      sessionStorage.setItem(paylasimAdresiAnahtari(listId), result.share_url);
-      onChanged();
-      push('Paylaşım linki hazır — bu link yalnız şimdi görünür, kopyalayın.');
-    } catch (caught) {
-      push(messageOf(caught), 'error');
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const revoke = async () => {
-    setBusy(true);
-    try {
-      await shareApi.revoke(listId);
-      setUrl(null);
-      onChanged();
-      sessionStorage.removeItem(paylasimAdresiAnahtari(listId));
-      push('Paylaşım linki iptal edildi — eski link artık açılmaz.');
-    } catch (caught) {
-      push(messageOf(caught), 'error');
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const copy = () => {
-    if (url) {
-      void navigator.clipboard.writeText(url).then(() => push('Link kopyalandı.'));
-    }
-  };
-
-  const message = url ? `Sipariş listemiz hazır, buradan inceleyebilirsiniz: ${url}` : '';
-
-  return (
-    <section className="card mb-4 p-4">
-      {/* Çatışma çözümü (İE#20 Bölüm B): V3 renk token'ı (text-ink-2) KORUNDU,
-          main'den gelen erişim anahtarı satırı (K62) EKLENDİ. İkisi de gerekliydi:
-          v3-faz1 paneli canlıda anahtarı gösteremiyordu (kullanıcının "NEREDE?"
-          sorusunun kaynağı), main'in paneli ise V3 token setini kullanmıyordu. */}
-      <h2 className="mb-2 text-sm font-semibold text-ink-2">Paylaşım linki</h2>
-      <ErisimAnahtari listId={listId} />
-      {url ? (
-        <>
-          <p className="break-all rounded-lg bg-g50 p-2 font-mono text-xs">{url}</p>
-          <p className="mt-1 text-xs text-warn">
-            Bu link yalnız şimdi görünür (güvenlik gereği kaydedilmez) — kopyalamadan sayfadan ayrılmayın.
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <button type="button" className="btn-primary" onClick={copy}>Bağlantıyı kopyala</button>
-            <a className="btn-ghost" href={`https://wa.me/?text=${encodeURIComponent(message)}`} target="_blank" rel="noreferrer">
-              WhatsApp
-            </a>
-            <a className="btn-ghost" href={`mailto:?subject=${encodeURIComponent('Sipariş listesi')}&body=${encodeURIComponent(message)}`}>
-              E-posta
-            </a>
-            <button type="button" className="btn-ghost" disabled={busy} onClick={() => void revoke()}>Linki iptal et</button>
-          </div>
-        </>
-      ) : (
-        <>
-          <p className="text-xs text-ink-3">
-            {tokenPrefix
-              ? `Aktif bir paylaşım linki var (${tokenPrefix}…). Yenilemek eski linki öldürür; iptal etmek sayfayı kapatır.`
-              : 'Firma için girişsiz, salt-okunur bir sayfa linki üretilir. Liste güncellendikçe sayfa da güncel kalır.'}
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <button type="button" className="btn-primary" disabled={busy} onClick={() => void create()}>
-              {tokenPrefix ? 'Linki yenile' : 'Link üret'}
-            </button>
-            {tokenPrefix ? (
-              <button type="button" className="btn-ghost" disabled={busy} onClick={() => void revoke()}>Linki iptal et</button>
-            ) : null}
-          </div>
-        </>
-      )}
-    </section>
-  );
-}
 
 /** İE#10 Blok 1 — export geçmişi: tarih + tür + indir (kayıt snapshot'ından yeniden üretim). */
 function ExportHistory({ listId, refreshKey }: { listId: number; refreshKey: string | number }) {

@@ -123,6 +123,8 @@ final class DataRoutes
             $group->post('/lists/{id}/share', [$shareController, 'create']);
             $group->delete('/lists/{id}/share', [$shareController, 'destroy']);
             // İE#18 G6 (K62): erişim anahtarı — göster · yenile · aç/kapat.
+            // İE#21 B6: kanal metni (tr/en/zh) — şablon sunucudan, {link} panelde dolar.
+            $group->get('/lists/{id}/share-text', [$shareController, 'text']);
             $group->get('/lists/{id}/share-key', [$shareController, 'keyShow']);
             $group->post('/lists/{id}/share-key', [$shareController, 'keyRotate']);
             $group->patch('/lists/{id}/share-key', [$shareController, 'keyToggle']);

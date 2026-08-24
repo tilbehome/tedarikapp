@@ -37,6 +37,46 @@ final class ShareController extends ApiController
     }
 
     /**
+     * GET /api/lists/{id}/share-text?lang=tr|en|zh — KANAL METNİ (İE#21 B6).
+     *
+     * Metin şablonu SUNUCUDAN gelir (`ShareTexts`): WhatsApp/e-posta metninin
+     * Türkçe, İngilizce ve Çince karşılıkları tek yerde durur. Panelde ikinci bir
+     * kopya yazmak, üç dilde iki ayrı gerçek demekti.
+     *
+     * BAĞLANTI SUNUCUYA GÖNDERİLMEZ: yanıt `{link}` yer tutucusunu OLDUĞU GİBİ
+     * döner ve panel onu kendi belleğindeki adresle değiştirir. Tam token'ın
+     * istek satırına (ve olası erişim günlüklerine) düşmemesi K51 disiplinidir.
+     *
+     * @param array<string, string> $args
+     */
+    public function text(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    {
+        $listId = $this->intArg($args, 'id');
+        $row = $listId === null ? null : $this->lists->find($listId);
+        if ($row === null) {
+            return Response::error($response, 'NOT_FOUND', 'Liste bulunamadı.', 404);
+        }
+
+        $dil = \App\Services\Share\ShareTexts::dil($request->getQueryParams()['lang'] ?? null);
+        $adet = $this->lists->urunSayisi((int) $row['id']);
+        $degerler = [
+            'liste' => (string) $row['name'],
+            'adet' => $adet,
+            'link' => '{link}',
+        ];
+        if (is_string($row['share_expires_at'] ?? null) && $row['share_expires_at'] !== '') {
+            $degerler['tarih'] = (new \DateTimeImmutable((string) $row['share_expires_at']))->format('d.m.Y');
+        }
+
+        return Response::success($response, [
+            'dil' => $dil,
+            'dil_adi' => \App\Services\Share\ShareTexts::dilAdi($dil),
+            'mesaj' => \App\Services\Share\ShareTexts::mesaj($dil, $degerler),
+            'konu' => \App\Services\Share\ShareTexts::metin($dil, 'eposta_konu', $degerler),
+        ]);
+    }
+
+    /**
      * GET /api/lists/{id}/share-key — panelde gösterilecek anahtar ve kapı durumu.
      *
      * Anahtar 6 hanelidir ve firmaya ELDEN iletilir; hash'ten geri okunamayacağı

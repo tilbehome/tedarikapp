@@ -61,8 +61,8 @@ tam mockup uyarlaması ayrı bir dilim olarak raporlanacak.
 | B3 | Ürün çekmecesi | ✅ | `GET /products/{id}/cekmece` (tek istek) + sağ çekmece: galeri · ürün bilgileri · ürün sağlığı (C8) · varyasyonlar · fiyat kademeleri · tedarik puanı · yorum özeti · kaynak/satıcı · not — `UrunCekmecesiTest` (7) · `UrunCekmecesi.test.tsx` (11). Yurt içi kıyas: veri kaynağı yok, açıkça `null` (V3-C) |
 | B4 | Gelen kutusu — deste modu | ◐ | deste modu ✅ (`DesteModuTest` 9 + `DesteModu.test.tsx` 8) · entity çözümü ✅ · E2E-PNL-16/17/18/19 · kural motoru + zenginleştirme paneli ☐ |
 | B5 | Kur: güncel kuru getir + taslak tazeleme | ✅ | `KurTazelemeTest` (8) · `KurKaynagiTest` (8) · K76 |
-| B6 | Paylaş penceresi anahtar bloğu | ☐ | |
-| B7 | Kilit ekranı | ☐ | referans: `erisim-anahtar-ekrani.png` |
+| B6 | Paylaş penceresi | ✅ | `PaylasPenceresi` (bağlantı+bitiş tarihi · erişim anahtarı bloğu · üç dilli kanal metni) · yeni uç `GET /lists/{id}/share-text` (şablon sunucudan, `{link}` panelde dolar — K51) · `PaylasPenceresi.test.tsx` (11) · `KilitEkraniTest` metin bölümü (4) |
+| B7 | Kilit ekranı | ✅ | referans düzeni + üç dil + kalan hane sayacı · `KilitEkraniTest` (9). İKİ BİLİNÇLİ SAPMA: anahtar geri sayımı YOK (anahtarın süresi yok — K62; yerine bağlantı bitişi), "yeni anahtar iste" düğme DEĞİL bilgi satırı (kanal yok) |
 | B8 | Paylaşım sayfası düzeltmeleri | ◐ | B8-1 kur ibaresi ZATEN VAR · B8-2 tek kaynak ✅ (`DurumSozluguTest`) · B8-4 firma görünümü ✅ (`PaylasimFirmaGorunumuTest`, 4) · B8-3 + 3 ince ayar ☐ |
 | B9 | Çeviri tam kapsam | ✅ | `CeviriKapsamiTest` (16) · K77 |
 | B10 | Kategori içe aktarma + seed + tahmin | ✅ | uç + `KategoriIceAktarimTest` (12); **seed dosyası bekliyor** |

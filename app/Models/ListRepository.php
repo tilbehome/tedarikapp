@@ -226,6 +226,17 @@ final class ListRepository
     }
 
     /** Ürün/fiyat/adet/sıra değişiminde çağrılır — "çıktı güncel değil" rozetinin sayacı (K25). */
+    /** Listedeki (silinmemiş) ürün sayısı — kanal metni "N ürün" der (İE#21 B6). */
+    public function urunSayisi(int $id): int
+    {
+        $statement = $this->connection->pdo()->prepare(
+            'SELECT COUNT(*) FROM products WHERE list_id = :id AND deleted_at IS NULL',
+        );
+        $statement->execute(['id' => $id]);
+
+        return (int) $statement->fetchColumn();
+    }
+
     public function bumpRevision(int $id, DateTimeImmutable $now): void
     {
         $statement = $this->connection->pdo()->prepare(

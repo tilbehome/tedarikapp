@@ -32,7 +32,8 @@ final class ShareGate
     private const MAX_LINK_PER_MINUTE = 12;
     /** İE#18 G6: erişim anahtarı denemesi — token+IP başına DAKİKADA en çok. */
     public const ACTION_ANAHTAR = 'share_key_try';
-    private const MAX_ANAHTAR_PER_MINUTE = 5;
+    /** İE#21 B7: kilit ekranı bu sayıyı kullanıcıya yazar — tek kaynak burası. */
+    public const MAX_ANAHTAR_PER_MINUTE = 5;
 
     public function __construct(private readonly Connection $connection)
     {

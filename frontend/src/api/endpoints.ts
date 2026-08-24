@@ -299,6 +299,15 @@ export const share = {
     ),
   revoke: (listId: number) => api.delete<void>(`/api/lists/${listId}/share`),
 
+  /**
+   * İE#21 B6: kanal metni. Şablon SUNUCUDAN gelir (üç dil tek yerde) ve `{link}`
+   * yer tutucusu OLDUĞU GİBİ döner — tam token istek satırına düşmez (K51).
+   */
+  text: (listId: number, lang: 'tr' | 'en' | 'zh') =>
+    api.get<{ dil: string; dil_adi: string; mesaj: string; konu: string }>(
+      `/api/lists/${listId}/share-text?lang=${lang}`,
+    ),
+
   // İE#18 G6 (K62): erişim anahtarı — paylaşım linki artık tek başına yetmez.
   key: (listId: number) => api.get<{ key: string; enabled: boolean }>(`/api/lists/${listId}/share-key`),
   rotateKey: (listId: number) =>

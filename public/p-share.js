@@ -25,6 +25,18 @@
     var gizliAlan = document.querySelector('[data-anahtar-deger]');
     var form = document.querySelector('[data-anahtar-form]');
 
+    // İE#21 B7: düğmenin altındaki "N hane kaldı" satırı. Kullanıcı kaç hane
+    // kaldığını sayarak değil OKUYARAK bilir; eksik kodla düğmeye basıp hata
+    // almak, kaçınılabilir bir sürtünmedir.
+    var kalanSatiri = document.querySelector('[data-anahtar-kalan]');
+    var kalanEtiket = kalanSatiri === null ? '' : (kalanSatiri.getAttribute('data-kalan-etiket') || '');
+
+    var kalanYaz = function (dolu) {
+      if (kalanSatiri === null) return;
+      var kalan = haneler.length - dolu;
+      kalanSatiri.textContent = kalan > 0 ? kalan + ' ' + kalanEtiket : '';
+    };
+
     var topla = function () {
       var deger = haneler
         .map(function (h) {
@@ -32,6 +44,7 @@
         })
         .join('');
       if (gizliAlan !== null) gizliAlan.value = deger;
+      kalanYaz(deger.replace(/\s/g, '').length);
 
       return deger;
     };

@@ -362,6 +362,27 @@ td.not-hucre .val { font-style: italic; }
   background:var(--navy); color:#fff; font:inherit; font-size:14.5px; font-weight:700; transition:.15s; }
 .kis-dugme:hover { background:var(--navy2); }
 .kis-not { font-size:11.5px; color:var(--t3); margin:14px 0 0; line-height:1.5; }
+/* İE#21 B7 — kilit ekranı referans düzeni (erisim-anahtar-ekrani.png). */
+.kis-ust { display:flex; align-items:center; justify-content:space-between; }
+.kis-diller { display:flex; gap:8px; align-items:center; }
+.kis-dil, .kis-dil-aktif { font-size:11.5px; font-weight:700; letter-spacing:.04em; text-decoration:none; }
+.kis-dil { color:var(--t3); }
+.kis-dil:hover { color:var(--navy); }
+.kis-dil-aktif { color:var(--navy); }
+.kis-ustluk { font-size:10.5px; font-weight:800; letter-spacing:.12em; color:var(--t3); margin:14px 0 0; }
+.kis-serit { display:flex; align-items:center; justify-content:space-between; gap:12px; text-align:left;
+  border:1px solid var(--ln); border-radius:14px; padding:12px 14px; margin:0 0 16px; }
+.kis-serit-sol { font-size:12px; font-weight:700; color:var(--ok, #128C4B); }
+.kis-serit-sag { text-align:right; display:flex; flex-direction:column; gap:2px; }
+.kis-serit-etiket { font-size:10.5px; color:var(--t3); }
+.kis-serit-deger { font-size:14px; color:var(--t1); }
+.kis-etiket { display:block; text-align:left; font-size:11.5px; font-weight:700; color:var(--t2); margin:0 0 6px; }
+.kis-ipucu { font-size:11px; color:var(--t3); margin:8px 0 0; }
+.kis-dugme-ad { display:block; }
+.kis-dugme-alt { display:block; font-size:11px; font-weight:600; opacity:.75; }
+.kis-alt-serit { display:flex; align-items:center; justify-content:center; gap:14px;
+  font-size:11px; color:var(--t3); margin:12px 0 0; }
+.kis-gizlilik { font-size:10.5px; color:var(--t3); margin:14px 0 0; border-top:1px solid var(--ln); padding-top:12px; }
 
 /* Yanlış anahtar: kısa ve tek seferlik sallanma (V3 hareket kuralı — abartı yok). */
 @keyframes kis-salla { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-7px)}

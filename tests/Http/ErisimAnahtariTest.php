@@ -120,8 +120,12 @@ final class ErisimAnahtariTest extends AuthTestCase
         self::assertSame(401, $yanit->getStatusCode());
         $html = (string) $yanit->getBody();
         self::assertStringContainsString('Anahtar hatalı', $html);
-        // Kaç deneme kaldığı SÖYLENMEZ; liste verisi de yok.
-        self::assertStringNotContainsString('deneme', mb_strtolower($html));
+        // KAÇ DENEME KALDIĞI söylenmez: kalan hak sayısı, saldırgana "ne kadar
+        // daha deneyebilirim" bilgisini verir. Sabit POLİTİKA satırı ("dakikada 5
+        // deneme hakkı", İE#21 B7) bundan farklıdır — herkes için aynıdır ve
+        // durum sızdırmaz, o yüzden serbesttir.
+        self::assertStringNotContainsString('deneme kaldı', mb_strtolower($html));
+        self::assertStringNotContainsString('deneme hakkınız', mb_strtolower($html));
         self::assertStringNotContainsString('Termos Yemek Kabı', $html);
         self::assertSame('', $yanit->getHeaderLine('Set-Cookie'), 'Yanlış anahtarda çerez yazılmaz.');
     }
