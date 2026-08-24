@@ -6,5 +6,5 @@
         "noUnusedParameters": true,
         "types": ["chrome", "vitest/globals"]
     },
-    "include": ["entrypoints", "core", "modules", "tests", "wxt.config.ts"]
+    "include": ["entrypoints", "core", "modules", "tests", "ui", "wxt.config.ts"]
 }

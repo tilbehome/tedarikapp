@@ -37,7 +37,9 @@ export const DISCLOSURE_METNI = {
     'Görseller, varyasyonlar ve ürün özellikleri',
     'Satıcı adı ve ilan adresi',
   ],
-  gonderilenYer: 'Yalnız sizin kurduğunuz TedarikApp paneline (Ayarlar’da girdiğiniz adres).',
+  // Store beyanıyla KELİME DÜZEYİNDE hizalı ("the user's own … panel" →
+  // "kendi … paneline"); `tests/storeBeyaniUyumu.test.ts` bunu korur.
+  gonderilenYer: 'Yalnız kendi kurduğunuz TedarikApp paneline (Ayarlar’da girdiğiniz adres).',
   toplanmayanlar: [
     'Çerezleriniz, oturum bilgileriniz ve 1688 hesabınız okunmaz',
     'Gezinme geçmişiniz izlenmez; yalnız düğmeye bastığınız sayfa okunur',

@@ -62,6 +62,7 @@ function eylemler(): PanelEylemleri {
     onVaryant: vi.fn(),
     onDisclosure: vi.fn(),
     onKuyruk: vi.fn(),
+    onPaneldeAc: vi.fn(),
   };
 }
 
@@ -296,6 +297,27 @@ describe('Duran kayıtlar sessiz kalmaz (B11 ikizi)', () => {
     const { govde } = ciz();
 
     expect(govde.querySelector('.tdk-kuyruk')).toBeNull();
+  });
+});
+
+describe('E2E-EKL-13 — başarıda panelde aç', () => {
+  test('D7de "Panelde aç" düğmesi görünür ve çalışır', () => {
+    const { govde, eylem } = ciz({
+      makine: { durum: 'D7_GONDERILDI', captureId: 'cap-1', gonderimSayisi: 1, eksikler: [] },
+      urunId: 42,
+    });
+
+    const ac = govde.querySelector('[data-eylem="panelde-ac"]') as HTMLButtonElement | null;
+    expect(ac).not.toBeNull();
+
+    ac?.click();
+    expect(eylem.onPaneldeAc).toHaveBeenCalled();
+  });
+
+  test('gönderim öncesi böyle bir düğme YOKTUR', () => {
+    const { govde } = ciz();
+
+    expect(govde.querySelector('[data-eylem="panelde-ac"]')).toBeNull();
   });
 });
 

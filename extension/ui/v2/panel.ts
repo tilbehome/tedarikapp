@@ -48,6 +48,8 @@ export interface PanelGorunumu {
   hedef: HedefSecimi;
   duranlar: DuranKayit[];
   disclosureGerekli: boolean;
+  /** Gönderim/mükerrer yanıtından gelen ürün kimliği (varsa "Panelde aç"). */
+  urunId?: number | null;
 }
 
 export interface PanelEylemleri {
@@ -60,6 +62,8 @@ export interface PanelEylemleri {
   onVaryant: (varyant: string) => void;
   onDisclosure: (onay: boolean) => void;
   onKuyruk: (captureId: string, eylem: 'YENIDEN' | 'DUZELT' | 'VAZGEC') => void;
+  /** Paneldeki kaydı açar (başarı ve mükerrer durumlarında). */
+  onPaneldeAc: () => void;
 }
 
 function el<K extends keyof HTMLElementTagNameMap>(
@@ -347,6 +351,18 @@ export function panelGovdesi(gorunum: PanelGorunumu, eylemler: PanelEylemleri): 
 
   if (gorunum.makine.durum === 'D8_MUKERRER') {
     govde.append(mukerrerBolumu(eylemler.onMukerrer));
+  }
+
+  if (gorunum.makine.durum === 'D7_GONDERILDI') {
+    // EKL-13: gönderim tamamlandı — kullanıcı kaydı panelde açabilmeli.
+    const kart = el('div', 'tdk-kart');
+    kart.append(el('div', 'tdk-ad', "TedarikApp'e gönderildi"));
+    const ac = el('button', 'tdk-gonder', 'Panelde aç');
+    ac.type = 'button';
+    ac.setAttribute('data-eylem', 'panelde-ac');
+    ac.addEventListener('click', eylemler.onPaneldeAc);
+    kart.append(ac);
+    govde.append(kart);
   }
 
   if (gorunum.makine.durum === 'D4_KISMI') {

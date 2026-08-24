@@ -31,6 +31,11 @@ export interface AkisBagimliliklari {
   listeler: () => Promise<{ id: number | null; ad: string }[]>;
   /** Yeni yakalama kimliği (UUID). */
   kimlikUret: () => string;
+  /** Son seçilen hedef listeyi hatırlar (EKL-22). */
+  sonListeyiOku: () => Promise<number | null>;
+  sonListeyiYaz: (listeId: number | null) => Promise<void>;
+  /** Paneldeki ürünü/kaydı tarayıcıda açar (EKL-13/17). */
+  paneldeAc: (urunId: number | null) => void;
   /** Görünüm değişince çağrılır — arayüz kendini yeniden çizer. */
   ciz: (gorunum: PanelGorunumu) => void;
 }
@@ -60,6 +65,9 @@ export class Akis {
 
   private disclosureGerekli = false;
 
+  /** Gönderim/mükerrer yanıtından gelen ürün kimliği — "Panelde aç" bunu kullanır. */
+  private urunId: number | null = null;
+
   public constructor(private readonly bagimliliklar: AkisBagimliliklari) {}
 
   public durum(): MakineDurumu {
@@ -78,6 +86,7 @@ export class Akis {
       hedef: this.hedef,
       duranlar: this.duranlar,
       disclosureGerekli: this.disclosureGerekli,
+      urunId: this.urunId,
     };
   }
 
@@ -100,6 +109,12 @@ export class Akis {
     this.duranlar = await this.bagimliliklar.duranlar();
     if (!this.disclosureGerekli && this.listeler.length === 0) {
       this.listeler = await this.bagimliliklar.listeler();
+      // EKL-22: son seçim hatırlanır — her yakalamada listeyi yeniden seçmek,
+      // aynı listeye 30 ürün ekleyen kullanıcı için 30 kez tekrarlanan bir zahmettir.
+      const sonListe = await this.bagimliliklar.sonListeyiOku();
+      if (this.listeler.some((liste) => liste.id === sonListe)) {
+        this.hedef = { ...this.hedef, listeId: sonListe };
+      }
     }
     this.yayinla();
   }
@@ -158,7 +173,9 @@ export class Akis {
   }
 
   public hedefDegistir(hedef: HedefSecimi): void {
+    const listeDegisti = hedef.listeId !== this.hedef.listeId;
     this.hedef = hedef;
+    if (listeDegisti) void this.bagimliliklar.sonListeyiYaz(hedef.listeId);
     this.yayinla();
   }
 
@@ -177,9 +194,11 @@ export class Akis {
 
     switch (yanit.sonuc) {
       case 'BASARILI':
+        this.urunId = yanit.urunId;
         this.makine = gecis(this.makine, 'YANIT_BASARILI');
         break;
       case 'MUKERRER':
+        this.urunId = yanit.urunId;
         this.makine = gecis(this.makine, 'YANIT_MUKERRER');
         break;
       case 'YETKI':
@@ -202,7 +221,8 @@ export class Akis {
 
         return;
       case 'BASKA_LISTEYE':
-        // Kullanıcı hedefi değiştirip yeniden gönderir; kimlik KORUNUR.
+        // Önizlemeye dönülür ki kullanıcı hedefi değiştirebilsin; kimlik KORUNUR,
+        // yani yeni gönderim aynı yakalamanın devamıdır (idempotens).
         this.makine = gecis(this.makine, 'MUKERRER_IPTAL');
         this.yayinla();
 
@@ -212,7 +232,9 @@ export class Akis {
 
         return;
       default:
-        // MEVCUDU_AC: panelde açma işini çağıran üstlenir; durum değişmez.
+        // MEVCUDU_AC: mevcut kayıt panelde açılır; yakalama durumu DEĞİŞMEZ —
+        // kullanıcı sekmeye bakıp geri dönebilmeli.
+        this.bagimliliklar.paneldeAc(this.urunId);
         this.yayinla();
     }
   }
@@ -225,6 +247,11 @@ export class Akis {
     this.seciliVaryant = null;
     this.hedef = { ...VARSAYILAN_HEDEF };
     this.yayinla();
+  }
+
+  /** Başarılı gönderimden sonra kaydı panelde açar (EKL-13). */
+  public paneldeAc(): void {
+    this.bagimliliklar.paneldeAc(this.urunId);
   }
 
   public kapat(): void {

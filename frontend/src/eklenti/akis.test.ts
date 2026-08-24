@@ -50,7 +50,9 @@ function ayristirma(fark: Partial<ParseResult> = {}): ParseResult {
 
 function kur(fark: Partial<AkisBagimliliklari> = {}) {
   let sayac = 0;
+  let sonListe: number | null = null;
   const ciz = vi.fn();
+  const paneldeAc = vi.fn();
   const bagimliliklar: AkisBagimliliklari = {
     ayristir: vi.fn(async () => ayristirma()),
     gonder: vi.fn(async (): Promise<GonderimYaniti> => ({ sonuc: 'BASARILI', urunId: 42 })),
@@ -58,11 +60,16 @@ function kur(fark: Partial<AkisBagimliliklari> = {}) {
     duranlar: vi.fn(async () => []),
     listeler: vi.fn(async () => [{ id: null, ad: 'Gelen Kutusu' }]),
     kimlikUret: () => `cap-${++sayac}`,
+    sonListeyiOku: vi.fn(async () => sonListe),
+    sonListeyiYaz: vi.fn(async (id: number | null) => {
+      sonListe = id;
+    }),
+    paneldeAc,
     ciz,
     ...fark,
   };
 
-  return { akis: new Akis(bagimliliklar), bagimliliklar, ciz };
+  return { akis: new Akis(bagimliliklar), bagimliliklar, ciz, paneldeAc };
 }
 
 describe('E2E-EKL-24 — disclosure kapısı', () => {
@@ -251,5 +258,82 @@ describe('Görünüm yayını', () => {
 
     // en az: TARA + sonuç
     expect(ciz.mock.calls.length).toBeGreaterThanOrEqual(2);
+  });
+});
+
+describe('E2E-EKL-17 — mevcut ürünü panelde aç', () => {
+  test('mükerrerde "mevcudu aç" paneli açar ve durum DEĞİŞMEZ', async () => {
+    const { akis, paneldeAc } = kur({
+      gonder: vi.fn(async () => ({ sonuc: 'MUKERRER', urunId: 55 }) as GonderimYaniti),
+    });
+    await akis.tara();
+    akis.devam();
+    await akis.gonder();
+
+    await akis.mukerrerSecenek('MEVCUDU_AC');
+
+    expect(paneldeAc).toHaveBeenCalledWith(55);
+    // Kullanıcı sekmeye bakıp geri dönebilmeli: yakalama hâlâ mükerrer ekranında.
+    expect(akis.durum().durum).toBe('D8_MUKERRER');
+  });
+});
+
+describe('E2E-EKL-18 — başka listeye ekle önizlemeye döner', () => {
+  test('hedef değiştirilebilsin diye D3e dönülür, kimlik korunur', async () => {
+    const gonder = vi
+      .fn<AkisBagimliliklari['gonder']>()
+      .mockResolvedValueOnce({ sonuc: 'MUKERRER', urunId: 9 })
+      .mockResolvedValueOnce({ sonuc: 'BASARILI', urunId: 10 });
+    const { akis } = kur({ gonder });
+    await akis.tara();
+    akis.devam();
+    await akis.gonder();
+
+    await akis.mukerrerSecenek('BASKA_LISTEYE');
+    expect(akis.durum().durum).toBe('D3_ONIZLEME');
+
+    akis.hedefDegistir({ listeId: 7, miktar: 5, not: '', etiketler: [] });
+    await akis.gonder();
+
+    expect(gonder.mock.calls[1]?.[0].hedef.listeId).toBe(7);
+    expect(gonder.mock.calls[1]?.[0].captureId).toBe(gonder.mock.calls[0]?.[0].captureId);
+  });
+});
+
+describe('E2E-EKL-22 — hedef liste ve son seçim', () => {
+  test('listeler yüklenir ve son seçim HATIRLANIR', async () => {
+    const sonListeyiOku = vi.fn(async () => 7);
+    const { akis } = kur({
+      sonListeyiOku,
+      listeler: vi.fn(async () => [
+        { id: null, ad: 'Gelen Kutusu' },
+        { id: 7, ad: 'MUTFAK' },
+      ]),
+    });
+
+    await akis.ac();
+
+    expect(akis.gorunum().listeler).toHaveLength(2);
+    expect(akis.gorunum().hedef.listeId).toBe(7);
+  });
+
+  test('artık var olmayan liste hatırlanmaz — silinmiş listeye gönderilmez', async () => {
+    const { akis } = kur({
+      sonListeyiOku: vi.fn(async () => 99),
+      listeler: vi.fn(async () => [{ id: null, ad: 'Gelen Kutusu' }]),
+    });
+
+    await akis.ac();
+
+    expect(akis.gorunum().hedef.listeId).toBeNull();
+  });
+
+  test('liste değişimi kaydedilir', async () => {
+    const { akis, bagimliliklar } = kur();
+    await akis.ac();
+
+    akis.hedefDegistir({ listeId: 7, miktar: 1, not: '', etiketler: [] });
+
+    expect(bagimliliklar.sonListeyiYaz).toHaveBeenCalledWith(7);
   });
 });

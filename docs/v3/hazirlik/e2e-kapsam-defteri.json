@@ -7,177 +7,177 @@
   "senaryolar": {
     "E2E-EKL-01": {
       "baslik": "Ürün sayfası değilse düğme yok",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "frontend/src/eklenti/montaj.test.ts",
+      "test": "E2E-EKL-01 — desteklenmeyen sayfada arayüz YOK"
     },
     "E2E-EKL-02": {
       "baslik": "Kapalı durum ve tembel başlangıç",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "frontend/src/eklenti/montaj.test.ts",
+      "test": "E2E-EKL-02/26 — kapalı durum, yerleşim ve izolasyon"
     },
     "E2E-EKL-03": {
       "baslik": "Kapalıdan okunuyor durumuna tek geçiş",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "frontend/src/eklenti/akis.test.ts",
+      "test": "E2E-EKL-03/04/05 — tarama ve önizleme"
     },
     "E2E-EKL-04": {
       "baslik": "Okunuyor durumunda çift tıklama koruması",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "extension/tests/durumMakinesi.test.ts",
+      "test": "E2E-EKL-04 — çift tık koruması"
     },
     "E2E-EKL-05": {
       "baslik": "Tam yakalama ile önizleme",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "frontend/src/eklenti/panel.test.ts",
+      "test": "E2E-EKL-05/07 — önizleme ve varyantlar"
     },
     "E2E-EKL-06": {
       "baslik": "Koşullu fiyat uyarısı",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "extension/tests/v2Senaryolari.test.ts",
+      "test": "E2E-EKL-06 — koşullu fiyat standart fiyatı EZMEZ"
     },
     "E2E-EKL-07": {
       "baslik": "Çok varyantlı SKU bütünlüğü",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "extension/tests/v2Senaryolari.test.ts",
+      "test": "E2E-EKL-07 — çok varyantlı SKU bütünlüğü"
     },
     "E2E-EKL-08": {
       "baslik": "Özel MOQ ve stok yok uyarısı",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "extension/tests/v2Senaryolari.test.ts",
+      "test": "E2E-EKL-08 — özel MOQ ve stok bilgisi genel MOQ ile karışmaz"
     },
     "E2E-EKL-09": {
       "baslik": "Pozitif ve negatif video kararı",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "extension/tests/v2Senaryolari.test.ts",
+      "test": "E2E-EKL-09 — video kararı: kanıt varsa var, yoksa yok"
     },
     "E2E-EKL-10": {
       "baslik": "Kısmi okuma ve kontrollü devam",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "frontend/src/eklenti/panel.test.ts",
+      "test": "E2E-EKL-10 — kısmi okumada devam düğmesi"
     },
     "E2E-EKL-11": {
       "baslik": "Okuma hatası ve tekrar tara",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "frontend/src/eklenti/akis.test.ts",
+      "test": "E2E-EKL-11 — zorunlu alan yoksa okuma hatası"
     },
     "E2E-EKL-12": {
       "baslik": "Önizlemeden gönderime geçiş ve kilit",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "frontend/src/eklenti/akis.test.ts",
+      "test": "E2E-EKL-12/13/15 — gönderim ve idempotens"
     },
     "E2E-EKL-13": {
       "baslik": "Başarılı gönderim ve panel bağlantısı",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "frontend/src/eklenti/panel.test.ts",
+      "test": "E2E-EKL-13 — başarıda panelde aç"
     },
     "E2E-EKL-14": {
       "baslik": "Ağ kopması ve veri koruma",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "extension/tests/kuyruk.test.ts",
+      "test": "MV3 uyanışında toparlama"
     },
     "E2E-EKL-15": {
       "baslik": "HTTP 502, tekrar gönder ve idempotency",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "frontend/src/eklenti/akis.test.ts",
+      "test": "502 sonrası tekrar AYNI capture_id ile gider"
     },
     "E2E-EKL-16": {
       "baslik": "Mükerrer durumu ve dört seçeneğin görünmesi",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "frontend/src/eklenti/panel.test.ts",
+      "test": "E2E-EKL-16..20 — mükerrerde dört seçenek"
     },
     "E2E-EKL-17": {
       "baslik": "Mükerrerde mevcut ürünü aç",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "frontend/src/eklenti/akis.test.ts",
+      "test": "E2E-EKL-17 — mevcut ürünü panelde aç"
     },
     "E2E-EKL-18": {
       "baslik": "Mükerreri başka listeye ekle",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "frontend/src/eklenti/akis.test.ts",
+      "test": "E2E-EKL-18 — başka listeye ekle önizlemeye döner"
     },
     "E2E-EKL-19": {
       "baslik": "Mükerrerde mevcut kaydı güncelle",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "frontend/src/eklenti/akis.test.ts",
+      "test": "\"mevcut kaydı güncelle\" aynı kimlikle yeniden gönderir"
     },
     "E2E-EKL-20": {
       "baslik": "Mükerrer işlemini iptal",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "frontend/src/eklenti/akis.test.ts",
+      "test": "mükerrer yanıtı dört seçeneği açar; iptal önizlemeye döner"
     },
     "E2E-EKL-21": {
       "baslik": "Geçersiz token ve bağlantıyı yenileme",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "frontend/src/eklenti/akis.test.ts",
+      "test": "yetki hatası kendiliğinden tekrar denemez"
     },
     "E2E-EKL-22": {
       "baslik": "Hedef liste yükleme ve son seçimi hatırlama",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "frontend/src/eklenti/akis.test.ts",
+      "test": "E2E-EKL-22 — hedef liste ve son seçim"
     },
     "E2E-EKL-23": {
       "baslik": "SPA offer değişiminde eski önizlemeyi temizleme",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "frontend/src/eklenti/akis.test.ts",
+      "test": "E2E-EKL-23 — SPA değişimi"
     },
     "E2E-EKL-24": {
       "baslik": "İlk kullanım prominent disclosure",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "frontend/src/eklenti/akis.test.ts",
+      "test": "E2E-EKL-24 — disclosure kapısı"
     },
     "E2E-EKL-25": {
       "baslik": "Klavye, odak ve Esc turu",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "frontend/src/eklenti/montaj.test.ts",
+      "test": "E2E-EKL-25 — Esc kapatır"
     },
     "E2E-EKL-26": {
       "baslik": "Yerleşim, çakışma ve Shadow DOM izolasyonu",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "frontend/src/eklenti/montaj.test.ts",
+      "test": "arayüz KAPALI shadow DOM içindedir — sayfa scriptleri göremez"
     },
     "E2E-EKL-27": {
       "baslik": "Token, cookie ve oturum verisi sızıntı testi",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "extension/tests/v2Senaryolari.test.ts",
+      "test": "E2E-EKL-27 — token, çerez ve oturum sızıntısı yok"
     },
     "E2E-EKL-28": {
       "baslik": "GTİP/TAREKS kapsam dışı kalır",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "frontend/src/eklenti/panel.test.ts",
+      "test": "GTİP/vergi gibi kapsam dışı alanlar panelde HİÇ görünmez"
     },
     "E2E-EKL-29": {
       "baslik": "Paneli kapatıp aynı önizlemeyi yeniden açma",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "frontend/src/eklenti/panel.test.ts",
+      "test": "E2E-EKL-29 — aynı önizleme yeniden çizilir"
     },
     "E2E-PNL-01": {
       "baslik": "Kategori + skor bandı + platform AND birleşimi",
