@@ -307,33 +307,33 @@
     },
     "E2E-PNL-22": {
       "baslik": "Eksik ürün uyarı rozetleri",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "frontend/src/screens/liste/UrunCekmecesi.test.tsx",
+      "test": "Ürün sağlığı C8 kapısını yansıtır"
     },
     "E2E-PNL-23": {
       "baslik": "Filtre veya sayfa değişiminde seçim sıfırlama",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "frontend/src/lib/secim.test.ts",
+      "test": "useSuzgecSecimi"
     },
     "E2E-PNL-24": {
       "baslik": "Çift tık mükerrer işlem üretmez",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "frontend/src/screens/liste/TopluEylemCubugu.test.tsx",
+      "test": "E2E-PNL-24 — çift tık mükerrer işlem üretmez"
     },
     "E2E-PNL-25": {
       "baslik": "Satır içi düzenleme ve Enter akışı",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "frontend/src/screens/liste/MiktarHucresi.test.tsx",
+      "test": "Kaydetme"
     },
     "E2E-PNL-26": {
       "baslik": "Geçersiz satır içi değer kaydedilmez",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "frontend/src/screens/liste/MiktarHucresi.test.tsx",
+      "test": "Geçersiz değer"
     },
     "E2E-PNL-27": {
       "baslik": "Eksik CBM ürünü HAZIR olamaz",
@@ -349,9 +349,9 @@
     },
     "E2E-PNL-29": {
       "baslik": "Uyarı çipi ilgili eksik alana filtreler",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "frontend/src/screens/liste/UyariCipleri.test.tsx",
+      "test": "Çip GÖTÜRÜR"
     },
     "E2E-PNL-30": {
       "baslik": "İletildi sonrası kur kilidi",
@@ -361,9 +361,9 @@
     },
     "E2E-PNL-31": {
       "baslik": "Toplu işlem çubuğu ve canlı toplam",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "frontend/src/screens/liste/TopluEylemCubugu.test.tsx",
+      "test": "E2E-PNL-31 — canlı toplam"
     },
     "E2E-PNL-32": {
       "baslik": "İzin verilen aşama geçişleri",
@@ -385,33 +385,33 @@
     },
     "E2E-PNL-35": {
       "baslik": "Paylaş penceresinde link + anahtar birlikte görünür ve kopyalanır",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "frontend/src/screens/liste/PaylasPenceresi.test.tsx",
+      "test": "Bağlantı bölümü + Erişim anahtarı bloğu"
     },
     "E2E-PNL-36": {
       "baslik": "Anahtar yenileme ve eski anahtarın 401 olması",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "tests/Http/ErisimAnahtariTest.php",
+      "test": "testANAHTAR_YENILENINCE_ESKI_CEREZ_OLUR"
     },
     "E2E-PNL-37": {
       "baslik": "Paylaşım sayfası TR/EN/ZH komple tek dil",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "celiski",
+      "dosya": "tests/Http/PaylasimDiliTest.php",
+      "test": "ONAYLI ŞABLONLA ÇELİŞİYOR — şablon v2 rev7 başlıkları KASITLI üç dilli (MİKTAR/数量/QUANTITY). \"Tek dil\" kuralı bu tasarımı bozar. PM kararı bekliyor; şablonun gerçek sözleşmesi testte sabitlendi."
     },
     "E2E-PNL-38": {
       "baslik": "Karışık dil sızıntısı KIRMIZI",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "celiski",
+      "dosya": "tests/Http/PaylasimDiliTest.php",
+      "test": "ONAYLI ŞABLONLA ÇELİŞİYOR — şablon v2 rev7 başlıkları KASITLI üç dilli (MİKTAR/数量/QUANTITY). \"Tek dil\" kuralı bu tasarımı bozar. PM kararı bekliyor; şablonun gerçek sözleşmesi testte sabitlendi."
     },
     "E2E-PNL-39": {
       "baslik": "K55 orijinal satır üç dilde aynen korunur",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "tests/Http/PaylasimDiliTest.php",
+      "test": "testE2E_PNL_39_ORIJINALSATIRUCDILDEAYNEN"
     },
     "E2E-PNL-40": {
       "baslik": "Excel/PDF başlık-durum-dipnot dili",
@@ -421,27 +421,27 @@
     },
     "E2E-PNL-41": {
       "baslik": "Kilit ekranının dar görünüm ve %200 yakınlaştırma kullanımı",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "tests/Http/KilitEkraniTest.php",
+      "test": "testREFERANSDUZENIBASILIR"
     },
     "E2E-PNL-42": {
       "baslik": "Doğru anahtar içerik açar",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "tests/Http/ErisimAnahtariTest.php",
+      "test": "testDOGRU_ANAHTAR_SAYFAYI_ACAR"
     },
     "E2E-PNL-43": {
       "baslik": "Yanlış anahtar sabit hata ve hız sınırı",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "tests/Http/ErisimAnahtariTest.php",
+      "test": "testYANLIS_ANAHTAR_401_ve_IPUCU_VERMEZ + testDAKIKADA_BES_DENEMEDEN_SONRA_SABIT_404"
     },
     "E2E-PNL-44": {
       "baslik": "JavaScript'siz kilit formu yolu",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "tests/Http/ErisimAnahtariTest.php",
+      "test": "testJS_KAPALIYKEN_HANELER_BIRLESTIRILIR"
     },
     "E2E-PNL-45": {
       "baslik": "Tazeleme sayacı tek istek üretir",
@@ -451,9 +451,9 @@
     },
     "E2E-PNL-46": {
       "baslik": "WhatsApp köprüsü numara ve metni doğru kodlar",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "frontend/src/screens/liste/PaylasPenceresi.test.tsx",
+      "test": "WhatsApp ve e-posta bağlantıları metni taşır"
     },
     "E2E-PNL-47": {
       "baslik": "Çeviri sağlayıcısını kaydetme ve anahtar maskeleme",

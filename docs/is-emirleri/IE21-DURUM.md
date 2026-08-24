@@ -70,7 +70,7 @@ tam mockup uyarlaması ayrı bir dilim olarak raporlanacak.
 | B12 | Sürümlü çeviri belleği | ✅ | `CeviriKapsamiTest` sürüm bölümü · migration 0027 · K78 |
 | B13 | Marka hibrit entegrasyonu | ◐ | kit `docs/marka/`'ya taşındı · favicon seti · panel amblemi · durum haritası eşitlendi (`DurumSozluguTest`, 9) · belge antet/amblem/filigran ✅ (`BelgeMarkasi` + `public/marka/belge/` + `config/belge-tema.json`; PDF: iç kopyada "İÇ KOPYA" metin filigranı, firma kopyasında marka filigranı; Excel: marka amblemi) · `BelgeMarkasiTest` (7). SAPMA: belge PALETİ rev7 şablonundan (lacivert/altın) — marka kitinin krem/turuncu belge teması onaylı şablonu bozacağı için yalnız GÖRSEL varlıklar ve sayı biçimleri kitten alındı |
 | B14 | Sihirbazda 2FA | ✅ | `SetupOnarimUclariTest` (14, 3'ü 2FA) |
-| B15 | Panel E2E (52 senaryo) | ◐ | kapsam defteri ✅ (10/81 kodlandı) |
+| B15 | Panel E2E (52 senaryo) | ◐ | kapsam defteri: **37/81 kapsandı**, 2 çelişki (PNL-37/38), 42 bekliyor. Bu turda eklenen: PNL-22/23/24/25/26/29/31/35/36/39/41/42/43/44/46 |
 
 ## BÖLÜM C — KAPSAM SINIRI + KAPANIŞ
 

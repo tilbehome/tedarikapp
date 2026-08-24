@@ -9,9 +9,11 @@ import UyariCipleri from './liste/UyariCipleri';
 import UrunTablosu from './liste/UrunTablosu';
 import UrunCekmecesi from './liste/UrunCekmecesi';
 import PaylasPenceresi from './liste/PaylasPenceresi';
+import TopluEylemCubugu from './liste/TopluEylemCubugu';
 import TabloDenetimleri from './liste/TabloDenetimleri';
 import { tercihOku, tercihYaz, type TabloTercihi } from '../lib/tabloTercihi';
 import { type EksikAlan, eksikAlanlar } from '../lib/eksikler';
+import { useSuzgecSecimi } from '../lib/secim';
 import type { ListStatus, Product, ProductStatus } from '../api/types';
 import { useAsync, messageOf } from '../lib/useAsync';
 import { count, dateTime, money, rate } from '../lib/format';
@@ -62,6 +64,12 @@ export default function ListDetailScreen() {
   const [sort, setSort] = useState<{ key: SortKey; asc: boolean }>({ key: 'sort_no', asc: true });
   const [selected, setSelected] = useState<number[]>([]);
   const [busyId, setBusyId] = useState<number | null>(null);
+  // Toplu işlem uçarken çubuk KAPANIR: çift tık ikinci bir toplu geçiş
+  // başlatmasın (E2E-PNL-24).
+  const [topluMesgul, setTopluMesgul] = useState(false);
+
+  // Süzgeç değişince seçim sıfırlanır (E2E-PNL-23 — gerekçe: lib/secim.ts).
+  useSuzgecSecimi(`${query}|${statusFilter}|${uyariFiltresi ?? ''}`, selected.length, () => setSelected([]));
 
   const listState = useAsync(() => listsApi.find(listId), [listId]);
   const productState = useAsync(
@@ -150,6 +158,8 @@ export default function ListDetailScreen() {
   };
 
   const bulkStatus = async (next: ProductStatus) => {
+    if (topluMesgul) return;
+    setTopluMesgul(true);
     try {
       const result = await productsApi.bulk({ ids: selected, action: 'status', status: next });
       setSelected([]);
@@ -162,6 +172,23 @@ export default function ListDetailScreen() {
       );
     } catch (caught) {
       push(messageOf(caught), 'error');
+    } finally {
+      setTopluMesgul(false);
+    }
+  };
+
+  const bulkDelete = async () => {
+    if (topluMesgul) return;
+    setTopluMesgul(true);
+    try {
+      const result = await productsApi.bulk({ ids: selected, action: 'delete' });
+      setSelected([]);
+      refresh();
+      push(`${count(result.updated)} ürün çöp kutusuna atıldı.`, 'success');
+    } catch (caught) {
+      push(messageOf(caught), 'error');
+    } finally {
+      setTopluMesgul(false);
     }
   };
 
@@ -294,19 +321,14 @@ export default function ListDetailScreen() {
         </select>
       </div>
 
-      {selected.length > 0 && (
-        <div className="card mb-3 flex flex-wrap items-center gap-2 border-blue/30 bg-blue-soft p-3 text-sm">
-          <span className="font-semibold text-navy">{count(selected.length)} ürün seçildi</span>
-          {(['ordered', 'in_transit', 'received', 'cancelled'] as ProductStatus[]).map((next) => (
-            <button key={next} type="button" className="btn-ghost" onClick={() => void bulkStatus(next)}>
-              {productStatusLabels[next]} yap
-            </button>
-          ))}
-          <button type="button" className="btn-ghost" onClick={() => setSelected([])}>
-            Seçimi temizle
-          </button>
-        </div>
-      )}
+      <TopluEylemCubugu
+        secili={selected}
+        urunler={tumUrunler}
+        mesgul={topluMesgul}
+        onDurum={(hedef) => void bulkStatus(hedef)}
+        onSil={() => void bulkDelete()}
+        onTemizle={() => setSelected([])}
+      />
 
       {productState.loading ? (
         <Skeleton rows={3} />
