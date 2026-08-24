@@ -116,15 +116,17 @@ describe('E2E-EKL-03/04/05 — tarama ve önizleme', () => {
   });
 
   test('okuma sürerken ikinci tarama İKİNCİ ayrıştırma açmaz', async () => {
-    let cozumle: (() => void) | null = null;
+    // TS, closure içinde atanan değişkeni `never` daraltıyor; çözücüyü dışarıda
+    // tutmak hem tipi hem okunabilirliği düzeltir.
+    let cozumleyici: ((sonuc: ParseResult) => void) | undefined;
     const bekleyen = new Promise<ParseResult>((resolve) => {
-      cozumle = () => resolve(ayristirma());
+      cozumleyici = resolve;
     });
     const { akis, bagimliliklar } = kur({ ayristir: vi.fn(() => bekleyen) });
 
     const ilk = akis.tara();
     await akis.tara();
-    cozumle?.();
+    cozumleyici?.(ayristirma());
     await ilk;
 
     expect(bagimliliklar.ayristir).toHaveBeenCalledTimes(1);
