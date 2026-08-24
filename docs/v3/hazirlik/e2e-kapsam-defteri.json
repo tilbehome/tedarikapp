@@ -387,7 +387,7 @@
       "baslik": "Paylaş penceresinde link + anahtar birlikte görünür ve kopyalanır",
       "durum": "kapsandi",
       "dosya": "frontend/src/screens/liste/PaylasPenceresi.test.tsx",
-      "test": "Bağlantı bölümü + Erişim anahtarı bloğu"
+      "test": "Erişim anahtarı bloğu"
     },
     "E2E-PNL-36": {
       "baslik": "Anahtar yenileme ve eski anahtarın 401 olması",
@@ -435,7 +435,7 @@
       "baslik": "Yanlış anahtar sabit hata ve hız sınırı",
       "durum": "kapsandi",
       "dosya": "tests/Http/ErisimAnahtariTest.php",
-      "test": "testYANLIS_ANAHTAR_401_ve_IPUCU_VERMEZ + testDAKIKADA_BES_DENEMEDEN_SONRA_SABIT_404"
+      "test": "testDAKIKADA_BES_DENEMEDEN_SONRA_SABIT_404"
     },
     "E2E-PNL-44": {
       "baslik": "JavaScript'siz kilit formu yolu",
