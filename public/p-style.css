@@ -382,6 +382,17 @@ td.not-hucre .val { font-style: italic; }
 .kis-dugme-alt { display:block; font-size:11px; font-weight:600; opacity:.75; }
 .kis-alt-serit { display:flex; align-items:center; justify-content:center; gap:14px;
   font-size:11px; color:var(--t3); margin:12px 0 0; }
+/* İE#21 EK-4 — tazeleme sayacı, art arda hata uyarısı, anahtar iste düğmesi. */
+.kis-tazele { display:flex; align-items:center; justify-content:center; gap:8px; margin:0 0 14px; }
+.kis-halka { width:26px; height:26px; border-radius:50%; flex:none;
+  background:conic-gradient(var(--navy) calc(var(--oran, 0) * 1%), var(--ln) 0); }
+.kis-halka i { display:block; width:18px; height:18px; margin:4px; border-radius:50%; background:#fff; }
+.kis-tazele-yazi { font-size:11px; color:var(--t3); }
+.kis-ardisik { margin:10px 0 0; padding:8px 10px; border-radius:10px;
+  background:#FFF4E5; color:#92400E; font-size:11.5px; font-weight:600; }
+.kis-iste { display:block; margin:10px 0 0; padding:10px 12px; border:1.5px solid var(--navy);
+  border-radius:12px; color:var(--navy); font-size:12.5px; font-weight:700; text-decoration:none; }
+.kis-iste:hover { background:rgba(15,37,87,.06); }
 .kis-gizlilik { font-size:10.5px; color:var(--t3); margin:14px 0 0; border-top:1px solid var(--ln); padding-top:12px; }
 
 /* Yanlış anahtar: kısa ve tek seferlik sallanma (V3 hareket kuralı — abartı yok). */

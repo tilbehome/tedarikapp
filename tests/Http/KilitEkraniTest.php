@@ -5,17 +5,20 @@ declare(strict_types=1);
 namespace Tests\Http;
 
 use App\Middleware\Csrf;
-use App\Services\Share\ShareGate;
+use App\Services\Share\ShareLockPage;
 use Tests\Support\AuthTestCase;
 
 /**
  * KİLİT EKRANI DÜZENİ (İE#21 B7 · referans: `erisim-anahtar-ekrani.png`).
  *
  * Ekranın işi iki cümlede: firmayı doğru yerde olduğuna ikna etmek ve anahtarı
- * kolayca girdirmek. Bu testler o iki işi ve İKİ BİLİNÇLİ SAPMAYI korur:
+ * kolayca girdirmek.
  *
- *  · anahtarın süresi YOK → geri sayım basılmaz (olmayan kural gösterilmez),
- *  · "yeni anahtar iste" bir DÜĞME değil bilgi satırıdır (çalışmayan vaat yok).
+ * İE#21 EK-4 (PM denetimi) ile SÖZLEŞME DEĞİŞTİ — testler de onunla değişti:
+ *  · TAZELEME SAYACI var (10 dk) ve bu ANAHTAR SÜRESİ DEĞİLDİR (K62 sürüyor),
+ *  · "yeni anahtar iste" numara doluysa WhatsApp DÜĞMESİ, boşsa bilgi satırı,
+ *  · "dakikada 5 deneme hakkı" KALICI satırı KALDIRILDI; uyarı yalnız art arda
+ *    hatalı denemede belirir ve kalan hak sayısını söylemez.
  *
  * Veri sınırı testleri `ErisimAnahtariTest`te; burada yalnız DÜZEN sınanır.
  */
@@ -48,6 +51,21 @@ final class KilitEkraniTest extends AuthTestCase
         return $this->call($method, $path, $body, [Csrf::HEADER => $this->csrf]);
     }
 
+    private function numarayiAyarla(string $numara): void
+    {
+        $yanit = $this->write('PUT', '/api/settings/share-contact', ['share_contact_phone' => $numara]);
+        self::assertSame(200, $yanit->getStatusCode(), (string) $yanit->getBody());
+    }
+
+    /** Kilit ekranındaki wa.me bağlantısının çözülmüş mesaj metni. */
+    private function whatsappMesaji(string $html): string
+    {
+        preg_match('/wa\.me\/\d+\?text=([^"]+)/', $html, $eslesme);
+        self::assertNotEmpty($eslesme, 'WhatsApp köprüsü bulunamadı.');
+
+        return rawurldecode((string) $eslesme[1]);
+    }
+
     private function kilitEkrani(string $dil = 'tr'): string
     {
         return (string) $this->call('GET', '/liste/' . $this->token . ($dil === 'tr' ? '' : '?lang=' . $dil))->getBody();
@@ -67,31 +85,58 @@ final class KilitEkraniTest extends AuthTestCase
         self::assertStringContainsString('üçüncü taraflarla paylaşılmaz', $html);
     }
 
-    public function testDENEMEHAKKITEKKAYNAKTANYAZILIR(): void
+    public function testDENEMEHAKKIKALICIYAZILMAZ(): void
     {
         $html = $this->kilitEkrani();
 
-        // Sayı ShareGate'ten gelir: ekranda yazan hak ile sunucunun uyguladığı
-        // sınır ayrışırsa kullanıcı yanlış bilgilendirilmiş olur.
-        self::assertStringContainsString(
-            sprintf('dakikada %d deneme hakkı', ShareGate::MAX_ANAHTAR_PER_MINUTE),
-            $html,
-        );
+        // EK-4 madde 4: hata yapmamış kullanıcı "deneme hakkı" yazısıyla karşılanmaz.
+        self::assertStringNotContainsString('deneme hakkı', $html);
+        self::assertStringNotContainsString('attempts per minute', $html);
+        // Uyarı da henüz yok: art arda hata olmadan görünmemeli.
+        self::assertStringNotContainsString('data-ardisik', $html);
     }
 
-    public function testOLMAYANGERISAYIMGOSTERILMEZ(): void
+    public function testARDISIKHATADAUYARIBELIRIRAMASAYIVERMEZ(): void
+    {
+        for ($i = 0; $i < ShareLockPage::UYARI_ESIGI; $i++) {
+            $this->call('POST', '/liste/' . $this->token . '/anahtar', ['anahtar' => 'ZZZZZ' . $i]);
+        }
+
+        $html = $this->kilitEkrani();
+
+        self::assertStringContainsString('data-ardisik', $html);
+        self::assertStringContainsString('Art arda hatalı deneme', $html);
+        // Kalan hak SAYISI söylenmez (K51): saldırgana bütçesi bildirilmez.
+        self::assertStringNotContainsString('deneme hakkı', $html);
+    }
+
+    public function testTAZELEMESAYACIVARVEANAHTARSURESIDEGILDIR(): void
     {
         $html = $this->kilitEkrani();
 
-        // Anahtarın süresi yok (K62): "Anahtar süresi" ve dakika:saniye sayacı
-        // referans karede olsa da BASILMAZ — gösterilse, olmayan bir kural
-        // vaat edilmiş olurdu.
-        self::assertStringNotContainsString('Anahtar süresi', $html);
-        self::assertDoesNotMatchRegularExpression('/\d{2}:\d{2}<\/(strong|span|div)>/', $html);
+        // EK-4 madde 2: sayaç EKRANIN tazelenmesini sayar…
+        self::assertStringContainsString('data-tazele="' . ShareLockPage::TAZELEME_SANIYE . '"', $html);
+        self::assertStringContainsString('Bu güvenli giriş ekranı', $html);
+        self::assertStringContainsString('tazelenir', $html);
+        self::assertStringContainsString('10:00', $html);
 
-        // Yerine GERÇEK bilgi: bağlantı bitişi yoksa "süre sınırı yok".
+        // …ANAHTARIN süresi olarak SUNULMAZ (K62 değişmedi).
+        self::assertStringNotContainsString('Anahtar süresi', $html);
+
+        // Bağlantı bitişi bilgi satırı yerinde kalır.
         self::assertStringContainsString('Bağlantı bitişi', $html);
         self::assertStringContainsString('Süre sınırı yok', $html);
+    }
+
+    public function testJSKAPALIYKENDETAZELENIR(): void
+    {
+        $html = $this->kilitEkrani();
+
+        // Söz "ekran tazelenir"dir; betiksiz tarayıcıda da tutulmalı.
+        self::assertStringContainsString(
+            '<meta http-equiv="refresh" content="' . ShareLockPage::TAZELEME_SANIYE . '">',
+            $html,
+        );
     }
 
     public function testBAGLANTIBITISIVARSATARIHYAZILIR(): void
@@ -110,15 +155,85 @@ final class KilitEkraniTest extends AuthTestCase
         self::assertStringNotContainsString('Süre sınırı yok', $html);
     }
 
-    public function testYENIANAHTARISTEDUGMEDEGILBILGIDIR(): void
+    public function testNUMARAYOKSADUGMEBASILMAZ(): void
     {
         $html = $this->kilitEkrani();
 
+        // Zarif bozulma: kanal yoksa vaat de yok — bilgi satırı kalır.
+        self::assertStringNotContainsString('data-anahtar-iste', $html);
         self::assertStringContainsString('Anahtarınız yok mu?', $html);
         self::assertStringContainsString('listeyi paylaşan kişiyle iletişime geçin', $html);
+    }
 
-        // Formda TEK gönderim düğmesi olmalı: çalışmayan ikinci bir düğme yok.
-        self::assertSame(1, preg_match_all('/<button/', $html));
+    public function testNUMARAVARSAWHATSAPPKOPRUSUBASILIR(): void
+    {
+        $this->numarayiAyarla('+90 532 123 45 67');
+
+        $html = $this->kilitEkrani();
+
+        self::assertStringContainsString('data-anahtar-iste', $html);
+        // wa.me yalnız rakam kabul eder: "+", boşluk ve tire temizlenir.
+        self::assertStringContainsString('https://wa.me/905321234567?text=', $html);
+        self::assertStringContainsString('Yeni anahtar iste', $html);
+    }
+
+    public function testWHATSAPPMESAJIANAHTARTASIMAZ(): void
+    {
+        $this->numarayiAyarla('+90 532 123 45 67');
+        $anahtar = (string) $this->json(
+            $this->call('GET', '/api/lists/' . $this->listId . '/share-key'),
+        )['data']['key'];
+
+        $mesaj = $this->whatsappMesaji($this->kilitEkrani());
+
+        // Anahtar mesaja ASLA girmez: talep kanalı, dağıtım kanalı değildir.
+        self::assertStringNotContainsString($anahtar, $mesaj);
+        self::assertStringContainsString('Mutfak Ürünleri', $mesaj);
+        self::assertStringContainsString('erişim anahtarını rica ediyorum', $mesaj);
+        self::assertStringContainsString('/liste/' . $this->token, $mesaj);
+    }
+
+    public function testWHATSAPPMESAJISECILIDILDE(): void
+    {
+        $this->numarayiAyarla('905321234567');
+
+        foreach (['en' => 'access key', 'zh' => '访问密钥'] as $dil => $beklenen) {
+            $mesaj = $this->whatsappMesaji($this->kilitEkrani($dil));
+
+            self::assertStringContainsString($beklenen, $mesaj, $dil . ' mesajı kendi dilinde olmalı.');
+        }
+    }
+
+    public function testGECERSIZNUMARAREDDEDILIR(): void
+    {
+        $yanit = $this->write('PUT', '/api/settings/share-contact', ['share_contact_phone' => '123']);
+
+        self::assertSame(422, $yanit->getStatusCode());
+        self::assertStringContainsString('Ülke koduyla', (string) $yanit->getBody());
+    }
+
+    public function testNUMARATEMIZLENEBILIR(): void
+    {
+        $this->numarayiAyarla('905321234567');
+        self::assertStringContainsString('data-anahtar-iste', $this->kilitEkrani());
+
+        $this->write('PUT', '/api/settings/share-contact', ['share_contact_phone' => '']);
+
+        self::assertStringNotContainsString('data-anahtar-iste', $this->kilitEkrani());
+    }
+
+    public function testHATALIDENEMEDESECILIDILKORUNUR(): void
+    {
+        $yanit = $this->call('POST', '/liste/' . $this->token . '/anahtar', [
+            'anahtar' => 'ZZZZZZ',
+            'lang' => 'en',
+        ]);
+
+        self::assertSame(401, $yanit->getStatusCode());
+        $html = (string) $yanit->getBody();
+        // Dil kaybolursa firma kendi dilinden Türkçeye düşer — form gizli alanla taşır.
+        self::assertStringContainsString('SECURE LIST ACCESS', $html);
+        self::assertStringContainsString('Incorrect key', $html);
     }
 
     public function testDILSECICIUCDILISUNAR(): void

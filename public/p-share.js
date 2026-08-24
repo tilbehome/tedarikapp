@@ -99,6 +99,44 @@
       });
     }
 
+    // İE#21 EK-4 — TAZELEME SAYACI. Sayaç ANAHTARIN SÜRESİ DEĞİLDİR: ekran
+    // kendini tazeler, firma girişine kaldığı yerden devam eder. Süre dolunca
+    // sayfa yeniden yüklenir; hiçbir şey kilitlenmez ya da kaybolmaz.
+    var tazeleKabi = document.querySelector('[data-tazele]');
+    if (tazeleKabi !== null) {
+      var toplam = parseInt(tazeleKabi.getAttribute('data-tazele'), 10) || 600;
+      var yaziAlani = tazeleKabi.querySelector('[data-tazele-yazi]');
+      var halka = tazeleKabi.querySelector('[data-tazele-halka]');
+      var kalip = yaziAlani === null ? '' : (yaziAlani.getAttribute('data-tazele-kalip') || '');
+      var kalan = toplam;
+
+      var iki = function (sayi) {
+        return (sayi < 10 ? '0' : '') + sayi;
+      };
+
+      var ciz = function () {
+        if (yaziAlani !== null) {
+          var sure = iki(Math.floor(kalan / 60)) + ':' + iki(kalan % 60);
+          yaziAlani.textContent = kalip.replace('{sure}', sure);
+        }
+        if (halka !== null) {
+          // Halka dolgusu yüzde olarak ilerler; conic-gradient stil dosyasında.
+          halka.style.setProperty('--oran', String(Math.round(((toplam - kalan) / toplam) * 100)));
+        }
+      };
+
+      ciz();
+      window.setInterval(function () {
+        kalan -= 1;
+        if (kalan <= 0) {
+          window.location.reload();
+
+          return;
+        }
+        ciz();
+      }, 1000);
+    }
+
     return; // kilit ekranında paylaşım sayfası davranışları yok
   }
 

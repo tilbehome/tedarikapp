@@ -54,6 +54,56 @@ final class SettingsController extends ApiController
             'media_writable' => $this->media->isWritable(),
             // İE#13 F1: belge antedi — çıktı ve paylaşım sayfası bandında görünür.
             'document_header' => $this->settings->documentHeader(),
+            // İE#21 EK-4 (B7): kilit ekranındaki "yeni anahtar iste" köprüsünün
+            // hedefi. Boşsa düğme basılmaz.
+            'share_contact_phone' => $this->settings->get(SettingsRepository::KEY_SHARE_CONTACT_PHONE),
+        ]);
+    }
+
+    /**
+     * PUT /api/settings/share-contact — paylaşım iletişim numarası (İE#21 EK-4).
+     *
+     * İSTEĞE BAĞLIDIR ve boş bırakılabilir; boş değer düğmeyi kapatır. Numara
+     * ülke koduyla beklenir ("+90 532 …"); kaydederken kullanıcının yazdığı biçim
+     * korunur, wa.me bağlantısı için rakama indirgeme OKUMA anında yapılır —
+     * kullanıcı ayarlar ekranında kendi yazdığını görmeli.
+     */
+    public function updateShareContact(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        $body = $this->body($request);
+        $ham = is_string($body['share_contact_phone'] ?? null) ? trim((string) $body['share_contact_phone']) : '';
+
+        if ($ham !== '') {
+            $rakam = preg_replace('/\D+/', '', $ham) ?? '';
+            if (mb_strlen($ham) > 32) {
+                return Response::error($response, 'VALIDATION', 'Doğrulama hatası', 422, [
+                    'share_contact_phone' => 'En fazla 32 karakter olabilir.',
+                ]);
+            }
+            // 8 hane altı bir numara ülke kodlu olamaz; wa.me böyle bir bağlantıyı
+            // sessizce boş sayfaya götürür — kullanıcı hatayı burada görmeli.
+            if (strlen($rakam) < 8) {
+                return Response::error($response, 'VALIDATION', 'Doğrulama hatası', 422, [
+                    'share_contact_phone' => 'Ülke koduyla birlikte girin (örn. +90 532 123 45 67).',
+                ]);
+            }
+        }
+
+        $this->settings->set(SettingsRepository::KEY_SHARE_CONTACT_PHONE, $ham);
+
+        $this->activity->record(
+            'settings',
+            null,
+            'share_contact_updated',
+            $ham === '' ? 'temizlendi' : 'güncellendi',
+            \App\Core\ClientIp::from($request),
+            $this->clock->now(),
+            \App\Services\ActivityLog::ACTOR_ADMIN,
+            $this->user($request)->id,
+        );
+
+        return Response::success($response, [
+            'share_contact_phone' => $this->settings->get(SettingsRepository::KEY_SHARE_CONTACT_PHONE),
         ]);
     }
 

@@ -8,22 +8,22 @@ use App\Middleware\Csrf;
 use Tests\Support\AuthTestCase;
 
 /**
- * PAYLAŞIM SAYFASI VE DİL (E2E-PNL-39 · PNL-37/38 ÇELİŞKİ KAYDI).
+ * PAYLAŞIM SAYFASI VE DİL — K81 SÖZLEŞMESİ (E2E-PNL-37/38/39).
  *
- * ÖNEMLİ BULGU (İE#21, 24 Ağu 2026): E2E kataloğundaki PNL-37 ("paylaşım sayfası
- * TR/EN/ZH komple tek dil") ve PNL-38 ("karışık dil sızıntısı KIRMIZI"),
- * ONAYLI ŞABLONLA ÇELİŞİYOR. Şablon v2 rev7 (İE#13 F, PM onaylı) tablo
- * başlıklarını KASITLI OLARAK ÜÇ DİLDE basar: `MİKTAR / 数量 / QUANTITY`. Amaç
- * Çinli tedarikçinin ve Türk alıcının AYNI belgeye bakabilmesidir; "tek dil"
- * kuralı bu tasarımı ortadan kaldırırdı.
+ * K81 (Ürün Sahibi kararı, 24 Ağu 2026 · İE#21 EK-4): "SIFIR KARIŞIK DİL" kuralı
+ * geçerlidir — arayüz metinleri, durum adları, alan değerleri, şartlar ve
+ * dipnotlar SEÇİLEN DİLDE tek dildir. Başka dilden ham değer = kusur.
  *
- * O yüzden bu dosya şablonun GERÇEK sözleşmesini sınar:
- *  · tablo başlıkları her dilde üç dilli kalır (şablon sözü),
- *  · `?lang=` GÖNDERİM metinlerini ve arayüz etiketlerini değiştirir,
- *  · PNL-39 (K55): ürünün orijinal Çince satırı üç dilde de AYNEN durur.
+ * YALNIZ İKİ ADLI İSTİSNA karışık dil sayılmaz:
+ *   a) K55 — ürün adının altındaki ORİJİNAL Çince referans satırı (her dilde kalır),
+ *   b) K81 — üç dilli kademeli TABLO SÜTUN BAŞLIĞI bloğu (MİKTAR / 数量 / QUANTITY);
+ *      paylaşım sayfası EKRANINDA ve EXCEL'de her dil seçiminde aynen üç dilli kalır.
+ *      PDF'te pdf-rev4 sözleşmesi geçerlidir: başlık TEK satır.
  *
- * PNL-37/38 kapsam defterinde "çelişki — PM kararı" olarak işaretlidir; kararı
- * PM verir, kod tek taraflı çözmez (CLAUDE.md §1).
+ * Bu dosya sözleşmenin üç parçasını da sınar. Üçüncüsü (istisna dışında tek dil)
+ * BUGÜN SAĞLANMIYOR: paylaşım sayfasının arayüz metinleri sabit Türkçedir.
+ * Test o yüzden "eksik" (incomplete) işaretlenir ve sızıntı DÖKÜMÜNÜ basar —
+ * yeşil görünüp kusuru gizlemek, kusurun kendisinden kötüdür.
  */
 final class PaylasimDiliTest extends AuthTestCase
 {
@@ -31,8 +31,26 @@ final class PaylasimDiliTest extends AuthTestCase
     private int $listId = 0;
     private string $token = '';
 
-    /** Şablonun ÜÇ DİLLİ başlık imzası — her sayfada birlikte bulunur. */
-    private const UC_DILLI_BASLIK = ['MİKTAR', '数量'];
+    /** K81(b): üç dilli sütun başlığı bloğu — her dilde birlikte bulunur. */
+    private const UC_DILLI_BASLIK = ['MİKTAR', '数量', 'Qty'];
+
+    /**
+     * Türkçe ARAYÜZ metinleri: seçilen dil TR değilken sayfada BULUNMAMALI.
+     *
+     * Liste/ürün verisi (liste adı, ürün adı, dönem) bu listede YOKTUR —
+     * o veri kullanıcının kendi yazdığıdır, çeviri konusu değildir.
+     */
+    private const TR_ARAYUZ_METINLERI = [
+        'Yazdır',
+        'Vazgeç',
+        'Sipariş şartları',
+        'Gönderim dili',
+        'Özet metnini kopyala',
+        'Kare kodu okutun',
+        'Yazdırma ayarları',
+        'Bir daha gösterme',
+        'üstteki özet şerididir',
+    ];
 
     protected function setUp(): void
     {
@@ -78,10 +96,9 @@ final class PaylasimDiliTest extends AuthTestCase
         return (string) $yanit->getBody();
     }
 
-    public function testSABLONBASLIKLARIUCDILDEKALIR(): void
+    public function testK81_BASLIK_BLOGU_HER_DILDE_UC_DILLI(): void
     {
-        // Şablon sözü: hangi dil seçilse de tablo başlığı üç dilli kalır. Bu,
-        // PNL-37'nin "tek dil" beklentisiyle çelişen ONAYLI davranıştır.
+        // K81(b): başlık bloğu istisnadır — dil ne seçilirse seçilsin üç dilli kalır.
         foreach (['tr', 'en', 'zh'] as $dil) {
             $html = $this->sayfa($dil);
 
@@ -89,6 +106,32 @@ final class PaylasimDiliTest extends AuthTestCase
                 self::assertStringContainsString($imza, $html, $dil . ' sayfasında üç dilli başlık korunmalı.');
             }
         }
+    }
+
+    public function testK81_ISTISNA_DISINDA_TEK_DIL(): void
+    {
+        $sizinti = [];
+        foreach (['en', 'zh'] as $dil) {
+            $html = $this->sayfa($dil);
+            foreach (self::TR_ARAYUZ_METINLERI as $metin) {
+                if (str_contains($html, $metin)) {
+                    $sizinti[] = $dil . ': ' . $metin;
+                }
+            }
+        }
+
+        if ($sizinti !== []) {
+            // AÇIK KUSUR KAYDI: sözleşme yazıldı, uygulama HENÜZ yok. Paylaşım
+            // sayfasının arayüz metinleri (SharePage.php) sabit Türkçedir ve
+            // yerelleştirilmesi kendi iş emrini ister — İE#21 EK-4 kapsamı bu
+            // dosyayı içermiyordu. Test yeşile boyanmaz, eksik işaretlenir.
+            self::markTestIncomplete(
+                'K81 tek dil kuralı paylaşım sayfasında HENÜZ sağlanmıyor. '
+                . 'Sızıntı dökümü: ' . implode(' · ', $sizinti),
+            );
+        }
+
+        self::assertSame([], $sizinti);
     }
 
     public function testGONDERIMDILISECILENDILEUYAR(): void

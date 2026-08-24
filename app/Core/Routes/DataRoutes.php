@@ -76,6 +76,8 @@ final class DataRoutes
             // İE#13 F1: belge antedi (çıktı üst bandı) — boş alan basılmaz.
             $group->put('/settings/document-header', [$settingsController, 'updateDocumentHeader']);
             // İE#14 A2 (K56 Katman 1): Ayarlar > Terminoloji — dosya tabanlı sözlük.
+            // İE#21 EK-4 (B7): kilit ekranındaki anahtar talebi köprüsünün numarası.
+            $group->put('/settings/share-contact', [$settingsController, 'updateShareContact']);
             $group->get('/settings/glossary', [$translationController, 'glossaryIndex']);
             $group->put('/settings/glossary', [$translationController, 'glossarySave']);
             // İE#20 C4: Ayarlar > Çeviri (sağlayıcı, anahtar, model, hedef diller).

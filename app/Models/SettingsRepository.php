@@ -31,6 +31,16 @@ final class SettingsRepository
     public const KEY_DOC_PREPARED_BY = 'doc_prepared_by';
 
     /**
+     * İE#21 EK-4 — PAYLAŞIM İLETİŞİM NUMARASI (B7).
+     *
+     * Kilit ekranındaki "yeni anahtar iste" düğmesi bu numaraya WhatsApp
+     * köprüsü açar. BOŞ BIRAKILABİLİR: numara yoksa düğme basılmaz ve ekran
+     * bilgi satırıyla yetinir (zarif bozulma). K44: `config.php`ye girmez,
+     * ayar tablosunda yaşar.
+     */
+    public const KEY_SHARE_CONTACT_PHONE = 'share_contact_phone';
+
+    /**
      * Ayar henüz girilmemişken kullanılan başlangıç değerleri.
      * Gerçek değerler `PUT /api/settings/rates` ile girilir (ayarlar iş emri);
      * o güne kadar liste oluşturulabilsin diye makul bir başlangıç verilir.
@@ -62,6 +72,22 @@ final class SettingsRepository
             'email' => $oku(self::KEY_DOC_EMAIL),
             'prepared_by' => $oku(self::KEY_DOC_PREPARED_BY),
         ];
+    }
+
+    /**
+     * Paylaşım iletişim numarası — YALNIZ RAKAM, boşsa null.
+     *
+     * wa.me yalnız ülke kodlu, işaretsiz rakam dizisi kabul eder ("905321234567").
+     * Kullanıcı "+90 532 123 45 67" yazabilsin diye temizleme OKUMA anında da
+     * yapılır: ayarı elle düzenleyen (ya da eski kayıt taşıyan) kurulumda düğme
+     * bozuk bir bağlantı üretmemelidir.
+     */
+    public function shareContactPhone(): ?string
+    {
+        $ham = $this->get(self::KEY_SHARE_CONTACT_PHONE);
+        $rakam = preg_replace('/\D+/', '', is_string($ham) ? $ham : '') ?? '';
+
+        return $rakam === '' ? null : $rakam;
     }
 
     public function get(string $key, ?string $default = null): ?string

@@ -396,16 +396,16 @@
       "test": "testANAHTAR_YENILENINCE_ESKI_CEREZ_OLUR"
     },
     "E2E-PNL-37": {
-      "baslik": "Paylaşım sayfası TR/EN/ZH komple tek dil",
-      "durum": "celiski",
+      "baslik": "Paylaşım sayfası TR/EN/ZH tek dil (K81 istisnaları hariç)",
+      "durum": "bekliyor",
       "dosya": "tests/Http/PaylasimDiliTest.php",
-      "test": "ONAYLI ŞABLONLA ÇELİŞİYOR — şablon v2 rev7 başlıkları KASITLI üç dilli (MİKTAR/数量/QUANTITY). \"Tek dil\" kuralı bu tasarımı bozar. PM kararı bekliyor; şablonun gerçek sözleşmesi testte sabitlendi."
+      "test": "testK81_ISTISNA_DISINDA_TEK_DIL — sözleşme yazıldı, EKSİK işaretli: paylaşım sayfasının arayüz metinleri (SharePage.php) sabit Türkçe; yerelleştirme kendi iş emrini ister. İstisnalar: K55 orijinal Çince satır, K81 üç dilli başlık bloğu."
     },
     "E2E-PNL-38": {
-      "baslik": "Karışık dil sızıntısı KIRMIZI",
-      "durum": "celiski",
+      "baslik": "Karışık dil sızıntısı KIRMIZI (K81 istisnaları hariç)",
+      "durum": "bekliyor",
       "dosya": "tests/Http/PaylasimDiliTest.php",
-      "test": "ONAYLI ŞABLONLA ÇELİŞİYOR — şablon v2 rev7 başlıkları KASITLI üç dilli (MİKTAR/数量/QUANTITY). \"Tek dil\" kuralı bu tasarımı bozar. PM kararı bekliyor; şablonun gerçek sözleşmesi testte sabitlendi."
+      "test": "testK81_ISTISNA_DISINDA_TEK_DIL sızıntı dökümü basar (bugün 9 arayüz metni × 2 dil). K81(b) başlık bloğu ve K55 orijinal satır sızıntı SAYILMAZ; onlar testK81_BASLIK_BLOGU_HER_DILDE_UC_DILLI ve testE2E_PNL_39... ile ayrıca korunur."
     },
     "E2E-PNL-39": {
       "baslik": "K55 orijinal satır üç dilde aynen korunur",
@@ -417,7 +417,7 @@
       "baslik": "Excel/PDF başlık-durum-dipnot dili",
       "durum": "bekliyor",
       "dosya": "",
-      "test": ""
+      "test": "BULGU (EK-4): PDF başlığı pdf-rev4 uyarınca TEK satır ama DAİMA TÜRKÇE — renderer `options.lang` okumuyor; K81 \"seçilen dilde\" şartı PDF için henüz sağlanmıyor. Excel üç dilli (K81(b) uyumlu)."
     },
     "E2E-PNL-41": {
       "baslik": "Kilit ekranının dar görünüm ve %200 yakınlaştırma kullanımı",

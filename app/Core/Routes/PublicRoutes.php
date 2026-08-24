@@ -144,7 +144,13 @@ final class PublicRoutes
                 $cerez = $request->getCookieParams()[\App\Services\Share\ShareKeyService::CEREZ_ADI] ?? null;
                 if (!$anahtar->cerezGecerli($token, $row, is_string($cerez) ? $cerez : null, $now)) {
                     $response->getBody()->write(
-                        $kilitSayfasi->render($presenter->list($row), $token, $surum, false, $dil),
+                        $kilitSayfasi->render($presenter->list($row), $token, $surum, false, $dil, [
+                            // İE#21 EK-4: "yeni anahtar iste" köprüsü ve art arda
+                            // hatalı deneme uyarısı için bağlam.
+                            'iletisim' => (new \App\Models\SettingsRepository($connection))->shareContactPhone(),
+                            'ardisik_hata' => $shareGate->anahtarDenemeSayisi($token, $ip, $now),
+                            'adres' => \App\Core\AppUrl::to($config->get('APP_URL'), $request, self::KANONIK_ON_EK . '/' . $token),
+                        ]),
                     );
 
                     return $response
@@ -185,7 +191,8 @@ final class PublicRoutes
         }
 
         // ── İE#18 G6-c: ANAHTAR DOĞRULAMA UCU ────────────────────────────────
-        $anahtarHandler = static function (ServerRequestInterface $request, ResponseInterface $response, array $args) use ($lists, $presenter, $shareGate, $services, $anahtar, $kilitSayfasi, $surum, $logger): ResponseInterface {
+        $settingsRepo = new \App\Models\SettingsRepository($connection);
+        $anahtarHandler = static function (ServerRequestInterface $request, ResponseInterface $response, array $args) use ($lists, $presenter, $shareGate, $services, $anahtar, $kilitSayfasi, $surum, $logger, $settingsRepo, $config): ResponseInterface {
             $now = $services->clock->now();
             $ip = ClientIp::from($request);
             $token = (string) ($args['token'] ?? '');
@@ -242,8 +249,15 @@ final class PublicRoutes
                     'token_onek' => substr($token, 0, 8),
                     'ip' => \App\Services\Share\ShareDownload::kirpilmisIp($ip),
                 ]);
+                // DİL KORUNUR: form gizli `lang` alanını taşır. Eskiden hatalı
+                // denemeden sonra ekran Türkçeye düşüyordu — firma dilini kaybediyordu.
+                $dil = \App\Services\Share\ShareTexts::dil($govde['lang'] ?? null);
                 $response->getBody()->write(
-                    $kilitSayfasi->render($presenter->list($row), $token, $surum, true),
+                    $kilitSayfasi->render($presenter->list($row), $token, $surum, true, $dil, [
+                        'iletisim' => $settingsRepo->shareContactPhone(),
+                        'ardisik_hata' => $shareGate->anahtarDenemeSayisi($token, $ip, $now),
+                        'adres' => \App\Core\AppUrl::to($config->get('APP_URL'), $request, self::KANONIK_ON_EK . '/' . $token),
+                    ]),
                 );
 
                 return $response->withStatus(401)
