@@ -1,0 +1,340 @@
+{
+  "schema_version": "1.0.0",
+  "dataset_name": "TedarikApp V3-C Yapıştır-Ayrıştır Altın Seti",
+  "amac": "Firma WhatsApp/e-posta metninden RFQ satırı, fiyat, para birimi, MOQ, termin, kademe, koli ve alternatif alanlarını güvenli biçimde çıkaran ayrıştırıcının kabul sınavı.",
+  "kaynak_demo_seti": "demo-urun-seti.json / DM-001..DM-100",
+  "kabul_kapisi": {
+    "alan_dogrulugu_min_yuzde": 90,
+    "yanlis_urun_eslesmesi_yuzde": 0,
+    "kritik_kural": "Belirsiz ürün veya para birimi otomatik bağlanmaz; yanlış ürüne fiyat yazılması tek olayda dahi otomatik reddir.",
+    "skorlama": "Doğru pozitif alan + doğru null/belirsiz kararları birlikte ölçülür. Normalizasyon kabul edilir; kaynak parça izi korunur."
+  },
+  "normalizasyon": {
+    "ondalik": "Virgül veya nokta kaynak olarak kabul edilir; makine çıktısı noktalı decimal olur.",
+    "para_birimi": "US$/USD/$ yalnız açık bağlamda USD; RMB/元/¥ yalnız Çin bağlamında CNY; sembol tek başına çelişkiliyse belirsiz.",
+    "termin": "天=calendar_day, 工作日=working_day, 周=week; başlangıç açık değilse null ve belirsiz bırakılır.",
+    "durum": "有货/可以做/found=found; 无货/缺货/not available=not_found; 有替代/alternative=alternative_available.",
+    "guvenlik": "Ürün kodu, eşsiz ad veya tek aday bağlamı olmadan benzer ürünler arasında tahmin yapılmaz."
+  },
+  "ornekler": [
+    {
+      "id": "YA-001",
+      "dil_profili": "ZH",
+      "baglam_satirlari": [{"demo_id": "DM-001", "ad_zh": "竹纤维浴巾 70×140cm 400g"}],
+      "ham_metin": "DM-001 竹纤维浴巾有货。含土耳其增值税DDP单价 USD 4.20，MOQ 300条，收到定金后20天交货。",
+      "beklenen": {
+        "eslesmeler": [{"demo_id": "DM-001", "durum": "found", "ddp": {"deger": 4.20, "para_birimi": "USD", "turkiye_kdv_dahil_beyani": true, "nitelik": "kesin"}, "moq": {"deger": 300, "birim": "adet"}, "termin": {"baslangic": "deposit_received", "sure": 20, "birim": "calendar_day"}, "kademeler": [], "koli": null, "alternatif": null, "not": null, "eksik_zorunlu": []}],
+        "belirsiz": [], "dogrulama_hatalari": []
+      }
+    },
+    {
+      "id": "YA-002",
+      "dil_profili": "ZH",
+      "baglam_satirlari": [{"demo_id": "DM-002", "ad_zh": "双层纯棉纱布盖毯 120×150cm"}],
+      "ham_metin": "DM-002 可以做，DDP含土耳其税：100件 USD8.60；500件 USD8.10；1000件 USD7.75。MOQ=100，订单确认后25个工作日。",
+      "beklenen": {
+        "eslesmeler": [{"demo_id": "DM-002", "durum": "found", "ddp": {"deger": 8.60, "para_birimi": "USD", "turkiye_kdv_dahil_beyani": true, "nitelik": "kesin"}, "moq": {"deger": 100, "birim": "adet"}, "termin": {"baslangic": "order_confirmation", "sure": 25, "birim": "working_day"}, "kademeler": [{"min_adet": 100, "max_adet": 499, "birim_fiyat": 8.60}, {"min_adet": 500, "max_adet": 999, "birim_fiyat": 8.10}, {"min_adet": 1000, "max_adet": null, "birim_fiyat": 7.75}], "koli": null, "alternatif": null, "not": null, "eksik_zorunlu": []}],
+        "belirsiz": [], "dogrulama_hatalari": []
+      }
+    },
+    {
+      "id": "YA-003",
+      "dil_profili": "ZH",
+      "baglam_satirlari": [{"demo_id": "DM-003", "ad_zh": "法兰绒床笠 150×200cm"}],
+      "ham_metin": "DM-003 这个规格目前缺货，面料也停产了，暂时无法报价。",
+      "beklenen": {
+        "eslesmeler": [{"demo_id": "DM-003", "durum": "not_found", "ddp": null, "moq": null, "termin": null, "kademeler": [], "koli": null, "alternatif": null, "not": "Bu ölçü stokta yok ve kumaş üretimi durmuş; fiyat verilemiyor.", "eksik_zorunlu": []}],
+        "belirsiz": [], "dogrulama_hatalari": []
+      }
+    },
+    {
+      "id": "YA-004",
+      "dil_profili": "ZH",
+      "baglam_satirlari": [{"demo_id": "DM-005", "ad_zh": "加厚遮光窗帘 140×260cm"}],
+      "ham_metin": "DM-005 原款没有了，可提供同材质替代款：https://example.cn/alt-curtain 。含土耳其增值税DDP USD 12.80/片，MOQ 200片，样品确认后30天。颜色稍有不同。",
+      "beklenen": {
+        "eslesmeler": [{"demo_id": "DM-005", "durum": "alternative_available", "ddp": {"deger": 12.80, "para_birimi": "USD", "turkiye_kdv_dahil_beyani": true, "nitelik": "kesin"}, "moq": {"deger": 200, "birim": "adet"}, "termin": {"baslangic": "sample_approval", "sure": 30, "birim": "calendar_day"}, "kademeler": [], "koli": null, "alternatif": {"url": "https://example.cn/alt-curtain", "aciklama": "Aynı malzeme, renk tonu farklı alternatif perde."}, "not": null, "eksik_zorunlu": []}],
+        "belirsiz": [], "dogrulama_hatalari": []
+      }
+    },
+    {
+      "id": "YA-005",
+      "dil_profili": "EN_TR",
+      "baglam_satirlari": [{"demo_id": "DM-006", "ad_en": "Chenille cushion cover 45×45cm"}],
+      "ham_metin": "DM-006 found 👍 DDP incl. Turkish VAT 2,35 USD/pc. MOQ 500 pcs. Termin: sipariş onayından sonra 18 iş günü. Packaging: 1 pc/polybag.",
+      "beklenen": {
+        "eslesmeler": [{"demo_id": "DM-006", "durum": "found", "ddp": {"deger": 2.35, "para_birimi": "USD", "turkiye_kdv_dahil_beyani": true, "nitelik": "kesin"}, "moq": {"deger": 500, "birim": "adet"}, "termin": {"baslangic": "order_confirmation", "sure": 18, "birim": "working_day"}, "kademeler": [], "koli": null, "alternatif": null, "not": "Ambalaj: 1 adet/polibag.", "eksik_zorunlu": []}],
+        "belirsiz": [], "dogrulama_hatalari": []
+      }
+    },
+    {
+      "id": "YA-006",
+      "dil_profili": "ZH_KIRLI",
+      "baglam_satirlari": [{"demo_id": "DM-008", "ad_zh": "超细纤维清洁布 30×30cm 10片装"}],
+      "ham_metin": "✅ DM-008\n有货 ～～ DDP（含土耳其VAT）$1.95 / 包 😄\nMOQ：1000包   交期：收到30%定金后 15 天",
+      "beklenen": {
+        "eslesmeler": [{"demo_id": "DM-008", "durum": "found", "ddp": {"deger": 1.95, "para_birimi": "USD", "turkiye_kdv_dahil_beyani": true, "nitelik": "kesin"}, "moq": {"deger": 1000, "birim": "paket"}, "termin": {"baslangic": "deposit_received", "sure": 15, "birim": "calendar_day"}, "kademeler": [], "koli": null, "alternatif": null, "not": "Termin başlangıcı: %30 kapora alındıktan sonra.", "eksik_zorunlu": []}],
+        "belirsiz": [], "dogrulama_hatalari": []
+      }
+    },
+    {
+      "id": "YA-007",
+      "dil_profili": "ZH_COKLU",
+      "baglam_satirlari": [{"demo_id": "DM-016", "ad_zh": "高硼硅玻璃油壶 550ml"}, {"demo_id": "DM-017", "ad_zh": "多功能切菜器 15件套"}],
+      "ham_metin": "报价如下：\nDM-016 油壶：DDP土耳其含税 USD3.40，MOQ 600，交期下单后22天。\nDM-017 切菜器：DDP土耳其含税 USD7.90，MOQ 300，交期下单后28天。",
+      "beklenen": {
+        "eslesmeler": [
+          {"demo_id": "DM-016", "durum": "found", "ddp": {"deger": 3.40, "para_birimi": "USD", "turkiye_kdv_dahil_beyani": true, "nitelik": "kesin"}, "moq": {"deger": 600, "birim": "adet"}, "termin": {"baslangic": "order_confirmation", "sure": 22, "birim": "calendar_day"}, "kademeler": [], "koli": null, "alternatif": null, "not": null, "eksik_zorunlu": []},
+          {"demo_id": "DM-017", "durum": "found", "ddp": {"deger": 7.90, "para_birimi": "USD", "turkiye_kdv_dahil_beyani": true, "nitelik": "kesin"}, "moq": {"deger": 300, "birim": "adet"}, "termin": {"baslangic": "order_confirmation", "sure": 28, "birim": "calendar_day"}, "kademeler": [], "koli": null, "alternatif": null, "not": null, "eksik_zorunlu": []}
+        ],
+        "belirsiz": [], "dogrulama_hatalari": []
+      }
+    },
+    {
+      "id": "YA-008",
+      "dil_profili": "ZH_COKLU_SIRA_KARISIK",
+      "baglam_satirlari": [{"demo_id": "DM-018", "ad_zh": "硅胶刮刀 27.5cm"}, {"demo_id": "DM-019", "ad_zh": "SUS304真空保温杯 500ml"}],
+      "ham_metin": "先报第二个：DM-019 保温杯 USD6.60 DDP含土耳其税，MOQ 800，25天（定金后）。\n第一个 DM-018 刮刀 USD1.10，MOQ 2000，20天（订单确认后），也是DDP含土耳其税。",
+      "beklenen": {
+        "eslesmeler": [
+          {"demo_id": "DM-019", "durum": "found", "ddp": {"deger": 6.60, "para_birimi": "USD", "turkiye_kdv_dahil_beyani": true, "nitelik": "kesin"}, "moq": {"deger": 800, "birim": "adet"}, "termin": {"baslangic": "deposit_received", "sure": 25, "birim": "calendar_day"}, "kademeler": [], "koli": null, "alternatif": null, "not": null, "eksik_zorunlu": []},
+          {"demo_id": "DM-018", "durum": "found", "ddp": {"deger": 1.10, "para_birimi": "USD", "turkiye_kdv_dahil_beyani": true, "nitelik": "kesin"}, "moq": {"deger": 2000, "birim": "adet"}, "termin": {"baslangic": "order_confirmation", "sure": 20, "birim": "calendar_day"}, "kademeler": [], "koli": null, "alternatif": null, "not": null, "eksik_zorunlu": []}
+        ],
+        "belirsiz": [], "dogrulama_hatalari": []
+      }
+    },
+    {
+      "id": "YA-009",
+      "dil_profili": "ZH_ES_DEGER_AD",
+      "baglam_satirlari": [{"demo_id": "DM-020", "ad_zh": "硅胶折叠沥水篮 24cm"}],
+      "ham_metin": "硅胶折叠沥水篮24cm可以做，DDP含土耳其税 USD2.75，最小500个，确认订单后16天。",
+      "beklenen": {
+        "eslesmeler": [{"demo_id": "DM-020", "durum": "found", "ddp": {"deger": 2.75, "para_birimi": "USD", "turkiye_kdv_dahil_beyani": true, "nitelik": "kesin"}, "moq": {"deger": 500, "birim": "adet"}, "termin": {"baslangic": "order_confirmation", "sure": 16, "birim": "calendar_day"}, "kademeler": [], "koli": null, "alternatif": null, "not": null, "eksik_zorunlu": []}],
+        "belirsiz": [], "dogrulama_hatalari": []
+      }
+    },
+    {
+      "id": "YA-010",
+      "dil_profili": "ZH_PARA_BELIRSIZ",
+      "baglam_satirlari": [{"demo_id": "DM-021", "ad_zh": "304不锈钢复底汤锅 24cm"}],
+      "ham_metin": "DM-021 有货，DDP价格 12.50，MOQ 200，订单确认后35天。税已含。",
+      "beklenen": {
+        "eslesmeler": [{"demo_id": "DM-021", "durum": "found", "ddp": null, "moq": {"deger": 200, "birim": "adet"}, "termin": {"baslangic": "order_confirmation", "sure": 35, "birim": "calendar_day"}, "kademeler": [], "koli": null, "alternatif": null, "not": null, "eksik_zorunlu": ["ddp_birim_fiyat_kdv_dahil", "para_birimi"]}],
+        "belirsiz": [{"parca": "DDP价格 12.50", "aday_demo_idleri": ["DM-021"], "neden": "Para birimi yazılmamış; sayı fiyat alanına otomatik bağlanamaz.", "yasak_otomatik_islem": "12.50 değerini USD/CNY/TRY olarak tahmin etme"}],
+        "dogrulama_hatalari": []
+      }
+    },
+    {
+      "id": "YA-011",
+      "dil_profili": "ZH_TERMIN_BASLANGIC",
+      "baglam_satirlari": [{"demo_id": "DM-022", "ad_zh": "相思木双面菜板 38×26cm"}],
+      "ham_metin": "DM-022 报价 USD5.45/pc，DDP含土耳其增值税。MOQ 400。30%订金到账并确认彩盒稿后起算，交期32个工作日。",
+      "beklenen": {
+        "eslesmeler": [{"demo_id": "DM-022", "durum": "found", "ddp": {"deger": 5.45, "para_birimi": "USD", "turkiye_kdv_dahil_beyani": true, "nitelik": "kesin"}, "moq": {"deger": 400, "birim": "adet"}, "termin": {"baslangic": "custom", "baslangic_aciklamasi": "%30 kapora hesaba geçip renkli kutu tasarımı onaylandıktan sonra", "sure": 32, "birim": "working_day"}, "kademeler": [], "koli": null, "alternatif": null, "not": null, "eksik_zorunlu": []}],
+        "belirsiz": [], "dogrulama_hatalari": []
+      }
+    },
+    {
+      "id": "YA-012",
+      "dil_profili": "ZH_TAHMINI_FIYAT",
+      "baglam_satirlari": [{"demo_id": "DM-023", "ad_zh": "高硼硅玻璃油壶 550ml"}],
+      "ham_metin": "DM-023 目前估算DDP约 USD3.10（含土耳其税），MOQ 1000，交期大约20-25天，最终等包装确认。",
+      "beklenen": {
+        "eslesmeler": [{"demo_id": "DM-023", "durum": "found", "ddp": {"deger": 3.10, "para_birimi": "USD", "turkiye_kdv_dahil_beyani": true, "nitelik": "tahmini"}, "moq": {"deger": 1000, "birim": "adet"}, "termin": null, "kademeler": [], "koli": null, "alternatif": null, "not": "Fiyat tahmini; ambalaj onayından sonra kesinleşecek. Termin 20-25 gün aralığı olarak bildirildi.", "eksik_zorunlu": ["termin_suresi", "termin_baslangici"]}],
+        "belirsiz": [{"parca": "交期大约20-25天", "aday_demo_idleri": ["DM-023"], "neden": "Tek bir termin süresi ve başlangıcı yok; aralık otomatik kesin süreye çevrilmez.", "yasak_otomatik_islem": "20 veya 25 günü tek termin olarak seçme"}],
+        "dogrulama_hatalari": []
+      }
+    },
+    {
+      "id": "YA-013",
+      "dil_profili": "ZH_FIYAT_ARALIGI",
+      "baglam_satirlari": [{"demo_id": "DM-024", "ad_zh": "分格保温饭盒 1200ml"}],
+      "ham_metin": "DM-024 可以生产。DDP含税大概 USD6.8-7.4，要看颜色和数量。MOQ 3000，订单后40天。",
+      "beklenen": {
+        "eslesmeler": [{"demo_id": "DM-024", "durum": "found", "ddp": null, "moq": {"deger": 3000, "birim": "adet"}, "termin": {"baslangic": "order_confirmation", "sure": 40, "birim": "calendar_day"}, "kademeler": [], "koli": null, "alternatif": null, "not": "Fiyat renk ve miktara bağlı 6.8-7.4 USD aralığında.", "eksik_zorunlu": ["ddp_birim_fiyat_kdv_dahil"]}],
+        "belirsiz": [{"parca": "USD6.8-7.4", "aday_demo_idleri": ["DM-024"], "neden": "Aralık tek kesin birim fiyat değildir; varyant/miktar bağı eksik.", "yasak_otomatik_islem": "Alt veya üst sınırı kesin fiyat olarak kaydetme"}],
+        "dogrulama_hatalari": []
+      }
+    },
+    {
+      "id": "YA-014",
+      "dil_profili": "ZH_CNY",
+      "baglam_satirlari": [{"demo_id": "DM-025", "ad_zh": "高硼硅玻璃油壶 550ml"}],
+      "ham_metin": "DM-025 找到了，含土耳其增值税DDP 价格 CNY 24.80/个，MOQ 800个，确认订单后21天。",
+      "beklenen": {
+        "eslesmeler": [{"demo_id": "DM-025", "durum": "found", "ddp": {"deger": 24.80, "para_birimi": "CNY", "turkiye_kdv_dahil_beyani": true, "nitelik": "kesin"}, "moq": {"deger": 800, "birim": "adet"}, "termin": {"baslangic": "order_confirmation", "sure": 21, "birim": "calendar_day"}, "kademeler": [], "koli": null, "alternatif": null, "not": null, "eksik_zorunlu": []}],
+        "belirsiz": [], "dogrulama_hatalari": []
+      }
+    },
+    {
+      "id": "YA-015",
+      "dil_profili": "ZH_AYNI_AD_KODLU",
+      "baglam_satirlari": [{"demo_id": "DM-001", "ad_zh": "竹纤维浴巾 70×140cm 400g"}, {"demo_id": "DM-004", "ad_zh": "竹纤维浴巾 70×140cm 400g"}],
+      "ham_metin": "同名两个请按编号：DM-004 DDP含土耳其税 USD4.05，MOQ 600，定金后18天；DM-001 USD4.20，MOQ 300，定金后20天，也是含税DDP。",
+      "beklenen": {
+        "eslesmeler": [
+          {"demo_id": "DM-004", "durum": "found", "ddp": {"deger": 4.05, "para_birimi": "USD", "turkiye_kdv_dahil_beyani": true, "nitelik": "kesin"}, "moq": {"deger": 600, "birim": "adet"}, "termin": {"baslangic": "deposit_received", "sure": 18, "birim": "calendar_day"}, "kademeler": [], "koli": null, "alternatif": null, "not": null, "eksik_zorunlu": []},
+          {"demo_id": "DM-001", "durum": "found", "ddp": {"deger": 4.20, "para_birimi": "USD", "turkiye_kdv_dahil_beyani": true, "nitelik": "kesin"}, "moq": {"deger": 300, "birim": "adet"}, "termin": {"baslangic": "deposit_received", "sure": 20, "birim": "calendar_day"}, "kademeler": [], "koli": null, "alternatif": null, "not": null, "eksik_zorunlu": []}
+        ],
+        "belirsiz": [], "dogrulama_hatalari": []
+      }
+    },
+    {
+      "id": "YA-016",
+      "dil_profili": "ZH_AYNI_AD_BELIRSIZ",
+      "baglam_satirlari": [{"demo_id": "DM-001", "ad_zh": "竹纤维浴巾 70×140cm 400g"}, {"demo_id": "DM-004", "ad_zh": "竹纤维浴巾 70×140cm 400g"}],
+      "ham_metin": "竹纤维浴巾 70×140cm 400g：DDP含税 USD4.15，MOQ 500，20天。",
+      "beklenen": {
+        "eslesmeler": [],
+        "belirsiz": [{"parca": "竹纤维浴巾 70×140cm 400g：DDP含税 USD4.15，MOQ 500，20天", "aday_demo_idleri": ["DM-001", "DM-004"], "neden": "İki RFQ satırının ürün adı birebir aynı ve kod/varyant ayrımı yok.", "yasak_otomatik_islem": "Fiyatı DM-001 veya DM-004 satırlarından birine tahminle yazma"}],
+        "dogrulama_hatalari": []
+      }
+    },
+    {
+      "id": "YA-017",
+      "dil_profili": "ZH_ALTERNATIF",
+      "baglam_satirlari": [{"demo_id": "DM-026", "ad_zh": "锌合金压蒜器 16cm"}],
+      "ham_metin": "DM-026 锌合金款找不到。可以换304不锈钢款：https://example.cn/garlic-304，DDP含土耳其VAT USD2.90，MOQ 1000，样品确认后24天。手柄材质不同。",
+      "beklenen": {
+        "eslesmeler": [{"demo_id": "DM-026", "durum": "alternative_available", "ddp": {"deger": 2.90, "para_birimi": "USD", "turkiye_kdv_dahil_beyani": true, "nitelik": "kesin"}, "moq": {"deger": 1000, "birim": "adet"}, "termin": {"baslangic": "sample_approval", "sure": 24, "birim": "calendar_day"}, "kademeler": [], "koli": null, "alternatif": {"url": "https://example.cn/garlic-304", "aciklama": "304 paslanmaz çelik alternatif; sap malzemesi farklı."}, "not": null, "eksik_zorunlu": []}],
+        "belirsiz": [], "dogrulama_hatalari": []
+      }
+    },
+    {
+      "id": "YA-018",
+      "dil_profili": "ZH_KOLI",
+      "baglam_satirlari": [{"demo_id": "DM-027", "ad_zh": "带盖硅胶冰格 24格"}],
+      "ham_metin": "DM-027 有货，DDP含土耳其税 USD1.85，MOQ 1200，订单确认后15天。装箱：120个/箱，外箱 52×41×38cm，CBM 0.081，毛重18.5kg，净重17.2kg，单个OPP袋。",
+      "beklenen": {
+        "eslesmeler": [{"demo_id": "DM-027", "durum": "found", "ddp": {"deger": 1.85, "para_birimi": "USD", "turkiye_kdv_dahil_beyani": true, "nitelik": "kesin"}, "moq": {"deger": 1200, "birim": "adet"}, "termin": {"baslangic": "order_confirmation", "sure": 15, "birim": "calendar_day"}, "kademeler": [], "koli": {"koli_ici_adet": 120, "uzunluk_cm": 52, "genislik_cm": 41, "yukseklik_cm": 38, "cbm": 0.081, "brut_kg": 18.5, "net_kg": 17.2, "ambalaj": "Tekli OPP poşet"}, "alternatif": null, "not": null, "eksik_zorunlu": []}],
+        "belirsiz": [], "dogrulama_hatalari": []
+      }
+    },
+    {
+      "id": "YA-019",
+      "dil_profili": "ZH_CAPRAZ_HATA",
+      "baglam_satirlari": [{"demo_id": "DM-028", "ad_zh": "壁挂式厨房纸巾架 28cm"}],
+      "ham_metin": "DM-028 DDP含税 USD3.30，MOQ 500，20天订单后。50个/箱，45×35×30cm，毛重9kg，净重10.2kg。",
+      "beklenen": {
+        "eslesmeler": [{"demo_id": "DM-028", "durum": "found", "ddp": {"deger": 3.30, "para_birimi": "USD", "turkiye_kdv_dahil_beyani": true, "nitelik": "kesin"}, "moq": {"deger": 500, "birim": "adet"}, "termin": {"baslangic": "order_confirmation", "sure": 20, "birim": "calendar_day"}, "kademeler": [], "koli": {"koli_ici_adet": 50, "uzunluk_cm": 45, "genislik_cm": 35, "yukseklik_cm": 30, "cbm": null, "brut_kg": 9, "net_kg": 10.2, "ambalaj": null}, "alternatif": null, "not": null, "eksik_zorunlu": []}],
+        "belirsiz": [], "dogrulama_hatalari": [{"demo_id": "DM-028", "alan": "koli_brut_kg", "deger": 9, "kural": "Brüt ağırlık net ağırlıktan küçük olamaz; otomatik düzeltme yapılmaz."}]
+      }
+    },
+    {
+      "id": "YA-020",
+      "dil_profili": "ZH_SIFIR_FIYAT",
+      "baglam_satirlari": [{"demo_id": "DM-029", "ad_zh": "304不锈钢细网筛 18cm"}],
+      "ham_metin": "DM-029 有货，DDP含土耳其税 USD 0，MOQ 1000，订单后12天。",
+      "beklenen": {
+        "eslesmeler": [{"demo_id": "DM-029", "durum": "found", "ddp": null, "moq": {"deger": 1000, "birim": "adet"}, "termin": {"baslangic": "order_confirmation", "sure": 12, "birim": "calendar_day"}, "kademeler": [], "koli": null, "alternatif": null, "not": null, "eksik_zorunlu": ["ddp_birim_fiyat_kdv_dahil"]}],
+        "belirsiz": [], "dogrulama_hatalari": [{"demo_id": "DM-029", "alan": "ddp_birim_fiyat_kdv_dahil", "deger": 0, "kural": "Fiyat 0 olamaz."}]
+      }
+    },
+    {
+      "id": "YA-021",
+      "dil_profili": "TR_EN_HATALI_MOQ",
+      "baglam_satirlari": [{"demo_id": "DM-030", "ad_tr": "Dört yüzeyli paslanmaz çelik rende 23cm"}],
+      "ham_metin": "DM-030 bulundu. DDP incl Turkish VAT: USD 2.70. MOQ: 0 pcs. Lead time 14 days after order confirmation.",
+      "beklenen": {
+        "eslesmeler": [{"demo_id": "DM-030", "durum": "found", "ddp": {"deger": 2.70, "para_birimi": "USD", "turkiye_kdv_dahil_beyani": true, "nitelik": "kesin"}, "moq": null, "termin": {"baslangic": "order_confirmation", "sure": 14, "birim": "calendar_day"}, "kademeler": [], "koli": null, "alternatif": null, "not": null, "eksik_zorunlu": ["moq"]}],
+        "belirsiz": [], "dogrulama_hatalari": [{"demo_id": "DM-030", "alan": "moq", "deger": 0, "kural": "MOQ en az 1 olmalıdır."}]
+      }
+    },
+    {
+      "id": "YA-022",
+      "dil_profili": "ZH_HATALI_TERMIN",
+      "baglam_satirlari": [{"demo_id": "DM-031", "ad_zh": "硅藻泥沥水垫 40×50cm"}],
+      "ham_metin": "DM-031 DDP含土耳其增值税 USD2.95，MOQ 600，订单确认后400天交货。",
+      "beklenen": {
+        "eslesmeler": [{"demo_id": "DM-031", "durum": "found", "ddp": {"deger": 2.95, "para_birimi": "USD", "turkiye_kdv_dahil_beyani": true, "nitelik": "kesin"}, "moq": {"deger": 600, "birim": "adet"}, "termin": null, "kademeler": [], "koli": null, "alternatif": null, "not": null, "eksik_zorunlu": ["termin_suresi"]}],
+        "belirsiz": [], "dogrulama_hatalari": [{"demo_id": "DM-031", "alan": "termin_suresi", "deger": 400, "kural": "Termin 365 günü aşamaz."}]
+      }
+    },
+    {
+      "id": "YA-023",
+      "dil_profili": "ZH_KADEME_SIRA_KARISIK",
+      "baglam_satirlari": [{"demo_id": "DM-032", "ad_zh": "抽屉式冰箱收纳盒 3L"}],
+      "ham_metin": "DM-032 阶梯价（DDP含土耳其税）：1000个 USD2.10，100个 USD2.60，500个 USD2.30。MOQ100，订单确认后18天。",
+      "beklenen": {
+        "eslesmeler": [{"demo_id": "DM-032", "durum": "found", "ddp": {"deger": 2.60, "para_birimi": "USD", "turkiye_kdv_dahil_beyani": true, "nitelik": "kesin"}, "moq": {"deger": 100, "birim": "adet"}, "termin": {"baslangic": "order_confirmation", "sure": 18, "birim": "calendar_day"}, "kademeler": [{"min_adet": 100, "max_adet": 499, "birim_fiyat": 2.60}, {"min_adet": 500, "max_adet": 999, "birim_fiyat": 2.30}, {"min_adet": 1000, "max_adet": null, "birim_fiyat": 2.10}], "koli": null, "alternatif": null, "not": "Kaynak kademeler karışık sıradaydı; beklenen çıktı min adet artan sıraya normalize edildi.", "eksik_zorunlu": []}],
+        "belirsiz": [], "dogrulama_hatalari": []
+      }
+    },
+    {
+      "id": "YA-024",
+      "dil_profili": "ZH_KADEME_CAKISMA",
+      "baglam_satirlari": [{"demo_id": "DM-033", "ad_zh": "高硼硅玻璃油壶 550ml"}],
+      "ham_metin": "DM-033 DDP含税阶梯：100-500个 USD3.50；400-999个 USD3.20；1000+ USD2.95。MOQ100，订单后20天。",
+      "beklenen": {
+        "eslesmeler": [{"demo_id": "DM-033", "durum": "found", "ddp": {"deger": 3.50, "para_birimi": "USD", "turkiye_kdv_dahil_beyani": true, "nitelik": "kesin"}, "moq": {"deger": 100, "birim": "adet"}, "termin": {"baslangic": "order_confirmation", "sure": 20, "birim": "calendar_day"}, "kademeler": [{"min_adet": 100, "max_adet": 500, "birim_fiyat": 3.50}, {"min_adet": 400, "max_adet": 999, "birim_fiyat": 3.20}, {"min_adet": 1000, "max_adet": null, "birim_fiyat": 2.95}], "koli": null, "alternatif": null, "not": null, "eksik_zorunlu": []}],
+        "belirsiz": [], "dogrulama_hatalari": [{"demo_id": "DM-033", "alan": "kademeli_fiyatlar", "deger": "100-500 ve 400-999", "kural": "Fiyat kademeleri çakışamaz; sessiz sınır düzeltmesi yapılmaz."}]
+      }
+    },
+    {
+      "id": "YA-025",
+      "dil_profili": "TR_EN_ZH",
+      "baglam_satirlari": [{"demo_id": "DM-034", "ad_zh": "琥珀色玻璃高脚杯 350ml 6只装"}],
+      "ham_metin": "DM-034 available / 有货. 6'lı set için DDP incl. Türkiye VAT = USD 9.80/set. 起订量 MOQ 360 set. Termin: artwork approval 后 26 working days. Carton 8 sets.",
+      "beklenen": {
+        "eslesmeler": [{"demo_id": "DM-034", "durum": "found", "ddp": {"deger": 9.80, "para_birimi": "USD", "turkiye_kdv_dahil_beyani": true, "nitelik": "kesin"}, "moq": {"deger": 360, "birim": "set"}, "termin": {"baslangic": "artwork_approval", "sure": 26, "birim": "working_day"}, "kademeler": [], "koli": {"koli_ici_adet": 8, "uzunluk_cm": null, "genislik_cm": null, "yukseklik_cm": null, "cbm": null, "brut_kg": null, "net_kg": null, "ambalaj": null}, "alternatif": null, "not": null, "eksik_zorunlu": []}],
+        "belirsiz": [], "dogrulama_hatalari": []
+      }
+    },
+    {
+      "id": "YA-026",
+      "dil_profili": "ZH_EMOJI_BOSLUK",
+      "baglam_satirlari": [{"demo_id": "DM-035", "ad_zh": "无铅玻璃冷水壶 1.5L"}],
+      "ham_metin": "📌DM-035｜无铅玻璃冷水壶\n有 货✅\nDDP 含 土耳其 增值税：USD 5.70 / pc\nMOQ   720 pcs；交期：定金到后 23 天。",
+      "beklenen": {
+        "eslesmeler": [{"demo_id": "DM-035", "durum": "found", "ddp": {"deger": 5.70, "para_birimi": "USD", "turkiye_kdv_dahil_beyani": true, "nitelik": "kesin"}, "moq": {"deger": 720, "birim": "adet"}, "termin": {"baslangic": "deposit_received", "sure": 23, "birim": "calendar_day"}, "kademeler": [], "koli": null, "alternatif": null, "not": null, "eksik_zorunlu": []}],
+        "belirsiz": [], "dogrulama_hatalari": []
+      }
+    },
+    {
+      "id": "YA-027",
+      "dil_profili": "EN_EMAIL_TABLO",
+      "baglam_satirlari": [{"demo_id": "DM-036", "ad_en": "Ceramic breakfast plate 8英寸"}],
+      "ham_metin": "Subject: Quote DM-036\nItem | Status | DDP incl Turkish VAT | MOQ | Lead time\nDM-036 | Found | USD 3.15/pc | 600 pcs | 30 calendar days after sample approval\nPacking: 24 pcs/carton; 46*32*29 cm; G.W. 16.8 kg; N.W. 15.6 kg.",
+      "beklenen": {
+        "eslesmeler": [{"demo_id": "DM-036", "durum": "found", "ddp": {"deger": 3.15, "para_birimi": "USD", "turkiye_kdv_dahil_beyani": true, "nitelik": "kesin"}, "moq": {"deger": 600, "birim": "adet"}, "termin": {"baslangic": "sample_approval", "sure": 30, "birim": "calendar_day"}, "kademeler": [], "koli": {"koli_ici_adet": 24, "uzunluk_cm": 46, "genislik_cm": 32, "yukseklik_cm": 29, "cbm": null, "brut_kg": 16.8, "net_kg": 15.6, "ambalaj": null}, "alternatif": null, "not": null, "eksik_zorunlu": []}],
+        "belirsiz": [], "dogrulama_hatalari": []
+      }
+    },
+    {
+      "id": "YA-028",
+      "dil_profili": "ZH_STOK_YOK",
+      "baglam_satirlari": [{"demo_id": "DM-037", "ad_zh": "双层玻璃杯 250ml 2只装"}],
+      "ham_metin": "DM-037 现在没库存，工厂这个模具也暂停，不能接单。下个月是否恢复不确定。",
+      "beklenen": {
+        "eslesmeler": [{"demo_id": "DM-037", "durum": "not_found", "ddp": null, "moq": null, "termin": null, "kademeler": [], "koli": null, "alternatif": null, "not": "Stok yok; kalıp üretimi durmuş ve gelecek ay yeniden başlayacağı belirsiz.", "eksik_zorunlu": []}],
+        "belirsiz": [], "dogrulama_hatalari": []
+      }
+    },
+    {
+      "id": "YA-029",
+      "dil_profili": "ZH_KISMI_EKSIK",
+      "baglam_satirlari": [{"demo_id": "DM-038", "ad_zh": "琥珀色玻璃高脚杯 350ml 6只装"}],
+      "ham_metin": "DM-038 产品找到了，MOQ 500套，交期订单确认后28天。价格还在等工厂确认，稍后发。",
+      "beklenen": {
+        "eslesmeler": [{"demo_id": "DM-038", "durum": "found", "ddp": null, "moq": {"deger": 500, "birim": "set"}, "termin": {"baslangic": "order_confirmation", "sure": 28, "birim": "calendar_day"}, "kademeler": [], "koli": null, "alternatif": null, "not": "Fiyat fabrika teyidi bekliyor; sonra gönderilecek.", "eksik_zorunlu": ["ddp_birim_fiyat_kdv_dahil", "para_birimi", "ddp_turkiye_kdv_dahil_onayi"]}],
+        "belirsiz": [], "dogrulama_hatalari": []
+      }
+    },
+    {
+      "id": "YA-030",
+      "dil_profili": "ZH_EN_TR_COKLU_KIRLI",
+      "baglam_satirlari": [{"demo_id": "DM-039", "ad_zh": "竹木圆形托盘 30cm"}, {"demo_id": "DM-040", "ad_zh": "骨瓷咖啡杯碟 200ml"}, {"demo_id": "DM-009", "ad_zh": "棉麻桌旗 33×180cm"}, {"demo_id": "DM-010", "ad_zh": "硅藻泥吸水地垫 40×60cm"}],
+      "ham_metin": "报价更新👇\nDM-040 cup&saucer: DDP incl TR VAT USD 6.90/set, MOQ 480, sample OK后35天。\nDM-009 桌旗：无货，面料停做。\nDM-039 托盘 有货｜USD4.60 DDP含土耳其税｜MOQ600｜order confirmed + 20 days。\n地垫那个价格大概3块多，数量要多一点，晚点确认 😅\nDM-010 MOQ 1000，交期25天（定金后）。",
+      "beklenen": {
+        "eslesmeler": [
+          {"demo_id": "DM-040", "durum": "found", "ddp": {"deger": 6.90, "para_birimi": "USD", "turkiye_kdv_dahil_beyani": true, "nitelik": "kesin"}, "moq": {"deger": 480, "birim": "set"}, "termin": {"baslangic": "sample_approval", "sure": 35, "birim": "calendar_day"}, "kademeler": [], "koli": null, "alternatif": null, "not": null, "eksik_zorunlu": []},
+          {"demo_id": "DM-009", "durum": "not_found", "ddp": null, "moq": null, "termin": null, "kademeler": [], "koli": null, "alternatif": null, "not": "Kumaş üretimi durduğu için stok yok.", "eksik_zorunlu": []},
+          {"demo_id": "DM-039", "durum": "found", "ddp": {"deger": 4.60, "para_birimi": "USD", "turkiye_kdv_dahil_beyani": true, "nitelik": "kesin"}, "moq": {"deger": 600, "birim": "adet"}, "termin": {"baslangic": "order_confirmation", "sure": 20, "birim": "calendar_day"}, "kademeler": [], "koli": null, "alternatif": null, "not": null, "eksik_zorunlu": []},
+          {"demo_id": "DM-010", "durum": "found", "ddp": null, "moq": {"deger": 1000, "birim": "adet"}, "termin": {"baslangic": "deposit_received", "sure": 25, "birim": "calendar_day"}, "kademeler": [], "koli": null, "alternatif": null, "not": "Fiyat daha sonra teyit edilecek.", "eksik_zorunlu": ["ddp_birim_fiyat_kdv_dahil", "para_birimi", "ddp_turkiye_kdv_dahil_onayi"]}
+        ],
+        "belirsiz": [{"parca": "地垫那个价格大概3块多，数量要多一点", "aday_demo_idleri": ["DM-010"], "neden": "Yaklaşık sayı, para birimi ve kesin miktar yok; DM-010 fiyatına bağlanamaz.", "yasak_otomatik_islem": "3 değerini fiyat, 'daha çok' ifadesini MOQ olarak kaydetme"}],
+        "dogrulama_hatalari": []
+      }
+    }
+  ]
+}

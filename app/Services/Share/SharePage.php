@@ -27,6 +27,13 @@ use App\Services\Translation\ValueSet;
  * bir puanı uydurmak yerine bölüm hiç basılmaz (şartname notu).
  *
  * İÇ KOPYA VERİSİ BURAYA GİRMEZ (F5): hedef satış/kâr alanları hiçbir koşulda görünmez.
+ *
+ * DİL (K81 · İE#21 EK-5): sayfanın ARAYÜZ metinleri `?lang=` ile seçilen dilde
+ * basılır ve tek kaynaktan (`ShareTexts`) gelir. İKİ İSTİSNA karışık dil sayılmaz:
+ *   · K81(b) — tablo SÜTUN BAŞLIĞI bloğu her dilde üç dilli kalır (TR/中文/EN);
+ *     Çinli tedarikçi ile Türk alıcı aynı tabloya bakar, başlık ortak sözlüktür,
+ *   · K55 — ürün adının altındaki orijinal Çince satır aynen korunur (veri).
+ * Bunların dışında sayfada başka dilden tek kelime kalmamalıdır.
  */
 final class SharePage
 {
@@ -50,6 +57,19 @@ final class SharePage
      * aittir — Türkçe eksikleri İngilizce sayfada rozetlenmemelidir.
      */
     private ?ValueSet $aktifDegerler = null;
+
+    /** O isteğin dili — arayüz metinleri buradan çözülür (K81). */
+    private string $aktifDil = 'tr';
+
+    /**
+     * Arayüz metni: tek kaynak `ShareTexts`; `{...}` yer tutucuları doldurulur.
+     *
+     * @param array<string, string> $degerler
+     */
+    private function s(string $anahtar, array $degerler = []): string
+    {
+        return ShareTexts::metin($this->aktifDil, $anahtar, $degerler);
+    }
 
     /**
      * @param array<string, mixed> $list ListPresenter::list çıktısı
@@ -77,6 +97,7 @@ final class SharePage
     ): string {
         $e = static fn (mixed $value): string => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
         $this->aktifDegerler = $this->values?->withDil($dil);
+        $this->aktifDil = ShareTexts::dil($dil);
 
         // İE#17 G1 — VARLIK SÜRÜMLEME: canlı kusurun kökü buydu. Bağlantılar
         // sürümsüzdü; zip açılımı dosya tarihlerini koruduğu için tarayıcının
@@ -109,7 +130,9 @@ final class SharePage
             ? mb_strtoupper((string) $documentHeader['company'], 'UTF-8')
             : 'TEDARİKAPP';
         $antetSatiri = $this->metaSatiri($documentHeader, $list);
-        $kurEtiketi = ($list['rate_locked_at'] ?? null) !== null ? 'KUR · KİLİTLİ' : 'KUR · GÜNCEL';
+        $kurEtiketi = ($list['rate_locked_at'] ?? null) !== null
+            ? $this->s('kur_kilitli')
+            : $this->s('kur_guncel');
         $revizyonHarfi = TemplateV2::revisionLabel(max(1, (int) ($list['revision'] ?? 0) + 1));
 
         $araclar = $this->araclar($list, $sira, $canonicalUrl, $token, $dil, $now, $e, $sahipGorunumu);
@@ -120,18 +143,18 @@ final class SharePage
         );
 
         return '<!DOCTYPE html>
-<html lang="tr">
+<html lang="' . $e($this->aktifDil) . '">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<meta name="description" content="TedarikApp (Ürün Tedarik Asistanı) ile paylaşılan sipariş listesi — salt okunur görünüm.">
+<meta name="description" content="' . $e($this->s('sayfa_aciklama')) . '">
 <title>' . $e($list['name']) . ' — TedarikApp</title>
 <link rel="icon" type="image/svg+xml" href="/panel/favicon.svg">
 <link rel="apple-touch-icon" sizes="180x180" href="/panel/apple-touch-icon.png">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="TedarikApp">
-<meta property="og:locale" content="tr_TR">
+<meta property="og:locale" content="' . $e($this->s('yerel')) . '">
 <meta property="og:title" content="' . $e($list['name']) . ' — TedarikApp">
 <!-- İE#15 F2: önizlemede liste adı, ürün sayısı ve dönem görünür; FİYAT/TUTAR ASLA.
      Link önizlemesi sohbet uygulamalarında herkese açılır — özel veri oraya sızmaz. -->
@@ -157,11 +180,11 @@ final class SharePage
         </div>
       </div>
       <div class="hm">
-        <div><b>BELGE</b><span>' . $e($this->belgeKodu($list)) . '</span>
-          <span class="alt">Rev ' . $e($revizyonHarfi) . '</span></div>
+        <div><b>' . $e($this->s('belge')) . '</b><span>' . $e($this->belgeKodu($list)) . '</span>
+          <span class="alt">' . $e($this->s('rev')) . ' ' . $e($revizyonHarfi) . '</span></div>
         <div><b>' . $e($kurEtiketi) . '</b><span>¥ ' . $e($list['yuan_rate']) . '</span>
           <span class="alt">$ ' . $e($list['usd_rate']) . '</span></div>
-        <div><b>GÜNCELLEME</b><span>' . $e($this->tarih((string) $list['updated_at'], 'd.m.Y')) . '</span>
+        <div><b>' . $e($this->s('guncelleme')) . '</b><span>' . $e($this->tarih((string) $list['updated_at'], 'd.m.Y')) . '</span>
           <span class="alt">' . $e($this->tarih((string) $list['updated_at'], 'H:i')) . '</span></div>
       </div>
     </div>
@@ -169,11 +192,11 @@ final class SharePage
     <div class="tools">' . $araclar . '</div>
 
     <div class="kpis">
-      <div class="kpi"><b>ÜRÜN</b><span>' . $e($sira) . '</span></div>
-      <div class="kpi"><b>TOPLAM MİKTAR</b><span>' . $e($totals['qty']) . '</span></div>
-      <div class="kpi"><b>MAL BEDELİ</b><span><span class="u">¥</span> ' . $e($totals['yuan']) . '</span></div>
-      <div class="kpi"><b>MAL BEDELİ</b><span><span class="u">₺</span> ' . $e($totals['yuan_tl']) . '</span></div>
-      <div class="kpi"><b>DDP · KDV DAHİL</b><span>'
+      <div class="kpi"><b>' . $e($this->s('kpi_urun')) . '</b><span>' . $e($sira) . '</span></div>
+      <div class="kpi"><b>' . $e($this->s('kpi_miktar')) . '</b><span>' . $e($totals['qty']) . '</span></div>
+      <div class="kpi"><b>' . $e($this->s('kpi_bedel')) . '</b><span><span class="u">¥</span> ' . $e($totals['yuan']) . '</span></div>
+      <div class="kpi"><b>' . $e($this->s('kpi_bedel')) . '</b><span><span class="u">₺</span> ' . $e($totals['yuan_tl']) . '</span></div>
+      <div class="kpi"><b>' . $e($this->s('kpi_ddp')) . '</b><span>'
         . (self::pozitif($totals['ddp_tl'] ?? null)
             ? '<span class="u">₺</span> ' . $e($totals['ddp_tl'])
             : '—')
@@ -198,23 +221,23 @@ final class SharePage
         <th></th>
       </tr></thead>
       <tbody>' . ($satirlar === ''
-                ? '<tr class="r"><td colspan="14">Bu listede gösterilecek ürün yok.</td></tr>'
+                ? '<tr class="r"><td colspan="14">' . $e($this->s('bos_liste')) . '</td></tr>'
                 : $satirlar) . '</tbody>
     </table></div>
 
-    <div class="tot"><span>GENEL TOPLAM — ' . $e($totals['qty']) . ' adet</span>
-      <small>Parasal toplamlar üstteki özet şerididir</small></div>
+    <div class="tot"><span>' . $e($this->s('genel_toplam', ['adet' => (string) $totals['qty']])) . '</span>
+      <small>' . $e($this->s('toplam_alt')) . '</small></div>
   </div>
 
   <div class="legal">
-    Sipariş şartları: Teslim DDP · Kur, liste iletildiğinde kilitlenir · Fiyatlar DDP teslim, KDV DAHİLDİR<br>
-    TedarikApp — Ürün Tedarik Asistanı · Görsele tıkla: galeri · Boş alan — ile gösterilir
+    ' . $e($this->s('sartlar')) . '<br>
+    ' . $e($this->s('kunye')) . '
   </div>
 </div>
 <div class="lbx" id="lbx">
   <img id="lbi" alt=""><video id="lbv" controls playsinline hidden></video>
   <p id="lbnot" class="lbnot" hidden></p>
-  <div><span id="lbs"></span> · kapat: tıkla / ESC</div>
+  <div><span id="lbs"></span> · ' . $e($this->s('lightbox_kapat')) . '</div>
 </div>
 
 <!-- İE#15 C1/C3: WeChat ve DingTalk dış link şemasıyla açılmaz; doğru yol KAREDİR.
@@ -222,14 +245,14 @@ final class SharePage
      Karenin içeriği YALNIZ paylaşım adresidir — imzalı indirme adresi konmaz. -->
 <div class="qrm" id="qrm" hidden>
   <div class="qrk" role="dialog" aria-modal="true" aria-labelledby="qrb">
-    <h2 id="qrb">Kare kodu okutun</h2>
+    <h2 id="qrb">' . $e($this->s('qr_baslik')) . '</h2>
     <p class="qra" id="qra">WeChat 微信</p>
-    <img id="qri" alt="Paylaşım bağlantısının kare kodu" width="260" height="260">
+    <img id="qri" alt="' . $e($this->s('qr_alt')) . '" width="260" height="260">
     <p class="qrn" id="qrn"></p>
     <div class="qrd">
-      <button type="button" data-qr-metin>Özet metnini kopyala</button>
-      <a id="qrp" download="tedarik-listesi-qr.png">Kareyi indir (PNG)</a>
-      <button type="button" data-qr-kapat>Kapat</button>
+      <button type="button" data-qr-metin>' . $e($this->s('qr_ozet')) . '</button>
+      <a id="qrp" download="tedarik-listesi-qr.png">' . $e($this->s('qr_indir')) . '</a>
+      <button type="button" data-qr-kapat>' . $e($this->s('qr_kapat')) . '</button>
     </div>
   </div>
 </div>
@@ -238,14 +261,13 @@ final class SharePage
      tarayıcıda saklanır (localStorage) ve bir daha çıkmaz. -->
 <div class="ynot" id="ynot" hidden>
   <div class="ynk" role="dialog" aria-modal="true" aria-labelledby="ynb">
-    <h2 id="ynb">Yazdırma ayarları</h2>
-    <p>Tarayıcı penceresinde <strong>Düzen: Yatay</strong> ve
-       <strong>Arka plan grafikleri: açık</strong> seçin — aksi hâlde sağdaki
-       fiyat sütunları kâğıda sığmayabilir ve renkler basılmaz.</p>
-    <label class="ynl"><input type="checkbox" id="ynh"> Bir daha gösterme</label>
+    <h2 id="ynb">' . $e($this->s('yaz_baslik')) . '</h2>
+    <p>' . $e($this->s('yaz_aciklama_bas')) . ' <strong>' . $e($this->s('yaz_duzen')) . '</strong>
+       <strong>' . $e($this->s('yaz_arkaplan')) . '</strong> ' . $e($this->s('yaz_aciklama_son')) . '</p>
+    <label class="ynl"><input type="checkbox" id="ynh"> ' . $e($this->s('yaz_bir_daha')) . '</label>
     <div class="ynd">
-      <button type="button" class="pri" data-yazdir-devam>Yazdır</button>
-      <button type="button" data-yazdir-iptal>Vazgeç</button>
+      <button type="button" class="pri" data-yazdir-devam>' . $e($this->s('yazdir')) . '</button>
+      <button type="button" data-yazdir-iptal>' . $e($this->s('vazgec')) . '</button>
     </div>
   </div>
 </div>
@@ -286,7 +308,7 @@ final class SharePage
         callable $e,
         bool $sahipGorunumu = false,
     ): string {
-        $html = '<div class="tgrp" role="group" aria-label="Çıktılar">';
+        $html = '<div class="tgrp" role="group" aria-label="' . $e($this->s('ciktilar')) . '">';
 
         if ($this->downloads !== null && $token !== '' && $now !== null) {
             foreach ([['xlsx', 'Excel'], ['pdf', 'PDF'], ['csv', 'CSV']] as [$bicim, $etiket]) {
@@ -298,7 +320,8 @@ final class SharePage
                     . ShareIcons::indir() . '<span>' . $e($etiket) . '</span></a>';
             }
         }
-        $html .= '<button type="button" class="tb" data-yazdir>' . ShareIcons::yazdir() . '<span>Yazdır</span></button>'
+        $html .= '<button type="button" class="tb" data-yazdir>' . ShareIcons::yazdir()
+            . '<span>' . $e($this->s('yazdir')) . '</span></button>'
             . '</div>';
 
         // B8-4: firma görünümünde araç çubuğu ÇIKTILARLA biter.
@@ -320,20 +343,20 @@ final class SharePage
 
         $html .= '<div class="pmenu">'
             . '<button type="button" class="tb pri" data-paylas-ac aria-expanded="false" aria-haspopup="true">'
-            . ShareIcons::link() . '<span>Paylaş</span></button>'
+            . ShareIcons::link() . '<span>' . $e($this->s('paylas')) . '</span></button>'
             . '<div class="pmenu-liste" data-paylas-menu hidden'
             . ' data-link="' . $e($link) . '"'
             . ' data-mesaj="' . $e($mesaj) . '"'
             . ' data-konu="' . $e($konu) . '"'
             . ' data-dil="' . $e($dil) . '">'
-            . '<button type="button" data-kopyala>' . ShareIcons::link() . 'Linki kopyala</button>'
+            . '<button type="button" data-kopyala>' . ShareIcons::link() . '' . $e($this->s('linki_kopyala')) . '</button>'
             . '<button type="button" data-kanal="whatsapp">' . ShareIcons::whatsapp() . 'WhatsApp</button>'
             . '<button type="button" data-kanal="wechat" data-qr="1">' . ShareIcons::kare() . 'WeChat 微信</button>'
             . '<button type="button" data-kanal="qq">' . ShareIcons::disLink() . 'QQ</button>'
             . '<button type="button" data-kanal="dingtalk" data-qr="1">' . ShareIcons::kare() . 'DingTalk 钉钉</button>'
             . '<button type="button" data-kanal="telegram">' . ShareIcons::disLink() . 'Telegram</button>'
-            . '<button type="button" data-kanal="eposta">' . ShareIcons::disLink() . 'E-posta</button>'
-            . '<div class="pmenu-dil"><span>Gönderim dili</span>'
+            . '<button type="button" data-kanal="eposta">' . ShareIcons::disLink() . '' . $e($this->s('eposta')) . '</button>'
+            . '<div class="pmenu-dil"><span>' . $e($this->s('gonderim_dili')) . '</span>'
             . $this->dilSecici($token, $dil, $e)
             . '</div>'
             . '</div></div>';
@@ -388,12 +411,12 @@ final class SharePage
      */
     private function onizlemeMetni(array $list, int $urunSayisi): string
     {
-        $parcalar = [$urunSayisi . ' ürün'];
+        $parcalar = [$this->s('onizleme_urun', ['adet' => (string) $urunSayisi])];
         $donem = $list['period'] ?? null;
         if (is_string($donem) && trim($donem) !== '') {
             $parcalar[] = trim($donem);
         }
-        $parcalar[] = 'DDP teklif için paylaşılan tedarik listesi';
+        $parcalar[] = $this->s('onizleme_kuyruk');
 
         return implode(' · ', $parcalar);
     }
@@ -455,8 +478,8 @@ final class SharePage
         $detay = ProductDetails::detay($product, $this->aktifDegerler);
 
         $gorsel = $galeri === []
-            ? '<span class="pi"><span class="yok-gorsel">görsel<br>yok</span></span>'
-            : '<span class="pi" data-galeri="' . $galeriIndex . '" data-sira="0" tabindex="0" role="button" aria-label="Galeriyi aç">'
+            ? '<span class="pi"><span class="yok-gorsel">' . $this->s('gorsel_yok') . '</span></span>'
+            : '<span class="pi" data-galeri="' . $galeriIndex . '" data-sira="0" tabindex="0" role="button" aria-label="' . $e($this->s('galeriyi_ac')) . '">'
                 . '<img src="' . $e($galeri[0]) . '" alt="" loading="lazy">'
                 . $this->videoRozeti($product, $e)
                 . '</span>';
@@ -473,32 +496,33 @@ final class SharePage
         // İE#15 D2: tek dış çıkış — yeni sekme, noopener/noreferrer/nofollow.
         $git = is_string($product['url'] ?? null) && $product['url'] !== ''
             ? '<a class="op-git" href="' . $e($product['url']) . '" target="_blank" rel="noopener noreferrer nofollow">'
-                . ShareIcons::disLink() . 'Ürüne git</a>'
+                . ShareIcons::disLink() . $e($this->s('urune_git')) . '</a>'
             : '';
 
         $satir = '<tr class="r" id="urun-' . $sira . '">
             <td class="c" style="font-weight:700;color:var(--t3)">' . $sira . '</td>
             <td><div class="prod">' . $gorsel . '<div><div class="pno">№ ' . $sira . '</div>'
                 . $adHtml . $orijinal . '</div></div></td>
-            <td class="mut"><span class="lab">DETAYLAR</span><span class="val">' . $this->hucre($detay, $e) . '</span></td>
-            <td class="mut c"><span class="lab">VARYASYON</span><span class="val">' . $this->hucre($this->varyasyonMetni($product), $e) . '</span></td>
-            <td class="mut c"><span class="lab">KATEGORİ</span><span class="val">' . $this->hucre($kategori, $e) . '</span></td>
-            <td class="c"><span class="lab">KAYNAK</span><span class="val"><span class="src">'
+            <td class="mut"><span class="lab">' . $e($this->sutunEtiketi('DETAYLAR')) . '</span><span class="val">' . $this->hucre($detay, $e) . '</span></td>
+            <td class="mut c"><span class="lab">' . $e($this->sutunEtiketi('VARYASYON')) . '</span><span class="val">' . $this->hucre($this->varyasyonMetni($product), $e) . '</span></td>
+            <td class="mut c"><span class="lab">' . $e($this->sutunEtiketi('KATEGORİ')) . '</span><span class="val">' . $this->hucre($kategori, $e) . '</span></td>
+            <td class="c"><span class="lab">' . $e($this->sutunEtiketi('KAYNAK')) . '</span><span class="val"><span class="src">'
                 . $e(TemplateV2::platformLabel($product['platform'] ?? null)) . '</span></span></td>
-            <td class="c"><span class="lab">DURUM</span><span class="val"><span class="pill ' . $pill . '">'
+            <td class="c"><span class="lab">' . $e($this->sutunEtiketi('DURUM')) . '</span><span class="val"><span class="pill ' . $pill . '">'
                 . '<span class="d"></span>' . $e($rozet) . '</span></span></td>
-            <td class="mut c not-hucre"><span class="lab">NOT</span><span class="val">' . $this->hucre($product['note'] ?? null, $e) . '</span></td>
-            <td class="c"><span class="lab">MİKTAR</span><span class="val"><b>' . $e($product['qty']) . '</b></span></td>
-            <td class="n"><span class="lab">VİTRİN FİYATI</span><span class="val">'
+            <td class="mut c not-hucre"><span class="lab">' . $e($this->sutunEtiketi('NOT')) . '</span><span class="val">' . $this->hucre($product['note'] ?? null, $e) . '</span></td>
+            <td class="c"><span class="lab">' . $e($this->sutunEtiketi('MİKTAR')) . '</span><span class="val"><b>' . $e($product['qty']) . '</b></span></td>
+            <td class="n"><span class="lab">' . $e($this->sutunEtiketi('VİTRİN FİYATI')) . '</span><span class="val">'
                 . $this->para($product['price_yuan'] ?? null, '¥', $e) . '</span></td>
-            <td class="n"><span class="lab">₺ KARŞILIĞI</span><span class="val">'
+            <td class="n"><span class="lab">' . $e($this->sutunEtiketi('₺ KARŞILIĞI')) . '</span><span class="val">'
                 . $this->para($product['price_yuan_tl'] ?? null, '₺', $e) . '</span></td>
             <td class="n mut"><span class="lab">DDP $</span><span class="val">'
                 . $this->para($product['price_ddp_usd'] ?? null, '$', $e) . '</span></td>
             <td class="n mut"><span class="lab">DDP ₺</span><span class="val">'
                 . $this->para($product['price_ddp_tl'] ?? null, '₺', $e) . '</span></td>
             <td><div class="ops">' . $git
-                . '<button type="button" class="op-det" data-detay>Detaylar ' . ShareIcons::asagiOk() . '</button>'
+                . '<button type="button" class="op-det" data-detay>' . $e($this->s('detaylar')) . ' '
+                . ShareIcons::asagiOk() . '</button>'
                 . '</div></td>
         </tr>';
 
@@ -517,36 +541,39 @@ final class SharePage
     {
         // İE#14 A6: dolu alanlar üstte; boşlar katlanmış "Eksik bilgileri göster (N)"
         // içinde. Hepsi boşsa ÜRÜN BİLGİLERİ bölümü hiç basılmaz.
-        ['dolu' => $dolu, 'bos' => $bos] = ProductFacts::grouped($product, $this->aktifDegerler);
+        // K81: alan etiketleri de SEÇİLEN DİLDE gelir (eskiden TR + 中文 çiftiydi).
+        ['dolu' => $dolu, 'bos' => $bos] = ProductFacts::grouped($product, $this->aktifDegerler, $this->aktifDil);
 
         $bilgiler = '';
         if ($dolu !== []) {
             $izgara = '';
-            foreach ($dolu as [$tr, $cjk, $deger]) {
+            foreach ($dolu as [$etiket, $deger]) {
                 // İE#21 B9 — SESSİZ MELEZ YASAK: çevrilememiş değer ham basılır ama
                 // İŞARETLENİR. Okuyucu "bu neden Çince?" diye sormaz; sistemin işi
                 // bitirmediğini görür ve sayfayı yenileyince yerini çevirisi alır.
                 $bekliyor = $this->aktifDegerler?->bekliyorMu($deger) === true;
-                $izgara .= '<div><b>' . $e($tr) . ' <span class="zh">' . $e($cjk) . '</span></b>'
+                $izgara .= '<div><b>' . $e($etiket) . '</b>'
                     . '<span>' . $e($deger)
-                    . ($bekliyor ? ' <span class="cb" title="Çevirisi kuyrukta">çeviri bekliyor</span>' : '')
+                    . ($bekliyor ? ' <span class="cb" title="' . $e($this->s('ceviri_kuyrukta')) . '">'
+                        . $e($this->s('ceviri_bekliyor')) . '</span>' : '')
                     . '</span></div>';
             }
 
             $eksik = '';
             if ($bos !== []) {
                 $eksikIzgara = '';
-                foreach ($bos as [$tr, $cjk]) {
-                    $eksikIzgara .= '<div><b>' . $e($tr) . ' <span class="zh">' . $e($cjk) . '</span></b>'
+                foreach ($bos as $etiket) {
+                    $eksikIzgara .= '<div><b>' . $e($etiket) . '</b>'
                         . '<span class="yok">—</span></div>';
                 }
                 // <details>: satır içi script YOK — açılır davranış tarayıcının kendisi (K51 CSP).
-                $eksik = '<details class="eks"><summary>Eksik bilgileri göster (' . count($bos) . ')</summary>'
+                $eksik = '<details class="eks"><summary>'
+                    . $e($this->s('eksik_goster', ['adet' => (string) count($bos)])) . '</summary>'
                     . '<div class="sg">' . $eksikIzgara . '</div></details>';
             }
 
             $bilgiler = '<div>
-                <div class="dh">ÜRÜN BİLGİLERİ <span class="zh">商品属性</span></div>
+                <div class="dh">' . $e($this->s('urun_bilgileri')) . '</div>
                 <div class="sg">' . $izgara . '</div>' . $eksik . '
             </div>';
         }
@@ -557,16 +584,18 @@ final class SharePage
         if ($varyasyonlar !== []) {
             $gorunen = array_slice($varyasyonlar, 0, ValueSet::LIMIT);
             $gizli = array_slice($varyasyonlar, ValueSet::LIMIT, 40);
-            $sag .= '<div class="dh">VARYASYONLAR <span class="zh">规格</span></div><div class="vr">';
+            $sag .= '<div class="dh">' . $e($this->s('varyasyonlar')) . '</div><div class="vr">';
             foreach ($gorunen as $varyasyon) {
                 $bekliyor = $this->aktifDegerler?->bekliyorMu($varyasyon) === true;
                 $sag .= '<div><span>' . $e($varyasyon)
-                    . ($bekliyor ? ' <span class="cb" title="Çevirisi kuyrukta">çeviri bekliyor</span>' : '')
+                    . ($bekliyor ? ' <span class="cb" title="' . $e($this->s('ceviri_kuyrukta')) . '">'
+                        . $e($this->s('ceviri_bekliyor')) . '</span>' : '')
                     . '</span><b></b></div>';
             }
             $sag .= '</div>';
             if ($gizli !== []) {
-                $sag .= '<details class="eks"><summary>+' . count($gizli) . ' seçenek</summary><div class="vr">';
+                $sag .= '<details class="eks"><summary>'
+                    . $e($this->s('secenek_daha', ['adet' => (string) count($gizli)])) . '</summary><div class="vr">';
                 foreach ($gizli as $varyasyon) {
                     $sag .= '<div><span>' . $e($varyasyon) . '</span><b></b></div>';
                 }
@@ -574,7 +603,7 @@ final class SharePage
             }
         }
         if (is_string($product['note'] ?? null) && $product['note'] !== '') {
-            $sag .= '<div class="nt">Not: ' . $e($product['note']) . '</div>';
+            $sag .= '<div class="nt">' . $e($this->s('not_oneki')) . ' ' . $e($product['note']) . '</div>';
         }
 
         // İE#17 G10 (PM kararı, 21 Ağu): detay panelindeki GALERİ ŞERİDİ KALDIRILDI.
@@ -652,7 +681,7 @@ final class SharePage
     {
         $video = $product['video_url'] ?? null;
         if (is_string($video) && $video !== '') {
-            return '<span class="vb" data-video="' . $e($video) . '" role="button" tabindex="0" aria-label="Videoyu oynat">'
+            return '<span class="vb" data-video="' . $e($video) . '" role="button" tabindex="0" aria-label="' . $e($this->s('video_oynat')) . '">'
                 . ShareIcons::oynat() . '</span>';
         }
 
@@ -663,7 +692,8 @@ final class SharePage
         $kaynak = is_string($product['url'] ?? null) && $product['url'] !== '' ? (string) $product['url'] : '';
 
         return '<span class="vb" data-video-yok="1" data-video-kaynak="' . $e($kaynak) . '"'
-            . ' role="button" tabindex="0" aria-label="Video bilgisi">' . ShareIcons::oynat() . '</span>';
+            . ' role="button" tabindex="0" aria-label="' . $e($this->s('video_bilgi')) . '">'
+            . ShareIcons::oynat() . '</span>';
     }
 
     /**
@@ -719,6 +749,35 @@ final class SharePage
      * @param array{company?: string|null, web?: string|null, email?: string|null, prepared_by?: string|null} $antet
      * @param array<string, mixed> $list
      */
+    /**
+     * MOBİL SÜTUN ETİKETİ — seçilen dilde (K81).
+     *
+     * Masaüstünde sütun başlığı ÜÇ DİLLİ bloktur (K81(b) istisnası); telefonda
+     * her hücrenin başına yazılan kısa etiket ise tek dildir — üç dili her
+     * satırın içine tekrar tekrar basmak kartı okunmaz kılardı. Kaynak yine
+     * tek: `TemplateV2::COLUMNS` (TR / 中文 / EN).
+     */
+    private function sutunEtiketi(string $turkce): string
+    {
+        $sira = ['tr' => 1, 'zh' => 2, 'en' => 3][$this->aktifDil] ?? 1;
+
+        foreach (TemplateV2::COLUMNS as [, $tr, $zh, $en]) {
+            if (mb_strtoupper($tr, 'UTF-8') !== mb_strtoupper($turkce, 'UTF-8')) {
+                continue;
+            }
+
+            return mb_strtoupper([1 => $tr, 2 => $zh, 3 => $en][$sira], 'UTF-8');
+        }
+
+        // Sütun sözlüğünde karşılığı olmayan etiket (₺ KARŞILIĞI gibi biçim
+        // varyantları) olduğu gibi kalır — uydurma çeviri yapılmaz.
+        return $turkce;
+    }
+
+    /**
+     * @param array{company?: string|null, web?: string|null, email?: string|null, prepared_by?: string|null} $antet
+     * @param array<string, mixed> $list
+     */
     private function metaSatiri(array $antet, array $list): string
     {
         $parcalar = [
@@ -726,7 +785,7 @@ final class SharePage
             $antet['web'] ?? null,
             $antet['email'] ?? null,
             $list['period'] ?? null,
-            'Firma kopyası',
+            $this->s('firma_kopyasi'),
             $list['supplier_name'] ?? null,
         ];
 

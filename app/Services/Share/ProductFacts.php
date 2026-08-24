@@ -18,26 +18,30 @@ namespace App\Services\Share;
 final class ProductFacts
 {
     /**
-     * Alan tanımı: [TR etiket, 中文 etiket, RAW anahtar adayları].
+     * Alan tanımı: [TR etiket, 中文 etiket, EN etiket, RAW anahtar adayları].
      *
-     * @var list<array{0: string, 1: string, 2: list<string>}>
+     * İE#21 EK-5 (K81): etiketler ÜÇ DİLLİDİR ve panele/sayfaya SEÇİLEN DİLDE
+     * tek dil olarak basılır. Önce TR+中文 çifti basılıyordu; İngilizce sayfada
+     * "Marka 品牌" görünmesi K81'in yasakladığı karışık dildi.
+     *
+     * @var list<array{0: string, 1: string, 2: string, 3: list<string>}>
      */
     private const FIELDS = [
-        ['Marka', '品牌', ['品牌', 'brand']],
+        ['Marka', '品牌', 'Brand', ['品牌', 'brand']],
         // İE#14 A5: 货号 (stok kodu) Model adaylarından ÇIKARILDI — "155" gibi
         // anlamsız stok kodları Model diye basılıyordu. Stok kodu kendi alanındadır.
-        ['Model', '型号', ['型号', 'model', 'model number']],
-        ['Malzeme', '材质', ['材质', 'material']],
-        ['Ölçü', '尺寸', ['尺寸', '规格尺寸', 'size']],
-        ['Ağırlık', '净重', ['净重', '重量', 'weight']],
-        ['Renk', '颜色', ['颜色', 'color']],
-        ['Set adedi', '套件', ['套件', '件数', '数量/套']],
-        ['Menşe', '产地', ['产地', '原产地', '货源地']],
-        ['Kapasite', '容量', ['容量', 'capacity']],
-        ['Stok kodu', '货号', ['货号', 'item no', 'sku']],
-        ['Güç', '功率', ['功率', 'power']],
-        ['Garanti', '保修', ['保修', '质保']],
-        ['Sertifika', '认证', ['认证', 'certificate']],
+        ['Model', '型号', 'Model', ['型号', 'model', 'model number']],
+        ['Malzeme', '材质', 'Material', ['材质', 'material']],
+        ['Ölçü', '尺寸', 'Size', ['尺寸', '规格尺寸', 'size']],
+        ['Ağırlık', '净重', 'Weight', ['净重', '重量', 'weight']],
+        ['Renk', '颜色', 'Colour', ['颜色', 'color']],
+        ['Set adedi', '套件', 'Pieces per set', ['套件', '件数', '数量/套']],
+        ['Menşe', '产地', 'Origin', ['产地', '原产地', '货源地']],
+        ['Kapasite', '容量', 'Capacity', ['容量', 'capacity']],
+        ['Stok kodu', '货号', 'Item no', ['货号', 'item no', 'sku']],
+        ['Güç', '功率', 'Power', ['功率', 'power']],
+        ['Garanti', '保修', 'Warranty', ['保修', '质保']],
+        ['Sertifika', '认证', 'Certificate', ['认证', 'certificate']],
     ];
 
     /**
@@ -45,14 +49,19 @@ final class ProductFacts
      * @param \App\Services\Translation\ValueSet|null $values İE#14 A3 — DEĞERLER de
      *                                                          sözlükten geçer (灰色 → Gri)
      *
-     * @return list<array{0: string, 1: string, 2: string|null}> [TR, 中文, değer|null]
+     * @param string $dil arayüz dili — etiket bu dilde döner (K81: tek dil)
+     *
+     * @return list<array{0: string, 1: string|null}> [etiket, değer|null]
      */
-    public static function build(array $product, ?\App\Services\Translation\ValueSet $values = null): array
-    {
+    public static function build(
+        array $product,
+        ?\App\Services\Translation\ValueSet $values = null,
+        string $dil = 'tr',
+    ): array {
         $raw = self::rawAttributes($product['raw_attributes'] ?? null);
 
         $out = [];
-        foreach (self::FIELDS as [$tr, $cjk, $adaylar]) {
+        foreach (self::FIELDS as [$tr, $cjk, $en, $adaylar]) {
             $deger = null;
             foreach ($adaylar as $aday) {
                 if (isset($raw[$aday]) && $raw[$aday] !== '') {
@@ -64,19 +73,20 @@ final class ProductFacts
                     }
                 }
             }
-            $out[] = [$tr, $cjk, $deger];
+            $out[] = [self::etiket($dil, $tr, $cjk, $en), $deger];
         }
 
         // Ürün kolonlarından gelen kesin bilgiler — RAW'a bakmaya gerek yok.
         // Koli içi SAYIDIR: "20" anlamsız değildir — A5 elemesi buraya UYGULANMAZ,
         // yalnız RAW'dan gelen model/stok kodu adaylarına uygulanır.
-        $out[] = ['Koli içi', '装箱', self::sayi($product['units_per_carton'] ?? null)];
-        $out[] = ['İlan no', '编号', self::sayi($product['external_id'] ?? null)];
-        $out[] = ['Kaynak', '来源', self::metin($product['platform'] ?? null)];
+        $out[] = [self::etiket($dil, 'Koli içi', '装箱', 'Units per carton'), self::sayi($product['units_per_carton'] ?? null)];
+        $out[] = [self::etiket($dil, 'İlan no', '编号', 'Listing no'), self::sayi($product['external_id'] ?? null)];
+        $out[] = [self::etiket($dil, 'Kaynak', '来源', 'Source'), self::metin($product['platform'] ?? null)];
         $out[] = [
-            'Video',
-            '视频',
-            is_string($product['video_url'] ?? null) && $product['video_url'] !== '' ? 'Var' : null,
+            self::etiket($dil, 'Video', '视频', 'Video'),
+            is_string($product['video_url'] ?? null) && $product['video_url'] !== ''
+                ? self::etiket($dil, 'Var', '有', 'Yes')
+                : null,
         ];
 
         return $out;
@@ -91,21 +101,36 @@ final class ProductFacts
      *
      * @param array<string, mixed> $product
      *
-     * @return array{dolu: list<array{0: string, 1: string, 2: string}>, bos: list<array{0: string, 1: string}>}
+     * @param string $dil arayüz dili (K81: etiketler tek dilde döner)
+     *
+     * @return array{dolu: list<array{0: string, 1: string}>, bos: list<string>}
      */
-    public static function grouped(array $product, ?\App\Services\Translation\ValueSet $values = null): array
-    {
+    public static function grouped(
+        array $product,
+        ?\App\Services\Translation\ValueSet $values = null,
+        string $dil = 'tr',
+    ): array {
         $dolu = [];
         $bos = [];
-        foreach (self::build($product, $values) as [$tr, $cjk, $deger]) {
+        foreach (self::build($product, $values, $dil) as [$etiket, $deger]) {
             if ($deger === null || $deger === '') {
-                $bos[] = [$tr, $cjk];
+                $bos[] = $etiket;
                 continue;
             }
-            $dolu[] = [$tr, $cjk, $deger];
+            $dolu[] = [$etiket, $deger];
         }
 
         return ['dolu' => $dolu, 'bos' => $bos];
+    }
+
+    /** Seçilen dildeki etiket — bilinmeyen dil Türkçeye düşer. */
+    private static function etiket(string $dil, string $tr, string $cjk, string $en): string
+    {
+        return match ($dil) {
+            'zh' => $cjk,
+            'en' => $en,
+            default => $tr,
+        };
     }
 
     /**

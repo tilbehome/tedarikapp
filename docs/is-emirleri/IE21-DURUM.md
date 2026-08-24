@@ -98,3 +98,17 @@ tam mockup uyarlaması ayrı bir dilim olarak raporlanacak.
   süreç, SQLite bellek şeması). Çözüm CI'da paralelleştirme veya grup ayrımıdır
   (örn. `capture`, `setup`, `paylasim`, `liste` süitleri ayrı job). **rc2 SONRASI**
   ele alınacak — v1.0 kapanışını geciktirmemek PM kararıdır.
+
+---
+
+## İE#21 EK-5 (24 Ağu 2026) — K81 tamamlama
+
+| # | İş | Durum | Kanıt |
+|---|---|---|---|
+| 1 | SharePage yerelleştirme (K81 istisna dışı tek dil) | ✅ | `ShareTexts` sayfa sözlüğü (51 anahtar × 3 dil) · `ProductFacts` etiketleri üç dilli · `testK81_ISTISNA_DISINDA_TEK_DIL` + `testK81_SECILEN_DIL_SAYFAYA_ISLENIR` |
+| 2 | PdfRenderer dil desteği (pdf-rev4) | ✅ | `options.lang` okunuyor; başlık TEK satır seçilen dilde; KPI/TOPLAM/şartlar/alt bilgi aynı dilde · `testPDF_BASLIK_SECILEN_DILDE_TEK_SATIR` · panel export'u da `lang` taşıyor |
+| 3 | PHPUnit sayım mutabakatı | ✅ | 1045 = Http 435 + Services 388 + Core 103 + Setup 47 + Auth 43 + Production 13 + Integration 9 + Support 6 + Models 1 |
+
+**Kapsam defteri:** PNL-37/38/40 `kapsandi` (40/81). K81 istisnaları testlerle korunuyor:
+başlık bloğu üç dilli (`testK81_BASLIK_BLOGU_HER_DILDE_UC_DILLI`), K55 orijinal satır
+(`testE2E_PNL_39_ORIJINALSATIRUCDILDEAYNEN`).

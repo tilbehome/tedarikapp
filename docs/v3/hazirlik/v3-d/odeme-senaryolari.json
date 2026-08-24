@@ -1,0 +1,710 @@
+{
+  "dosya_ozeti_5_satir": [
+    "Ne işe yarar: Sipariş ödemelerini plan, vade olayı, kanıt ve kur kaydı halinde kalıcılaştırır.",
+    "Hangi fazda: V3-D ödeme/kanıt uygulaması ve İE#24 altın testlerinde kullanılır.",
+    "Temel ilke: Ödeme, kanıt ve kur farkı ayrı değişmez kayıt satırlarıdır.",
+    "Çıktı: Dört plan şablonu, kilometre taşı eşleşmeleri ve ODM-001..ODM-012 beklenen kayıtlarıdır.",
+    "Kapsam dışı: Banka entegrasyonu, vergi/mevzuat ve gümrük vergisi hesabıdır."
+  ],
+  "schema_version": "1.0",
+  "para_kurallari": {
+    "tutar_tipi": "Ondalık tutarlar JSON number değil string olarak saklanır.",
+    "kur_kaydi": "original_currency, original_amount, rate_snapshot_id, rate, rate_date ve converted_amount birlikte tutulur.",
+    "odeme_gunu_kuru": "Fiilî ödeme günündeki doğrulanmış kur snapshot'ı kullanılır.",
+    "kilitli_kur": "Sözleşme/karar snapshot'ındaki kur değişmez; ödeme günü kuru fark yaratırsa ana borç satırı değiştirilmez.",
+    "kur_farki": "Lehte veya aleyhte fark FX_DIFFERENCE türünde ayrı satırdır; yön tedarikçi borcunu taşıyan alıcı açısından yazılır.",
+    "dekont": "PAYMENT kaydının doğrulanmış olması için en az bir dekont eki veya banka işlem referansı zorunludur."
+  },
+  "plan_sablonlari": [
+    {
+      "plan_id": "PAY-PLAN-01",
+      "ad": "Peşin",
+      "parametreler": [],
+      "satirlar": [
+        {
+          "satir_no": 1,
+          "tutar_formulu": "siparis_net_toplam",
+          "vade_olayi": "ORDER_APPROVED",
+          "dekont_eki_zorunlu": true,
+          "kur_politikasi": "payment_day|locked"
+        }
+      ]
+    },
+    {
+      "plan_id": "PAY-PLAN-02",
+      "ad": "Kapora + bakiye",
+      "parametreler": [
+        "deposit_pct",
+        "balance_pct",
+        "balance_release_event"
+      ],
+      "bekci": "deposit_pct + balance_pct = 100",
+      "satirlar": [
+        {
+          "satir_no": 1,
+          "tutar_formulu": "siparis_net_toplam * deposit_pct / 100",
+          "vade_olayi": "ORDER_APPROVED",
+          "dekont_eki_zorunlu": true,
+          "kur_politikasi": "payment_day|locked"
+        },
+        {
+          "satir_no": 2,
+          "tutar_formulu": "siparis_net_toplam * balance_pct / 100",
+          "vade_olayi": "balance_release_event: BEFORE_LOADING|ETA|GOODS_ACCEPTED",
+          "dekont_eki_zorunlu": true,
+          "kur_politikasi": "payment_day|locked"
+        }
+      ]
+    },
+    {
+      "plan_id": "PAY-PLAN-03",
+      "ad": "Teslimatta",
+      "parametreler": [],
+      "satirlar": [
+        {
+          "satir_no": 1,
+          "tutar_formulu": "siparis_net_toplam",
+          "vade_olayi": "GOODS_ACCEPTED",
+          "dekont_eki_zorunlu": true,
+          "kur_politikasi": "payment_day|locked"
+        }
+      ]
+    },
+    {
+      "plan_id": "PAY-PLAN-04",
+      "ad": "Kısmen peşin, kısmen teslimatta",
+      "parametreler": [
+        "upfront_pct",
+        "delivery_pct"
+      ],
+      "bekci": "upfront_pct + delivery_pct = 100",
+      "satirlar": [
+        {
+          "satir_no": 1,
+          "tutar_formulu": "siparis_net_toplam * upfront_pct / 100",
+          "vade_olayi": "ORDER_APPROVED",
+          "dekont_eki_zorunlu": true,
+          "kur_politikasi": "payment_day|locked"
+        },
+        {
+          "satir_no": 2,
+          "tutar_formulu": "siparis_net_toplam * delivery_pct / 100",
+          "vade_olayi": "GOODS_ACCEPTED",
+          "dekont_eki_zorunlu": true,
+          "kur_politikasi": "payment_day|locked"
+        }
+      ]
+    }
+  ],
+  "kilometre_tasi_kanitlari": [
+    {
+      "milestone": "ORDER_APPROVED",
+      "zorunlu_kanit": [
+        "onayli_siparis_snapshot"
+      ],
+      "serbest_biraktigi_odeme": "peşin veya kapora"
+    },
+    {
+      "milestone": "BEFORE_LOADING",
+      "zorunlu_kanit": [
+        "firma_ticari_fatura_veya_proforma",
+        "paketleme_listesi",
+        "yuklemeye_hazirlik_kaniti"
+      ],
+      "serbest_biraktigi_odeme": "yükleme öncesi bakiye"
+    },
+    {
+      "milestone": "ON_VESSEL",
+      "zorunlu_kanit": [
+        "konşimento_veya_taslak_konşimento",
+        "gemi_sefer_referansi"
+      ],
+      "serbest_biraktigi_odeme": "gemide kilometre taşına bağlı ödeme"
+    },
+    {
+      "milestone": "ETA",
+      "zorunlu_kanit": [
+        "tasiyici_takip_kaydi",
+        "eta_snapshot"
+      ],
+      "serbest_biraktigi_odeme": "yalnız sözleşmede açıkça ETA'ya bağlı satır"
+    },
+    {
+      "milestone": "GOODS_ACCEPTED",
+      "zorunlu_kanit": [
+        "imzali_mal_kabul_tutanagi"
+      ],
+      "serbest_biraktigi_odeme": "teslimat/mal kabul bakiyesi"
+    }
+  ],
+  "senaryolar": [
+    {
+      "id": "ODM-001",
+      "ad": "Peşin normal akış",
+      "girdiler": {
+        "order_total": "10000.00",
+        "currency": "TRY",
+        "plan_id": "PAY-PLAN-01"
+      },
+      "beklenen_kayit_satirlari": [
+        {
+          "record_id": "ODM-001-R01",
+          "type": "EVIDENCE",
+          "amount": "0.00",
+          "currency": "TRY",
+          "milestone": "ORDER_APPROVED"
+        },
+        {
+          "record_id": "ODM-001-R02",
+          "type": "DUE",
+          "amount": "10000.00",
+          "currency": "TRY",
+          "release_event": "ORDER_APPROVED"
+        },
+        {
+          "record_id": "ODM-001-R03",
+          "type": "PAYMENT",
+          "amount": "10000.00",
+          "currency": "TRY",
+          "receipt_required": true
+        },
+        {
+          "record_id": "ODM-001-R04",
+          "type": "SETTLEMENT",
+          "amount": "0.00",
+          "currency": "TRY",
+          "remaining": "0.00"
+        }
+      ]
+    },
+    {
+      "id": "ODM-002",
+      "ad": "%30 kapora + %70 bakiye normal",
+      "girdiler": {
+        "order_total": "10000.00",
+        "currency": "USD",
+        "plan_id": "PAY-PLAN-02",
+        "deposit_pct": "30",
+        "balance_pct": "70"
+      },
+      "beklenen_kayit_satirlari": [
+        {
+          "record_id": "ODM-002-R01",
+          "type": "EVIDENCE",
+          "amount": "0.00",
+          "currency": "USD",
+          "milestone": "ORDER_APPROVED"
+        },
+        {
+          "record_id": "ODM-002-R02",
+          "type": "DUE",
+          "amount": "3000.00",
+          "currency": "USD",
+          "release_event": "ORDER_APPROVED"
+        },
+        {
+          "record_id": "ODM-002-R03",
+          "type": "PAYMENT",
+          "amount": "3000.00",
+          "currency": "USD",
+          "receipt_required": true
+        },
+        {
+          "record_id": "ODM-002-R04",
+          "type": "EVIDENCE",
+          "amount": "0.00",
+          "currency": "USD",
+          "milestone": "BEFORE_LOADING"
+        },
+        {
+          "record_id": "ODM-002-R05",
+          "type": "DUE",
+          "amount": "7000.00",
+          "currency": "USD",
+          "release_event": "BEFORE_LOADING"
+        },
+        {
+          "record_id": "ODM-002-R06",
+          "type": "PAYMENT",
+          "amount": "7000.00",
+          "currency": "USD",
+          "receipt_required": true
+        },
+        {
+          "record_id": "ODM-002-R07",
+          "type": "SETTLEMENT",
+          "amount": "0.00",
+          "currency": "USD",
+          "remaining": "0.00"
+        }
+      ]
+    },
+    {
+      "id": "ODM-003",
+      "ad": "Kısmi ödeme",
+      "girdiler": {
+        "due_total": "5000.00",
+        "currency": "CNY"
+      },
+      "beklenen_kayit_satirlari": [
+        {
+          "record_id": "ODM-003-R01",
+          "type": "DUE",
+          "amount": "5000.00",
+          "currency": "CNY",
+          "release_event": "ORDER_APPROVED"
+        },
+        {
+          "record_id": "ODM-003-R02",
+          "type": "PAYMENT",
+          "amount": "2000.00",
+          "currency": "CNY",
+          "receipt_required": true
+        },
+        {
+          "record_id": "ODM-003-R03",
+          "type": "PAYMENT",
+          "amount": "1500.00",
+          "currency": "CNY",
+          "receipt_required": true
+        },
+        {
+          "record_id": "ODM-003-R04",
+          "type": "SETTLEMENT",
+          "amount": "0.00",
+          "currency": "CNY",
+          "remaining": "1500.00",
+          "status": "PARTIAL"
+        }
+      ]
+    },
+    {
+      "id": "ODM-004",
+      "ad": "Geciken bakiye",
+      "girdiler": {
+        "order_total": "10000.00",
+        "currency": "USD",
+        "deposit_pct": "30",
+        "balance_pct": "70"
+      },
+      "beklenen_kayit_satirlari": [
+        {
+          "record_id": "ODM-004-R01",
+          "type": "DUE",
+          "amount": "3000.00",
+          "currency": "USD",
+          "release_event": "ORDER_APPROVED"
+        },
+        {
+          "record_id": "ODM-004-R02",
+          "type": "PAYMENT",
+          "amount": "3000.00",
+          "currency": "USD",
+          "receipt_required": true
+        },
+        {
+          "record_id": "ODM-004-R03",
+          "type": "DUE",
+          "amount": "7000.00",
+          "currency": "USD",
+          "release_event": "BEFORE_LOADING"
+        },
+        {
+          "record_id": "ODM-004-R04",
+          "type": "OVERDUE",
+          "amount": "7000.00",
+          "currency": "USD",
+          "days_overdue": 5
+        },
+        {
+          "record_id": "ODM-004-R05",
+          "type": "SETTLEMENT",
+          "amount": "0.00",
+          "currency": "USD",
+          "remaining": "7000.00",
+          "status": "OVERDUE"
+        }
+      ]
+    },
+    {
+      "id": "ODM-005",
+      "ad": "İptal ve tam iade",
+      "girdiler": {
+        "order_total": "20000.00",
+        "currency": "CNY",
+        "deposit_paid": "6000.00"
+      },
+      "beklenen_kayit_satirlari": [
+        {
+          "record_id": "ODM-005-R01",
+          "type": "PAYMENT",
+          "amount": "6000.00",
+          "currency": "CNY",
+          "receipt_required": true
+        },
+        {
+          "record_id": "ODM-005-R02",
+          "type": "CANCELLATION",
+          "amount": "0.00",
+          "currency": "CNY",
+          "reason_required": true
+        },
+        {
+          "record_id": "ODM-005-R03",
+          "type": "REFUND",
+          "amount": "-6000.00",
+          "currency": "CNY",
+          "receipt_required": true
+        },
+        {
+          "record_id": "ODM-005-R04",
+          "type": "SETTLEMENT",
+          "amount": "0.00",
+          "currency": "CNY",
+          "remaining": "0.00"
+        }
+      ]
+    },
+    {
+      "id": "ODM-006",
+      "ad": "Kur farkı lehte",
+      "girdiler": {
+        "principal": "1000.00",
+        "currency": "USD",
+        "locked_rate": "32.00",
+        "payment_day_rate": "31.00",
+        "calc_currency": "TRY"
+      },
+      "beklenen_kayit_satirlari": [
+        {
+          "record_id": "ODM-006-R01",
+          "type": "DUE",
+          "amount": "1000.00",
+          "currency": "USD",
+          "booked_try": "32000.00"
+        },
+        {
+          "record_id": "ODM-006-R02",
+          "type": "PAYMENT",
+          "amount": "1000.00",
+          "currency": "USD",
+          "paid_try": "31000.00",
+          "receipt_required": true
+        },
+        {
+          "record_id": "ODM-006-R03",
+          "type": "FX_DIFFERENCE",
+          "amount": "-1000.00",
+          "currency": "TRY",
+          "direction": "LEHTE"
+        },
+        {
+          "record_id": "ODM-006-R04",
+          "type": "SETTLEMENT",
+          "amount": "0.00",
+          "currency": "USD",
+          "remaining": "0.00"
+        }
+      ]
+    },
+    {
+      "id": "ODM-007",
+      "ad": "Kur farkı aleyhte",
+      "girdiler": {
+        "principal": "1000.00",
+        "currency": "USD",
+        "locked_rate": "32.00",
+        "payment_day_rate": "33.50",
+        "calc_currency": "TRY"
+      },
+      "beklenen_kayit_satirlari": [
+        {
+          "record_id": "ODM-007-R01",
+          "type": "DUE",
+          "amount": "1000.00",
+          "currency": "USD",
+          "booked_try": "32000.00"
+        },
+        {
+          "record_id": "ODM-007-R02",
+          "type": "PAYMENT",
+          "amount": "1000.00",
+          "currency": "USD",
+          "paid_try": "33500.00",
+          "receipt_required": true
+        },
+        {
+          "record_id": "ODM-007-R03",
+          "type": "FX_DIFFERENCE",
+          "amount": "1500.00",
+          "currency": "TRY",
+          "direction": "ALEYHTE"
+        },
+        {
+          "record_id": "ODM-007-R04",
+          "type": "SETTLEMENT",
+          "amount": "0.00",
+          "currency": "USD",
+          "remaining": "0.00"
+        }
+      ]
+    },
+    {
+      "id": "ODM-008",
+      "ad": "Çok partide kapora bölünmesi",
+      "girdiler": {
+        "order_total": "12000.00",
+        "currency": "USD",
+        "deposit_pct": "30",
+        "parts": {
+          "P-A": "7000.00",
+          "P-B": "5000.00"
+        }
+      },
+      "beklenen_kayit_satirlari": [
+        {
+          "record_id": "ODM-008-R01",
+          "type": "ALLOCATION",
+          "amount": "2100.00",
+          "currency": "USD",
+          "party_id": "P-A"
+        },
+        {
+          "record_id": "ODM-008-R02",
+          "type": "ALLOCATION",
+          "amount": "1500.00",
+          "currency": "USD",
+          "party_id": "P-B"
+        },
+        {
+          "record_id": "ODM-008-R03",
+          "type": "DUE",
+          "amount": "3600.00",
+          "currency": "USD",
+          "release_event": "ORDER_APPROVED"
+        },
+        {
+          "record_id": "ODM-008-R04",
+          "type": "PAYMENT",
+          "amount": "3600.00",
+          "currency": "USD",
+          "receipt_required": true
+        },
+        {
+          "record_id": "ODM-008-R05",
+          "type": "SETTLEMENT",
+          "amount": "0.00",
+          "currency": "USD",
+          "remaining": "8400.00",
+          "status": "DEPOSIT_PAID"
+        }
+      ]
+    },
+    {
+      "id": "ODM-009",
+      "ad": "Çok partide kanıta göre bakiye serbest bırakma",
+      "girdiler": {
+        "order_total": "10000.00",
+        "currency": "USD",
+        "deposit_pct": "30",
+        "parts": {
+          "P-A": "4000.00",
+          "P-B": "6000.00"
+        }
+      },
+      "beklenen_kayit_satirlari": [
+        {
+          "record_id": "ODM-009-R01",
+          "type": "PAYMENT",
+          "amount": "3000.00",
+          "currency": "USD",
+          "scope": "ALL_PARTS",
+          "receipt_required": true
+        },
+        {
+          "record_id": "ODM-009-R02",
+          "type": "EVIDENCE",
+          "amount": "0.00",
+          "currency": "USD",
+          "milestone": "BEFORE_LOADING",
+          "party_id": "P-A"
+        },
+        {
+          "record_id": "ODM-009-R03",
+          "type": "DUE",
+          "amount": "2800.00",
+          "currency": "USD",
+          "party_id": "P-A",
+          "release_event": "BEFORE_LOADING"
+        },
+        {
+          "record_id": "ODM-009-R04",
+          "type": "LOCKED_DUE",
+          "amount": "4200.00",
+          "currency": "USD",
+          "party_id": "P-B",
+          "waiting_for": "BEFORE_LOADING"
+        },
+        {
+          "record_id": "ODM-009-R05",
+          "type": "SETTLEMENT",
+          "amount": "0.00",
+          "currency": "USD",
+          "remaining": "7000.00",
+          "released_remaining": "2800.00"
+        }
+      ]
+    },
+    {
+      "id": "ODM-010",
+      "ad": "Teslimatta ödeme",
+      "girdiler": {
+        "order_total": "15000.00",
+        "currency": "TRY",
+        "plan_id": "PAY-PLAN-03"
+      },
+      "beklenen_kayit_satirlari": [
+        {
+          "record_id": "ODM-010-R01",
+          "type": "EVIDENCE",
+          "amount": "0.00",
+          "currency": "TRY",
+          "milestone": "GOODS_ACCEPTED"
+        },
+        {
+          "record_id": "ODM-010-R02",
+          "type": "DUE",
+          "amount": "15000.00",
+          "currency": "TRY",
+          "release_event": "GOODS_ACCEPTED"
+        },
+        {
+          "record_id": "ODM-010-R03",
+          "type": "PAYMENT",
+          "amount": "15000.00",
+          "currency": "TRY",
+          "receipt_required": true
+        },
+        {
+          "record_id": "ODM-010-R04",
+          "type": "SETTLEMENT",
+          "amount": "0.00",
+          "currency": "TRY",
+          "remaining": "0.00"
+        }
+      ]
+    },
+    {
+      "id": "ODM-011",
+      "ad": "%40 peşin %60 teslimatta",
+      "girdiler": {
+        "order_total": "20000.00",
+        "currency": "TRY",
+        "plan_id": "PAY-PLAN-04",
+        "upfront_pct": "40",
+        "delivery_pct": "60"
+      },
+      "beklenen_kayit_satirlari": [
+        {
+          "record_id": "ODM-011-R01",
+          "type": "DUE",
+          "amount": "8000.00",
+          "currency": "TRY",
+          "release_event": "ORDER_APPROVED"
+        },
+        {
+          "record_id": "ODM-011-R02",
+          "type": "PAYMENT",
+          "amount": "8000.00",
+          "currency": "TRY",
+          "receipt_required": true
+        },
+        {
+          "record_id": "ODM-011-R03",
+          "type": "EVIDENCE",
+          "amount": "0.00",
+          "currency": "TRY",
+          "milestone": "GOODS_ACCEPTED"
+        },
+        {
+          "record_id": "ODM-011-R04",
+          "type": "DUE",
+          "amount": "12000.00",
+          "currency": "TRY",
+          "release_event": "GOODS_ACCEPTED"
+        },
+        {
+          "record_id": "ODM-011-R05",
+          "type": "PAYMENT",
+          "amount": "12000.00",
+          "currency": "TRY",
+          "receipt_required": true
+        },
+        {
+          "record_id": "ODM-011-R06",
+          "type": "SETTLEMENT",
+          "amount": "0.00",
+          "currency": "TRY",
+          "remaining": "0.00"
+        }
+      ]
+    },
+    {
+      "id": "ODM-012",
+      "ad": "Fazla ödeme ve iade",
+      "girdiler": {
+        "due_total": "5000.00",
+        "currency": "TRY"
+      },
+      "beklenen_kayit_satirlari": [
+        {
+          "record_id": "ODM-012-R01",
+          "type": "DUE",
+          "amount": "5000.00",
+          "currency": "TRY"
+        },
+        {
+          "record_id": "ODM-012-R02",
+          "type": "PAYMENT",
+          "amount": "5200.00",
+          "currency": "TRY",
+          "receipt_required": true
+        },
+        {
+          "record_id": "ODM-012-R03",
+          "type": "OVERPAYMENT",
+          "amount": "200.00",
+          "currency": "TRY"
+        },
+        {
+          "record_id": "ODM-012-R04",
+          "type": "REFUND",
+          "amount": "-200.00",
+          "currency": "TRY",
+          "receipt_required": true
+        },
+        {
+          "record_id": "ODM-012-R05",
+          "type": "SETTLEMENT",
+          "amount": "0.00",
+          "currency": "TRY",
+          "remaining": "0.00"
+        }
+      ]
+    }
+  ],
+  "kaynaklar": [
+    {
+      "kaynak": "Bu görev metni",
+      "kullanim": "plan türleri, vade olayları, kanıta bağlı ödeme ve ODM kapsamı"
+    },
+    {
+      "kaynak": "teklif-turu-durum-makinesi.md",
+      "kullanim": "onaylı teklif ve kur snapshot değişmezliği"
+    },
+    {
+      "kaynak": "cikti-terimleri.json",
+      "kullanim": "mevcut terim tek-kaynağı; yeni anahtar eklenmedi"
+    }
+  ]
+}

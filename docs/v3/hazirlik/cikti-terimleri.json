@@ -1,0 +1,1673 @@
+{
+  "schema_version": "1.0",
+  "table_name": "TedarikApp Çıktı Şablonu Üç Dilli Terim Tablosu",
+  "usage_note": "Panel dili Türkçe sabittir. Bu tablo Excel, PDF ve paylaşım sayfasının seçilen çıktı dilinde bütünüyle üretilmesi için çekirdek terim önerisidir.",
+  "review_rule": "durum=gozden_gecir olan ticari Çince karşılıklar Ürün Sahibi ve Çince ticaret dili uzmanı onayı olmadan kesin terminolojiye alınmaz.",
+  "terms": [
+    {
+      "anahtar": "doc.offer_list",
+      "tr": "Teklif Listesi",
+      "en": "Quotation List",
+      "zh": "报价单",
+      "baglam": "Belge başlığı",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "doc.purchase_list",
+      "tr": "Satın Alma Listesi",
+      "en": "Purchase List",
+      "zh": "采购清单",
+      "baglam": "Belge başlığı",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "doc.discovery_report",
+      "tr": "Keşif Havuzu Raporu",
+      "en": "Discovery Pool Report",
+      "zh": "选品池报告",
+      "baglam": "Belge başlığı",
+      "durum": "gozden_gecir",
+      "not": "选品池 terimi Çin ticaret ekibiyle onaylanmalı."
+    },
+    {
+      "anahtar": "doc.company",
+      "tr": "Firma",
+      "en": "Company",
+      "zh": "公司",
+      "baglam": "Belge üstbilgisi",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "doc.customer",
+      "tr": "Müşteri",
+      "en": "Customer",
+      "zh": "客户",
+      "baglam": "Belge üstbilgisi",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "doc.list_name",
+      "tr": "Liste Adı",
+      "en": "List Name",
+      "zh": "清单名称",
+      "baglam": "Belge üstbilgisi",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "doc.date",
+      "tr": "Tarih",
+      "en": "Date",
+      "zh": "日期",
+      "baglam": "Belge üstbilgisi",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "doc.prepared_by",
+      "tr": "Hazırlayan",
+      "en": "Prepared By",
+      "zh": "制表人",
+      "baglam": "Belge üstbilgisi",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "doc.approved_by",
+      "tr": "Onaylayan",
+      "en": "Approved By",
+      "zh": "批准人",
+      "baglam": "Belge üstbilgisi",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "doc.company_approval",
+      "tr": "Firma Onayı",
+      "en": "Company Approval",
+      "zh": "公司确认",
+      "baglam": "İmza alanı",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "doc.signature",
+      "tr": "İmza / Kaşe",
+      "en": "Signature / Stamp",
+      "zh": "签字 / 盖章",
+      "baglam": "İmza alanı",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "doc.page",
+      "tr": "Sayfa {current}/{total}",
+      "en": "Page {current}/{total}",
+      "zh": "第 {current}/{total} 页",
+      "baglam": "Sayfa altbilgisi",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "doc.code",
+      "tr": "Belge Kodu",
+      "en": "Document Code",
+      "zh": "文件编号",
+      "baglam": "Belge üstbilgisi",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "doc.revision",
+      "tr": "Rev",
+      "en": "Rev",
+      "zh": "修订版",
+      "baglam": "Belge üstbilgisi",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "doc.version",
+      "tr": "Sürüm",
+      "en": "Version",
+      "zh": "版本",
+      "baglam": "Belge üstbilgisi",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "doc.currency",
+      "tr": "Para Birimi",
+      "en": "Currency",
+      "zh": "币种",
+      "baglam": "Belge üstbilgisi",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "doc.generated_at",
+      "tr": "Oluşturulma Tarihi",
+      "en": "Generated At",
+      "zh": "生成时间",
+      "baglam": "Belge altbilgisi",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "doc.confidential",
+      "tr": "Ticari ve gizli",
+      "en": "Commercial and Confidential",
+      "zh": "商业机密",
+      "baglam": "Belge altbilgisi",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "col.no",
+      "tr": "No",
+      "en": "No.",
+      "zh": "序号",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "col.product_name",
+      "tr": "Ürün Adı",
+      "en": "Product Name",
+      "zh": "产品名称",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "col.product_details",
+      "tr": "Ürün Detayları",
+      "en": "Product Details",
+      "zh": "产品详情",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "col.variation",
+      "tr": "Varyasyon",
+      "en": "Variation",
+      "zh": "规格 / 款式",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "col.category",
+      "tr": "Kategori",
+      "en": "Category",
+      "zh": "类目",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "col.source",
+      "tr": "Kaynak",
+      "en": "Source",
+      "zh": "来源",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "col.status",
+      "tr": "Durum",
+      "en": "Status",
+      "zh": "状态",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "col.note",
+      "tr": "Not",
+      "en": "Note",
+      "zh": "备注",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "col.quantity",
+      "tr": "Miktar",
+      "en": "Quantity",
+      "zh": "数量",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "col.unit",
+      "tr": "Birim",
+      "en": "Unit",
+      "zh": "单位",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "col.moq",
+      "tr": "Minimum Sipariş",
+      "en": "Minimum Order Quantity",
+      "zh": "最小起订量",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "col.variant_moq",
+      "tr": "Varyasyon MOQ",
+      "en": "Variant MOQ",
+      "zh": "规格起订量",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "col.showcase_cny",
+      "tr": "Vitrin ¥",
+      "en": "Showcase ¥",
+      "zh": "展示价（¥）",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "gozden_gecir",
+      "not": "Çince ticari etiket kurulum günü Ürün Sahibi ve ticaret dili uzmanıyla onaylanmalı."
+    },
+    {
+      "anahtar": "col.showcase_try",
+      "tr": "Vitrin ₺",
+      "en": "Showcase ₺",
+      "zh": "展示价（土耳其里拉）",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "gozden_gecir",
+      "not": "Çince ticari etiket kurulum günü Ürün Sahibi ve ticaret dili uzmanıyla onaylanmalı."
+    },
+    {
+      "anahtar": "col.ddp_usd",
+      "tr": "DDP $",
+      "en": "DDP $",
+      "zh": "DDP价格（美元）",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "col.ddp_try",
+      "tr": "DDP ₺",
+      "en": "DDP ₺",
+      "zh": "DDP价格（土耳其里拉）",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "col.unit_price",
+      "tr": "Birim Fiyat",
+      "en": "Unit Price",
+      "zh": "单价",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "col.total_price",
+      "tr": "Toplam Fiyat",
+      "en": "Total Price",
+      "zh": "总价",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "col.carton_count",
+      "tr": "Koli Sayısı",
+      "en": "Carton Count",
+      "zh": "箱数",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "col.units_per_carton",
+      "tr": "Koli İçi",
+      "en": "Units per Carton",
+      "zh": "每箱数量",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "col.cbm",
+      "tr": "Hacim (CBM)",
+      "en": "Volume (CBM)",
+      "zh": "体积（CBM）",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "col.gross_weight",
+      "tr": "Brüt Ağırlık",
+      "en": "Gross Weight",
+      "zh": "毛重",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "col.net_weight",
+      "tr": "Net Ağırlık",
+      "en": "Net Weight",
+      "zh": "净重",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "col.seller",
+      "tr": "Satıcı",
+      "en": "Seller",
+      "zh": "供应商",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "col.seller_years",
+      "tr": "Satıcı Yılı",
+      "en": "Seller Years",
+      "zh": "经营年限",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "col.quality_score",
+      "tr": "Kalite Sinyali",
+      "en": "Quality Signal",
+      "zh": "质量指标",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "gozden_gecir",
+      "not": "Çince ticari etiket kurulum günü Ürün Sahibi ve ticaret dili uzmanıyla onaylanmalı."
+    },
+    {
+      "anahtar": "col.ship48h",
+      "tr": "48 Saat Sevk",
+      "en": "48h Dispatch",
+      "zh": "48小时发货率",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "col.repeat_rate",
+      "tr": "Tekrar Alış",
+      "en": "Repeat Purchase",
+      "zh": "复购率",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "col.sales_30d",
+      "tr": "30 Günlük Satış",
+      "en": "30-Day Sales",
+      "zh": "近30天销量",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "col.sales_total",
+      "tr": "Toplam Satış",
+      "en": "Total Sales",
+      "zh": "累计销量",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "col.rating",
+      "tr": "Puan",
+      "en": "Rating",
+      "zh": "评分",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "col.review_count",
+      "tr": "Yorum Sayısı",
+      "en": "Review Count",
+      "zh": "评价数",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "col.listed_at",
+      "tr": "İlan Tarihi",
+      "en": "Listed At",
+      "zh": "上架日期",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "col.updated_at",
+      "tr": "Güncellenme",
+      "en": "Updated At",
+      "zh": "更新时间",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "col.video",
+      "tr": "Video",
+      "en": "Video",
+      "zh": "视频",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "col.cluster",
+      "tr": "Aynı Ürün Kümesi",
+      "en": "Same-Product Cluster",
+      "zh": "同款分组",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "gozden_gecir",
+      "not": "Çince ticari etiket kurulum günü Ürün Sahibi ve ticaret dili uzmanıyla onaylanmalı."
+    },
+    {
+      "anahtar": "col.completeness",
+      "tr": "Veri Tamlığı",
+      "en": "Data Completeness",
+      "zh": "数据完整度",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "col.score",
+      "tr": "Keşif Skoru",
+      "en": "Discovery Score",
+      "zh": "选品评分",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "gozden_gecir",
+      "not": "Çince ticari etiket kurulum günü Ürün Sahibi ve ticaret dili uzmanıyla onaylanmalı."
+    },
+    {
+      "anahtar": "col.source_id",
+      "tr": "Kaynak Kimliği",
+      "en": "Source ID",
+      "zh": "来源编号",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "col.image",
+      "tr": "Ürün Görseli",
+      "en": "Product Image",
+      "zh": "产品图片",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "col.product_code",
+      "tr": "Ürün Kodu",
+      "en": "Product Code",
+      "zh": "产品编号",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "col.model",
+      "tr": "Model",
+      "en": "Model",
+      "zh": "型号",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "col.brand",
+      "tr": "Marka",
+      "en": "Brand",
+      "zh": "品牌",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "col.material",
+      "tr": "Malzeme",
+      "en": "Material",
+      "zh": "材质",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "col.color",
+      "tr": "Renk",
+      "en": "Color",
+      "zh": "颜色",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "col.dimensions",
+      "tr": "Ürün Ölçüleri",
+      "en": "Product Dimensions",
+      "zh": "产品尺寸",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "col.capacity",
+      "tr": "Kapasite",
+      "en": "Capacity",
+      "zh": "容量",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "col.stock",
+      "tr": "Beyan Stok",
+      "en": "Declared Stock",
+      "zh": "申报库存",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "col.origin",
+      "tr": "Menşe",
+      "en": "Country of Origin",
+      "zh": "原产地",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "col.source_link",
+      "tr": "Kaynak Bağlantısı",
+      "en": "Source Link",
+      "zh": "来源链接",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "col.china_shipping",
+      "tr": "Çin İçi Nakliye",
+      "en": "China Domestic Shipping",
+      "zh": "中国境内运费",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "col.lead_time",
+      "tr": "Üretim Termin Süresi",
+      "en": "Production Lead Time",
+      "zh": "生产交期",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "col.dispatch_time",
+      "tr": "Sevk Süresi",
+      "en": "Dispatch Time",
+      "zh": "发货时效",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "col.payment_terms",
+      "tr": "Ödeme Koşulları",
+      "en": "Payment Terms",
+      "zh": "付款条件",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "col.packaging",
+      "tr": "Ambalaj Şekli",
+      "en": "Packaging",
+      "zh": "包装方式",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "col.carton_dimensions",
+      "tr": "Koli Ölçüleri",
+      "en": "Carton Dimensions",
+      "zh": "外箱尺寸",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "col.unit_net_weight",
+      "tr": "Birim Net Ağırlık",
+      "en": "Unit Net Weight",
+      "zh": "单件净重",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "col.custom_order",
+      "tr": "Özel Üretim",
+      "en": "Custom Order",
+      "zh": "是否定制",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "col.translation_status",
+      "tr": "Çeviri Durumu",
+      "en": "Translation Status",
+      "zh": "翻译状态",
+      "baglam": "Excel/PDF/paylaşım sütunu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "status.preparing",
+      "tr": "Hazırlanıyor",
+      "en": "Preparing",
+      "zh": "准备中",
+      "baglam": "Durum etiketi",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "status.waiting_price",
+      "tr": "Fiyat bekleniyor",
+      "en": "Awaiting Price",
+      "zh": "待报价",
+      "baglam": "Durum etiketi",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "status.found",
+      "tr": "Bulundu",
+      "en": "Found",
+      "zh": "已找到",
+      "baglam": "Durum etiketi",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "status.not_found",
+      "tr": "Bulunamadı",
+      "en": "Not Found",
+      "zh": "未找到",
+      "baglam": "Durum etiketi",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "status.alternative_available",
+      "tr": "Alternatif var",
+      "en": "Alternative Available",
+      "zh": "有替代品",
+      "baglam": "Durum etiketi",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "status.waiting_approval",
+      "tr": "Onay bekliyor",
+      "en": "Awaiting Approval",
+      "zh": "待确认",
+      "baglam": "Durum etiketi",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "status.approved",
+      "tr": "Onaylandı",
+      "en": "Approved",
+      "zh": "已确认",
+      "baglam": "Durum etiketi",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "status.rejected",
+      "tr": "Reddedildi",
+      "en": "Rejected",
+      "zh": "已拒绝",
+      "baglam": "Durum etiketi",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "status.ready",
+      "tr": "Siparişe hazır",
+      "en": "Ready to Order",
+      "zh": "可下单",
+      "baglam": "Durum etiketi",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "status.missing_data",
+      "tr": "Eksik veri",
+      "en": "Missing Data",
+      "zh": "数据不完整",
+      "baglam": "Durum etiketi",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "status.sent",
+      "tr": "Gönderildi",
+      "en": "Sent",
+      "zh": "已发送",
+      "baglam": "Durum etiketi",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "status.archived",
+      "tr": "Arşivlendi",
+      "en": "Archived",
+      "zh": "已归档",
+      "baglam": "Durum etiketi",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "status.cancelled",
+      "tr": "İptal edildi",
+      "en": "Cancelled",
+      "zh": "已取消",
+      "baglam": "Durum etiketi",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "status.waiting_supplier",
+      "tr": "Tedarikçi yanıtı bekleniyor",
+      "en": "Awaiting Supplier Response",
+      "zh": "等待供应商回复",
+      "baglam": "Durum etiketi",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "status.expired",
+      "tr": "Güncelliğini yitirdi",
+      "en": "Expired",
+      "zh": "已过期",
+      "baglam": "Durum etiketi",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "kpi.products",
+      "tr": "Ürün Sayısı",
+      "en": "Product Count",
+      "zh": "产品数量",
+      "baglam": "KPI kartı",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "kpi.ready",
+      "tr": "Hazır Ürün",
+      "en": "Ready Products",
+      "zh": "可下单产品",
+      "baglam": "KPI kartı",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "kpi.missing",
+      "tr": "Eksik Verili",
+      "en": "Incomplete",
+      "zh": "数据不完整",
+      "baglam": "KPI kartı",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "kpi.sources",
+      "tr": "Kaynak Sayısı",
+      "en": "Source Count",
+      "zh": "来源数量",
+      "baglam": "KPI kartı",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "kpi.avg_price",
+      "tr": "Ortalama Fiyat",
+      "en": "Average Price",
+      "zh": "平均价格",
+      "baglam": "KPI kartı",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "kpi.total_quantity",
+      "tr": "Toplam Miktar",
+      "en": "Total Quantity",
+      "zh": "总数量",
+      "baglam": "KPI kartı",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "kpi.total_cartons",
+      "tr": "Toplam Koli",
+      "en": "Total Cartons",
+      "zh": "总箱数",
+      "baglam": "KPI kartı",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "kpi.total_cbm",
+      "tr": "Toplam CBM",
+      "en": "Total CBM",
+      "zh": "总体积（CBM）",
+      "baglam": "KPI kartı",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "kpi.total_gross",
+      "tr": "Toplam Brüt Ağırlık",
+      "en": "Total Gross Weight",
+      "zh": "总毛重",
+      "baglam": "KPI kartı",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "kpi.video_products",
+      "tr": "Videolu Ürün",
+      "en": "Products with Video",
+      "zh": "含视频产品",
+      "baglam": "KPI kartı",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "kpi.multi_variant",
+      "tr": "Çok Varyantlı",
+      "en": "Multi-Variant",
+      "zh": "多规格产品",
+      "baglam": "KPI kartı",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "kpi.clusters",
+      "tr": "Aynı Ürün Kümesi",
+      "en": "Same-Product Clusters",
+      "zh": "同款分组数",
+      "baglam": "KPI kartı",
+      "durum": "gozden_gecir",
+      "not": "Çince ticari etiket kurulum günü Ürün Sahibi ve ticaret dili uzmanıyla onaylanmalı."
+    },
+    {
+      "anahtar": "kpi.avg_quality",
+      "tr": "Ortalama Kalite Sinyali",
+      "en": "Average Quality Signal",
+      "zh": "平均质量指标",
+      "baglam": "KPI kartı",
+      "durum": "gozden_gecir",
+      "not": "Çince ticari etiket kurulum günü Ürün Sahibi ve ticaret dili uzmanıyla onaylanmalı."
+    },
+    {
+      "anahtar": "kpi.avg_ship48h",
+      "tr": "Ortalama 48 Saat Sevk",
+      "en": "Average 48h Dispatch",
+      "zh": "平均48小时发货率",
+      "baglam": "KPI kartı",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "kpi.avg_repeat",
+      "tr": "Ortalama Tekrar Alış",
+      "en": "Average Repeat Purchase",
+      "zh": "平均复购率",
+      "baglam": "KPI kartı",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "kpi.added_today",
+      "tr": "Bugün Eklenen",
+      "en": "Added Today",
+      "zh": "今日新增",
+      "baglam": "KPI kartı",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "kpi.updated_today",
+      "tr": "Bugün Güncellenen",
+      "en": "Updated Today",
+      "zh": "今日更新",
+      "baglam": "KPI kartı",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "kpi.alternatives",
+      "tr": "Alternatif Sayısı",
+      "en": "Alternative Count",
+      "zh": "替代品数量",
+      "baglam": "KPI kartı",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "total.subtotal",
+      "tr": "Ara Toplam",
+      "en": "Subtotal",
+      "zh": "小计",
+      "baglam": "Finans özeti",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "total.discount",
+      "tr": "İndirim",
+      "en": "Discount",
+      "zh": "折扣",
+      "baglam": "Finans özeti",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "total.china_shipping",
+      "tr": "Çin İçi Nakliye",
+      "en": "China Domestic Shipping",
+      "zh": "中国境内运费",
+      "baglam": "Finans özeti",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "total.international_freight",
+      "tr": "Uluslararası Navlun",
+      "en": "International Freight",
+      "zh": "国际运费",
+      "baglam": "Finans özeti",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "total.insurance",
+      "tr": "Sigorta",
+      "en": "Insurance",
+      "zh": "保险费",
+      "baglam": "Finans özeti",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "total.customs",
+      "tr": "Gümrük Gideri",
+      "en": "Customs Cost",
+      "zh": "清关费用",
+      "baglam": "Finans özeti",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "total.tax",
+      "tr": "Vergiler",
+      "en": "Taxes",
+      "zh": "税费",
+      "baglam": "Finans özeti",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "total.other_costs",
+      "tr": "Diğer Giderler",
+      "en": "Other Costs",
+      "zh": "其他费用",
+      "baglam": "Finans özeti",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "total.ddp_total",
+      "tr": "DDP Toplam",
+      "en": "DDP Total",
+      "zh": "DDP总额",
+      "baglam": "Finans özeti",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "total.grand_total",
+      "tr": "GENEL TOPLAM",
+      "en": "GRAND TOTAL",
+      "zh": "总计",
+      "baglam": "Finans özeti",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "total.vat_included",
+      "tr": "KDV DAHİL",
+      "en": "VAT INCLUDED",
+      "zh": "含增值税",
+      "baglam": "Finans özeti",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "total.vat_excluded",
+      "tr": "KDV HARİÇ",
+      "en": "VAT EXCLUDED",
+      "zh": "不含增值税",
+      "baglam": "Finans özeti",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "total.locked_rate",
+      "tr": "Kilitli Kur",
+      "en": "Locked Exchange Rate",
+      "zh": "锁定汇率",
+      "baglam": "Finans özeti",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "total.rate_date",
+      "tr": "Kur Tarihi",
+      "en": "Exchange Rate Date",
+      "zh": "汇率日期",
+      "baglam": "Finans özeti",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "total.rate_source",
+      "tr": "Kur Kaynağı",
+      "en": "Exchange Rate Source",
+      "zh": "汇率来源",
+      "baglam": "Finans özeti",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "total.usd_cny",
+      "tr": "USD/CNY Kuru",
+      "en": "USD/CNY Rate",
+      "zh": "美元/人民币汇率",
+      "baglam": "Finans özeti",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "total.try_cny",
+      "tr": "TRY/CNY Kuru",
+      "en": "TRY/CNY Rate",
+      "zh": "土耳其里拉/人民币汇率",
+      "baglam": "Finans özeti",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "total.rounding",
+      "tr": "Yuvarlama Farkı",
+      "en": "Rounding Difference",
+      "zh": "舍入差额",
+      "baglam": "Finans özeti",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "total.unit_ddp",
+      "tr": "Birim DDP Maliyet",
+      "en": "Unit DDP Cost",
+      "zh": "单件DDP成本",
+      "baglam": "Finans özeti",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "total.vat_rate",
+      "tr": "KDV Oranı",
+      "en": "VAT Rate",
+      "zh": "增值税率",
+      "baglam": "Finans özeti",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "total.vat_amount",
+      "tr": "KDV Tutarı",
+      "en": "VAT Amount",
+      "zh": "增值税额",
+      "baglam": "Finans özeti",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "total.exchange_rate",
+      "tr": "Döviz Kuru",
+      "en": "Exchange Rate",
+      "zh": "汇率",
+      "baglam": "Finans özeti",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "total.freight_per_unit",
+      "tr": "Birim Navlun",
+      "en": "Freight per Unit",
+      "zh": "单件运费",
+      "baglam": "Finans özeti",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "filter.search",
+      "tr": "Ürünlerde ara",
+      "en": "Search Products",
+      "zh": "搜索产品",
+      "baglam": "Filtre/sıralama metni",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "filter.category",
+      "tr": "Kategori filtresi",
+      "en": "Category Filter",
+      "zh": "类目筛选",
+      "baglam": "Filtre/sıralama metni",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "filter.status",
+      "tr": "Durum filtresi",
+      "en": "Status Filter",
+      "zh": "状态筛选",
+      "baglam": "Filtre/sıralama metni",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "filter.source",
+      "tr": "Kaynak filtresi",
+      "en": "Source Filter",
+      "zh": "来源筛选",
+      "baglam": "Filtre/sıralama metni",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "filter.video_only",
+      "tr": "Yalnız videolu",
+      "en": "With Video Only",
+      "zh": "仅含视频",
+      "baglam": "Filtre/sıralama metni",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "filter.variants_only",
+      "tr": "Yalnız varyantlı",
+      "en": "With Variants Only",
+      "zh": "仅多规格",
+      "baglam": "Filtre/sıralama metni",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "filter.date_range",
+      "tr": "Tarih aralığı",
+      "en": "Date Range",
+      "zh": "日期范围",
+      "baglam": "Filtre/sıralama metni",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "filter.min_price",
+      "tr": "En düşük fiyat",
+      "en": "Minimum Price",
+      "zh": "最低价格",
+      "baglam": "Filtre/sıralama metni",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "filter.max_price",
+      "tr": "En yüksek fiyat",
+      "en": "Maximum Price",
+      "zh": "最高价格",
+      "baglam": "Filtre/sıralama metni",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "filter.ready_only",
+      "tr": "Yalnız hazır",
+      "en": "Ready Only",
+      "zh": "仅可下单",
+      "baglam": "Filtre/sıralama metni",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "filter.completeness",
+      "tr": "Veri tamlığı",
+      "en": "Data Completeness",
+      "zh": "数据完整度",
+      "baglam": "Filtre/sıralama metni",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "filter.score",
+      "tr": "Skor aralığı",
+      "en": "Score Range",
+      "zh": "评分范围",
+      "baglam": "Filtre/sıralama metni",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "filter.clustered",
+      "tr": "Kümelenmiş ürünler",
+      "en": "Clustered Products",
+      "zh": "已分组产品",
+      "baglam": "Filtre/sıralama metni",
+      "durum": "gozden_gecir",
+      "not": "Çince ticari etiket kurulum günü Ürün Sahibi ve ticaret dili uzmanıyla onaylanmalı."
+    },
+    {
+      "anahtar": "filter.same_product",
+      "tr": "Aynı ürün",
+      "en": "Same Product",
+      "zh": "同款产品",
+      "baglam": "Filtre/sıralama metni",
+      "durum": "gozden_gecir",
+      "not": "Çince ticari etiket kurulum günü Ürün Sahibi ve ticaret dili uzmanıyla onaylanmalı."
+    },
+    {
+      "anahtar": "filter.seller_years",
+      "tr": "Satıcı yılı",
+      "en": "Seller Years",
+      "zh": "经营年限",
+      "baglam": "Filtre/sıralama metni",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "filter.quality",
+      "tr": "Kalite sinyali",
+      "en": "Quality Signal",
+      "zh": "质量指标",
+      "baglam": "Filtre/sıralama metni",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "filter.ship48h",
+      "tr": "48 saat sevk",
+      "en": "48h Dispatch",
+      "zh": "48小时发货",
+      "baglam": "Filtre/sıralama metni",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "filter.repeat",
+      "tr": "Tekrar alış",
+      "en": "Repeat Purchase",
+      "zh": "复购率",
+      "baglam": "Filtre/sıralama metni",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "filter.sales",
+      "tr": "Satış adedi",
+      "en": "Sales",
+      "zh": "销量",
+      "baglam": "Filtre/sıralama metni",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "filter.rating",
+      "tr": "Puan",
+      "en": "Rating",
+      "zh": "评分",
+      "baglam": "Filtre/sıralama metni",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "filter.newest",
+      "tr": "En yeni",
+      "en": "Newest",
+      "zh": "最新",
+      "baglam": "Filtre/sıralama metni",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "filter.oldest",
+      "tr": "En eski",
+      "en": "Oldest",
+      "zh": "最早",
+      "baglam": "Filtre/sıralama metni",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "filter.all",
+      "tr": "Tümü",
+      "en": "All",
+      "zh": "全部",
+      "baglam": "Filtre/sıralama metni",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "filter.reset",
+      "tr": "Filtreleri temizle",
+      "en": "Clear Filters",
+      "zh": "清除筛选",
+      "baglam": "Filtre/sıralama metni",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "filter.no_results",
+      "tr": "Sonuç bulunamadı",
+      "en": "No Results Found",
+      "zh": "未找到结果",
+      "baglam": "Filtre/sıralama metni",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "msg.share_intro",
+      "tr": "Merhaba, {list_name} listesini incelemeniz için paylaşıyorum.",
+      "en": "Hello, I am sharing {list_name} for your review.",
+      "zh": "您好，现将 {list_name} 分享给您审核。",
+      "baglam": "WhatsApp/e-posta mesajı",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "msg.product_count",
+      "tr": "Listede {product_count} ürün bulunmaktadır.",
+      "en": "The list contains {product_count} products.",
+      "zh": "清单共包含 {product_count} 个产品。",
+      "baglam": "WhatsApp/e-posta mesajı",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "msg.valid_until",
+      "tr": "Fiyatlar {valid_until} tarihine kadar geçerlidir.",
+      "en": "Prices are valid until {valid_until}.",
+      "zh": "价格有效期至 {valid_until}。",
+      "baglam": "WhatsApp/e-posta mesajı",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "msg.approval_request",
+      "tr": "Lütfen listeyi inceleyip firma onayınızı iletin.",
+      "en": "Please review the list and provide company approval.",
+      "zh": "请审核清单并提供公司确认。",
+      "baglam": "WhatsApp/e-posta mesajı",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "msg.revision_shared",
+      "tr": "{revision} revizyonu paylaşılmıştır.",
+      "en": "Revision {revision} has been shared.",
+      "zh": "已分享修订版 {revision}。",
+      "baglam": "WhatsApp/e-posta mesajı",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "msg.price_updated",
+      "tr": "{product_name} ürünü için fiyat güncellendi.",
+      "en": "The price for {product_name} has been updated.",
+      "zh": "产品 {product_name} 的价格已更新。",
+      "baglam": "Kanal bildirimi",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "msg.alternative_found",
+      "tr": "{product_name} için bir alternatif bulundu.",
+      "en": "An alternative was found for {product_name}.",
+      "zh": "已为 {product_name} 找到替代品。",
+      "baglam": "Kanal bildirimi",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "msg.supplier_waiting",
+      "tr": "{product_name} için tedarikçi yanıtı bekleniyor.",
+      "en": "Awaiting supplier response for {product_name}.",
+      "zh": "正在等待供应商回复 {product_name}。",
+      "baglam": "Kanal bildirimi",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "msg.missing_data",
+      "tr": "{product_name} kaydında eksik alanlar var: {missing_fields}.",
+      "en": "{product_name} has missing fields: {missing_fields}.",
+      "zh": "{product_name} 存在缺失字段：{missing_fields}。",
+      "baglam": "Kanal bildirimi",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "msg.ready_summary",
+      "tr": "{ready_count}/{product_count} ürün siparişe hazırdır.",
+      "en": "{ready_count}/{product_count} products are ready to order.",
+      "zh": "{ready_count}/{product_count} 个产品可下单。",
+      "baglam": "Kanal özeti",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "msg.download_ready",
+      "tr": "{document_name} dosyanız hazırdır.",
+      "en": "Your {document_name} file is ready.",
+      "zh": "您的 {document_name} 文件已生成。",
+      "baglam": "Dışa aktarma bildirimi",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "msg.link_expiry",
+      "tr": "Paylaşım bağlantısı {expiry_date} tarihinde sona erer.",
+      "en": "The share link expires on {expiry_date}.",
+      "zh": "分享链接将于 {expiry_date} 失效。",
+      "baglam": "Paylaşım bildirimi",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "footnote.valid_days",
+      "tr": "Bu fiyatlar {days} gün geçerlidir.",
+      "en": "These prices are valid for {days} days.",
+      "zh": "以上价格有效期为 {days} 天。",
+      "baglam": "Belge dipnotu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "footnote.rate_locked",
+      "tr": "Hesaplamalarda {rate_date} tarihli kilitli kur kullanılmıştır.",
+      "en": "Calculations use the locked exchange rate dated {rate_date}.",
+      "zh": "计算采用 {rate_date} 的锁定汇率。",
+      "baglam": "Belge dipnotu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "footnote.ddp_estimate",
+      "tr": "DDP değerleri tahminidir; kesin maliyet değildir.",
+      "en": "DDP values are estimates and not final costs.",
+      "zh": "DDP金额为估算值，并非最终成本。",
+      "baglam": "Belge dipnotu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "footnote.vat_included",
+      "tr": "Fiyatlara KDV dahildir.",
+      "en": "Prices include VAT.",
+      "zh": "价格含增值税。",
+      "baglam": "Belge dipnotu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "footnote.vat_excluded",
+      "tr": "Fiyatlara KDV dahil değildir.",
+      "en": "Prices exclude VAT.",
+      "zh": "价格不含增值税。",
+      "baglam": "Belge dipnotu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "footnote.china_shipping_excluded",
+      "tr": "Çin içi nakliye fiyata dahil değildir.",
+      "en": "China domestic shipping is not included in the price.",
+      "zh": "价格不含中国境内运费。",
+      "baglam": "Belge dipnotu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "footnote.moq",
+      "tr": "Sipariş, belirtilen minimum miktara tabidir.",
+      "en": "The order is subject to the stated minimum quantity.",
+      "zh": "订单须满足所示最小起订量。",
+      "baglam": "Belge dipnotu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "footnote.conditional_price",
+      "tr": "Koşullu fiyatlar standart fiyatın yerine geçmez.",
+      "en": "Conditional prices do not replace the regular price.",
+      "zh": "条件价格不替代常规价格。",
+      "baglam": "Belge dipnotu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "footnote.seller_signals",
+      "tr": "Satıcı oranları platform sinyalleridir; bağımsız doğrulama değildir.",
+      "en": "Seller rates are platform signals, not independent verification.",
+      "zh": "供应商指标为平台信号，并非独立认证。",
+      "baglam": "Belge dipnotu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "footnote.declared_stock",
+      "tr": "Stok, satıcının beyan ettiği miktardır.",
+      "en": "Stock is the quantity declared by the seller.",
+      "zh": "库存数量为供应商申报值。",
+      "baglam": "Belge dipnotu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "footnote.package_declared",
+      "tr": "Ölçü ve ağırlıklar satıcı beyanıdır; sipariş öncesi teyit edilmelidir.",
+      "en": "Dimensions and weights are seller-declared and must be confirmed before ordering.",
+      "zh": "尺寸和重量由供应商申报，下单前须确认。",
+      "baglam": "Belge dipnotu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "footnote.image_reference",
+      "tr": "Görseller yalnız referans amaçlıdır.",
+      "en": "Images are for reference only.",
+      "zh": "图片仅供参考。",
+      "baglam": "Belge dipnotu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "footnote.translation",
+      "tr": "Çeviri bilgilendirme amaçlıdır; ticari koşullarda kaynak metin esas alınır.",
+      "en": "The translation is for information; the source text governs commercial terms.",
+      "zh": "译文仅供参考，商业条款以原文为准。",
+      "baglam": "Belge dipnotu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "footnote.custom_order",
+      "tr": "Özel üretim ürünlerinde numune, termin ve MOQ ayrıca teyit edilmelidir.",
+      "en": "For custom products, samples, lead time, and MOQ must be confirmed separately.",
+      "zh": "定制产品的样品、交期和起订量须另行确认。",
+      "baglam": "Belge dipnotu",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "footnote.rounding",
+      "tr": "Yuvarlama nedeniyle küçük toplam farkları oluşabilir.",
+      "en": "Minor total differences may occur due to rounding.",
+      "zh": "因四舍五入，合计金额可能存在微小差异。",
+      "baglam": "Belge dipnotu",
+      "durum": "kesin",
+      "not": ""
+    }
+  ]
+}

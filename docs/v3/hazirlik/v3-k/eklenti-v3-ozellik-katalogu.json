@@ -1,0 +1,747 @@
+{
+  "belge": "TedarikApp Eklenti v3 Özellik Kataloğu",
+  "belge_turu": "vizyon",
+  "baglayicilik": "Bu katalog şartname değildir. V1.0 saha verileri ve kullanıcı dersleri toplandıktan sonra PM süzgeciyle V3-K şartnamesine dönüştürülecektir.",
+  "surum": "1.1",
+  "son_arastirma_tarihi": "2026-08-23",
+  "oncelik_olcegi": {
+    "1": "V3-K çekirdeğine en güçlü aday",
+    "2": "Yüksek değer; çekirdeğin hemen ardından değerlendir",
+    "3": "Değerli geliştirme; saha kanıtına bağlı",
+    "4": "İleri seviye; maliyet ve kullanım kanıtı ister",
+    "5": "Deneysel; ancak açık PM kararıyla"
+  },
+  "karmasiklik_olcegi": {
+    "S": "Küçük",
+    "M": "Orta",
+    "L": "Büyük"
+  },
+  "marka_kurali": "Eklenti ve araç çubuğu ikonlarında turuncu vurgu; sayfa içi ve Side Panel yüzeylerinde lacivert ana kimlik, beyaz zemin ve yüksek kontrast. 1688 arayüzü taklit edilmez.",
+  "tek_amac_cercevesi": "Kullanıcının Çin kaynaklı ürünleri araştırması, seçmesi, doğrulaması ve kendi TedarikApp paneline kontrollü biçimde aktarması.",
+  "revizyon": "Çok platform eki: V3-E merdiveni ve çekirdek + site adaptörü kapsamı",
+  "platform_merdiveni": {
+    "P0": ["1688"],
+    "P1": ["Alibaba"],
+    "P2": ["Made-in-China", "Global Sources"],
+    "P3": ["AliExpress", "Taobao"],
+    "P4": ["Amazon", "Temu"]
+  },
+  "platform_mimari_ilkesi": "Özellikler platform-bağımsız çekirdekte yaşar; site adaptörü sayfa türünü, kaynak alanları ve desteklediği yetenekleri bildirir. Arayüz özellikleri adapter_id adına gömülü dallarla değil yetenek kapılarıyla açar.",
+  "ozellikler": [
+    {
+      "id": "V3X-001",
+      "kategori": "arayuz",
+      "koken": "zorunlu_kapsam",
+      "ad": "Kalıcı Side Panel komuta merkezi",
+      "tanim": "Chrome Side Panel içinde aktif sayfanın yakalama durumu, çevrimdışı kuyruk, son yakalamalar ve hızlı panel araması aynı kalıcı çalışma yüzeyinde yaşar; sekmeler arasında dolaşırken kullanıcı bağlamını kaybetmez.",
+      "kullanici_degeri": "Ürün araştırırken popup aç-kapa tekrarını ortadan kaldırır ve yakalama işini kesintisiz bir çalışma akışına dönüştürür.",
+      "mv3_store_politika_uyumu": "MV3 Side Panel API ile paket içi yerel sayfa kullanılır; panel yalnız desteklenen sitelerde veya açık kullanıcı hareketiyle etkinleşir ve tek amaç sınırında kalır.",
+      "bagimlilik": ["V3-K eklenti kabuğu", "Panel yakalama API'si", "V3-B bildirim sözleşmesi"],
+      "karmasiklik": "L",
+      "PM_onceligi_onerisi": 1,
+      "platform_kapsami": "genel"
+    },
+    {
+      "id": "V3X-002",
+      "kategori": "arayuz",
+      "koken": "vizyon_cekirdegi",
+      "ad": "Hızlı işlem popup'ı",
+      "tanim": "Araç çubuğu popup'ı yalnız anlık işleri taşır: mevcut sayfayı yakala, Side Panel'i aç, son gönderim sonucunu gör ve eklenti sağlık durumuna ulaş; uzun formlar veya arşiv listeleri popup'a yüklenmez.",
+      "kullanici_degeri": "Tek tıklık işleri hızlandırırken ayrıntılı işlerin Side Panel'e taşınmasını sağlar.",
+      "mv3_store_politika_uyumu": "Popup yerel paket içeriğidir; görünür kullanıcı eylemiyle çalışır ve arka planda kendiliğinden veri toplamaz.",
+      "bagimlilik": ["V3-K eklenti kabuğu", "Yakalama durum servisi"],
+      "karmasiklik": "S",
+      "PM_onceligi_onerisi": 1,
+      "platform_kapsami": "genel"
+    },
+    {
+      "id": "V3X-003",
+      "kategori": "arayuz",
+      "koken": "vizyon_cekirdegi",
+      "ad": "Sayfa içi kompakt işlem rayı",
+      "tanim": "Ürün ve arama sayfalarında lacivert, dar ve küçültülebilir bir işlem rayı; yakala, karşılaştır, izle ve medya önizle eylemlerini sayfanın doğal düzenini kapatmadan sunar.",
+      "kullanici_degeri": "Ana kararları ürün bağlamından kopmadan verir ve gereksiz pencere geçişlerini azaltır.",
+      "mv3_store_politika_uyumu": "Shadow DOM ile izole edilir, reklam veya yönlendirme içermez, desteklenmeyen sayfalarda yüklenmez ve kullanıcı tarafından kapatılabilir.",
+      "bagimlilik": ["V3-K sayfa içi UI", "Platform adaptörleri"],
+      "karmasiklik": "M",
+      "PM_onceligi_onerisi": 1,
+      "platform_kapsami": {
+        "uyarlama": "İşlem rayı ortak çekirdektir; görünür eylemler adaptörün ilan ettiği sayfa türü ve yeteneklere göre açılır. P0 1688 ile doğrulanır, P1-P4 aynı sözleşmeye katılır."
+      }
+    },
+    {
+      "id": "V3X-004",
+      "kategori": "arayuz",
+      "koken": "vizyon_cekirdegi",
+      "ad": "Sayfa türüne duyarlı arayüz",
+      "tanim": "Eklenti ürün detayı, arama sonucu, kategori ve mağaza sayfasını ayırır; her bağlamda yalnız anlamlı eylemleri gösterir ve geçersiz özellikleri pasif açıklamayla gizler.",
+      "kullanici_degeri": "Karmaşayı azaltır, yanlış sayfada yanlış işlem başlatılmasını önler.",
+      "mv3_store_politika_uyumu": "Host kapsamı ve içerik betiği eşleşmeleri desteklenen sayfa türleriyle sınırlandırılır; beklenmedik tarama yapılmaz.",
+      "bagimlilik": ["Platform adaptörleri", "Sayfa türü algılayıcı"],
+      "karmasiklik": "M",
+      "PM_onceligi_onerisi": 1,
+      "platform_kapsami": {
+        "uyarlama": "Sayfa türünü çekirdek tahmin etmez; her site adaptörü ürün, arama, kategori ve mağaza/tedarikçi bağlamını kendi URL ve DOM sözleşmesiyle bildirir."
+      }
+    },
+    {
+      "id": "V3X-005",
+      "kategori": "arayuz",
+      "koken": "zorunlu_kapsam",
+      "ad": "Turuncu ikon ve lacivert ürün yüzeyi sistemi",
+      "tanim": "Araç çubuğu, durum ve aksiyon ikonlarında turuncu; Side Panel ve sayfa içi kartlarda lacivert-beyaz kurumsal sistem kullanılır; başarı, uyarı ve hata renkleri ayrı erişilebilir anlam taşır.",
+      "kullanici_degeri": "TedarikApp'i 1688'den görsel olarak ayırır, durumları hızlı okunur ve profesyonel kılar.",
+      "mv3_store_politika_uyumu": "Arayüz eklentinin kimliğini açık gösterir; yerel site arayüzünü taklit etmez ve yanıltıcı yerel kontrol görünümü oluşturmaz.",
+      "bagimlilik": ["TedarikApp marka kiti", "Erişilebilir renk belirteçleri"],
+      "karmasiklik": "S",
+      "PM_onceligi_onerisi": 1,
+      "platform_kapsami": "genel"
+    },
+    {
+      "id": "V3X-006",
+      "kategori": "arayuz",
+      "koken": "vizyon_cekirdegi",
+      "ad": "Yoğunluk ve panel genişliği uyarlaması",
+      "tanim": "Side Panel dar, orta ve geniş görünümlerde kart, tablo ve medya yerleşimini otomatik değiştirir; kullanıcı ayrıca rahat veya kompakt yoğunluğu seçebilir.",
+      "kullanici_degeri": "Farklı ekran ve çalışma alışkanlıklarında okunabilirliği korur.",
+      "mv3_store_politika_uyumu": "Yalnız yerel görünüm tercihidir; ek izin veya yeni veri toplama gerektirmez.",
+      "bagimlilik": ["V3-K tasarım sistemi"],
+      "karmasiklik": "M",
+      "PM_onceligi_onerisi": 2,
+      "platform_kapsami": "genel"
+    },
+    {
+      "id": "V3X-007",
+      "kategori": "verimlilik",
+      "koken": "emsal_esinli_ekstra",
+      "emsal_esini": ["1Password Quick Access", "Grammarly klavye erişimi"],
+      "ad": "Eklenti komut paleti",
+      "tanim": "Tek kısayolla açılan arama odaklı palet; yakala, Side Panel'i aç, listede ara, kuyruk hatasına git ve son ürünü karşılaştır gibi komutları fare kullanmadan çalıştırır.",
+      "kullanici_degeri": "Yoğun ürün taramasında menü dolaşımını azaltır ve uzman kullanıcı hızını yükseltir.",
+      "mv3_store_politika_uyumu": "Chrome commands API ve kullanıcı hareketi kullanılır; çakışan kısayollar ayarlardan değiştirilebilir.",
+      "bagimlilik": ["V3-K komut kayıt katmanı", "Panel derin bağlantıları"],
+      "karmasiklik": "M",
+      "PM_onceligi_onerisi": 3,
+      "platform_kapsami": "genel"
+    },
+    {
+      "id": "V3X-008",
+      "kategori": "verimlilik",
+      "koken": "zorunlu_kapsam",
+      "ad": "Özelleştirilebilir klavye kısayolları",
+      "tanim": "Yakalama, Side Panel açma, seçili ürünü karşılaştırmaya ekleme, sıradaki karta geçme ve kuyruk görünümünü açma için belgelenmiş ve değiştirilebilir kısayollar sunulur.",
+      "kullanici_degeri": "Klavye ağırlıklı araştırmada saniyeleri topluca geri kazandırır.",
+      "mv3_store_politika_uyumu": "Yalnız açık kullanıcı hareketiyle işlem başlatır; tarayıcı veya site kısayollarıyla çakışma algılanır.",
+      "bagimlilik": ["V3-K komut kayıt katmanı"],
+      "karmasiklik": "S",
+      "PM_onceligi_onerisi": 2,
+      "platform_kapsami": "genel"
+    },
+    {
+      "id": "V3X-009",
+      "kategori": "arayuz",
+      "koken": "vizyon_cekirdegi",
+      "ad": "Tam klavye ve ekran okuyucu erişimi",
+      "tanim": "Side Panel, popup ve sayfa içi kontroller mantıklı odak sırası, görünür odak, ARIA adları, canlı durum mesajları ve hareket azaltma seçeneğiyle erişilebilir tasarlanır.",
+      "kullanici_degeri": "Arayüzü daha güvenilir ve her çalışma koşulunda kullanılabilir kılar.",
+      "mv3_store_politika_uyumu": "Ek izin gerektirmez; kaliteli ve öngörülebilir kullanıcı deneyimi hedefiyle uyumludur.",
+      "bagimlilik": ["V3-K tasarım sistemi", "E2E erişilebilirlik kataloğu"],
+      "karmasiklik": "M",
+      "PM_onceligi_onerisi": 1,
+      "platform_kapsami": "genel"
+    },
+    {
+      "id": "V3X-010",
+      "kategori": "arayuz",
+      "koken": "vizyon_cekirdegi",
+      "ad": "Site bazlı görünürlük denetimi",
+      "tanim": "Kullanıcı desteklenen her alan adı için sayfa içi rayı, rozetleri ve otomatik önizlemeyi ayrı ayrı açıp kapatabilir; Side Panel bağımsız kalır.",
+      "kullanici_degeri": "Görsel yoğunluğu kişiselleştirir ve gerektiğinde sıfır müdahaleli gezinme sağlar.",
+      "mv3_store_politika_uyumu": "Kullanıcı kontrolünü artırır; site erişimi ile UI görünürlüğü açık ve geri alınabilir biçimde ayrılır.",
+      "bagimlilik": ["Ayarlar senkronizasyonu", "Platform adaptörleri"],
+      "karmasiklik": "S",
+      "PM_onceligi_onerisi": 2,
+      "platform_kapsami": {
+        "uyarlama": "Görünürlük ayarı alan adı ve adaptör yetenekleri bazında tutulur; V3-E merdiveninde açılan her yeni site kullanıcı tarafından bağımsız kapatılabilir."
+      }
+    },
+    {
+      "id": "V3X-011",
+      "kategori": "toplu_yakalama",
+      "koken": "zorunlu_kapsam",
+      "ad": "Arama sonuçlarından toplu seçim ve yakalama (P0: 1688)",
+      "tanim": "Adaptörün ürün kartı olarak doğruladığı görünür kayıtlara seçim kutusu eklenir; kullanıcı bir grubu seçer, toplu önizlemeyi açar ve tek onayla kontrollü yakalama kuyruğuna alır. İlk üretim uygulaması P0 1688 adaptörüdür.",
+      "kullanici_degeri": "Ürünleri tek tek açmadan aday havuzu oluşturur ve araştırma süresini ciddi biçimde kısaltır.",
+      "mv3_store_politika_uyumu": "Yalnız kullanıcının seçtiği görünür kartlar okunur; kendiliğinden sayfa tarama, gizli veri toplama veya otomatik gönderim yapılmaz.",
+      "bagimlilik": ["1688 arama adaptörü", "Toplu yakalama API'si", "İdempotent kuyruk"],
+      "karmasiklik": "L",
+      "PM_onceligi_onerisi": 1,
+      "platform_kapsami": {
+        "uyarlama": "Toplu seçim çekirdeği adaptörün sağladığı görünür ürün kartlarını işler. İlk tam uygulama P0 1688 arama adaptörüdür; P1-P4 yalnız kendi doğrulanmış kart çıkarıcıları hazırsa aynı akışı açar."
+      }
+    },
+    {
+      "id": "V3X-012",
+      "kategori": "toplu_yakalama",
+      "koken": "zorunlu_kapsam",
+      "ad": "Kategori sayfası tarama modu",
+      "tanim": "Desteklenen kategori sayfasındaki görünür ürün kartlarını sayfa sınırları içinde çıkarır; kullanıcı filtreler, seçer ve yalnız seçtiklerini toplu önizlemeye taşır.",
+      "kullanici_degeri": "Bir ürün ailesindeki adayları hızlıca yan yana getirir.",
+      "mv3_store_politika_uyumu": "Tarama kullanıcı hareketiyle başlar, görünür sayfa içeriğiyle sınırlıdır ve robotsuz arka plan gezintisine dönüşmez.",
+      "bagimlilik": ["Kategori adaptörü", "Toplu önizleme", "Oran sınırı"],
+      "karmasiklik": "L",
+      "PM_onceligi_onerisi": 2,
+      "platform_kapsami": {
+        "uyarlama": "Kategori/koleksiyon kavramı ve kart yapısı platforma göre değişir; özellik yalnız adaptör kategori bağlamını ve görünür kart çıkarımını desteklediğinde açılır."
+      }
+    },
+    {
+      "id": "V3X-013",
+      "kategori": "toplu_yakalama",
+      "koken": "zorunlu_kapsam",
+      "ad": "Mağaza sayfası tarama modu",
+      "tanim": "Desteklenen mağaza, tedarikçi vitrini veya eşdeğer sayfadaki ürün kartları satıcı bağlamıyla birlikte seçilebilir; kullanıcı görünür ürünleri filtreleyip aday yakalama grubuna ekler. İlk üretim uygulaması P0 1688 mağaza adaptörüdür.",
+      "kullanici_degeri": "Güvenilir görülen bir satıcının ürün dünyasını hızlı değerlendirmeyi sağlar.",
+      "mv3_store_politika_uyumu": "Desteklenen mağaza yollarına dar host kapsamıyla çalışır; otomatik sonsuz tarama ve kullanıcıdan habersiz aktarım yoktur.",
+      "bagimlilik": ["Mağaza adaptörü", "Satıcı kimliği normalizasyonu", "Toplu önizleme"],
+      "karmasiklik": "L",
+      "PM_onceligi_onerisi": 2,
+      "platform_kapsami": {
+        "uyarlama": "Mağaza, tedarikçi vitrini veya marka sayfası eşdeğerleri adaptörce tanımlanır. P0 1688 mağazasıyla başlar; P1-P4 güvenilir satıcı ve kart kimliği sağladığı ölçüde açılır."
+      }
+    },
+    {
+      "id": "V3X-014",
+      "kategori": "toplu_yakalama",
+      "koken": "emsal_esinli_ekstra",
+      "emsal_esini": ["Helium 10 Xray", "SellerSprite ürün listeleri"],
+      "ad": "Sonsuz kaydırma yakalama oturumu",
+      "tanim": "Kullanıcı bir araştırma oturumu başlatır; sayfada aşağı indikçe yeni görünür kartlar aynı oturuma eklenir, tekrarlar elenir ve açık sayaçla oturum sınırı gösterilir.",
+      "kullanici_degeri": "Uzun sonuç sayfalarında seçimin kaybolmasını önler ve yüzlerce adayı kontrollü gruplar halinde yönetir.",
+      "mv3_store_politika_uyumu": "Yalnız açık oturumda ve kullanıcı kaydırdıkça çalışır; otomatik sayfalama veya gizli arka plan taraması yapılmaz.",
+      "bagimlilik": ["Toplu yakalama oturumu", "Yinelenen ürün önleme", "Oturum üst sınırı"],
+      "karmasiklik": "L",
+      "PM_onceligi_onerisi": 3,
+      "platform_kapsami": {
+        "uyarlama": "Sayfalama, sanal liste ve sonsuz kaydırma biçimi site adaptörünün yükleme sinyali ve oturum üst sınırı sözleşmesine göre yönetilir."
+      }
+    },
+    {
+      "id": "V3X-015",
+      "kategori": "yakalama_kalitesi",
+      "koken": "zorunlu_kapsam",
+      "ad": "Yakalama önizleme ve alan düzeltme mini formu",
+      "tanim": "Gönderimden önce başlık, fiyat, MOQ, varyant, satıcı, kategori ve medya alanları kompakt formda gösterilir; kullanıcı hatalı veya eksik değeri düzelterek onaylar.",
+      "kullanici_degeri": "Panelde sonradan düzeltme yükünü ve yanlış veri aktarımını azaltır.",
+      "mv3_store_politika_uyumu": "Aktarım açık onaydan sonra gerçekleşir; toplanan alanlar görünür ve tek amaçla sınırlıdır.",
+      "bagimlilik": ["Yakalama şeması", "Alan doğrulama kuralları", "Kategori sözlüğü"],
+      "karmasiklik": "L",
+      "PM_onceligi_onerisi": 1,
+      "platform_kapsami": "genel"
+    },
+    {
+      "id": "V3X-016",
+      "kategori": "yakalama_kalitesi",
+      "koken": "emsal_esinli_ekstra",
+      "emsal_esini": ["Jungle Scout veri kartları", "SellerSprite ayrıntı panelleri"],
+      "ad": "Alan güven puanı ve kaynak izi",
+      "tanim": "Önizlemedeki her kritik alan, hangi sayfa parçasından geldiğini ve çıkarım güvenini gösterir; düşük güvenli alanlar turuncu çerçeveyle insan kontrolüne yönlendirilir.",
+      "kullanici_degeri": "Yanlış seçici eşleşmesini gizlemek yerine kullanıcıya anlaşılır bir doğrulama ipucu verir.",
+      "mv3_store_politika_uyumu": "Kaynak izi yalnız yerel çıkarım açıklamasıdır; kişisel veri veya ek gezinme geçmişi oluşturmaz.",
+      "bagimlilik": ["Sürümlü seçici paketi", "Alan çıkarım telemetrisi olmadan yerel açıklama modeli"],
+      "karmasiklik": "M",
+      "PM_onceligi_onerisi": 2,
+      "platform_kapsami": {
+        "uyarlama": "Ortak güven ölçeği korunur; hangi seçici, JSON-LD veya görünür alanın hangi güvene sahip olduğu her adaptör sürümünde ayrı tanımlanır."
+      }
+    },
+    {
+      "id": "V3X-017",
+      "kategori": "yakalama_kalitesi",
+      "koken": "vizyon_cekirdegi",
+      "ad": "Varyant matrisi seçici",
+      "tanim": "Renk, ölçü, paket ve diğer varyant eksenleri matris halinde gösterilir; kullanıcı yalnız ilgilendiği kombinasyonları seçer ve seçilmeyen varyantlar aktarım dışı kalır.",
+      "kullanici_degeri": "Gereksiz SKU kalabalığını önler ve sipariş niyetine uygun veri taşır.",
+      "mv3_store_politika_uyumu": "Sayfada görünen varyant verisi yalnız kullanıcı seçimiyle işlenir; otomatik sepet veya sipariş eylemi yapılmaz.",
+      "bagimlilik": ["Varyant normalizasyonu", "Liste ürün şeması"],
+      "karmasiklik": "L",
+      "PM_onceligi_onerisi": 1,
+      "platform_kapsami": {
+        "uyarlama": "Varyant/SKU matrisi yalnız adaptör varyant boyutları, seçenek kimlikleri ve fiyat-stok bağını güvenle sağlıyorsa açılır; eksik veri uydurulmaz."
+      }
+    },
+    {
+      "id": "V3X-018",
+      "kategori": "medya",
+      "koken": "zorunlu_kapsam",
+      "ad": "Görsel ve video hızlı önizleme",
+      "tanim": "Ana görseller, varyant görselleri, açıklama görselleri ve varsa video Side Panel içinde hafif galeri olarak açılır; tam indirme başlamadan kalite ve içerik kontrol edilir.",
+      "kullanici_degeri": "Yanlış veya gereksiz medyayı yakalamadan önce ayıklamayı sağlar.",
+      "mv3_store_politika_uyumu": "Önizleme desteklenen ürün sayfasındaki kullanıcı görünür medyayla sınırlıdır; medya aktarımı ayrıca onaylanır.",
+      "bagimlilik": ["Medya manifesti", "Güvenli önizleme bileşeni"],
+      "karmasiklik": "M",
+      "PM_onceligi_onerisi": 1,
+      "platform_kapsami": {
+        "uyarlama": "Önizleme kabuğu ortaktır; görsel galeri, varyant görseli ve video kaynakları her sitenin adaptörü tarafından güvenli medya türleri olarak ilan edilir."
+      }
+    },
+    {
+      "id": "V3X-019",
+      "kategori": "medya",
+      "koken": "vizyon_cekirdegi",
+      "ad": "Seçmeli medya yakalama",
+      "tanim": "Kullanıcı galeri içinden aktarılacak görsel ve videoları tek tek veya tür bazında seçer; dosya sayısı, tahmini boyut ve seçilmeyen içerik açıkça görünür.",
+      "kullanici_degeri": "Medya depolamasını kontrol eder ve listeye yalnız işe yarayan materyali taşır.",
+      "mv3_store_politika_uyumu": "Toplu indirme veya aktarım kullanıcı seçimine bağlıdır; site dışı medya taraması yapılmaz.",
+      "bagimlilik": ["Medya depolama API'si", "Boyut kotası", "Yakalama önizlemesi"],
+      "karmasiklik": "M",
+      "PM_onceligi_onerisi": 2,
+      "platform_kapsami": {
+        "uyarlama": "Seçim ve limit arayüzü geneldir; indirilebilir/yakalanabilir medya yetenekleri adaptörün kaynak ve kullanım kısıtlarına göre açılır."
+      }
+    },
+    {
+      "id": "V3X-020",
+      "kategori": "yakalama_kalitesi",
+      "koken": "vizyon_cekirdegi",
+      "ad": "Gönderim öncesi mükerrer algılama",
+      "tanim": "Kaynak ürün kimliği, kanonik URL, satıcı ve görsel parmak izi sinyalleriyle panelde muhtemel eşleşmeler gösterilir; kullanıcı mevcut ürüne güncelleme veya yeni kayıt kararını verir.",
+      "kullanici_degeri": "Aynı ürünün farklı linklerle tekrar tekrar havuza düşmesini azaltır.",
+      "mv3_store_politika_uyumu": "Karşılaştırma yalnız kullanıcının kendi panel verisiyle ve tek amaç kapsamında yapılır; otomatik birleştirme yoktur.",
+      "bagimlilik": ["Panel mükerrer aday API'si", "Ürün kanonikleştirme", "Görsel parmak izi servisi"],
+      "karmasiklik": "L",
+      "PM_onceligi_onerisi": 1,
+      "platform_kapsami": "genel"
+    },
+    {
+      "id": "V3X-021",
+      "kategori": "karsilastirma",
+      "koken": "emsal_esinli_ekstra",
+      "emsal_esini": ["SellerSprite Product Comparison", "AliPrice karşılaştırma"],
+      "ad": "Sayfa içi karşılaştırma sepeti",
+      "tanim": "Ürün sayfası veya sonuç kartından 2–6 aday geçici sepete eklenir; fiyat, MOQ, satıcı, skor, varyant ve medya tamlığı Side Panel'de yan yana karşılaştırılır.",
+      "kullanici_degeri": "Sekme kalabalığını azaltır ve tedarik kararını aynı bağlamda hızlandırır.",
+      "mv3_store_politika_uyumu": "Sepet yalnız yerel oturum verisi veya kullanıcının panelindeki ürünlerle çalışır; satın alma sepetini değiştirmez.",
+      "bagimlilik": ["Karşılaştırma veri modeli", "Kategori eşleme", "Skor servisi"],
+      "karmasiklik": "L",
+      "PM_onceligi_onerisi": 2,
+      "platform_kapsami": {
+        "uyarlama": "Karşılaştırma sepeti ortaktır; fiyat, MOQ, varyant, satıcı ve hedef pazar alanları adaptörün sağladığı ortak şemaya göre doldurulur, olmayan alanlar sıfır gösterilmez."
+      }
+    },
+    {
+      "id": "V3X-022",
+      "kategori": "toplu_yakalama",
+      "koken": "vizyon_cekirdegi",
+      "ad": "Toplu liste ve etiket atama",
+      "tanim": "Toplu önizlemedeki seçili ürünlere hedef liste, araştırma etiketi ve not tek işlemde atanır; her ürünün farklı varyant seçimi korunur.",
+      "kullanici_degeri": "Panelde sonradan yapılan sınıflandırma işini azaltır.",
+      "mv3_store_politika_uyumu": "Atama kullanıcı onayıyla kendi panelinde yapılır; sessiz veya otomatik iş kuralı çalışmaz.",
+      "bagimlilik": ["Panel liste API'si", "Etiket sözlüğü", "Toplu yakalama"],
+      "karmasiklik": "M",
+      "PM_onceligi_onerisi": 2,
+      "platform_kapsami": "genel"
+    },
+    {
+      "id": "V3X-023",
+      "kategori": "toplu_yakalama",
+      "koken": "vizyon_cekirdegi",
+      "ad": "Aşamalı toplu yakalama incelemesi",
+      "tanim": "Büyük seçimler 20–25 ürünlük inceleme dilimlerine ayrılır; kullanıcı her dilimi onaylar, erteler veya seçimi daraltır ve ilerleme Side Panel'de kalıcı görünür.",
+      "kullanici_degeri": "Büyük yakalamalarda hata riskini ve zihinsel yükü düşürür.",
+      "mv3_store_politika_uyumu": "Her gönderim dilimi açık onaya dayanır; arka planda kontrolsüz toplu aktarım yapılmaz.",
+      "bagimlilik": ["Toplu yakalama oturumu", "Kalıcı kuyruk", "İlerleme durumu"],
+      "karmasiklik": "M",
+      "PM_onceligi_onerisi": 2,
+      "platform_kapsami": "genel"
+    },
+    {
+      "id": "V3X-024",
+      "kategori": "yakalama_kalitesi",
+      "koken": "emsal_esinli_ekstra",
+      "emsal_esini": ["Grammarly öneri kartları", "Sellerbility alan etiketleme yaklaşımı"],
+      "ad": "Eksik alan onarım sihirbazı",
+      "tanim": "Yakalama sonrası eksik kritik alanlar tek tek kartlaştırılır; sihirbaz kullanıcıyı sayfadaki olası kaynağa götürür, elle değer kabul eder veya alanı bilinçli eksik olarak işaretler.",
+      "kullanici_degeri": "Belirsiz bir genel hata yerine tamamlanabilir bir düzeltme akışı sunar.",
+      "mv3_store_politika_uyumu": "Kullanıcı onayı olmadan DOM seçimi veya uzaktan çalıştırılabilir seçici kodu yüklenmez; öneriler paketli mantıktan gelir.",
+      "bagimlilik": ["Alan doğrulama kuralları", "Kaynak izi", "Sürümlü yerel seçici paketi"],
+      "karmasiklik": "L",
+      "PM_onceligi_onerisi": 3,
+      "platform_kapsami": "genel"
+    },
+    {
+      "id": "V3X-025",
+      "kategori": "yakalama",
+      "koken": "emsal_esinli_ekstra",
+      "emsal_esini": ["AliPrice görsel arama", "AliNiche sağ tık akışı"],
+      "ad": "Sağ tıkla görselden araştırma başlatma",
+      "tanim": "Kullanıcı herhangi bir desteklenen sayfadaki ürün görseline sağ tıklayıp TedarikApp hızlı aramasını açar; görsel URL'si veya kullanıcı seçtiyse ekran kırpımı kendi panel aramasına gönderilir.",
+      "kullanici_degeri": "Ürün adı bilinmediğinde benzer ürün araştırmasını tek hareketle başlatır.",
+      "mv3_store_politika_uyumu": "Context menu yalnız kullanıcı hareketiyle çalışır; görsel açık açıklamayla panel API'sine gönderilir ve genel gezinme geçmişi tutulmaz.",
+      "bagimlilik": ["Panel görsel arama servisi", "Görsel kullanım bildirimi", "Bağlama duyarlı menü"],
+      "karmasiklik": "M",
+      "PM_onceligi_onerisi": 3,
+      "platform_kapsami": {
+        "uyarlama": "Sağ tık komutu geneldir; görsel URL çıkarımı ve desteklenen tersine arama/hedef platform seçenekleri aktif site adaptörü ve kullanıcı iznine göre belirlenir."
+      }
+    },
+    {
+      "id": "V3X-026",
+      "kategori": "izleme",
+      "koken": "zorunlu_kapsam",
+      "ad": "Sayfa içi fiyat geçmişi ve izleme rozeti",
+      "tanim": "V3-F izleme verisi varsa ürün sayfasında mevcut fiyatın son yakalamaya göre farkı ve küçük tarih grafiği gösterilir; rozet izleme durumunu ve veri yaşını açıklar.",
+      "kullanici_degeri": "Fiyatın gerçekten uygun olup olmadığını ve değişimin yönünü sayfadan ayrılmadan gösterir.",
+      "mv3_store_politika_uyumu": "Grafik kullanıcının kendi panel verisinden gelir; eklenti kendiliğinden sürekli tarama yapmaz ve veri yaşı görünürdür.",
+      "bagimlilik": ["V3-F ürün izleme", "Fiyat zaman serisi API'si", "Ürün eşleme"],
+      "karmasiklik": "L",
+      "PM_onceligi_onerisi": 1,
+      "platform_kapsami": {
+        "uyarlama": "Rozet ortak UI yüzeyidir; fiyat geçmişi ancak kaynak ürün kimliği V3-F kaydıyla eşleştiğinde açılır. P4 Amazon/Temu verisi hedef pazar referansı olarak ayrıca etiketlenir."
+      }
+    },
+    {
+      "id": "V3X-027",
+      "kategori": "izleme",
+      "koken": "emsal_esinli_ekstra",
+      "emsal_esini": ["Keepa hedef fiyat takibi", "AliPrice fiyat düşüş bildirimi"],
+      "ad": "Tek tık izleme ve eşik belirleme",
+      "tanim": "Ürün rozetinden fiyat, MOQ, stok veya satıcı puanı için izleme açılır; kullanıcı mutlak değer, yüzde değişim veya herhangi bir değişim eşiği seçer.",
+      "kullanici_degeri": "Panelde ayrı form aramadan kritik ürünü izlemeye alır.",
+      "mv3_store_politika_uyumu": "İzleme panel tarafında açık kullanıcı talebiyle kurulur; eklenti arka planda sayfa dolaşmaz ve alarm nedeni açıklanır.",
+      "bagimlilik": ["V3-F izleme kuralları", "Bildirim merkezi", "Ürün eşleme"],
+      "karmasiklik": "M",
+      "PM_onceligi_onerisi": 2,
+      "platform_kapsami": {
+        "uyarlama": "İzleme komutu geneldir; fiyat, stok, MOQ veya hedef pazar eşiği seçenekleri adaptörün sağladığı ölçümlere göre değişir."
+      }
+    },
+    {
+      "id": "V3X-028",
+      "kategori": "izleme",
+      "koken": "vizyon_cekirdegi",
+      "ad": "Stok ve MOQ değişim rozeti",
+      "tanim": "Kayıtlı son değerle güncel sayfadaki stok ve MOQ karşılaştırılır; artış, düşüş veya belirsizlik ayrı rozetlerle gösterilir ve eski değer tarih damgasıyla sunulur.",
+      "kullanici_degeri": "Fiyat sabit kalsa bile sipariş uygulanabilirliğini etkileyen değişimleri görünür kılar.",
+      "mv3_store_politika_uyumu": "Karşılaştırma yalnız açık ürün sayfasında ve kullanıcının panel verisiyle yapılır; otomatik hüküm yerine kaynak değerler gösterilir.",
+      "bagimlilik": ["V3-F izleme", "MOQ/stok normalizasyonu"],
+      "karmasiklik": "M",
+      "PM_onceligi_onerisi": 2,
+      "platform_kapsami": {
+        "uyarlama": "P0-P2 kapsamında MOQ ve stok birlikte izlenebilir; MOQ bulunmayan P3-P4 sitelerinde uydurma değer yerine yalnız mevcut stok/paket sinyali gösterilir."
+      }
+    },
+    {
+      "id": "V3X-029",
+      "kategori": "izleme",
+      "koken": "emsal_esinli_ekstra",
+      "emsal_esini": ["AliPrice satıcı analizi", "Keepa satıcı geçmişi"],
+      "ad": "Satıcı sağlık değişimi rozeti",
+      "tanim": "Satıcının puan, mağaza yaşı, işlem hacmi ve son yakalamadan bu yana değişen güven sinyalleri özetlenir; kötüleşme tek bir neden cümlesiyle açıklanır.",
+      "kullanici_degeri": "Ürünün ötesindeki tedarikçi riskini erken fark ettirir.",
+      "mv3_store_politika_uyumu": "Yalnız herkese açık satıcı sinyalleri ve kullanıcının kendi geçmişi kullanılır; kredi değerliliği kararı veya kişisel profil çıkarımı yapılmaz.",
+      "bagimlilik": ["V3-F satıcı izleme", "Satıcı karnesi", "Değişim zaman serisi"],
+      "karmasiklik": "L",
+      "PM_onceligi_onerisi": 3,
+      "platform_kapsami": {
+        "uyarlama": "Satıcı sağlık alanları platforma özgüdür; adaptör puan, doğrulama, mağaza yaşı veya yorum sinyallerini kaynak adıyla normalleştirir ve karşılaştırılmayan metrikleri birleştirmez."
+      }
+    },
+    {
+      "id": "V3X-030",
+      "kategori": "zeka",
+      "koken": "vizyon_cekirdegi",
+      "ad": "Sayfa içi TedarikApp Skoru rozeti",
+      "tanim": "Panelde hesaplanmış skor bandı ürün kartı ve detay sayfasında yüksek, orta, düşük veya gizli olarak gösterilir; kullanıcı rozeti açınca belirleyici sinyalleri görür.",
+      "kullanici_degeri": "Kendi ticari ölçütlerini kaynak sayfada anında kullanır.",
+      "mv3_store_politika_uyumu": "Skor panelden gelir; eklenti yeni bir gizli veri toplamayı başlatmaz ve eksik veride skor uydurmaz.",
+      "bagimlilik": ["C6 skor motoru", "Ürün eşleme API'si"],
+      "karmasiklik": "M",
+      "PM_onceligi_onerisi": 2,
+      "platform_kapsami": {
+        "uyarlama": "Skor UI yüzeyi ortaktır; panel normalizasyonu platform içinde yapılır ve adaptör skor için yeterli sinyali sağlayamıyorsa rozet GİZLİ kalır."
+      }
+    },
+    {
+      "id": "V3X-031",
+      "kategori": "zeka",
+      "koken": "vizyon_cekirdegi",
+      "ad": "Kategori tahmini onay çipi",
+      "tanim": "Kategori sözlüğüyle önerilen TedarikApp kategorisi sayfa içi çipte gösterilir; kullanıcı kabul eder, değiştirir veya boş bırakır ve düşük güven zorla atanmaz.",
+      "kullanici_degeri": "Yakalama sırasında doğru sınıflandırmayı hızlandırır.",
+      "mv3_store_politika_uyumu": "Yerel/veri-JSON tabanlı sınıflandırma çalıştırılabilir uzak kod içermez; belirsizlik açık gösterilir.",
+      "bagimlilik": ["Kategori ağacı", "1688 eşleme sözlüğü", "Kategori atama API'si"],
+      "karmasiklik": "M",
+      "PM_onceligi_onerisi": 1,
+      "platform_kapsami": {
+        "uyarlama": "Kategori tahmini ortak panel sözlüğüne yapılır; adaptör kaynak kategori yolu ve siteye özgü kırıntıları sağladığında güven çipi açılır."
+      }
+    },
+    {
+      "id": "V3X-032",
+      "kategori": "zeka",
+      "koken": "vizyon_cekirdegi",
+      "ad": "同款 küme ve benzer kayıt rozeti",
+      "tanim": "Panelde aynı veya benzer kümeye bağlanan ürün sayısı rozetlenir; kullanıcı kümeyi Side Panel karşılaştırmasında açar ve kaynak ürünlerin farklarını görür.",
+      "kullanici_degeri": "Aynı ürünü farklı satıcı ve fiyatlarla daha hızlı karşılaştırır.",
+      "mv3_store_politika_uyumu": "Eşleşmeler kullanıcının panel verisinden gelir; kaynak siteye otomatik işlem uygulanmaz.",
+      "bagimlilik": ["同款 küme motoru", "Karşılaştırma sepeti"],
+      "karmasiklik": "M",
+      "PM_onceligi_onerisi": 2,
+      "platform_kapsami": {
+        "uyarlama": "同款 P0 1688 için bir sinyaldir; diğer platformlarda yalnız doğrulanmış ürün eşleme veya görsel benzerlik sinyalleri adaptör tarafından sağlanırsa ortak benzer kayıt rozeti açılır."
+      }
+    },
+    {
+      "id": "V3X-033",
+      "kategori": "maliyet",
+      "koken": "emsal_esinli_ekstra",
+      "emsal_esini": ["Helium 10 profitability calculator", "SellerSprite FBA calculator"],
+      "ad": "Hızlı yaklaşık maliyet hesaplayıcı",
+      "tanim": "Ürün fiyatı, seçili varyant, miktar, tahmini navlun ve paneldeki kurla basit bir ön maliyet görünümü üretir; sonuç kesin ithalat maliyeti değil, karşılaştırma amaçlı tahmindir.",
+      "kullanici_degeri": "Adayları daha yakalama aşamasında ticari olarak kıyaslamayı sağlar.",
+      "mv3_store_politika_uyumu": "Hesap yerel veya panel verisiyle yapılır; yanıltıcı kesinlikten kaçınmak için varsayımlar ve tarih damgası görünürdür.",
+      "bagimlilik": ["Kur servisi", "V3-G maliyet varsayımları", "Varyant fiyatı"],
+      "karmasiklik": "M",
+      "PM_onceligi_onerisi": 3,
+      "platform_kapsami": {
+        "uyarlama": "Hesap kabuğu ortaktır; kaynak para birimi, fiyat kademesi, MOQ ve hedef pazar rolü adaptör verisinden gelir. Amazon/Temu fiyatı tedarik fiyatı gibi yorumlanmaz."
+      }
+    },
+    {
+      "id": "V3X-034",
+      "kategori": "maliyet",
+      "koken": "vizyon_cekirdegi",
+      "ad": "Kur yaşı ve hesap güven uyarısı",
+      "tanim": "Eklentide gösterilen TL karşılıklarının hangi kur ve tarihle hesaplandığı görünür; kur yaşı eşiği aşınca turuncu uyarı ve güncelleme eylemi çıkar.",
+      "kullanici_degeri": "Eski kurla yanlış maliyet kıyasını önler.",
+      "mv3_store_politika_uyumu": "Kur yalnız kullanıcının panelinden alınır; arka planda açıklanmamış üçüncü taraf döviz isteği yapılmaz.",
+      "bagimlilik": ["Panel kur servisi", "Kur onay akışı"],
+      "karmasiklik": "S",
+      "PM_onceligi_onerisi": 1,
+      "platform_kapsami": {
+        "uyarlama": "Kur yaşı uyarısı geneldir; kullanılan kaynak para birimi ve hedef para birimi aktif adaptörün fiyat bağlamına göre seçilir."
+      }
+    },
+    {
+      "id": "V3X-035",
+      "kategori": "veri_kalitesi",
+      "koken": "vizyon_cekirdegi",
+      "ad": "Son yakalama ve veri tazeliği damgası",
+      "tanim": "Sayfa içi rozet ürünün en son ne zaman yakalandığını, hangi cihazdan geldiğini ve güncel sayfada kritik alan farkı olup olmadığını özetler.",
+      "kullanici_degeri": "Aynı ürünü gereksiz yeniden yakalamayı ve eski veriye güvenmeyi azaltır.",
+      "mv3_store_politika_uyumu": "Cihaz adı kullanıcı tarafından belirlenmiş takma addır; konum veya donanım parmak izi toplanmaz.",
+      "bagimlilik": ["Yakalama geçmişi API'si", "Cihaz kayıtları"],
+      "karmasiklik": "M",
+      "PM_onceligi_onerisi": 2,
+      "platform_kapsami": {
+        "uyarlama": "Tazelik biçimi ortaktır; kaynak zaman damgası, adaptör sürümü ve platform ürün kimliği birlikte gösterilir."
+      }
+    },
+    {
+      "id": "V3X-036",
+      "kategori": "zeka",
+      "koken": "vizyon_cekirdegi",
+      "ad": "Sayfa bağlamlı anomali özeti",
+      "tanim": "Ürün veya satıcı için panelde açık anomali varsa Side Panel tek cümlelik neden, önem seviyesi ve ilgili panel bağlantısını gösterir.",
+      "kullanici_degeri": "Kritik problemi kaynak sayfada karar anına taşır.",
+      "mv3_store_politika_uyumu": "Yalnız kullanıcının kendi panel bildirimleri gösterilir; sayfa üstünde korkutucu veya yanıltıcı sistem uyarısı taklit edilmez.",
+      "bagimlilik": ["V3-B anomali kataloğu", "Bildirim API'si", "Ürün eşleme"],
+      "karmasiklik": "M",
+      "PM_onceligi_onerisi": 3,
+      "platform_kapsami": {
+        "uyarlama": "Anomali motoru ortak kuralları kullanır; eşik ve kullanılabilir sinyaller platform içi normalizasyona ve adaptör yeteneklerine göre değerlendirilir."
+      }
+    },
+    {
+      "id": "V3X-037",
+      "kategori": "zeka",
+      "koken": "emsal_esinli_ekstra",
+      "emsal_esini": ["Jungle Scout Opportunity Score", "fiyat izleyicilerdeki al/bekle açıklaması"],
+      "ad": "Yakalama kararı için açıklamalı öneri",
+      "tanim": "Eklenti kesin hüküm vermek yerine yakala, önce karşılaştır veya veri eksik gibi öneri üretir; önerinin altında en fazla üç belirleyici sinyal ve eksik veri görünür.",
+      "kullanici_degeri": "Skorları yorumlamayı kolaylaştırır fakat ticari kararı kullanıcıda bırakır.",
+      "mv3_store_politika_uyumu": "Öneri tek amaç içindedir, reklam veya satın almaya yönlendirme değildir; veri eksikse karar gizlenir.",
+      "bagimlilik": ["Skor motoru", "Karar açıklama kuralları", "Veri tamlığı"],
+      "karmasiklik": "L",
+      "PM_onceligi_onerisi": 4,
+      "platform_kapsami": {
+        "uyarlama": "Öneri dili ortaktır; yalnız adaptörün sağladığı kanıtlanabilir sinyaller açıklanır, eksik platform verisinden kesin ticari hüküm üretilmez."
+      }
+    },
+    {
+      "id": "V3X-038",
+      "kategori": "veri_kalitesi",
+      "koken": "emsal_esinli_ekstra",
+      "emsal_esini": ["Keepa zaman serileri", "Grammarly öneri geçmişi yaklaşımı"],
+      "ad": "Yakalamalar arası alan farkı görüntüleyici",
+      "tanim": "Aynı ürünün iki yakalaması arasında değişen fiyat, MOQ, başlık, varyant, satıcı ve medya alanları önce-sonra görünümünde listelenir; değişiklikler tek tek kabul edilebilir.",
+      "kullanici_degeri": "Yeni yakalamayla eski kayıt arasındaki gerçek farkı hızla doğrular.",
+      "mv3_store_politika_uyumu": "Karşılaştırma kullanıcının kendi kayıtlarıyla sınırlıdır; otomatik üzerine yazma yapılmaz.",
+      "bagimlilik": ["Sürümlü ürün snapshot'ı", "Alan bazlı revizyon API'si"],
+      "karmasiklik": "L",
+      "PM_onceligi_onerisi": 3,
+      "platform_kapsami": {
+        "uyarlama": "Fark görüntüleyici ortaktır; ham alanlar adaptörün sürümlü kaynak eşlemesiyle ortak ürün şemasına bağlanır ve platformlar arası anlamsız alanlar karşılaştırılmaz."
+      }
+    },
+    {
+      "id": "V3X-039",
+      "kategori": "guvenlik",
+      "koken": "zorunlu_kapsam",
+      "ad": "Cihaz bazlı çoklu token yönetimi",
+      "tanim": "Her tarayıcı kurulumu kendi adlandırılmış, kapsamı ve son kullanım zamanı görünen tokenına sahip olur; kullanıcı Side Panel'den aktif cihazı görür, panelden tokenı iptal eder veya yeniler.",
+      "kullanici_degeri": "Tek tokenın bütün cihazlarda paylaşılması riskini kaldırır ve kayıp cihazı ayrı kapatmayı sağlar.",
+      "mv3_store_politika_uyumu": "Token paket veya loga yazılmaz; yerel güvenli depoda tutulur, dar yetki ve süreyle çalışır, hassas değer maskelenir.",
+      "bagimlilik": ["Panel cihaz/token API'si", "Token kapsamları", "İptal ve yenileme akışı"],
+      "karmasiklik": "L",
+      "PM_onceligi_onerisi": 1,
+      "platform_kapsami": "genel"
+    },
+    {
+      "id": "V3X-040",
+      "kategori": "guvenlik",
+      "koken": "vizyon_cekirdegi",
+      "ad": "Token kapsamı ve en az yetki görünümü",
+      "tanim": "Eklenti tokenının yakalama, arama, bildirim okuma ve izleme yazma kapsamları ayrı gösterilir; gerekmeyen kapsamlar panelden verilemez veya sonradan kaldırılabilir.",
+      "kullanici_degeri": "Yetki sınırını anlaşılır kılar ve olası sızıntının etkisini küçültür.",
+      "mv3_store_politika_uyumu": "Tek amaç ve veri minimizasyonunu destekler; geniş yönetici tokenı kullanılmaz.",
+      "bagimlilik": ["Kapsamlı token modeli", "Panel güvenlik ekranı"],
+      "karmasiklik": "M",
+      "PM_onceligi_onerisi": 1,
+      "platform_kapsami": "genel"
+    },
+    {
+      "id": "V3X-041",
+      "kategori": "guvenlik",
+      "koken": "vizyon_cekirdegi",
+      "ad": "Token sağlık ve süre bitiş uyarısı",
+      "tanim": "Side Panel tokenın geçerliliğini, son başarılı API doğrulamasını ve yaklaşan süre bitimini gösterir; yenileme öncesi kuyruk korunur ve kullanıcı yönlendirilir.",
+      "kullanici_degeri": "Sahada aniden 401 hatasıyla kesilen yakalamaları azaltır.",
+      "mv3_store_politika_uyumu": "Sağlık testi yalnız kullanıcının kendi sabit panel kökenine yapılır; token değeri hiçbir UI veya hata günlüğünde açılmaz.",
+      "bagimlilik": ["Token doğrulama uç noktası", "Yenileme akışı", "Kuyruk"],
+      "karmasiklik": "M",
+      "PM_onceligi_onerisi": 1,
+      "platform_kapsami": "genel"
+    },
+    {
+      "id": "V3X-042",
+      "kategori": "cevrimdisi",
+      "koken": "zorunlu_kapsam",
+      "ad": "Çevrimdışı kuyruk yönetim arayüzü",
+      "tanim": "Side Panel bekleyen, gönderiliyor, yeniden denenecek ve kalıcı hatalı işleri ayrı gruplar; ürün küçük resmi, yakalama zamanı, deneme sayısı ve hata nedeni görünür.",
+      "kullanici_degeri": "Çevrimdışı yakalamayı görünmez bir teknik ayrıntı olmaktan çıkarıp yönetilebilir hale getirir.",
+      "mv3_store_politika_uyumu": "Kalıcı durum chrome.storage veya IndexedDB'de tutulur; service worker belleğine güvenilmez ve gereksiz kişisel veri saklanmaz.",
+      "bagimlilik": ["Kalıcı kuyruk", "Lease ve yeniden deneme sözleşmesi", "Side Panel"],
+      "karmasiklik": "L",
+      "PM_onceligi_onerisi": 1,
+      "platform_kapsami": "genel"
+    },
+    {
+      "id": "V3X-043",
+      "kategori": "cevrimdisi",
+      "koken": "vizyon_cekirdegi",
+      "ad": "Kuyrukta seçili yeniden dene, düzenle ve iptal et",
+      "tanim": "Kullanıcı hatalı işleri topluca veya tek tek yeniden dener, önizlemeyi düzenler ya da kuyruktan iptal eder; her işlem geri bildirim üretir ve sessizce kaybolmaz.",
+      "kullanici_degeri": "Tek bir bozuk kaydın bütün akışı kilitlemesini önler.",
+      "mv3_store_politika_uyumu": "Ağ işlemleri açık kullanıcı eylemiyle veya belgelenmiş backoff zamanlayıcısıyla çalışır; sınırsız hızlı tekrar yoktur.",
+      "bagimlilik": ["Kalıcı kuyruk", "Backoff", "Bildirim olayları"],
+      "karmasiklik": "M",
+      "PM_onceligi_onerisi": 1,
+      "platform_kapsami": "genel"
+    },
+    {
+      "id": "V3X-044",
+      "kategori": "cevrimdisi",
+      "koken": "vizyon_cekirdegi",
+      "ad": "İdempotensi ve capture ID görünümü",
+      "tanim": "Her kuyruk kaydı kısa capture ID, ilk oluşturma zamanı ve sunucu sonucu taşır; mükerrer gönderim engellendiğinde kullanıcı teknik ayrıntıya boğulmadan nedenini görebilir.",
+      "kullanici_degeri": "Çift tık veya yeniden denemede iki ürün oluşmadığına güven verir.",
+      "mv3_store_politika_uyumu": "Kimlik yalnız operasyonel güvenilirlik için kullanılır ve kullanıcı takibi amacı taşımaz.",
+      "bagimlilik": ["İdempotent yakalama API'si", "Capture ID sözleşmesi"],
+      "karmasiklik": "S",
+      "PM_onceligi_onerisi": 1,
+      "platform_kapsami": "genel"
+    },
+    {
+      "id": "V3X-045",
+      "kategori": "senkronizasyon",
+      "koken": "zorunlu_kapsam",
+      "ad": "Panel bildirimleriyle senkron durum rozeti",
+      "tanim": "Araç çubuğu ikonu ve Side Panel; bekleyen, uyarı ve kritik panel olay sayılarını birleştirilmiş rozetle gösterir, olay açıldığında ilgili panel kaydına derin bağlantı verir.",
+      "kullanici_degeri": "Yakalama sonrası panelde oluşan sorunu tarayıcı bağlamına geri taşır.",
+      "mv3_store_politika_uyumu": "Yalnız kullanıcının kendi panel bildirimleri alınır; hassas içerik tarayıcı bildirimi içinde varsayılan olarak gösterilmez.",
+      "bagimlilik": ["V3-B bildirim merkezi", "Bildirim özet API'si", "Derin bağlantılar"],
+      "karmasiklik": "M",
+      "PM_onceligi_onerisi": 2,
+      "platform_kapsami": "genel"
+    },
+    {
+      "id": "V3X-046",
+      "kategori": "senkronizasyon",
+      "koken": "zorunlu_kapsam",
+      "ad": "Son yakalamalar ve hızlı panel araması",
+      "tanim": "Side Panel son yakalanan ürünleri durumlarıyla listeler; kullanıcı ürün adı, kaynak kimliği veya liste adıyla kendi panelinde hızlı arama yapar ve sonucu yeni sekmede açabilir.",
+      "kullanici_degeri": "Yakalamanın panele ulaşıp ulaşmadığını anında doğrular ve önceki ürüne geri dönmeyi kolaylaştırır.",
+      "mv3_store_politika_uyumu": "Arama yalnız sabit TedarikApp API kökenine ve kullanıcı isteğiyle yapılır; genel tarama geçmişi aranmaz.",
+      "bagimlilik": ["Panel arama API'si", "Yakalama geçmişi", "Side Panel"],
+      "karmasiklik": "M",
+      "PM_onceligi_onerisi": 1,
+      "platform_kapsami": "genel"
+    },
+    {
+      "id": "V3X-047",
+      "kategori": "senkronizasyon",
+      "koken": "emsal_esinli_ekstra",
+      "emsal_esini": ["1Password çok cihazlı senkron", "SellerSprite web-eklenti ürün listesi"],
+      "ad": "Cihazlar arası çalışma durumu devri",
+      "tanim": "Kaydedilmiş karşılaştırma sepetleri, araştırma oturumları ve kullanıcı tercihleri panel hesabı üzerinden diğer yetkili cihaza taşınabilir; çevrimdışı ham kuyruk cihazda kalır.",
+      "kullanici_degeri": "Ofis ve dizüstü arasında araştırmayı baştan kurmadan sürdürür.",
+      "mv3_store_politika_uyumu": "Senkronlanacak veri türleri açık seçilir; token ve gönderilmemiş ham kuyruk hiçbir zaman cihazlar arası taşınmaz.",
+      "bagimlilik": ["Panel kullanıcı tercihleri API'si", "Cihaz kayıtları", "Çakışma çözümü"],
+      "karmasiklik": "L",
+      "PM_onceligi_onerisi": 4,
+      "platform_kapsami": "genel"
+    },
+    {
+      "id": "V3X-048",
+      "kategori": "guvenlik",
+      "koken": "vizyon_cekirdegi",
+      "ad": "Kullanıcıya açık veri faaliyet günlüğü",
+      "tanim": "Eklenti son gönderimleri, başarısız API çağrılarını, izin taleplerini ve token yenilemelerini içerik gizliliğini koruyan kısa kayıtlarla gösterir; kayıtlar kullanıcı tarafından temizlenebilir.",
+      "kullanici_degeri": "Eklentinin ne zaman ne yaptığını görünür kılar ve destek süresini kısaltır.",
+      "mv3_store_politika_uyumu": "Günlük yalnız operasyonel olayları tutar; tam URL, token, kişisel veri ve sayfa içeriği yazılmaz; saklama süresi sınırlıdır.",
+      "bagimlilik": ["Yerel audit şeması", "Maskeleme kuralları", "Saklama ayarı"],
+      "karmasiklik": "M",
+      "PM_onceligi_onerisi": 2,
+      "platform_kapsami": "genel"
+    },
+    {
+      "id": "V3X-049",
+      "kategori": "izinler",
+      "koken": "vizyon_cekirdegi",
+      "ad": "İhtiyaç anında alan adı izni akışı",
+      "tanim": "Yeni desteklenen platform veya özel panel adresi için izin kurulumda topluca değil, kullanıcı o özelliği açtığında anlaşılır gerekçeyle istenir; reddedilirse temel işlev çalışmaya devam eder.",
+      "kullanici_degeri": "Kurulum uyarılarını azaltır ve hangi erişimin neden istendiğini anlaşılır kılar.",
+      "mv3_store_politika_uyumu": "optional_host_permissions tercih edilir; izin talebi yalnız kullanıcı hareketiyle ve ilgili özellik bağlamında yapılır.",
+      "bagimlilik": ["İzin orkestrasyonu", "Platform modülleri", "Gerekçe metinleri"],
+      "karmasiklik": "M",
+      "PM_onceligi_onerisi": 1,
+      "platform_kapsami": "genel"
+    },
+    {
+      "id": "V3X-050",
+      "kategori": "destek",
+      "koken": "emsal_esinli_ekstra",
+      "emsal_esini": ["1Password belgeli güvenlik/teşhis akışları", "Grammarly site bazlı sorun giderme"],
+      "ad": "Gizlilik korumalı teşhis paketi",
+      "tanim": "Kullanıcı tek tıkla eklenti sürümü, Chrome sürümü, adaptör sürümü, izin özeti, kuyruk sayaçları ve son hata kodlarını içeren destek paketi üretir; ürün içeriği ve token dahil edilmez.",
+      "kullanici_degeri": "Saha hatasının yeniden üretilmesini ve destek ekibine aktarılmasını hızlandırır.",
+      "mv3_store_politika_uyumu": "Paket kullanıcı tarafından önizlenir ve açıkça dışa aktarılır; hassas değerler tasarım gereği üretilmez.",
+      "bagimlilik": ["Teşhis şeması", "Maskeleme testi", "Sürüm envanteri"],
+      "karmasiklik": "M",
+      "PM_onceligi_onerisi": 2,
+      "platform_kapsami": "genel"
+    }
+  ]
+}

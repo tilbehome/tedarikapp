@@ -1,0 +1,192 @@
+{
+  "schema_version": "1.0",
+  "katalog_adi": "TedarikApp Ekran × Durum Metin Envanteri",
+  "ad_alani": "ui.durum.*",
+  "durumlar": ["BOŞ", "YÜKLENİYOR", "HATA"],
+  "kayitlar": [
+    {
+      "anahtar": "ui.durum.panorama.bos",
+      "ekran": "Panorama",
+      "durum": "BOŞ",
+      "baslik": "Bugün sakin görünüyor",
+      "govde": "Acil müdahale gerektiren bir konu yok. Yeni ürünleri yakalayabilir veya Keşif havuzunu inceleyebilirsiniz.",
+      "eylem_metni": "Keşfe git"
+    },
+    {
+      "anahtar": "ui.durum.panorama.yukleniyor",
+      "ekran": "Panorama",
+      "durum": "YÜKLENİYOR",
+      "baslik": "Bugünün özeti hazırlanıyor",
+      "govde": "Listeler, kuyruk, kur, yakalama sağlığı ve çeviri durumu birlikte kontrol ediliyor."
+    },
+    {
+      "anahtar": "ui.durum.panorama.hata",
+      "ekran": "Panorama",
+      "durum": "HATA",
+      "baslik": "Bugünün özeti hazırlanamadı",
+      "govde": "Verileriniz kaybolmadı. Panorama bilgilerini yeniden yüklemeyi deneyin.",
+      "eylem_metni": "Tekrar dene"
+    },
+    {
+      "anahtar": "ui.durum.gelen_kutusu.bos",
+      "ekran": "Gelen Kutusu",
+      "durum": "BOŞ",
+      "baslik": "Gelen Kutusu boş",
+      "govde": "Eklentiyle yakaladığınız yeni ürünler burada karar vermeniz için sıraya alınacak.",
+      "eylem_metni": "Eklentiyi aç"
+    },
+    {
+      "anahtar": "ui.durum.gelen_kutusu.yukleniyor",
+      "ekran": "Gelen Kutusu",
+      "durum": "YÜKLENİYOR",
+      "baslik": "Ürünler hazırlanıyor",
+      "govde": "Bekleyen ürünler ve oturum grupları yükleniyor."
+    },
+    {
+      "anahtar": "ui.durum.gelen_kutusu.hata",
+      "ekran": "Gelen Kutusu",
+      "durum": "HATA",
+      "baslik": "Gelen Kutusu açılamadı",
+      "govde": "Ürünleriniz silinmedi. Bağlantıyı kontrol edip yeniden deneyin.",
+      "eylem_metni": "Tekrar dene"
+    },
+    {
+      "anahtar": "ui.durum.kesif.bos",
+      "ekran": "Keşif",
+      "durum": "BOŞ",
+      "baslik": "Keşif havuzunda ürün yok",
+      "govde": "İlk ürünü eklentiyle yakalayın; ardından filtreleme, kümeleme ve karşılaştırma burada başlayacak.",
+      "eylem_metni": "İlk ürünü yakala"
+    },
+    {
+      "anahtar": "ui.durum.kesif.yukleniyor",
+      "ekran": "Keşif",
+      "durum": "YÜKLENİYOR",
+      "baslik": "Keşif havuzu yükleniyor",
+      "govde": "Ürünler, skorlar ve 同款 kümeleri hazırlanıyor."
+    },
+    {
+      "anahtar": "ui.durum.kesif.hata",
+      "ekran": "Keşif",
+      "durum": "HATA",
+      "baslik": "Keşif sonuçları alınamadı",
+      "govde": "Filtreleriniz korunuyor. Sonuçları yeniden yüklemeyi deneyin.",
+      "eylem_metni": "Tekrar dene"
+    },
+    {
+      "anahtar": "ui.durum.listeler.bos",
+      "ekran": "Listeler",
+      "durum": "BOŞ",
+      "baslik": "Henüz liste oluşturulmadı",
+      "govde": "Keşif havuzundaki ürünleri bir araya getirerek ilk teklif veya satın alma listenizi oluşturun.",
+      "eylem_metni": "İlk listeyi oluştur"
+    },
+    {
+      "anahtar": "ui.durum.listeler.yukleniyor",
+      "ekran": "Listeler",
+      "durum": "YÜKLENİYOR",
+      "baslik": "Listeler yükleniyor",
+      "govde": "Durumlar, revizyonlar ve son işlem zamanları hazırlanıyor."
+    },
+    {
+      "anahtar": "ui.durum.listeler.hata",
+      "ekran": "Listeler",
+      "durum": "HATA",
+      "baslik": "Listeler açılamadı",
+      "govde": "Kayıtlarınız güvende. Liste görünümünü yeniden yüklemeyi deneyin.",
+      "eylem_metni": "Tekrar dene"
+    },
+    {
+      "anahtar": "ui.durum.liste_detay.bos",
+      "ekran": "Liste Detay",
+      "durum": "BOŞ",
+      "baslik": "Bu listede ürün yok",
+      "govde": "Listeyi ilerletebilmek için Keşif havuzundan en az bir ürün ekleyin.",
+      "eylem_metni": "Keşiften ürün ekle"
+    },
+    {
+      "anahtar": "ui.durum.liste_detay.yukleniyor",
+      "ekran": "Liste Detay",
+      "durum": "YÜKLENİYOR",
+      "baslik": "Liste hazırlanıyor",
+      "govde": "Ürün satırları, aşama bilgisi, toplamlar ve uyarılar yükleniyor."
+    },
+    {
+      "anahtar": "ui.durum.liste_detay.hata",
+      "ekran": "Liste Detay",
+      "durum": "HATA",
+      "baslik": "Liste ayrıntıları alınamadı",
+      "govde": "Yaptığınız kayıtlı değişiklikler korunuyor. Listeyi yeniden yüklemeyi deneyin.",
+      "eylem_metni": "Tekrar dene"
+    },
+    {
+      "anahtar": "ui.durum.urun_cekmecesi.bos",
+      "ekran": "Ürün çekmecesi",
+      "durum": "BOŞ",
+      "baslik": "İncelenecek ürün seçin",
+      "govde": "Bir ürün kartına veya liste satırına tıkladığınızda kaynak bilgiler ve varyantlar burada açılacak.",
+      "eylem_metni": "Ürünlere dön"
+    },
+    {
+      "anahtar": "ui.durum.urun_cekmecesi.yukleniyor",
+      "ekran": "Ürün çekmecesi",
+      "durum": "YÜKLENİYOR",
+      "baslik": "Ürün ayrıntıları yükleniyor",
+      "govde": "Varyantlar, fiyatlar, satıcı bilgisi ve medya hazırlanıyor."
+    },
+    {
+      "anahtar": "ui.durum.urun_cekmecesi.hata",
+      "ekran": "Ürün çekmecesi",
+      "durum": "HATA",
+      "baslik": "Ürün ayrıntıları açılamadı",
+      "govde": "Ürün kaydı duruyor. Ayrıntıları yeniden yüklemeyi deneyin.",
+      "eylem_metni": "Tekrar dene"
+    },
+    {
+      "anahtar": "ui.durum.ayarlar.bos",
+      "ekran": "Ayarlar",
+      "durum": "BOŞ",
+      "baslik": "Bu aramayla eşleşen ayar yok",
+      "govde": "Daha kısa bir ifade deneyin veya filtreleri temizleyerek bütün ayarları gösterin.",
+      "eylem_metni": "Aramayı temizle"
+    },
+    {
+      "anahtar": "ui.durum.ayarlar.yukleniyor",
+      "ekran": "Ayarlar",
+      "durum": "YÜKLENİYOR",
+      "baslik": "Ayarlar yükleniyor",
+      "govde": "Yapılandırma ve son değişiklik izleri hazırlanıyor."
+    },
+    {
+      "anahtar": "ui.durum.ayarlar.hata",
+      "ekran": "Ayarlar",
+      "durum": "HATA",
+      "baslik": "Ayarlar alınamadı",
+      "govde": "Kayıtlı ayarlarınız değiştirilmedi. Sayfayı yeniden yüklemeyi deneyin.",
+      "eylem_metni": "Tekrar dene"
+    },
+    {
+      "anahtar": "ui.durum.arsiv.bos",
+      "ekran": "Arşiv",
+      "durum": "BOŞ",
+      "baslik": "Arşiv henüz boş",
+      "govde": "Arşivlenen listeler ve salt okunur geçmiş sürümler burada tutulacak.",
+      "eylem_metni": "Aktif listelere git"
+    },
+    {
+      "anahtar": "ui.durum.arsiv.yukleniyor",
+      "ekran": "Arşiv",
+      "durum": "YÜKLENİYOR",
+      "baslik": "Arşiv yükleniyor",
+      "govde": "Arşivlenmiş listeler ve geçmiş sürümler hazırlanıyor."
+    },
+    {
+      "anahtar": "ui.durum.arsiv.hata",
+      "ekran": "Arşiv",
+      "durum": "HATA",
+      "baslik": "Arşiv açılamadı",
+      "govde": "Arşiv kayıtları silinmedi. Görünümü yeniden yüklemeyi deneyin.",
+      "eylem_metni": "Tekrar dene"
+    }
+  ]
+}

@@ -102,6 +102,11 @@ final class ExportController extends ApiController
             // F6 — QR: paylaşım adresi YALNIZ istekle gelirse gömülür. Tam token
             // sunucuda SAKLANMAZ (K51: yalnız hash) — bu yüzden yeniden üretilemez.
             'share_url' => $this->shareUrl($body['share_url'] ?? null, $row),
+            // İE#21 EK-5 (K81): belge dili. Panelden istenmezse Türkçe; oturumsuz
+            // indirme yolu (`/liste/{token}/export?lang=`) zaten dili taşıyordu,
+            // panel tarafı taşımıyordu — aynı belge iki kapıdan farklı dilde
+            // çıkamamalı.
+            'lang' => \App\Services\Share\ShareTexts::dil($body['lang'] ?? null),
             'document_header' => $this->settings->documentHeader(),
         ]);
 

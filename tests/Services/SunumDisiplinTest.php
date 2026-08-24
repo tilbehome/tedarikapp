@@ -75,7 +75,7 @@ final class SunumDisiplinTest extends TestCase
         ));
 
         self::assertCount(1, $renkSatiri, 'Panelde alan durmalı.');
-        self::assertStringContainsString('颜色40', $renkSatiri[0][2], 'Panelde TAM değer görünür.');
+        self::assertStringContainsString('颜色40', $renkSatiri[0][1], 'Panelde TAM değer görünür.');
     }
 
     public function testKULLANICI_DETAYI_KIRPILMAZ(): void

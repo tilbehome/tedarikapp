@@ -133,8 +133,9 @@ final class ProductDetailsTest extends TestCase
         $gruplu = ProductFacts::grouped($urun, $this->values());
 
         self::assertNotSame([], $gruplu['dolu']);
+        // İE#21 EK-5 (K81): etiket artık TEK DİLDE döner — [etiket, değer].
         self::assertSame('Malzeme', $gruplu['dolu'][0][0]);
-        self::assertSame('Paslanmaz çelik', $gruplu['dolu'][0][2]);
+        self::assertSame('Paslanmaz çelik', $gruplu['dolu'][0][1]);
         self::assertGreaterThan(5, count($gruplu['bos']), 'Doldurulmayan alanlar boş kümede.');
 
         $bosUrun = ProductFacts::grouped($this->urun([]), $this->values());
@@ -148,8 +149,8 @@ final class ProductDetailsTest extends TestCase
         $urun['units_per_carton'] = 20;
 
         $degerler = [];
-        foreach (ProductFacts::build($urun) as [$tr, , $deger]) {
-            $degerler[$tr] = $deger;
+        foreach (ProductFacts::build($urun) as [$etiket, $deger]) {
+            $degerler[$etiket] = $deger;
         }
 
         self::assertSame('20', $degerler['Koli içi']);

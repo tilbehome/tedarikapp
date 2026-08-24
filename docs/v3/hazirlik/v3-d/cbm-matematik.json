@@ -1,0 +1,499 @@
+{
+  "dosya_ozeti_5_satir": [
+    "Ne işe yarar: Koli ölçüsü, miktar, CBM, brüt ağırlık ve konteyner doluluğunu aynı matematikte birleştirir.",
+    "Hangi fazda: V3-D konteyner/LCL planlama motoru ve İE#24 testlerinde kullanılır.",
+    "Temel ilke: Doluluk hacim ve ağırlıktan büyük olan oranla belirlenir; koli sayısı daima yukarı yuvarlanır.",
+    "Çıktı: Konteyner referansları, yer-kaldı önerisi ve CBM-001..CBM-014 test vektörleridir.",
+    "Kapsam dışı: Rota/taşıyıcı rezervasyonu, tehlikeli yük kararı, mevzuat ve gümrük vergisi hesabıdır."
+  ],
+  "schema_version": "1.0",
+  "formuller": {
+    "carton_cbm": "length_cm * width_cm * height_cm / 1,000,000",
+    "carton_count": "ceil(requested_qty / units_per_carton)",
+    "effective_order_qty": "carton_count * units_per_carton",
+    "total_cbm": "carton_count * carton_cbm",
+    "total_gross_weight_kg": "carton_count * gross_kg_per_carton",
+    "existing_capacity_default": "mevcut_doluluk yoksa existing_cbm = 0 ve existing_weight_kg = 0",
+    "occupied_cbm": "existing_cbm + total_cbm",
+    "occupied_weight_kg": "existing_weight_kg + total_gross_weight_kg",
+    "volume_pct": "occupied_cbm / planning_usable_cbm * 100",
+    "weight_pct": "occupied_weight_kg / planning_weight_limit_kg * 100",
+    "order_volume_pct": "total_cbm / planning_usable_cbm * 100",
+    "order_weight_pct": "total_gross_weight_kg / planning_weight_limit_kg * 100",
+    "overall_pct": "max(volume_pct, weight_pct)",
+    "remaining_cbm": "planning_usable_cbm - occupied_cbm",
+    "remaining_weight_kg": "planning_weight_limit_kg - occupied_weight_kg",
+    "candidate_cartons": "min(floor(remaining_cbm/candidate_carton_cbm), floor(remaining_weight_kg/candidate_gross_kg_per_carton))",
+    "candidate_qty": "candidate_cartons * candidate_units_per_carton"
+  },
+  "konteyner_tipleri": {
+    "20_DRY": {
+      "type": "20'",
+      "theoretical_cbm": "33.2",
+      "official_max_payload_kg": "28300",
+      "planning_usable_cbm": "28.0",
+      "planning_weight_limit_kg": "26000",
+      "planning_status": "kanıtlanmadı",
+      "note": "Plan değeri ihtiyatlı iç kalibrasyondur; rota, ekipman plakası ve taşıyıcı teyidi zorunlu."
+    },
+    "40_DRY": {
+      "type": "40'",
+      "theoretical_cbm": "67.7",
+      "official_max_payload_kg": "28870",
+      "planning_usable_cbm": "56.0",
+      "planning_weight_limit_kg": "26000",
+      "planning_status": "kanıtlanmadı",
+      "note": "Plan değeri ihtiyatlı iç kalibrasyondur; istif geometrisi ve rota limiti doğrulanmalıdır."
+    },
+    "40_HC": {
+      "type": "40HC",
+      "theoretical_cbm": "76.4",
+      "official_max_payload_kg": "28690",
+      "planning_usable_cbm": "68.0",
+      "planning_weight_limit_kg": "26000",
+      "planning_status": "kanıtlanmadı",
+      "note": "Plan değeri ihtiyatlı iç kalibrasyondur; gerçek konteyner üreticisine göre hacim değişebilir."
+    },
+    "LCL": {
+      "type": "LCL",
+      "theoretical_cbm": null,
+      "official_max_payload_kg": null,
+      "planning_usable_cbm": null,
+      "planning_weight_limit_kg": null,
+      "planning_status": "kanıtlanmadı",
+      "note": "Paylaşımlı yükte sabit konteyner kapasitesi varsayılmaz; rezervasyondaki CBM ve kg tavanı hesap girdisidir."
+    }
+  },
+  "uyari": "Resmî hacim/payload değerleri ekipman örneğidir; gerçek CSC plaka, kara yolu/liman/rota ve taşıyıcı limiti daha düşük olabilir. İç planlama değerleri kaynakta yayımlanmış saha garantisi olmadığı için kanıtlanmadı işaretlidir.",
+  "test_vektorleri": [
+    {
+      "id": "CBM-001",
+      "ad": "Temel zincir",
+      "tuzakli": false,
+      "girdiler": {
+        "length_cm": "50",
+        "width_cm": "40",
+        "height_cm": "30",
+        "units_per_carton": 10,
+        "requested_qty": 100,
+        "gross_kg_per_carton": "20"
+      },
+      "beklenen": {
+        "status": "CALCULATED",
+        "carton_cbm": "0.060000",
+        "carton_count": 10,
+        "effective_order_qty": 100,
+        "total_cbm": "0.600000",
+        "total_gross_weight_kg": "200.00"
+      }
+    },
+    {
+      "id": "CBM-002",
+      "ad": "Koli katına yukarı yuvarlama",
+      "tuzakli": false,
+      "girdiler": {
+        "length_cm": "50",
+        "width_cm": "40",
+        "height_cm": "30",
+        "units_per_carton": 10,
+        "requested_qty": 101,
+        "gross_kg_per_carton": "20"
+      },
+      "beklenen": {
+        "status": "CALCULATED",
+        "carton_cbm": "0.060000",
+        "carton_count": 11,
+        "effective_order_qty": 110,
+        "total_cbm": "0.660000",
+        "total_gross_weight_kg": "220.00"
+      }
+    },
+    {
+      "id": "CBM-003",
+      "ad": "Kesirli koli CBM",
+      "tuzakli": false,
+      "girdiler": {
+        "length_cm": "60",
+        "width_cm": "40",
+        "height_cm": "40",
+        "units_per_carton": 6,
+        "requested_qty": 25,
+        "gross_kg_per_carton": "12"
+      },
+      "beklenen": {
+        "status": "CALCULATED",
+        "carton_cbm": "0.096000",
+        "carton_count": 5,
+        "effective_order_qty": 30,
+        "total_cbm": "0.480000",
+        "total_gross_weight_kg": "60.00"
+      }
+    },
+    {
+      "id": "CBM-004",
+      "ad": "20' hacim kısıtlayıcı",
+      "tuzakli": false,
+      "girdiler": {
+        "length_cm": "50",
+        "width_cm": "40",
+        "height_cm": "30",
+        "units_per_carton": 1,
+        "requested_qty": 450,
+        "gross_kg_per_carton": "20",
+        "container": "20_DRY"
+      },
+      "beklenen": {
+        "status": "CALCULATED",
+        "carton_cbm": "0.060000",
+        "carton_count": 450,
+        "effective_order_qty": 450,
+        "total_cbm": "27.000000",
+        "total_gross_weight_kg": "9000.00",
+        "utilization": {
+          "volume_pct": "96.43",
+          "weight_pct": "34.62",
+          "limiting": "VOLUME",
+          "overall_pct": "96.43",
+          "overflow": false
+        }
+      }
+    },
+    {
+      "id": "CBM-005",
+      "ad": "Tuzak: ağırlık hacimden önce dolar",
+      "tuzakli": true,
+      "girdiler": {
+        "length_cm": "50",
+        "width_cm": "40",
+        "height_cm": "20",
+        "units_per_carton": 1,
+        "requested_qty": 500,
+        "gross_kg_per_carton": "60",
+        "container": "20_DRY"
+      },
+      "beklenen": {
+        "status": "CALCULATED",
+        "carton_cbm": "0.040000",
+        "carton_count": 500,
+        "effective_order_qty": 500,
+        "total_cbm": "20.000000",
+        "total_gross_weight_kg": "30000.00",
+        "utilization": {
+          "volume_pct": "71.43",
+          "weight_pct": "115.38",
+          "limiting": "WEIGHT",
+          "overall_pct": "115.38",
+          "overflow": true
+        }
+      }
+    },
+    {
+      "id": "CBM-006",
+      "ad": "Tuzak: %100 üzeri taşma",
+      "tuzakli": true,
+      "girdiler": {
+        "length_cm": "50",
+        "width_cm": "40",
+        "height_cm": "30",
+        "units_per_carton": 1,
+        "requested_qty": 500,
+        "gross_kg_per_carton": "60",
+        "container": "20_DRY"
+      },
+      "beklenen": {
+        "status": "CALCULATED",
+        "carton_cbm": "0.060000",
+        "carton_count": 500,
+        "effective_order_qty": 500,
+        "total_cbm": "30.000000",
+        "total_gross_weight_kg": "30000.00",
+        "utilization": {
+          "volume_pct": "107.14",
+          "weight_pct": "115.38",
+          "limiting": "WEIGHT",
+          "overall_pct": "115.38",
+          "overflow": true
+        }
+      }
+    },
+    {
+      "id": "CBM-007",
+      "ad": "20' tam hacim",
+      "tuzakli": false,
+      "girdiler": {
+        "length_cm": "70",
+        "width_cm": "50",
+        "height_cm": "20",
+        "units_per_carton": 1,
+        "requested_qty": 400,
+        "gross_kg_per_carton": "20",
+        "container": "20_DRY"
+      },
+      "beklenen": {
+        "status": "CALCULATED",
+        "carton_cbm": "0.070000",
+        "carton_count": 400,
+        "effective_order_qty": 400,
+        "total_cbm": "28.000000",
+        "total_gross_weight_kg": "8000.00",
+        "utilization": {
+          "volume_pct": "100.00",
+          "weight_pct": "30.77",
+          "limiting": "VOLUME",
+          "overall_pct": "100.00",
+          "overflow": false
+        }
+      }
+    },
+    {
+      "id": "CBM-008",
+      "ad": "Yer kaldı: hacim kısıtlayıcı",
+      "tuzakli": false,
+      "girdiler": {
+        "length_cm": "50",
+        "width_cm": "40",
+        "height_cm": "50",
+        "units_per_carton": 12,
+        "requested_qty": 12,
+        "gross_kg_per_carton": "50",
+        "container": "20_DRY",
+        "candidate": "same_product",
+        "mevcut_doluluk": {
+          "existing_cbm": "20",
+          "existing_weight_kg": "10000"
+        }
+      },
+      "beklenen": {
+        "status": "CALCULATED",
+        "carton_cbm": "0.100000",
+        "carton_count": 1,
+        "effective_order_qty": 12,
+        "total_cbm": "0.100000",
+        "total_gross_weight_kg": "50.00",
+        "utilization": {
+          "occupied_cbm": "20.100000",
+          "occupied_weight_kg": "10050.00",
+          "volume_pct": "71.79",
+          "weight_pct": "38.65",
+          "order_volume_pct": "0.36",
+          "order_weight_pct": "0.19",
+          "limiting": "VOLUME",
+          "overall_pct": "71.79",
+          "overflow": false
+        },
+        "remaining_capacity": {
+          "remaining_cbm": "7.900000",
+          "remaining_weight_kg": "15950.00",
+          "candidate_cartons": 79,
+          "candidate_qty": 948,
+          "limiting": "VOLUME"
+        }
+      }
+    },
+    {
+      "id": "CBM-009",
+      "ad": "Yer kaldı: ağırlık kısıtlayıcı",
+      "tuzakli": false,
+      "girdiler": {
+        "length_cm": "50",
+        "width_cm": "50",
+        "height_cm": "20",
+        "units_per_carton": 10,
+        "requested_qty": 10,
+        "gross_kg_per_carton": "50",
+        "container": "20_DRY",
+        "candidate": "same_product",
+        "mevcut_doluluk": {
+          "existing_cbm": "10",
+          "existing_weight_kg": "25000"
+        }
+      },
+      "beklenen": {
+        "status": "CALCULATED",
+        "carton_cbm": "0.050000",
+        "carton_count": 1,
+        "effective_order_qty": 10,
+        "total_cbm": "0.050000",
+        "total_gross_weight_kg": "50.00",
+        "utilization": {
+          "occupied_cbm": "10.050000",
+          "occupied_weight_kg": "25050.00",
+          "volume_pct": "35.89",
+          "weight_pct": "96.35",
+          "order_volume_pct": "0.18",
+          "order_weight_pct": "0.19",
+          "limiting": "WEIGHT",
+          "overall_pct": "96.35",
+          "overflow": false
+        },
+        "remaining_capacity": {
+          "remaining_cbm": "17.950000",
+          "remaining_weight_kg": "950.00",
+          "candidate_cartons": 19,
+          "candidate_qty": 190,
+          "limiting": "WEIGHT"
+        }
+      }
+    },
+    {
+      "id": "CBM-010",
+      "ad": "40' planlama",
+      "tuzakli": false,
+      "girdiler": {
+        "length_cm": "100",
+        "width_cm": "50",
+        "height_cm": "40",
+        "units_per_carton": 5,
+        "requested_qty": 250,
+        "gross_kg_per_carton": "200",
+        "container": "40_DRY"
+      },
+      "beklenen": {
+        "status": "CALCULATED",
+        "carton_cbm": "0.200000",
+        "carton_count": 50,
+        "effective_order_qty": 250,
+        "total_cbm": "10.000000",
+        "total_gross_weight_kg": "10000.00",
+        "utilization": {
+          "volume_pct": "17.86",
+          "weight_pct": "38.46",
+          "limiting": "WEIGHT",
+          "overall_pct": "38.46",
+          "overflow": false
+        }
+      }
+    },
+    {
+      "id": "CBM-011",
+      "ad": "40HC planlama",
+      "tuzakli": false,
+      "girdiler": {
+        "length_cm": "80",
+        "width_cm": "50",
+        "height_cm": "50",
+        "units_per_carton": 10,
+        "requested_qty": 300,
+        "gross_kg_per_carton": "100",
+        "container": "40_HC"
+      },
+      "beklenen": {
+        "status": "CALCULATED",
+        "carton_cbm": "0.200000",
+        "carton_count": 30,
+        "effective_order_qty": 300,
+        "total_cbm": "6.000000",
+        "total_gross_weight_kg": "3000.00",
+        "utilization": {
+          "volume_pct": "8.82",
+          "weight_pct": "11.54",
+          "limiting": "WEIGHT",
+          "overall_pct": "11.54",
+          "overflow": false
+        }
+      }
+    },
+    {
+      "id": "CBM-012",
+      "ad": "Tuzak: LCL rezervasyon hacmi",
+      "tuzakli": true,
+      "girdiler": {
+        "length_cm": "100",
+        "width_cm": "80",
+        "height_cm": "60",
+        "units_per_carton": 1,
+        "requested_qty": 10,
+        "gross_kg_per_carton": "120",
+        "container": "LCL",
+        "booked_cbm_limit": "5",
+        "booked_weight_limit_kg": "3000"
+      },
+      "beklenen": {
+        "status": "CALCULATED",
+        "carton_cbm": "0.480000",
+        "carton_count": 10,
+        "effective_order_qty": 10,
+        "total_cbm": "4.800000",
+        "total_gross_weight_kg": "1200.00",
+        "utilization": {
+          "volume_pct": "96.00",
+          "weight_pct": "40.00",
+          "limiting": "VOLUME",
+          "overall_pct": "96.00",
+          "overflow": false
+        }
+      }
+    },
+    {
+      "id": "CBM-013",
+      "ad": "Tuzak: LCL taşma",
+      "tuzakli": true,
+      "girdiler": {
+        "length_cm": "100",
+        "width_cm": "100",
+        "height_cm": "50",
+        "units_per_carton": 1,
+        "requested_qty": 12,
+        "gross_kg_per_carton": "100",
+        "container": "LCL",
+        "booked_cbm_limit": "5",
+        "booked_weight_limit_kg": "3000"
+      },
+      "beklenen": {
+        "status": "CALCULATED",
+        "carton_cbm": "0.500000",
+        "carton_count": 12,
+        "effective_order_qty": 12,
+        "total_cbm": "6.000000",
+        "total_gross_weight_kg": "1200.00",
+        "utilization": {
+          "volume_pct": "120.00",
+          "weight_pct": "40.00",
+          "limiting": "VOLUME",
+          "overall_pct": "120.00",
+          "overflow": true
+        }
+      }
+    },
+    {
+      "id": "CBM-014",
+      "ad": "Eksik ölçü sert engeli",
+      "tuzakli": true,
+      "girdiler": {
+        "length_cm": "50",
+        "width_cm": null,
+        "height_cm": "30",
+        "units_per_carton": 10,
+        "requested_qty": 100,
+        "gross_kg_per_carton": "20"
+      },
+      "beklenen": {
+        "status": "REJECTED",
+        "error_code": "CARTON_INPUT_MISSING_OR_ZERO"
+      }
+    }
+  ],
+  "kaynaklar": [
+    {
+      "id": "SRC-CBM-01",
+      "kurum": "Maersk",
+      "url": "https://www.maersk.com/de-de/support/faqs/cargo-weight-limit",
+      "erisim_tarihi": "2026-08-24",
+      "kullanim": "20' 33.2 m³/28,300 kg; 40' 67.7 m³/28,870 kg; 40HC 76.4 m³/28,690 kg resmî kapasite örnekleri."
+    },
+    {
+      "id": "SRC-CBM-02",
+      "kurum": "Hapag-Lloyd",
+      "url": "https://www.hapag-lloyd.com/de/services-information/cargo-fleet/container.html",
+      "erisim_tarihi": "2026-08-24",
+      "kullanim": "Ölçülerin üreticiye göre değiştiği ve belirli ekipman için taşıyıcı teyidi gerektiği uyarısı."
+    },
+    {
+      "id": "SRC-CBM-03",
+      "kurum": "IMO/ILO/UNECE",
+      "url": "https://unece.org/transport/intermodal-transport/imoilounece-code-practice-packing-cargo-transport-units-ctu-code",
+      "erisim_tarihi": "2026-08-24",
+      "kullanim": "Aşırı yükleme ve yanlış beyanı önleyen güvenli paketleme/istif bağlamı."
+    }
+  ]
+}
