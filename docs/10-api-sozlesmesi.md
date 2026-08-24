@@ -91,6 +91,9 @@
 | `PATCH /api/products/{id}` | Kısmi güncelleme (alan kuralları docs/04 §2d) |
 | `PATCH /api/products/{id}/status` | `{status}` — durum makinesine aykırıysa 422 `STATE_TRANSITION` + izinli geçişler `meta.allowed` içinde |
 | `DELETE /api/products/{id}` | Çöp kutusuna → 204 |
+| `GET /api/products/{id}/cekmece` | İE#21 B3 — ürün çekmecesi TEK istekte: `{urun, ilan, kademeler, yorum_ozeti, yurtici_kiyas}`. `ilan` elle eklenen üründe `null`; sinyali olmayan alan `null` (K67 — sıfır yazılmaz). `yurtici_kiyas` bugün DAİMA `null`: veri kaynağı yok (V3-C) |
+| `GET /api/lists/{id}/hazirlik` | İE#20 C8 — liste hazırlık özeti: `{urun, hazir_olmayan, tamamlanabilir, neden, eksik_dokumu}` |
+| `PATCH /api/products/{id}/hazir` | İE#20 C8 — HAZIR kapısı: eksik alan varsa 422 (gerekçe `fields.hazir`) |
 | `PATCH /api/products/bulk` | `{ids: [...], action: "status"\|"move"\|"delete", status?, target_list_id?}` → 200 `{updated, failed: [{id, error}]}` — kısmi başarı desteklenir; tüm işlem TEK transaction'dır (K37 §B5). Terminal listedeki ürün `failed`'a düşer; terminal HEDEFE taşıma → 422 `LIST_IMMUTABLE` |
 | `PATCH /api/lists/{id}/products/reorder` | `{ordered_ids: [...]}` → sıra numaraları yeniden yazılır. Dizi, listedeki ürünlerin **TAM permütasyonu** olmalı: eksik/fazla/yinelenen kimlik → 422 (K37 §B6) |
 

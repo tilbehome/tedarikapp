@@ -142,6 +142,8 @@ final class DataRoutes
             $group->get('/products/{id}', [$productController, 'show']);
             // İE#20 C8: "HAZIR" kalite kapısı — kural sunucuda zorlanır.
             $group->patch('/products/{id}/hazir', [$productController, 'setHazir']);
+            // İE#21 B3: ürün çekmecesi — ürün + ilan + kademe + skor TEK istekte.
+            $group->get('/products/{id}/cekmece', [$productController, 'cekmece']);
             $group->get('/lists/{id}/hazirlik', [$productController, 'listeHazirligi']);
 
             // bulk, {id} deseninden ÖNCE tanımlanır; aksi hâlde "bulk" bir kimlik sanılır.

@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom';
 import { Trash2 } from 'lucide-react';
 import type { Product, ProductStatus, SupplyList } from '../../api/types';
 import { count, money } from '../../lib/format';
@@ -43,6 +42,8 @@ interface Props {
   siralamaBasligi: (anahtar: 'name' | 'qty' | 'price_yuan' | 'line_total_yuan_tl' | 'status', etiket: string, saga?: boolean) => React.ReactNode;
   eylemler: TabloEylemleri;
   onSecili: (ids: number[]) => void;
+  /** Ürüne tıklayınca sağ çekmece açılır (İE#21 B3 · referans notu). */
+  onAc: (urun: Product) => void;
 }
 
 /** Sütun tanımı: başlık, hücre ve toplam TEK yerden. */
@@ -55,7 +56,7 @@ interface SutunTanimi {
 }
 
 export default function UrunTablosu(props: Props) {
-  const { liste, urunler, tercih, secili, kategoriAdi, siralamaBasligi, eylemler, onSecili } = props;
+  const { urunler, tercih, secili, kategoriAdi, siralamaBasligi, eylemler, onSecili, onAc } = props;
   const hucre = hucreSinifi(tercih.yogunluk);
   const sutunlar = SUTUN_TANIMLARI(siralamaBasligi).filter((sutun) => tercih.sutunlar.includes(sutun.anahtar));
   // Seçim + ürün + satır sonu sil düğmesi her zaman durur; sayım TOPLAM satırının
@@ -118,9 +119,17 @@ export default function UrunTablosu(props: Props) {
                     />
                   </td>
                   <td className={`max-w-xs ${hucre}`}>
-                    <Link to={`/listeler/${liste.id}/urun/${urun.id}`} className="block truncate font-medium">
+                    {/* Tıklama çekmeceyi açar: liste ekranından çıkmadan ürünün
+                        tüm hikâyesi görünür. Tam düzenleme çekmecenin içindeki
+                        "Düzenle" ile açılır. */}
+                    <button
+                      type="button"
+                      className="block max-w-full truncate text-left font-medium hover:text-navy"
+                      onClick={() => onAc(urun)}
+                      data-testid="urun-adi"
+                    >
                       {urun.name}
-                    </Link>
+                    </button>
                     {urun.detail ? <span className="block truncate text-xs text-ink-3">{urun.detail}</span> : null}
                     <SatirUyarilari urun={urun} />
                   </td>
@@ -151,7 +160,7 @@ export default function UrunTablosu(props: Props) {
               </td>
               {sutunlar.map((sutun) => (
                 <td key={sutun.anahtar} className={`px-3 py-3 ${sutun.saga ? 'text-right' : ''}`}>
-                  {sutun.toplam ? sutun.toplam(liste) : null}
+                  {sutun.toplam ? sutun.toplam(props.liste) : null}
                 </td>
               ))}
               <td className="px-3 py-3" />

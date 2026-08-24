@@ -12,6 +12,7 @@ import type {
   SystemStatus,
   Trash,
   User,
+  UrunCekmecesiVerisi,
   Visibility,
 } from './types';
 
@@ -72,6 +73,9 @@ export const products = {
   create: (listId: number, body: Record<string, unknown>) =>
     api.post<Product>(`/api/lists/${listId}/products`, body),
   update: (id: number, body: Record<string, unknown>) => api.patch<Product>(`/api/products/${id}`, body),
+  /** İE#21 B3: ürün çekmecesi — ürün + ilan + kademe + skor TEK istekte. */
+  cekmece: (id: number, signal?: AbortSignal) =>
+    api.get<UrunCekmecesiVerisi>(`/api/products/${id}/cekmece`, { signal }),
   /** C8 HAZIR kapısı: eksik varsa sunucu 422 ile reddeder (İE#21 B2). */
   setHazir: (id: number, hazir: boolean) =>
     api.patch<{ hazir: boolean; eksikler: string[] }>(`/api/products/${id}/hazir`, { hazir }),

@@ -7,6 +7,7 @@ import AsamaCubugu from './liste/AsamaCubugu';
 import OzetSeridi from './liste/OzetSeridi';
 import UyariCipleri from './liste/UyariCipleri';
 import UrunTablosu from './liste/UrunTablosu';
+import UrunCekmecesi from './liste/UrunCekmecesi';
 import TabloDenetimleri from './liste/TabloDenetimleri';
 import { tercihOku, tercihYaz, type TabloTercihi } from '../lib/tabloTercihi';
 import { type EksikAlan, eksikAlanlar } from '../lib/eksikler';
@@ -46,6 +47,10 @@ export default function ListDetailScreen() {
   const [uyariFiltresi, setUyariFiltresi] = useState<EksikAlan | null>(null);
   // Tablo tercihi (sütun/yoğunluk/gruplama) kullanıcının cihazında yaşar.
   const [tercih, setTercih] = useState<TabloTercihi>(() => tercihOku());
+  // Açık çekmecenin ürünü (İE#21 B3). Kimlik tutulur, ürünün kopyası değil:
+  // çekmece veriyi kendisi çeker ve tabloda bir güncelleme olduğunda bayat
+  // bir kopyayı göstermez.
+  const [cekmeceId, setCekmeceId] = useState<number | null>(null);
   const tercihDegistir = (yeni: TabloTercihi) => {
     setTercih(yeni);
     tercihYaz(yeni);
@@ -310,9 +315,13 @@ export default function ListDetailScreen() {
                 <div className="flex gap-3">
                   <Thumb product={product} onChanged={productState.reload} />
                   <div className="min-w-0 flex-1">
-                    <Link to={`/listeler/${listId}/urun/${product.id}`} className="block truncate font-semibold">
+                    <button
+                      type="button"
+                      className="block max-w-full truncate text-left font-semibold"
+                      onClick={() => setCekmeceId(product.id)}
+                    >
                       {product.name}
-                    </Link>
+                    </button>
                     <div className="text-xs text-ink-3">{categoryName(product.category_id)}</div>
                     <div className="mt-1 text-sm">
                       {count(product.qty)} adet × ¥{money(product.price_yuan)}
@@ -366,6 +375,7 @@ export default function ListDetailScreen() {
               onSil: (urun) => void removeProduct(urun),
             }}
             onSecili={setSelected}
+            onAc={(urun) => setCekmeceId(urun.id)}
           />
 
           {/* Telefonda toplam ayrı kartta durur — tablo dayatılmaz. */}
@@ -383,6 +393,18 @@ export default function ListDetailScreen() {
       )}
 
       <ExportHistory listId={listId} refreshKey={list.revision + (list.last_export?.created_at ?? '')} />
+
+      {cekmeceId !== null ? (
+        <UrunCekmecesi
+          urunId={cekmeceId}
+          onKapat={() => {
+            setCekmeceId(null);
+            // Çekmecede yapılan bir değişiklik (düzenleme ekranına gidip dönüş)
+            // tabloya yansısın diye kapanışta tazeleme yapılır.
+            refresh();
+          }}
+        />
+      ) : null}
     </>
   );
 }

@@ -86,6 +86,7 @@ function urun(id: number, fark: Partial<Product> = {}): Product {
 const KATEGORILER: Record<number, string> = { 1: 'Mutfak', 2: 'Banyo' };
 
 function kur(tercih: TabloTercihi = VARSAYILAN, urunler: Product[] = [urun(1), urun(2)]) {
+  const onAc = vi.fn();
   const eylemler = {
     onDurum: vi.fn(),
     onMiktar: vi.fn(async () => {}),
@@ -106,11 +107,12 @@ function kur(tercih: TabloTercihi = VARSAYILAN, urunler: Product[] = [urun(1), u
         siralamaBasligi={(anahtar, etiket) => <span data-testid={`sirala-${anahtar}`}>{etiket}</span>}
         eylemler={eylemler}
         onSecili={vi.fn()}
+        onAc={onAc}
       />
     </MemoryRouter>,
   );
 
-  return { eylemler };
+  return { eylemler, onAc };
 }
 
 describe('Sütun görünürlüğü', () => {
@@ -194,5 +196,17 @@ describe('Gruplama', () => {
     kur({ ...VARSAYILAN, grupla: 'kategori' }, [urun(1), urun(2), urun(3, { category_id: 1 })]);
 
     expect(screen.getAllByTestId('urun-satiri')).toHaveLength(3);
+  });
+});
+
+describe('Ürüne tıklama çekmeceyi açar (B3)', () => {
+  test('ad düğmesi ürünle birlikte onAc çağırır', async () => {
+    const { onAc } = kur();
+
+    const adlar = screen.getAllByTestId('urun-adi');
+    adlar[0]?.click();
+
+    expect(onAc).toHaveBeenCalledTimes(1);
+    expect(onAc.mock.calls[0]?.[0]).toMatchObject({ id: 1 });
   });
 });

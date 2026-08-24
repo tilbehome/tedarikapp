@@ -117,6 +117,47 @@ export interface Product {
   deleted_at: string | null;
 }
 
+/**
+ * ÜRÜN ÇEKMECESİ VERİSİ (İE#21 B3 · `GET /api/products/{id}/cekmece`).
+ *
+ * Alan yoksa NULL gelir (K67): ilan kaydı olmayan elle girilmiş ürün `ilan: null`
+ * döner, sinyali olmayan alan null kalır. Arayüz bunları "—" basar, uydurmaz.
+ */
+export interface IlanGorunumu {
+  platform: string | null;
+  external_id: string | null;
+  url: string | null;
+  baslik_orijinal: string | null;
+  satici_ad: string | null;
+  satici_url: string | null;
+  satici_yil: number | null;
+  satici_puan: string | null;
+  yanit_orani: string | null;
+  satis_adedi: number | null;
+  satis_toplam: number | null;
+  moq: number | null;
+  birim_fiyat: string | null;
+  para_birimi: string | null;
+  skor: number | null;
+  bant: string;
+  skor_bilesenleri: Record<string, number> | null;
+}
+
+export interface FiyatKademesi {
+  min_adet: number;
+  /** Para: string taşınır (K14). */
+  birim_fiyat: string;
+}
+
+export interface UrunCekmecesiVerisi {
+  urun: Product;
+  ilan: IlanGorunumu | null;
+  kademeler: FiyatKademesi[];
+  yorum_ozeti: { adet: number | null; puan: string | null } | null;
+  /** Yurt içi kıyas: bugün veri kaynağı YOK — daima null (V3-C kapsamı). */
+  yurtici_kiyas: null;
+}
+
 export interface Category {
   id: number;
   name: string;
