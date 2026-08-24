@@ -68,7 +68,7 @@ tam mockup uyarlaması ayrı bir dilim olarak raporlanacak.
 | B10 | Kategori içe aktarma + seed + tahmin | ✅ | uç + `KategoriIceAktarimTest` (12); **seed dosyası bekliyor** |
 | B11 | Kuyruk sertleştirme | ✅ | `KuyrukSertlestirmeTest` (20) · K79 |
 | B12 | Sürümlü çeviri belleği | ✅ | `CeviriKapsamiTest` sürüm bölümü · migration 0027 · K78 |
-| B13 | Marka hibrit entegrasyonu | ◐ | kit `docs/marka/`'ya taşındı · favicon seti · panel amblemi · durum haritası eşitlendi (`DurumSozluguTest`, 9) · **belge antet/filigran şablonları ☐** |
+| B13 | Marka hibrit entegrasyonu | ◐ | kit `docs/marka/`'ya taşındı · favicon seti · panel amblemi · durum haritası eşitlendi (`DurumSozluguTest`, 9) · belge antet/amblem/filigran ✅ (`BelgeMarkasi` + `public/marka/belge/` + `config/belge-tema.json`; PDF: iç kopyada "İÇ KOPYA" metin filigranı, firma kopyasında marka filigranı; Excel: marka amblemi) · `BelgeMarkasiTest` (7). SAPMA: belge PALETİ rev7 şablonundan (lacivert/altın) — marka kitinin krem/turuncu belge teması onaylı şablonu bozacağı için yalnız GÖRSEL varlıklar ve sayı biçimleri kitten alındı |
 | B14 | Sihirbazda 2FA | ✅ | `SetupOnarimUclariTest` (14, 3'ü 2FA) |
 | B15 | Panel E2E (52 senaryo) | ◐ | kapsam defteri ✅ (10/81 kodlandı) |
 

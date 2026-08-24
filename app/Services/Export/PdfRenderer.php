@@ -65,6 +65,25 @@ final class PdfRenderer implements ExportRenderer
             ]);
             $mpdf->SetTitle('tedarikapp — ' . (string) ($snapshot['list']['name'] ?? 'liste'));
             $icKopya = (($snapshot['options']['copy'] ?? 'firma') === 'ic');
+
+            // İE#21 B13 — FİLİGRAN. İki farklı amaç, iki farklı filigran:
+            //  · İÇ KOPYA'da METİN filigranı: bu belgenin firmaya gönderilmemesi
+            //    gereken kopya olduğu, sayfanın ortasında okunur durur. Kâğıda
+            //    basılıp masada karışan kopyaları alt bilgi satırı kurtarmıyordu.
+            //  · Firma kopyasında MARKA filigranı: belge kimliği taşır.
+            // Varlık yoksa filigran basılmaz, belge üretilir (K50/K61).
+            $marka = new BelgeMarkasi($this->basePath);
+            if ($icKopya) {
+                $mpdf->SetWatermarkText('İÇ KOPYA');
+                $mpdf->watermarkTextAlpha = 0.08;
+                $mpdf->showWatermarkText = true;
+            } else {
+                $filigran = $marka->filigran();
+                if ($filigran !== null) {
+                    $mpdf->SetWatermarkImage($filigran, 0.05, 'F');
+                    $mpdf->showWatermarkImage = true;
+                }
+            }
             $mpdf->SetHTMLFooter(
                 '<div style="border-top:0.2mm solid #e2e8f0;padding-top:1mm;font-size:7pt;color:#64748b;text-align:center">'
                 . 'TedarikApp — Ürün Tedarik Asistanı · Ürün adı kaynak platformdaki ilana köprülüdür'
@@ -115,6 +134,22 @@ final class PdfRenderer implements ExportRenderer
                 @unlink($file);
             }
         }
+    }
+
+    /**
+     * Antet bandındaki amblem (İE#21 B13).
+     *
+     * Amblem dosyası yoksa BOŞ döner: belge yazıyla kendini tanıtmaya devam eder.
+     * Görsel bir varlığın eksikliği belgeyi düşürmemeli.
+     */
+    private function amblemEtiketi(): string
+    {
+        $amblem = (new BelgeMarkasi($this->basePath))->amblem();
+        if ($amblem === null) {
+            return '';
+        }
+
+        return '<img src="' . htmlspecialchars($amblem, ENT_QUOTES, 'UTF-8') . '" style="height:6mm">';
     }
 
     /**
@@ -280,6 +315,7 @@ final class PdfRenderer implements ExportRenderer
             </style>
             <table class="bant"><tr>
                 <td style="width:58%">
+                    ' . $this->amblemEtiketi() . '
                     <div class="marka">' . $e($this->markaEtiketi($antet)) . '</div>
                     <div class="baslik">' . $e($list['name']) . '</div>
                     <div class="antet">' . $e(TemplateV2::headerLine($antet, $list)) . '</div>
