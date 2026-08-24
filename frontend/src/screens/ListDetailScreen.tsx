@@ -6,8 +6,10 @@ import CiktiSecenekleri, { paylasimAdresiAnahtari } from './liste/CiktiSecenekle
 import AsamaCubugu from './liste/AsamaCubugu';
 import OzetSeridi from './liste/OzetSeridi';
 import UyariCipleri from './liste/UyariCipleri';
-import MiktarHucresi from './liste/MiktarHucresi';
-import { type EksikAlan, eksikAlanlar, eksikEtiketleri } from '../lib/eksikler';
+import UrunTablosu from './liste/UrunTablosu';
+import TabloDenetimleri from './liste/TabloDenetimleri';
+import { tercihOku, tercihYaz, type TabloTercihi } from '../lib/tabloTercihi';
+import { type EksikAlan, eksikAlanlar } from '../lib/eksikler';
 import type { ListStatus, Product, ProductStatus } from '../api/types';
 import { useAsync, messageOf } from '../lib/useAsync';
 import { count, dateTime, money, rate } from '../lib/format';
@@ -42,6 +44,12 @@ export default function ListDetailScreen() {
   const [statusFilter, setStatusFilter] = useState<ProductStatus | ''>('');
   // Uyarı çipi süzgeci: "2 üründe kategori eksik" çipine basınca yalnız o ürünler.
   const [uyariFiltresi, setUyariFiltresi] = useState<EksikAlan | null>(null);
+  // Tablo tercihi (sütun/yoğunluk/gruplama) kullanıcının cihazında yaşar.
+  const [tercih, setTercih] = useState<TabloTercihi>(() => tercihOku());
+  const tercihDegistir = (yeni: TabloTercihi) => {
+    setTercih(yeni);
+    tercihYaz(yeni);
+  };
   const [sort, setSort] = useState<{ key: SortKey; asc: boolean }>({ key: 'sort_no', asc: true });
   const [selected, setSelected] = useState<number[]>([]);
   const [busyId, setBusyId] = useState<number | null>(null);
@@ -231,6 +239,10 @@ export default function ListDetailScreen() {
         onSec={setUyariFiltresi}
       />
 
+      <div className="hidden md:block">
+        <TabloDenetimleri tercih={tercih} onDegis={tercihDegistir} />
+      </div>
+
       <div className="mb-4 flex flex-col gap-3 sm:flex-row">
         <label className="relative flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-3" aria-hidden />
@@ -327,123 +339,34 @@ export default function ListDetailScreen() {
             ))}
           </ul>
 
-          {/* Masaüstü: tablo görünümü */}
-          <div className="card hidden md:block">
-            <div className="table-scroll">
-              <table className="w-full text-sm">
-                <thead className="border-b border-line text-left text-xs uppercase tracking-wide text-ink-3">
-                  <tr>
-                    <th className="w-10 px-3 py-3">
-                      <input
-                        type="checkbox"
-                        aria-label="Tümünü seç"
-                        className="h-4 w-4"
-                        checked={selected.length === items.length && items.length > 0}
-                        onChange={(event) => setSelected(event.target.checked ? items.map((item) => item.id) : [])}
-                      />
-                    </th>
-                    <th className="w-16 px-3 py-3">Görsel</th>
-                    <SortHeader label="Ürün" sortKey="name" sort={sort} onSort={setSort} />
-                    <th className="px-3 py-3">Kategori</th>
-                    <SortHeader label="Adet" sortKey="qty" sort={sort} onSort={setSort} align="right" />
-                    <SortHeader label="¥ Birim" sortKey="price_yuan" sort={sort} onSort={setSort} align="right" />
-                    <th className="px-3 py-3 text-right">¥ Satır</th>
-                    <th className="px-3 py-3 text-right">₺ Birim</th>
-                    <th className="px-3 py-3 text-right">$ DDP</th>
-                    <SortHeader label="₺ Satır" sortKey="line_total_yuan_tl" sort={sort} onSort={setSort} align="right" />
-                    <SortHeader label="Durum" sortKey="status" sort={sort} onSort={setSort} />
-                    <th className="px-3 py-3">Hazır</th>
-                    <th className="w-12 px-3 py-3" />
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-line-soft">
-                  {items.map((product) => (
-                    <tr key={product.id} className="hover:bg-g50">
-                      <td className="px-3 py-2">
-                        <input
-                          type="checkbox"
-                          className="h-4 w-4"
-                          aria-label={`${product.name} seç`}
-                          checked={selected.includes(product.id)}
-                          onChange={(event) =>
-                            setSelected((current) =>
-                              event.target.checked
-                                ? [...current, product.id]
-                                : current.filter((value) => value !== product.id),
-                            )
-                          }
-                        />
-                      </td>
-                      <td className="px-3 py-2">
-                        <Thumb product={product} onChanged={productState.reload} />
-                      </td>
-                      <td className="max-w-xs px-3 py-2">
-                        <Link to={`/listeler/${listId}/urun/${product.id}`} className="block truncate font-medium">
-                          {product.name}
-                        </Link>
-                        {product.detail && <span className="block truncate text-xs text-ink-3">{product.detail}</span>}
-                        <SatirUyarilari urun={product} />
-                      </td>
-                      <td className="px-3 py-2 text-ink-2">{categoryName(product.category_id)}</td>
-                      <td className="px-3 py-2 text-right">
-                        <MiktarHucresi
-                          deger={product.qty}
-                          etiket={product.name}
-                          kapali={list.status === 'completed' || list.status === 'cancelled'}
-                          onKaydet={(yeni) => changeQty(product, yeni)}
-                        />
-                      </td>
-                      <td className="px-3 py-2 text-right">¥{money(product.price_yuan)}</td>
-                      <td className="px-3 py-2 text-right">¥{money(product.line_total_yuan)}</td>
-                      <td className="px-3 py-2 text-right">₺{money(product.price_yuan_tl)}</td>
-                      <td className="px-3 py-2 text-right">${money(product.price_ddp_usd)}</td>
-                      <td className="px-3 py-2 text-right font-semibold">₺{money(product.line_total_yuan_tl)}</td>
-                      <td className="px-3 py-2">
-                        <StatusMenu
-                          status={product.status}
-                          busy={busyId === product.id}
-                          onChange={(next) => void changeStatus(product, next)}
-                        />
-                      </td>
-                      <td className="px-3 py-2">
-                        <HazirDugmesi
-                          urun={product}
-                          mesgul={busyId === product.id}
-                          onDegistir={() => void toggleHazir(product)}
-                        />
-                      </td>
-                      <td className="px-3 py-2">
-                        <button
-                          type="button"
-                          className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-err"
-                          aria-label="Ürünü sil"
-                          onClick={() => void removeProduct(product)}
-                        >
-                          <Trash2 className="h-4 w-4" aria-hidden />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-                {/* TOPLAM satırı: değerler backend'in MoneyService'inden gelir. */}
-                <tfoot className="border-t-2 border-line bg-g50 font-semibold">
-                  <tr>
-                    <td className="px-3 py-3" colSpan={4}>
-                      TOPLAM
-                    </td>
-                    {/* Hiza: Adet → boş(¥Birim) → ¥Satır toplamı → boş(₺Birim) → $ → ₺Satır toplamı */}
-                    <td className="px-3 py-3 text-right">{count(list.totals.qty)}</td>
-                    <td className="px-3 py-3" />
-                    <td className="px-3 py-3 text-right">¥{money(list.totals.yuan)}</td>
-                    <td className="px-3 py-3" />
-                    <td className="px-3 py-3 text-right">${money(list.totals.ddp_usd)}</td>
-                    <td className="px-3 py-3 text-right">₺{money(list.totals.yuan_tl)}</td>
-                    <td className="px-3 py-3" colSpan={3} />
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-          </div>
+          {/* Masaüstü: tablo görünümü (İE#21 B2 — sütun/yoğunluk/gruplama denetimli). */}
+          <UrunTablosu
+            liste={list}
+            urunler={items}
+            tercih={tercih}
+            secili={selected}
+            mesgulId={busyId}
+            kategoriAdi={categoryName}
+            gorsel={(urun) => <Thumb product={urun} onChanged={productState.reload} />}
+            siralamaBasligi={(anahtar, etiket, saga) => (
+              <SortHeader
+                key={anahtar}
+                label={etiket}
+                sortKey={anahtar}
+                sort={sort}
+                onSort={setSort}
+                align={saga ? 'right' : 'left'}
+                sadeceIcerik
+              />
+            )}
+            eylemler={{
+              onDurum: (urun, hedef) => void changeStatus(urun, hedef),
+              onMiktar: (urun, yeni) => changeQty(urun, yeni),
+              onHazir: (urun) => void toggleHazir(urun),
+              onSil: (urun) => void removeProduct(urun),
+            }}
+            onSecili={setSelected}
+          />
 
           {/* Telefonda toplam ayrı kartta durur — tablo dayatılmaz. */}
           <div className="card mt-3 p-4 md:hidden">
@@ -461,53 +384,6 @@ export default function ListDetailScreen() {
 
       <ExportHistory listId={listId} refreshKey={list.revision + (list.last_export?.created_at ?? '')} />
     </>
-  );
-}
-
-/**
- * HAZIR DÜĞMESİ (İE#21 B2 · C8 kalite kapısı).
- *
- * Kapının kararı sunucudadır: eksik alan varsa `PATCH /hazir` 422 ile reddeder.
- * Panel bu yüzden düğmeyi eksik üründe KAPATMAZ — kullanıcı basar, gerekçeyi
- * okur. Kapatsaydık "neden basamıyorum?" sorusu cevapsız kalırdı.
- */
-function HazirDugmesi({ urun, mesgul, onDegistir }: { urun: Product; mesgul: boolean; onDegistir: () => void }) {
-  const eksik = eksikEtiketleri(urun);
-
-  return (
-    <button
-      type="button"
-      disabled={mesgul}
-      onClick={onDegistir}
-      aria-pressed={urun.hazir}
-      data-testid="hazir-dugmesi"
-      title={eksik.length > 0 ? `Eksik: ${eksik.join(' · ')}` : undefined}
-      className={`badge ${urun.hazir ? 'bg-ok-soft text-ok ring-ok/20' : 'bg-g50 text-ink-3 ring-line'}`}
-    >
-      {urun.hazir ? 'HAZIR' : eksik.length > 0 ? `${count(eksik.length)} eksik` : 'İşaretle'}
-    </button>
-  );
-}
-
-/**
- * SATIR UYARILARI (İE#21 B2) — hangi ürünün nesi eksik, satırda görünür.
- *
- * Üstteki çipler "kaç üründe" der; satırdaki rozetler "bu üründe ne" der. İkisi
- * aynı kelimeyi kullanır (`EKSIK_ETIKETLERI`), yoksa kullanıcı iki ayrı sorun
- * olduğunu sanar.
- */
-function SatirUyarilari({ urun }: { urun: Product }) {
-  const eksik = eksikEtiketleri(urun);
-  if (eksik.length === 0) return null;
-
-  return (
-    <span className="mt-0.5 flex flex-wrap gap-1" data-testid="satir-uyarilari">
-      {eksik.map((etiket) => (
-        <span key={etiket} className="badge bg-warn-soft text-warn ring-warn/20">
-          {etiket} yok
-        </span>
-      ))}
-    </span>
   );
 }
 
@@ -714,33 +590,44 @@ function Thumb({ product, onChanged }: { product: Product; onChanged?: () => voi
   );
 }
 
+/**
+ * Sıralama başlığı.
+ *
+ * `sadeceIcerik`: yalnız düğmeyi döner, `<th>` sarmalamaz. Sütunlar artık VERİ
+ * olarak tanımlandığı için (bkz. `UrunTablosu`) hücreyi tablo kendisi sarar;
+ * ikisi birden sarsa iç içe `<th>` çıkardı ve tablo erişilebilirliği bozulurdu.
+ */
 function SortHeader({
   label,
   sortKey,
   sort,
   onSort,
   align = 'left',
+  sadeceIcerik = false,
 }: {
   label: string;
   sortKey: SortKey;
   sort: { key: SortKey; asc: boolean };
   onSort: (value: { key: SortKey; asc: boolean }) => void;
   align?: 'left' | 'right';
+  sadeceIcerik?: boolean;
 }) {
   const active = sort.key === sortKey;
-  return (
-    <th className={`px-3 py-3 ${align === 'right' ? 'text-right' : 'text-left'}`}>
-      <button
-        type="button"
-        className="inline-flex items-center gap-1 uppercase tracking-wide"
-        onClick={() => onSort({ key: sortKey, asc: active ? !sort.asc : true })}
-        aria-sort={active ? (sort.asc ? 'ascending' : 'descending') : 'none'}
-      >
-        {label}
-        {active && <span aria-hidden>{sort.asc ? '↑' : '↓'}</span>}
-      </button>
-    </th>
+  const dugme = (
+    <button
+      type="button"
+      className="inline-flex items-center gap-1 uppercase tracking-wide"
+      onClick={() => onSort({ key: sortKey, asc: active ? !sort.asc : true })}
+      aria-sort={active ? (sort.asc ? 'ascending' : 'descending') : 'none'}
+    >
+      {label}
+      {active && <span aria-hidden>{sort.asc ? '↑' : '↓'}</span>}
+    </button>
   );
+
+  if (sadeceIcerik) return dugme;
+
+  return <th className={`px-3 py-3 ${align === 'right' ? 'text-right' : 'text-left'}`}>{dugme}</th>;
 }
 
 /**
