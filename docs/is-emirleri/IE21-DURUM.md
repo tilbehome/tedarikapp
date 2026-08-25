@@ -292,6 +292,44 @@ karşılaştırması, sayı değil) · `tests/Http/TopluCeviriKuyrugaTest.php` (
 düğme → kuyruk → **gerçek `JobRunner`** uçtan uca; ağa çıkılmaz.
 `AuthTestCase` şemasına `jobs` tabloları eklendi (gerçek migration'lardan).
 
+### D9-KESİN (aynı gün, ikinci tur) — kuyruk iki işten sonra DURUYORDU
+
+**Kanıt:** 19:57'de yazılan 5 işten 2'si işlendi (ürün 1+4, TR+EN `llm:deepseek`,
+kalite doğru — zincir uçtan uca çalışıyor); kalan 3 iş 23+ dakika alınmadı,
+bu arada cron en az 4 tur attı.
+
+**Kök neden — kira mekanizması CLI ortamında ters çalışıyordu:**
+
+1. İşi alan süreç sonuç yazmadan ölüyor (paylaşımlı hostingde CLI süre/bellek
+   sınırı). İş `calisiyor` durumunda kalıyor.
+2. **Kira 900 saniyeydi (15 dk), cron ise 5 dakikada bir koşuyor.** Yani ölen
+   bir sürecin işi ÜÇ TUR boyunca kimseye görünmüyor; o üç turda günlüğe
+   "kuyruk boş" düşüyor. Sahadaki 23 dakika ≈ 1,5 kira döngüsü.
+3. Kira dolunca devralınıyor, `deneme` artıyor ama hiçbir sonuç yazılmadığı
+   için iş ölü rafına da DÜŞMÜYORDU: sonsuz sessiz döngü. "Hata %0 · ölü 0"
+   tablosunun açıklaması budur.
+
+**Düzeltme:**
+
+| Değişiklik | Dosya |
+|---|---|
+| `birak()`: süreç kapanırken elindeki işi DERHAL serbest bırakır (kira beklenmez) | `JobQueue` |
+| `KILIT_OMRU_SANIYE` 900 → **300** (cron aralığına eşit) | `JobQueue` |
+| Devralınan iş deneme hakkını tükettiyse **ölü rafına** gider; kuyruk tıkanmaz | `JobQueue::sahiplen()` |
+| `askidakiIs()` + `register_shutdown_function` — tur yarıda kesilse de iş asılı kalmaz | `JobRunner`, `bin/kuyruk.php` |
+
+**Test:** `KuyrukGorunurlukTest` +4 — *N iş yazılır, ardışık turlarda HEPSİ
+işlenir* · *yarıda kesilen turun işi sonraki turda alınır* · *terk edilen iş ölü
+rafına düşer* · *kira ≤ cron aralığı*.
+
+**rc6 kurulumundan sonra bekleyen 3 iş kendiliğinden işlenir:** kilitleri en geç
+5 dakikada düşer ve ilk cron turunda alınırlar; elle müdahale gerekmez.
+
+**Bu turda yakalanan kendi hatamız (kayda değer):** `birak()` sorgusunda
+`:simdi` yer tutucusu iki kez geçiyordu. SQLite emülasyonunda çalışır, canlıda
+MySQL native prepare **HY093** ile reddeder — yani düzeltme canlıda çalışmazdı.
+`SorguYerTutucuTest` (v0.11.3 dersi) bunu yakaladı. Koruma testleri işe yarıyor.
+
 ### AKIŞ HIZI ANALİZİ (asıl soru)
 
 Ölçülen değerler (koddan):
@@ -378,3 +416,50 @@ ayrışmazlığı). Eklenti vitest 123, panel eklenti süiti 62.
 
 **Kabul ölçütü EKRANDIR:** bu testler yalnız "bir daha bozulmasın" içindir;
 mockup'la yan yana kıyası Ürün Sahibi yapacaktır.
+
+---
+
+## D11 (25 Ağu 2026) — galeri görselleri + tazelenen çevirinin sunuma yansıması
+
+### D11a — "5 görsel" yazıyor ama dördü boş kare
+
+İKİ ayrı kusur üst üsteydi:
+
+| # | Kusur | Kanıt |
+|---|---|---|
+| 1 | **Adres bozuluyordu.** `ProductRepository::images()` her yola `/` ekliyordu; uzak satırlarda `path` TAM ADRESTİR → `/https://cbu01.alicdn.com/...` → tarayıcı kendi alanında arar, 404 alır | Sayaç doğru ("5 görsel"), kareler boş |
+| 2 | **Galeri hiç indirilmiyordu.** Yakalamada yalnız ANA GÖRSEL `MediaService`ten geçiyor; kalanı `storage_mode='remote'` kalıyordu. Taşıma hattı (`MediaMigrator`) vardı ama YALNIZ elle koşulan bir CLI'dan çağrılıyordu — pratikte hiç koşmuyordu | Ürün düzenlemede tek "Görsel adresi" (/media/… yalnız ana görsel) |
+
+**Düzeltme:** `images()` uzak adrese dokunmaz ve satırı `uzak: true` ile
+işaretler · `MediaMigrator::urununMedyasi()` tek ürünün ana + galeri görsellerini
+indirir · her yakalama bir **`medya` kuyruk işi** yazar (yakalama BEKLEMEZ; 20
+görsel indirmek eklentiyi dakikalarca bekletirdi) · çekmece uzak görseli
+"arşive alınıyor", yüklenemeyeni "yüklenemedi" diye **görünür biçimde** işaretler
+— sessiz boş kare kalmadı.
+
+**Test:** `MediaMigratorTest` +3 · `GaleriGorselleriTest` 3 (adres bozulmaz ·
+yakalama medya işi yazar · yerel görsel uzak işareti almaz).
+
+### D11b — tazelenen çeviri ekrana yansımıyordu (D5 dersinin ÜÇÜNCÜ tekrarı)
+
+**Kök neden:** `products.name` YAKALAMA ANINDA donar (`CaptureService`,
+`normalized.name`); LLM turu ise yalnız `translation_cache`i tazeler (D6, K54 —
+çeviri öneridir, alana yazılmaz). Sınav belleği, ekran ürün satırını okuyordu.
+
+**Düzeltme — tek kaynak, K54 bozulmadan:** `AdCozumleyici` gösterilecek adı
+çözer: **elle yazılmış ad > kalıcı çeviri (`llm:*`/`elle`) > yakalama adı**.
+`products.name` hiçbir turla ezilmez. Yeni `products.name_elle` (migration 0031)
+kullanıcının yazdığı adı dokunulmaz kılar; bayrak **uçtan yazılamaz** (docs/10 §4
+sözleşmesi genişletilmedi) ve yalnız ad değişince set edilir.
+
+**Dört yüzey tek çözümü kullanır:** liste (`ad_gosterim`), ürün çekmecesi,
+paylaşım sayfası ve belgeler (Excel/PDF). Panel tarafında `lib/urunAdi.ts` tek
+kaynaktır.
+
+**Test:** `AdCozumleyiciTest` 5 · `CeviriTazelemeEkranaYansirTest` 3 (liste +
+çekmece · elle düzeltilen ad korunur · paylaşım sayfası yeni çeviriyi gösterir).
+
+**Sözleşme koruması:** `ExportSnapshot` ve `SharePage` `name_elle`yi DOĞRUDAN
+okumaz — okusalardı `RevizyonSozlesmesiTest` gereği alanın hem revizyon listesine
+hem API sözleşmesine girmesi gerekirdi. Karar tek merkezde (`AdCozumleyici`)
+kaldı; API sözleşmesi genişletilmedi (PM kararı gerektirir).
