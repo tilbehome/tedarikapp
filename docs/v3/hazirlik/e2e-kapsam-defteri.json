@@ -301,9 +301,9 @@
     },
     "E2E-PNL-21": {
       "baslik": "Oturum grubunda toplu işlem atomikliği",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "tests/Http/TopluTasimaAtomikTest.php",
+      "test": "testE2E_PNL_21_UCLU_GRUP_TEK_ISTEKTE_TASINIR"
     },
     "E2E-PNL-22": {
       "baslik": "Eksik ürün uyarı rozetleri",
@@ -457,21 +457,21 @@
     },
     "E2E-PNL-47": {
       "baslik": "Çeviri sağlayıcısını kaydetme ve anahtar maskeleme",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "frontend/src/screens/ayarlar/CeviriAyarlari.test.tsx",
+      "test": "E2E-PNL-47 — sağlayıcı kaydı ve anahtar maskeleme"
     },
     "E2E-PNL-48": {
       "baslik": "Çeviri bağlantı testi hatası görünür",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "frontend/src/screens/ayarlar/CeviriAyarlari.test.tsx",
+      "test": "E2E-PNL-48 — bağlantı testi hatası EKRANDA kalır"
     },
     "E2E-PNL-49": {
       "baslik": "Kur getir → onayla → kaydet",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "tests/Http/KurOnerisiTest.php",
+      "test": "testONERI_UCU_KAYDETMEZ"
     },
     "E2E-PNL-50": {
       "baslik": "Geçerli sözlük CSV içe aktarımı",
@@ -487,9 +487,9 @@
     },
     "E2E-PNL-52": {
       "baslik": "Hedef dil listesi değişimi ve bağımlı UI",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": ""
+      "durum": "kapsandi",
+      "dosya": "frontend/src/screens/ayarlar/CeviriAyarlari.test.tsx",
+      "test": "E2E-PNL-52 — hedef dil listesi"
     }
   }
 }
