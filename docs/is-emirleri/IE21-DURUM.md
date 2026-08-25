@@ -164,3 +164,64 @@ eklenmedi (K19).
 **Sayfa varyantı notu:** global (TR arayüzlü) 1688 görünümünde ayrıştırıcı hiç
 uyanmıyor; Çince detay görünümü v1.0 için yeterlidir. Ayrıntı ve devir:
 `docs/v3/hazirlik/v3-e/platform-veri-kanali-raporu.md` §9 → V3-E/K.
+
+---
+
+## D6 SAHA BULGUSU (25 Ağu 2026) — LLM turu makine çevirisinin üstüne yazmıyordu
+
+**Belirti (altın set koşumu):** TR 4/4 dolu ama sağlayıcı `mymemory` ve kalite
+düşük ("无脚踏 → Bisiklet Yok"; doğrusu *pedalsız*, "乐扣杯 → Le toka fincan");
+EN 2/4 ve `llm:deepseek` kalitesinde. K56'nın "TR+EN tek LLM isteğinde birlikte"
+ilkesi fiilen bozuluyordu.
+
+**Kök neden — iki mekanizma birden:**
+
+1. **Adaylık ölçütü yanlıştı.** `ProductRepository::cevrilmemisler()` "önbellekte
+   o başlık için HERHANGİ bir satır var mı" diye soruyordu. Yakalamada makine
+   katmanı TR'yi doldurduğu için ürün "çevrilmiş" sayılıyor, LLM turu ona HİÇ
+   uğramıyordu.
+2. **Yazma tek yönlüydü.** `TranslationCacheRepository::store()` yalnız INSERT
+   eder; aynı anahtarda satır varsa sessizce geçer. LLM tura girse bile makine
+   satırı yerinde kalırdı. Üstüne, LLM yalnız **sürümlü** anahtara yazıyordu;
+   kullanıcının ve `bin/ceviri-sinavi.php`nin okuduğu satır ise **sürümsüz**
+   anahtardaki makine satırıydı.
+
+**Düzeltme:**
+
+| Değişiklik | Dosya |
+|---|---|
+| Adaylık: hedef dillerden HERHANGİ BİRİ için `llm:*` ya da `elle` satırı yoksa ürün tura girer | `app/Models/ProductRepository.php` |
+| `tazele()` — makine satırının ÜZERİNE yazar; `llm:*` ve `elle` satırlarına dokunmaz. `tazeleTumAnahtarlar()` sürümlü + sürümsüz anahtarı birlikte tazeler | `app/Models/TranslationCacheRepository.php` |
+| LLM yazımı `tazeleTumAnahtarlar()` üzerinden | `app/Services/Translation/LlmTranslator.php` |
+| Toplu tur hedef dilleri ayarlardan okur | `app/Controllers/TranslationController.php` |
+
+**K54 sınırı korunuyor:** `elle` (onaylı düzeltme) sağlayıcılı satır hiçbir
+otomatik tur tarafından ezilmez; `TranslationCacheRepository::ELLE_SAGLAYICI`
+sabiti hem yazan hem koruyan tarafça kullanılır. Makine çevirisi artık ne ise
+odur: **LLM gelene kadarki geçici doldurma**.
+
+**Test:** `tests/Services/CeviriLlmTazelemeTest.php` — 13 test (tazeleme, onaylı
+satırın korunması, çift anahtar yazımı, adaylık ölçütünün altı hâli).
+
+---
+
+## D7 SAHA BULGUSU (25 Ağu 2026) — kuyruk cron'da hiç işlemiyordu
+
+**Belirti (MegaTR, ea-php83 CLI):** `bin/kuyruk.php` →
+`Call to undefined function App\Services\Kuyruk\getmypid()`. Paylaşımlı hosting
+`disable_functions` ile `getmypid`'i CLI'da kapatmış; kuyruk her turda ölümcül
+hatayla düşüyordu — yani "kuyruk var" demek "kuyruk çalışıyor" demek değilmiş.
+D6'nın mekanik kökü de büyük ölçüde budur: LLM turu kuyrukta koşar.
+
+**Düzeltme:** `JobRunner::surecKimligi()` — süreç fonksiyonlarına GÜVENMEZ.
+`getmypid` varsa PID kullanılır (log okunur kalsın), yoksa `posix_getpid`
+denenir, o da yoksa `bin2hex(random_bytes(8))` ile benzersiz kimlik üretilir.
+`gethostname` de aynı korumadan geçer. Kimlikten beklenen tek şey kira
+sahipliğinde benzersizliktir; gerçek PID şart değildir. Kuyruk hattında başka
+süreç/sistem fonksiyonu çağrısı KALMADI (tarandı: `getmypid`, `posix_*`,
+`pcntl_*`, `gethostname`, `set_time_limit`, `shell_exec`).
+
+**Test:** `tests/Services/SurecKimligiTest.php` — 5 test. `disable_functions`
+ad-alanı düzeyinde taklit edilir (`App\Services\Kuyruk\function_exists`), yani
+fonksiyon-yok senaryosu gerçek sunucuya gitmeden koşar. Asıl kabul: ölümcül hata
+YOK ve 50 kimlik çakışmıyor.
