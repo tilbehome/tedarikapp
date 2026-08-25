@@ -65,12 +65,28 @@ try {
     if ($yalnizDurum) {
         $saglik = $kuyruk->saglik($now);
         printf(
-            "KUYRUK: %d bekleyen · %d çalışan · %d ölü · en eski bekleyen: %s\n",
+            "KUYRUK: %d bekleyen · %d alınabilir · %d çalışan · %d ölü · en eski bekleyen: %s
+",
             $saglik['bekleyen'],
+            $saglik['alinabilir'],
             $saglik['calisan'],
             $saglik['olu'],
             $saglik['en_eski_bekleyen_dakika'] === null ? '—' : $saglik['en_eski_bekleyen_dakika'] . ' dk',
         );
+        // D9: bekleyen ile alınabilir ayrışıyorsa sebep BURADA yazar — teşhis
+        // için sunucuya SSH gerekmesin, cron günlüğü yetsin.
+        if ($saglik['bekleyen'] > $saglik['alinabilir']) {
+            printf(
+                "UYARI: %d iş bekliyor ama alınamıyor · ileri tarihli: %d%s · işçi saati: %s
+",
+                $saglik['bekleyen'] - $saglik['alinabilir'],
+                $saglik['ileri_tarihli'],
+                $saglik['en_yakin_calisacak_dakika'] === null
+                    ? ''
+                    : ' (en yakın ' . $saglik['en_yakin_calisacak_dakika'] . ' dk sonra)',
+                $now->format('Y-m-d H:i:s P'),
+            );
+        }
         foreach ($saglik['turler'] as $tur => $adet) {
             printf("  %-16s %d\n", $tur, $adet);
         }

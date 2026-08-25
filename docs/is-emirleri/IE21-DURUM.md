@@ -253,3 +253,74 @@ onaylı.** Sekiz durumlu teşhis sözleşmesi korunur; SAĞLIKLI eylemlerine yal
 `surum['ayni'] === false` iken görünen `damgayi_esitle` eklenir ve SAĞLIKLI metni
 fark varsa iki değeri birden basar ("dosya X · kurulu Y"). Terfi prosedürü
 §5 + adım 7 yolu (sihirbaz üzerinden; SQL son çare) v1.0.0 terfisinde koşulacak.
+
+---
+
+## D9 SAHA BULGUSU (25 Ağu 2026) — panel "5 bekliyor", cron "kuyruk boş"
+
+**İlk belirti (20:06):** Ayarlar > Kuyruk durumu "Bekleyen 5 · Çalışan 0 · Ölü 0 ·
+en eski bekleyen 8 dk · kuyruk sağlıklı" derken cron günlüğü her turda
+"KUYRUK TURU: 0 iş · kuyruk boş". **Güncelleme (20:15):** işler aslında
+alınıyormuş — 5 işten 2'si tamamlanmış (ürün 1 ve 4, TR `llm:deepseek`, kalite
+doğru). Yani blokaj değil, **AKIŞ HIZI** sorunu; ilk gözlem iki turun arasına
+denk gelmiş.
+
+### Yine de düzeltilen kusur: iki yüzey aynı soruyu farklı soruyordu
+
+Sayaç ile işçi AYNI tabloya **ayrı koşullarla** bakıyordu:
+
+| Yüzey | Sorgu |
+|---|---|
+| Sayaç (`saglik`) | `durum = 'bekliyor'` |
+| İşçi (`sahiplen`) | `durum = 'bekliyor' AND calisacak_at <= now` |
+
+Tek fark zaman koşuludur. Bu fark yüzünden "5 bekliyor" ile "kuyruk boş"
+cümleleri **aynı anda doğru** olabiliyor ve kimse çelişkiyi göremiyordu — D5'te
+popup ile sayfa içi panel arasında yaşananın kuyruk hâli. Bu turda kapatıldı:
+
+| Değişiklik | Dosya |
+|---|---|
+| Alınabilirlik koşulu TEK YERDE (`JobQueue::ALINABILIR`); sahiplenme ve sayım aynı metni kullanır | `app/Services/Kuyruk/JobQueue.php` |
+| `saglik()` artık `alinabilir`, `ileri_tarihli`, `en_yakin_calisacak_dakika` da döner | aynı dosya |
+| İşçi "kuyruk boş" derken YALAN SÖYLEMEZ: bekleyen varsa sebebi ve **kendi saatini** yazar | `app/Services/Kuyruk/JobRunner.php` |
+| `GET /api/system/queue` üç yeni sayıyı taşır | `app/Controllers/SystemController.php` |
+| `bin/kuyruk.php --durum` ayrışma varsa UYARI satırı basar (SSH gerekmeden teşhis) | `bin/kuyruk.php` |
+
+**Test:** `tests/Services/KuyrukGorunurlukTest.php` (6) — sözleşme: *panel sayacının
+bekleyen dediği her iş, işçinin bir sonraki turda claim ettiği kümededir* (küme
+karşılaştırması, sayı değil) · `tests/Http/TopluCeviriKuyrugaTest.php` (2) —
+düğme → kuyruk → **gerçek `JobRunner`** uçtan uca; ağa çıkılmaz.
+`AuthTestCase` şemasına `jobs` tabloları eklendi (gerçek migration'lardan).
+
+### AKIŞ HIZI ANALİZİ (asıl soru)
+
+Ölçülen değerler (koddan):
+
+| Ayar | Değer | Nerede |
+|---|---|---|
+| Cron aralığı | **5 dk** (`*/5`) | runbook |
+| Tur süre bütçesi | **50 sn** (`--sure` varsayılanı) | `bin/kuyruk.php` |
+| Tur iş sınırı | 25 | `JobRunner::$isSiniri` |
+| LLM istek zaman aşımı | **45 sn** | `TRANSLATE_LLM_TIMEOUT` |
+
+Bütçe **iş almadan önce** denetlenir: bir tur, 50 saniye dolana kadar yeni iş
+alır; almış olduğu işi yarıda kesmez. Bir çeviri işi (ad + kategori + öznitelik
+değerleri tek istekte) sahada 20–45 sn sürüyor. Sonuç: **tur başına 1–2 iş**.
+Beş iş = 3–5 cron turu = **15–25 dakika**. Gözlem (18 dakikada 2 iş) bu aralığın
+alt ucudur; yani sistem tasarlandığı gibi çalışıyor, yalnız yavaş.
+
+**Öneri — ayar, kod değil (İE#22):**
+
+```cron
+*/5 * * * * /usr/local/bin/php /home/<kullanici>/tedarikapp/bin/kuyruk.php --sure=240 >> ~/kuyruk-gunluk.txt 2>&1
+```
+
+`--sure=240` ile bir tur ~4 dakika iş alır (en kötü hâlde 240 + son işin süresi
+≈ 285 sn < 300 sn cron aralığı; üst üste binme olmaz, binse bile kira token'ı
+korur). Beş iş **tek turda** biter. Alternatif: cron'u dakikada bire çekip
+`--sure=50` bırakmak — aynı verim, daha çok süreç başlatma maliyeti.
+
+**Kod değişikliği ŞART DEĞİL** (PM kararı, 25 Ağu). İE#22'de değerlendirilecek
+iki iyileştirme: (a) `--sure` varsayılanını cron aralığından türetmek,
+(b) çeviri işini ürün başına değil **parti** hâlinde kuyruğa almak (tek LLM
+isteğinde 5 ürün → beş kat hız, K56'nın "tek istek" ilkesine de uygun).

@@ -441,6 +441,10 @@ abstract class AuthTestCase extends TestCase
             '0026_arama_ve_kalite',
             '0029_ilan_satis_toplam',
             '0030_kesif_havuzu',
+            // D9: kuyruk tabloları da HTTP testlerinde bulunmalı — "toplu çevir"
+            // düğmesi iş yazar; iş yazılamıyorsa uç test edilmiş sayılmaz.
+            '0024_create_jobs',
+            '0028_kuyruk_sertlestirme',
         ] as $ad) {
             /** @var \App\Core\Migration $migration */
             $migration = require dirname(__DIR__, 2) . '/migrations/' . $ad . '.php';

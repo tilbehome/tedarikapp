@@ -102,6 +102,34 @@ final class JobRunner
     }
 
     /**
+     * İŞ ALINAMADIĞINDA SEBEP (D9).
+     *
+     * Kuyruk gerçekten boş olabilir; bekleyen iş olup zamanı gelmemiş de
+     * olabilir. İkisi çok farklı durumlardır: ilki normal, ikincisi (saat
+     * kayması ya da ileri tarihli yazım) bir arızadır ve sessiz kalırsa
+     * kuyruk saatlerce çalışmaz.
+     */
+    private function neden(DateTimeImmutable $now): string
+    {
+        $saglik = $this->kuyruk->saglik($now);
+        $bekleyen = (int) $saglik['bekleyen'];
+        if ($bekleyen === 0) {
+            return 'kuyruk boş';
+        }
+
+        $ileri = (int) $saglik['ileri_tarihli'];
+        $dakika = $saglik['en_yakin_calisacak_dakika'];
+
+        return sprintf(
+            'ALINAMADI: %d iş bekliyor, %d tanesi ileri tarihli%s — işçi saati: %s',
+            $bekleyen,
+            $ileri,
+            is_int($dakika) ? ' (en yakın ' . $dakika . ' dk sonra)' : '',
+            $now->format('Y-m-d H:i:s P'),
+        );
+    }
+
+    /**
      * Bir cron turu koşar.
      *
      * @return array{islenen: int, basarili: int, basarisiz: int, sure: float, durma_nedeni: string}
@@ -129,6 +157,12 @@ final class JobRunner
 
             $is = $this->kuyruk->sahiplen($kimlik, $now);
             if ($is === null) {
+                // D9: "kuyruk boş" YALNIZ gerçekten boşken söylenir. Sahada
+                // panel "5 bekleyen" derken günlük her turda "kuyruk boş"
+                // yazıyordu ve çelişkiyi kimse fark etmiyordu; işçi artık
+                // neden hiçbir şey almadığını SÖYLER.
+                $durmaNedeni = $this->neden($now);
+
                 break;
             }
 

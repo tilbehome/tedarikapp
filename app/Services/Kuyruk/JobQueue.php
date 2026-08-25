@@ -96,6 +96,82 @@ final class JobQueue
     }
 
     /**
+     * ALINABİLİRLİK KOŞULU — TEK KAYNAK (D9 saha bulgusu, 25 Ağu 2026).
+     *
+     * BULGU: panel "Bekleyen 5 · kuyruk sağlıklı" derken cron günlüğü her turda
+     * "0 iş · kuyruk boş" yazıyordu. Ölü 0, hata 0 — yani işler denenip
+     * düşmüyor, HİÇ ALINMIYORDU. Sebep iki yüzeyin AYRI SORGU kullanmasıydı:
+     *   · sayaç  → `durum = 'bekliyor'`            (zaman koşulu YOK)
+     *   · işçi   → `durum = 'bekliyor' AND calisacak_at <= now`
+     * Aradaki tek fark zaman koşuludur; `calisacak_at` ileri tarihliyse (ya da
+     * işçinin saati sayacınkinden geriyse) sayaç "5 bekliyor" der, işçi hiçbir
+     * şey görmez ve kimse çelişkiyi fark etmez.
+     *
+     * Koşul artık TEK YERDE yazılıdır ve hem sahiplenme hem sayım aynı metni
+     * kullanır — D5'te sayfa içi panel ile popup için yapılanın kuyruk hâli.
+     */
+    private const ALINABILIR = '(durum = :bekliyor AND calisacak_at <= :simdi)
+                OR (durum = :calisiyor AND kilit_bitis IS NOT NULL AND kilit_bitis <= :kira_bitti)';
+
+    /** @return array<string, string> ALINABILIR koşulunun yer tutucuları */
+    private function alinabilirParametreleri(string $zaman): array
+    {
+        return [
+            'bekliyor' => self::BEKLIYOR,
+            'calisiyor' => self::CALISIYOR,
+            'simdi' => $zaman,
+            'kira_bitti' => $zaman,
+        ];
+    }
+
+    /**
+     * ŞU AN alınabilir iş sayısı — işçinin GERÇEKTEN göreceği küme.
+     *
+     * Panel bunu `bekleyen` ile birlikte basar: ikisi ayrışıyorsa sorun görünür
+     * hâle gelir ("5 bekliyor · 0 alınabilir" bir arıza cümlesidir).
+     */
+    public function alinabilirSayisi(DateTimeImmutable $now): int
+    {
+        $statement = $this->connection->pdo()->prepare(
+            'SELECT COUNT(*) FROM jobs WHERE ' . self::ALINABILIR,
+        );
+        $statement->execute($this->alinabilirParametreleri(Dates::toStorage($now)));
+
+        return (int) $statement->fetchColumn();
+    }
+
+    /**
+     * Bekleyen ama HENÜZ ZAMANI GELMEMİŞ işlerin sayısı ve en yakınının dakikası.
+     *
+     * @return array{sayi: int, en_yakin_dakika: int|null}
+     */
+    public function ileriTarihliler(DateTimeImmutable $now): array
+    {
+        $zaman = Dates::toStorage($now);
+        $statement = $this->connection->pdo()->prepare(
+            'SELECT COUNT(*) AS adet, MIN(calisacak_at) AS en_yakin
+             FROM jobs WHERE durum = :durum AND calisacak_at > :simdi',
+        );
+        $statement->execute(['durum' => self::BEKLIYOR, 'simdi' => $zaman]);
+        $satir = $statement->fetch();
+        $sayi = is_array($satir) ? (int) $satir['adet'] : 0;
+        $enYakin = is_array($satir) && is_string($satir['en_yakin'] ?? null) ? (string) $satir['en_yakin'] : null;
+
+        $dakika = null;
+        if ($enYakin !== null && $enYakin !== '') {
+            try {
+                $dakika = (int) ceil(
+                    (Dates::fromStorage($enYakin, $now->getTimezone())->getTimestamp() - $now->getTimestamp()) / 60,
+                );
+            } catch (Throwable) {
+                $dakika = null;
+            }
+        }
+
+        return ['sayi' => $sayi, 'en_yakin_dakika' => $dakika];
+    }
+
+    /**
      * Sıradaki işi SAHİPLENİR. Yoksa null.
      *
      * @return array<string, mixed>|null
@@ -115,18 +191,12 @@ final class JobQueue
         // almadıysa ondan alınır. Öncelik hâlâ üstündür — adalet, önceliğin
         // yerine geçmez, EŞİT öncelikler arasında paylaştırır.
         $sira = $pdo->prepare(
-            "SELECT tur, MIN(oncelik) AS en_yuksek
+            'SELECT tur, MIN(oncelik) AS en_yuksek
              FROM jobs
-             WHERE (durum = :bekliyor AND calisacak_at <= :simdi)
-                OR (durum = :calisiyor AND kilit_bitis IS NOT NULL AND kilit_bitis <= :kira_bitti)
-             GROUP BY tur",
+             WHERE ' . self::ALINABILIR . '
+             GROUP BY tur',
         );
-        $sira->execute([
-            'bekliyor' => self::BEKLIYOR,
-            'calisiyor' => self::CALISIYOR,
-            'simdi' => $zaman,
-            'kira_bitti' => $zaman,
-        ]);
+        $sira->execute($this->alinabilirParametreleri($zaman));
         /** @var list<array<string, mixed>> $turler */
         $turler = $sira->fetchAll();
         if ($turler === []) {
@@ -141,21 +211,12 @@ final class JobQueue
         $tur = (string) $adaylar[$this->siradakiTurIndeksi(count($adaylar))]['tur'];
 
         $aday = $pdo->prepare(
-            "SELECT id FROM jobs
-             WHERE tur = :tur AND (
-                   (durum = :bekliyor AND calisacak_at <= :simdi)
-                OR (durum = :calisiyor AND kilit_bitis IS NOT NULL AND kilit_bitis <= :kira_bitti)
-             )
+            'SELECT id FROM jobs
+             WHERE tur = :tur AND (' . self::ALINABILIR . ')
              ORDER BY oncelik ASC, calisacak_at ASC, id ASC
-             LIMIT 1",
+             LIMIT 1',
         );
-        $aday->execute([
-            'tur' => $tur,
-            'bekliyor' => self::BEKLIYOR,
-            'calisiyor' => self::CALISIYOR,
-            'simdi' => $zaman,
-            'kira_bitti' => $zaman,
-        ]);
+        $aday->execute(['tur' => $tur] + $this->alinabilirParametreleri($zaman));
         $id = $aday->fetchColumn();
         if ($id === false) {
             return null;
@@ -505,11 +566,18 @@ final class JobQueue
         );
         $bekleyenHatali->execute(['durum' => self::BEKLIYOR]);
 
+        $ileri = $this->ileriTarihliler($now);
+
         return [
             'bekleyen' => $say(self::BEKLIYOR),
             'calisan' => $say(self::CALISIYOR),
             'olu' => $say(self::OLU),
             'en_eski_bekleyen_dakika' => $enEski,
+            // D9: "bekleyen" ile "alınabilir" AYRI sayılardır. Eşit değillerse
+            // işçi o işleri göremiyor demektir; panel bunu susarak geçmez.
+            'alinabilir' => $this->alinabilirSayisi($now),
+            'ileri_tarihli' => $ileri['sayi'],
+            'en_yakin_calisacak_dakika' => $ileri['en_yakin_dakika'],
             'turler' => $turler,
             // B11 metrikleri — Ayarlar > Kuyruk durumu bunları basar.
             'saatlik_biten' => $bitenSaatlik,

@@ -384,6 +384,11 @@ final class SystemController
             'calisan' => $saglik['calisan'],
             'olu' => $saglik['olu'],
             'en_eski_bekleyen_dakika' => $saglik['en_eski_bekleyen_dakika'],
+            // D9: işçinin GERÇEKTEN alabileceği iş sayısı. `bekleyen` ile
+            // ayrışması bir arızadır ve panelde sayı olarak görünür.
+            'alinabilir' => $saglik['alinabilir'],
+            'ileri_tarihli' => $saglik['ileri_tarihli'],
+            'en_yakin_calisacak_dakika' => $saglik['en_yakin_calisacak_dakika'],
             'turler' => $saglik['turler'],
             'olu_isler' => $olu,
             // İE#21 B11 metrikleri: "kuyruk çalışıyor mu" sorusu sayılarla yanıtlanır.
