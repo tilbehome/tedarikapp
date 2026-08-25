@@ -22,7 +22,7 @@ import {
   type MukerrerSecenegi,
 } from '../../core/durumMakinesi';
 import { DISCLOSURE_METNI } from '../../core/disclosure';
-import { dolulukYuzdesi, type AlanRaporu } from '../../core/alanRaporu';
+import { ALAN_ADLARI, dolulukYuzdesi, type AlanRaporu } from '../../core/alanRaporu';
 import type { BaglantiDurumu } from '../../core/baglanti';
 
 export interface HedefSecimi {
@@ -151,7 +151,14 @@ export function baglantiSeridi(
 }
 
 /** Doluluk halkası + alan listesi (A3). */
-export function dolulukBolumu(rapor: AlanRaporu): HTMLElement {
+export function dolulukBolumu(rapor: AlanRaporu | null): HTMLElement {
+  // D10-NİHAİ: VERİ YOKSA BOŞLUK DEĞİL İSKELET. Panel her açılışta aynı yapıyı
+  // gösterir; sayfa okunana kadar alanlar gri bekler. "Boş kabuk" diye bir
+  // durum yoktur — kullanıcı ne geleceğini baştan görür.
+  if (rapor === null) {
+    return iskeletBolumu();
+  }
+
   const kart = el('div', 'tdk-kart');
   const ust = el('div', 'tdk-doluluk');
 
@@ -188,6 +195,90 @@ export function dolulukBolumu(rapor: AlanRaporu): HTMLElement {
   kart.append(ust, liste);
 
   return kart;
+}
+
+/** Önizleme iskeleti: alan adları görünür, değerler "okunuyor" der (D10). */
+export function iskeletBolumu(): HTMLElement {
+  const kart = el('div', 'tdk-kart');
+  const ust = el('div', 'tdk-doluluk');
+
+  const halka = el('div', 'tdk-halka');
+  halka.setAttribute('role', 'img');
+  halka.setAttribute('aria-label', 'Alanlar okunuyor');
+  halka.style.setProperty('--oran', '0');
+  halka.append(el('span', undefined, `–/${ALAN_ADLARI.length}`));
+
+  const bilgi = el('div');
+  bilgi.append(
+    el('div', 'tdk-ad', 'Yakalama önizlemesi'),
+    el('div', 'tdk-zh', 'Sayfa okunuyor — alanlar geldikçe dolar.'),
+  );
+  ust.append(halka, bilgi);
+
+  const liste = el('div', 'tdk-alanlar');
+  for (const ad of ALAN_ADLARI) {
+    const satir = el('div', 'tdk-alan iskelet');
+    satir.append(el('span', 'ad', ad), el('span', 'deger', 'okunuyor…'));
+    liste.append(satir);
+  }
+
+  kart.append(ust, liste);
+
+  return kart;
+}
+
+/**
+ * ÜRÜN KARTI (mockup `c-urun`) — HER AÇILIŞTA çizilir.
+ *
+ * Mockup'ta üç şey var ve üçü de bilgi taşır: orijinal Çince satır (K55),
+ * Türkçe karşılık ve "TR önerisi" rozeti. Rozet olmadan kullanıcı, Türkçe adı
+ * kendi yazdığı bir metin sanabilir.
+ */
+export function urunKarti(urunAdi: string | null, orijinalAd: string | null): HTMLElement {
+  const kart = el('div', 'tdk-kart tdk-urun');
+
+  if (urunAdi === null && orijinalAd === null) {
+    kart.append(el('div', 'tdk-ad iskelet-metin', 'Ürün okunuyor…'));
+    kart.append(el('div', 'tdk-zh iskelet-metin', ' '));
+
+    return kart;
+  }
+
+  if (orijinalAd !== null) {
+    // K55: orijinal satır her dilde korunur — karşı taraf kendi kaydını bulur.
+    kart.append(el('div', 'tdk-zh', orijinalAd));
+  }
+  if (urunAdi !== null) {
+    const satir = el('div', 'tdk-ad');
+    satir.append(document.createTextNode(urunAdi));
+    satir.append(el('span', 'tdk-oneri', 'TR önerisi'));
+    kart.append(satir);
+  }
+
+  return kart;
+}
+
+/**
+ * BİLGİ BANDI (mockup `c-eski`) — "bu ilan panelde yok / daha önce yakalandı".
+ *
+ * Kullanıcının ilk sorusu "bunu zaten göndermiş miydim?"tir. Cevabı düğmeye
+ * basmadan önce vermek, mükerrer gönderimi baştan engeller.
+ */
+export function bilgiBandi(gorunum: PanelGorunumu): HTMLElement {
+  const band = el('div', 'tdk-bilgi');
+  const mukerrer = gorunum.makine.durum === 'D8_MUKERRER' || gorunum.urunId !== null;
+  band.setAttribute('data-bilgi', mukerrer ? 'mukerrer' : 'yeni');
+  band.append(
+    el(
+      'span',
+      undefined,
+      mukerrer
+        ? 'Bu ilan panelde ZATEN VAR — göndermek kaydı tazeler.'
+        : 'Bu ilan panelde yok — gönderilince yeni kayıt açılır.',
+    ),
+  );
+
+  return band;
 }
 
 /** Seçilen varyant bölümü (mockup'ın renk/beden şeridinin karşılığı). */
@@ -410,16 +501,12 @@ export function panelGovdesi(gorunum: PanelGorunumu, eylemler: PanelEylemleri): 
   const kuyruk = kuyrukBolumu(gorunum.duranlar, eylemler.onKuyruk);
   if (kuyruk !== null) govde.append(kuyruk);
 
-  if (gorunum.urunAdi !== null) {
-    const urun = el('div', 'tdk-kart');
-    urun.append(el('div', 'tdk-ad', gorunum.urunAdi));
-    if (gorunum.orijinalAd !== null) urun.append(el('div', 'tdk-zh', gorunum.orijinalAd));
-    govde.append(urun);
-  }
-
-  if (gorunum.rapor !== null) {
-    govde.append(dolulukBolumu(gorunum.rapor));
-  }
+  // D10-NİHAİ: ÜRÜN KARTI, BİLGİ BANDI ve ÖNİZLEME HER AÇILIŞTA ÇİZİLİR.
+  // Eskiden üçü de veriye bağlıydı; veri yoksa panel yalnız "Hedef/Miktar/Not"
+  // gösteriyordu ve kullanıcı bunu bozuk sanıyordu.
+  govde.append(urunKarti(gorunum.urunAdi, gorunum.orijinalAd));
+  govde.append(bilgiBandi(gorunum));
+  govde.append(dolulukBolumu(gorunum.rapor));
 
   const varyant = varyantBolumu(gorunum.varyantlar, gorunum.seciliVaryant, eylemler.onVaryant);
   if (varyant !== null) govde.append(varyant);

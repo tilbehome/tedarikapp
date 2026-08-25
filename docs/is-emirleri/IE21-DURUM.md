@@ -324,3 +324,57 @@ korur). Beş iş **tek turda** biter. Alternatif: cron'u dakikada bire çekip
 iki iyileştirme: (a) `--sure` varsayılanını cron aralığından türetmek,
 (b) çeviri işini ürün başına değil **parti** hâlinde kuyruğa almak (tek LLM
 isteğinde 5 ürün → beş kat hız, K56'nın "tek istek" ilkesine de uygun).
+
+---
+
+## D10-NİHAİ (25 Ağu 2026) — sayfa içi panel mockup'a getirildi
+
+**Belirti (canlı, rc5 + yeniden kurulmuş eklenti):** panel ya kendiliğinden açık
+BOŞ KABUK, ya yalnız Hedef/Miktar/Not; mockup'taki zengin içerik hiç görünmüyor.
+Aynı sayfada üç yenilemede üç farklı hâl.
+
+### 3. sorunun DÜRÜST cevabı: içerik kodda VARDI, çizim koşulu ve montaj sırası bozuktu
+
+Üç ayrı kusur üst üste bindi:
+
+| # | Kusur | Sonuç |
+|---|---|---|
+| 1 | **Çizim koşula bağlıydı.** `panelGovdesi()` ürün kartını yalnız `urunAdi !== null`, önizlemeyi yalnız `rapor !== null` iken çiziyordu. İskelet hâli YOKTU | Sayfa okunamadıysa (ya da henüz okunmadıysa) panelde yalnız durum şeridi + Hedef/Miktar/Not kalıyordu — "boş kabuk" |
+| 2 | **İkinci montaj düğmeyi ÖLÜ bırakıyordu.** `montajYap()` aynı kap varsa ERKEN DÖNÜYOR, yeni `onTikla` bağlanmıyordu | SPA yönlendirmesinden sonra düğme duruyor ama tıklama hiçbir şey yapmıyor — "üç yenilemede üç farklı hâl" |
+| 3 | **Her `kur()` yeni Akis + yeni çekmece üretiyordu.** Eski akış sökülen düğüme çizmeye devam ediyor, ekrandaki çekmece hiç çizilmiyordu | Görünen çekmece boş; "kendiliğinden açık boş kabuk" |
+
+Yani **içerik hiç bağlanmamış değildi**: 18 alanlık önizleme, kanal rozetleri
+(YANIT/GÖMÜLÜ/SAYFA), "sayfada yok — panelde elle girilir" satırı, doluluk
+halkası ve varyant şeridi kodda yazılıydı ve birim testleri geçiyordu. Kaybolan
+şey içerik değil, **içeriğin ekrana ulaşma yolu**ydu.
+
+### E2E'ler bunu neden kaçırdı?
+
+Panel testleri (`frontend/src/eklenti/panel.test.ts`) `panelGovdesi()`i
+**doğrudan, dolu bir görünüm nesnesiyle** çağırıyordu. Yani "veri varsa doğru
+çiziyor mu?" sorusunu sınıyor, "veri YOKKEN ne oluyor?" ve "montaj → tıklama →
+çizim zinciri gerçekten kuruluyor mu?" sorularını hiç sormuyordu. Gerçek mount
+akışı (bridge → montaj → çekmece → akış) hiçbir testte uçtan uca koşmuyordu.
+Bu turda eklenen testler tam olarak o boşluğu hedefliyor.
+
+### Düzeltme
+
+| Değişiklik | Dosya |
+|---|---|
+| Ürün kartı, bilgi bandı ve önizleme HER AÇILIŞTA çizilir; veri yoksa **iskelet** (18 alan, "okunuyor…") | `extension/ui/v2/panel.ts` |
+| `ALAN_ADLARI` tek kaynak; iskelet ile gerçek rapor ayrışamaz (test kilitler) | `extension/core/alanRaporu.ts` |
+| Üst şeritte **Bağlı / Bağlantı yok** rozeti (mockup `c-durum`) | `extension/ui/v2/cekmece.ts` |
+| "TR önerisi" rozeti, mükerrer bilgi bandı, iskelet stilleri | `extension/ui/v2/stil.ts` |
+| İkinci montaj eskisini **söker ve yeniden basar** — düğme her zaman bağlıdır | `extension/ui/v2/montaj.ts` |
+| Tek örnek koruması: `kur()` önceki kurulumu söker; önce çiz sonra aç | `extension/entrypoints/bridge.content.ts` |
+
+**Panel varsayılan KAPALIDIR** ve yalnız düğmeye tıklayınca açılır; X kapatır ve
+SPA gezinmesinde kapalı kalır (yeni kurulum yalnız düğmeyi basar).
+
+**Test:** `panel.test.ts` +5 (tam içerik · veri yokken iskelet · 10 çizimde aynı
+imza · mükerrer bandı) · `montaj.test.ts` +2 (ikinci montajın düğmesi çalışır ·
+10 yüklemede tek kap) · `baglantiSenkronu.test.ts` +1 (iskelet ↔ rapor
+ayrışmazlığı). Eklenti vitest 123, panel eklenti süiti 62.
+
+**Kabul ölçütü EKRANDIR:** bu testler yalnız "bir daha bozulmasın" içindir;
+mockup'la yan yana kıyası Ürün Sahibi yapacaktır.

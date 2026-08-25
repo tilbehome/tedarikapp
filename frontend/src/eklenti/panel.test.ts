@@ -364,6 +364,84 @@ describe('D5 — bağlantı şeridi ve boş hedef seçici (saha bulgusu)', () =>
   });
 });
 
+describe('D10-NİHAİ — panel HER AÇILIŞTA mockup içeriğini gösterir', () => {
+  /** Onaylı mockup'ın (docs/sablon/eklenti-v2-sayfa-ici-mockup.html) zorunlu parçaları. */
+  function mockupParcalari(govde: HTMLElement) {
+    return {
+      durumSeridi: govde.querySelector('.tdk-serit'),
+      urunKarti: govde.querySelector('.tdk-urun'),
+      bilgiBandi: govde.querySelector('.tdk-bilgi'),
+      onizleme: govde.querySelector('.tdk-doluluk'),
+      alanlar: govde.querySelectorAll('.tdk-alan'),
+      hedef: govde.querySelector('#tdk-liste'),
+      miktar: govde.querySelector('#tdk-miktar'),
+      not: govde.querySelector('#tdk-not'),
+    };
+  }
+
+  test('veri geldiğinde tüm bölümler var: ürün · önizleme · kanal rozetleri · hedef', () => {
+    const { govde } = ciz();
+    const parca = mockupParcalari(govde);
+
+    expect(parca.durumSeridi).not.toBeNull();
+    expect(parca.urunKarti).not.toBeNull();
+    expect(parca.bilgiBandi).not.toBeNull();
+    expect(parca.onizleme).not.toBeNull();
+    expect(parca.hedef).not.toBeNull();
+    expect(parca.miktar).not.toBeNull();
+    expect(parca.not).not.toBeNull();
+
+    // Mockup'ta 16+ alan listelenir; kanal rozetleri (YANIT/GÖMÜLÜ/SAYFA) görünür.
+    expect(parca.alanlar.length).toBeGreaterThanOrEqual(16);
+    expect(govde.querySelectorAll('.kanal').length).toBeGreaterThan(0);
+    // Eksik alan SESSİZ değildir: mockup'ın "panelde elle girilir" satırı.
+    expect(govde.textContent).toContain('sayfada yok — panelde elle girilir');
+    // ZH orijinal + TR önerisi rozeti (mockup c-zh / c-tr).
+    expect(govde.textContent).toContain('洞洞鞋男士2025夏季新款');
+    expect(govde.textContent).toContain('TR önerisi');
+  });
+
+  test('VERİ YOKKEN BOŞ KABUK DEĞİL İSKELET çizilir', () => {
+    const { govde } = ciz({ makine: baslangicDurumu(), rapor: null, urunAdi: null, orijinalAd: null });
+    const parca = mockupParcalari(govde);
+
+    // Sahada görülen hâl: yalnız Hedef/Miktar/Not. Artık ürün kartı ve önizleme
+    // de var; alanlar "okunuyor…" diyor.
+    expect(parca.urunKarti).not.toBeNull();
+    expect(parca.onizleme).not.toBeNull();
+    expect(parca.alanlar.length).toBeGreaterThanOrEqual(16);
+    expect(govde.querySelectorAll('.tdk-alan.iskelet').length).toBeGreaterThanOrEqual(16);
+    expect(govde.textContent).toContain('okunuyor…');
+    expect(parca.hedef).not.toBeNull();
+  });
+
+  test('on kez çizilse de görünüm AYNI kalır (deterministik)', () => {
+    const imzalar = new Set<string>();
+    for (let i = 0; i < 10; i++) {
+      const { govde } = ciz();
+      imzalar.add(
+        [
+          govde.querySelectorAll('.tdk-alan').length,
+          govde.querySelectorAll('.kanal').length,
+          govde.querySelector('.tdk-urun') === null ? 'yok' : 'var',
+          govde.querySelector('.tdk-doluluk') === null ? 'yok' : 'var',
+          govde.querySelector('#tdk-liste') === null ? 'yok' : 'var',
+        ].join('|'),
+      );
+    }
+
+    // Saha şikâyeti "aynı sayfada üç yenilemede üç farklı hâl"di.
+    expect(imzalar.size).toBe(1);
+  });
+
+  test('mükerrer kayıtta bilgi bandı UYARIR', () => {
+    const { govde } = ciz({ urunId: 42 });
+
+    expect(govde.querySelector('.tdk-bilgi')?.getAttribute('data-bilgi')).toBe('mukerrer');
+    expect(govde.textContent).toContain('panelde ZATEN VAR');
+  });
+});
+
 describe('E2E-EKL-29 — aynı önizleme yeniden çizilir', () => {
   test('panel iki kez kurulduğunda aynı alanlar ve seçimler görünür', () => {
     const ilk = panelGovdesi(gorunum(), eylemler());

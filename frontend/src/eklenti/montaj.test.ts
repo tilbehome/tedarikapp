@@ -91,10 +91,34 @@ describe('E2E-EKL-02/26 — kapalı durum, yerleşim ve izolasyon', () => {
   });
 });
 
-describe('İkinci montaj etkisizdir', () => {
+describe('İkinci montaj TEK düğme bırakır ve düğme HER ZAMAN bağlıdır (D10)', () => {
   test('aynı sayfada iki kez çağrılırsa tek kap kalır', () => {
     montajYap({ adres: URUN_ADRESI, belge: document });
     montajYap({ adres: URUN_ADRESI, belge: document });
+
+    expect(document.querySelectorAll(`#${KAP_ID}`)).toHaveLength(1);
+  });
+
+  test('ikinci montajın tıklama işleyicisi ÇALIŞIR', () => {
+    const ilkTikla = vi.fn();
+    const ikinciTikla = vi.fn();
+
+    montajYap({ adres: URUN_ADRESI, belge: document, onTikla: ilkTikla });
+    const ikinci = montajYap({ adres: URUN_ADRESI, belge: document, onTikla: ikinciTikla });
+
+    // D10 saha bulgusu: eskiden ikinci montaj erken dönüyordu; düğme ekranda
+    // duruyor ama TIKLAMA HİÇBİR ŞEY YAPMIYORDU (üç yenilemede üç farklı hâl).
+    expect(ikinci.dugme).not.toBeNull();
+    ikinci.dugme?.click();
+
+    expect(ikinciTikla).toHaveBeenCalledTimes(1);
+    expect(ilkTikla).not.toHaveBeenCalled();
+  });
+
+  test('on kez yüklense de sonuç AYNI: tek kap, tek düğme', () => {
+    for (let i = 0; i < 10; i++) {
+      montajYap({ adres: URUN_ADRESI, belge: document, onTikla: vi.fn() });
+    }
 
     expect(document.querySelectorAll(`#${KAP_ID}`)).toHaveLength(1);
   });

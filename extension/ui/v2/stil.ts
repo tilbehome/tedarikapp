@@ -138,6 +138,23 @@ button { font: inherit; cursor: pointer; border: 0; }
   padding: 8px 10px; font-size: 12.5px; color: var(--n900); }
 .tdk-mukerrer button:hover { border-color: var(--lacivert); }
 
+/* ── İSKELET, TR ÖNERİSİ ROZETİ, BİLGİ BANDI (D10) ──────────────────── */
+.tdk-alan.iskelet .deger { color: var(--n400); font-style: italic; }
+.tdk-alan.iskelet .ad { color: var(--n400); }
+.iskelet-metin { color: var(--n400); }
+.tdk-oneri { margin-left: 8px; font-size: 10px; font-weight: 700; letter-spacing: .3px;
+  color: var(--yesil); background: #E9F7F0; border-radius: 999px; padding: 2px 8px; vertical-align: middle; }
+.tdk-bilgi { display: flex; align-items: center; gap: 8px; font-size: 12px; padding: 8px 12px;
+  border-radius: var(--r8); background: var(--n100); color: var(--n700); border: 1px solid var(--n150); }
+.tdk-bilgi[data-bilgi="mukerrer"] { background: var(--sari-zemin); color: var(--sari); border-color: #F3E2BE; }
+
+/* ── ÜST BAŞLIKTAKİ BAĞLANTI ROZETİ (mockup c-durum) ────────────────── */
+.tdk-ust .tdk-durum { display: flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600;
+  color: #C9D3EA; background: rgba(255,255,255,.10); border-radius: 999px; padding: 4px 10px; }
+.tdk-ust .tdk-durum .nk { width: 7px; height: 7px; border-radius: 50%; background: var(--yesil); }
+.tdk-ust .tdk-durum[data-bagli="hayir"] { color: #FFD9D3; }
+.tdk-ust .tdk-durum[data-bagli="hayir"] .nk { background: var(--kirmizi); }
+
 /* ── BAĞLANTI ŞERİDİ (D5) ───────────────────────────────────────────── */
 .tdk-baglanti { display: flex; align-items: center; gap: 8px; font-size: 12px; padding: 9px 12px;
   border-radius: var(--r8); background: var(--sari-zemin); color: var(--sari); border: 1px solid #F3E2BE; }

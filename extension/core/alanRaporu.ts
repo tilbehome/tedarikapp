@@ -53,6 +53,38 @@ function satir(ad: string, deger: string | null, kanal: Kanal, bosMetin = 'sayfa
  * MOQ), sonra lojistik ve kaynak bilgileri. Kullanıcı listeyi yukarıdan aşağı
  * okuyup "bu ürünü alır mıyım?" sorusunu yanıtlayabilmeli.
  */
+/**
+ * ALAN ADLARI — İSKELET İÇİN (D10-NİHAİ, 25 Ağu 2026).
+ *
+ * Panel açıldığında sayfa henüz okunmamış olabilir. Eskiden bu durumda önizleme
+ * bölümü HİÇ çizilmiyordu ve kullanıcı boş bir kabuk görüyordu; sahada "panel
+ * ya boş ya yarım" şikâyetinin yarısı buydu.
+ *
+ * Artık aynı alanlar gri iskelet olarak çizilir: kullanıcı NE BEKLEYECEĞİNİ
+ * baştan görür. Liste, `alanRaporu()`nun ürettiği satırlarla BİREBİR aynı
+ * olmalıdır — `alanRaporuTest` bunu doğrular, ikisi ayrışamaz.
+ */
+export const ALAN_ADLARI: readonly string[] = [
+  'Ürün adı',
+  'Orijinal başlık',
+  'Birim fiyat',
+  'Fiyat kademeleri',
+  'Varyantlar',
+  'Görseller',
+  'Video',
+  'Ürün özellikleri',
+  'MOQ',
+  'Birim',
+  'Kategori yolu',
+  'Menşe',
+  'Satıcı',
+  'Satıcı adresi',
+  'İlan no',
+  'İlan adresi',
+  'Koli ölçüsü',
+  'Üretim süresi',
+];
+
 export function alanRaporu(sonuc: ParseResult): AlanRaporu {
   const { raw, normalized, source } = sonuc;
   const ham = raw as unknown as Record<string, unknown>;

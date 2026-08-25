@@ -63,12 +63,24 @@ export function cekmeceKur(secenekler: CekmeceSecenekleri): Cekmece {
   const altMarka = belge.createElement('small');
   altMarka.textContent = 'ÜRÜN TEDARİK ASİSTANI';
   marka.append(altMarka);
+  // D10: mockup'ın üst şeridindeki bağlantı rozeti (`c-durum`). Kullanıcı
+  // "bağlı mıyım?" sorusunu panelin ilk satırında görür.
+  const durumRozeti = belge.createElement('div');
+  durumRozeti.className = 'tdk-durum';
+  durumRozeti.setAttribute('data-bagli', 'hayir');
+  const nokta = belge.createElement('span');
+  nokta.className = 'nk';
+  nokta.setAttribute('aria-hidden', 'true');
+  const durumMetni = belge.createElement('span');
+  durumMetni.textContent = 'Bağlantı bekleniyor';
+  durumRozeti.append(nokta, durumMetni);
+
   const kapatDugmesi = belge.createElement('button');
   kapatDugmesi.type = 'button';
   kapatDugmesi.className = 'tdk-kapat';
   kapatDugmesi.setAttribute('aria-label', 'Kapat');
   kapatDugmesi.textContent = '×';
-  ust.append(kup, marka, kapatDugmesi);
+  ust.append(kup, marka, durumRozeti, kapatDugmesi);
 
   const govdeKabi = belge.createElement('div');
   govdeKabi.setAttribute('data-govde', '');
@@ -122,6 +134,10 @@ export function cekmeceKur(secenekler: CekmeceSecenekleri): Cekmece {
     kok: () => shadow,
     ciz(gorunum: PanelGorunumu) {
       govdeKabi.replaceChildren(panelGovdesi(gorunum, secenekler.eylemler));
+
+      const bagli = (gorunum.baglanti ?? 'BILINMIYOR') === 'BAGLI';
+      durumRozeti.setAttribute('data-bagli', bagli ? 'evet' : 'hayir');
+      durumMetni.textContent = bagli ? 'Bağlı' : 'Bağlantı yok';
       // Gönder düğmesi yalnız gönderilebilir durumlarda etkindir; kilidi
       // durum makinesi + bağlantı belirler (bkz. `gonderDugmesiKapali`), arayüz
       // kendi kuralını uydurmaz. D5: bağlantı yoksa düğme kapalıdır ama SEBEBİ

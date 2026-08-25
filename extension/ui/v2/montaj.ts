@@ -97,15 +97,16 @@ export function montajYap(secenekler: MontajSecenekleri = {}): MontajSonucu {
     return { tur: 'YOK', kap: null, shadow: null, dugme: null };
   }
 
-  const mevcut = belge.getElementById(KAP_ID);
-  if (mevcut !== null) {
-    return {
-      tur: (mevcut.getAttribute('data-tur') as MontajTuru | null) ?? 'PILL',
-      kap: mevcut,
-      shadow: null,
-      dugme: null,
-    };
-  }
+  // D10-NİHAİ: AYNI KAP VARSA ESKİSİ SÖKÜLÜR.
+  //
+  // Eskiden mevcut kap bulununca ERKEN DÖNÜLÜYORDU ve yeni `onTikla` bağlanmadan
+  // kalıyordu: SPA yönlendirmesinden sonra düğme duruyor ama TIKLAMA HİÇBİR ŞEY
+  // YAPMIYORDU. Sahada "aynı sayfada üç yenilemede üç farklı hâl" şikâyetinin
+  // kaynağı buydu — düğmenin çalışıp çalışmaması montaj sırasına bağlıydı.
+  //
+  // Sökülüp yeniden basmak ucuzdur (tek düğüm) ve sonucu BELİRLENİMCİ kılar:
+  // ekranda her zaman TEK düğme vardır ve o düğme her zaman bağlıdır.
+  belge.getElementById(KAP_ID)?.remove();
 
   const hedef = SATIRICI_HEDEFLER.map((secici) => belge.querySelector(secici)).find((dugum) => dugum !== null) ?? null;
   const tur: MontajTuru = hedef === null ? 'PILL' : 'SATIRICI';

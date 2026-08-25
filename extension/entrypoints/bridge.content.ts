@@ -120,7 +120,17 @@ export default defineContentScript({
       set: (deger) => chrome.storage.local.set(deger),
     });
 
+    // D10-NİHAİ: TEK ÖRNEK KORUMASI.
+    //
+    // `kur()` hem açılışta hem her SPA yönlendirmesinde çağrılır. Eskiden her
+    // çağrı YENİ bir Akis + çekmece çifti üretiyordu; eski çift sökülen düğüme
+    // çizmeye devam ediyor, ekrandaki çekmece ise hiç çizilmiyordu. "Kendiliğinden
+    // açık boş kabuk" görüntüsünün kaynağı buydu. Artık önceki kurulum açıkça
+    // sökülür ve aynı anda tek akış yaşar.
+    let oncekiSokum: (() => void) | null = null;
+
     const kur = (): void => {
+      oncekiSokum?.();
       const akis = new Akis({
         ayristir,
         gonder: async ({ captureId, hedef, sonuc }): Promise<GonderimYaniti> => {
@@ -202,6 +212,10 @@ export default defineContentScript({
 
       const montaj = montajYap({
         onTikla: () => {
+          // D10-NİHAİ: ÖNCE ÇİZ, SONRA AÇ. Çekmece hiçbir koşulda boş açılmaz;
+          // veri yoksa iskelet görünür. Panel VARSAYILAN KAPALIDIR ve yalnız bu
+          // tıklamayla açılır.
+          cekmece.ciz(akis.gorunum());
           cekmece.ac();
           // Sayfayı okumak BAĞLANTIDAN bağımsızdır (panel kapalıyken de önizleme
           // görülebilmeli) ama ONAYDAN bağımsız DEĞİLDİR: disclosure alınmadan
@@ -233,16 +247,21 @@ export default defineContentScript({
       // sonra sayfada on sayaç dönüyor, hepsi aynı işi tekrar tekrar yapıyordu.
       // Artık eski sayaç ve dinleyici sökülür.
       let sonOffer = offerId(location.href);
-      const sayac = window.setInterval(() => {
+      let sayac = 0;
+      oncekiSokum = (): void => {
+        window.clearInterval(sayac);
+        chrome.storage.onChanged.removeListener(ayarDinleyicisi);
+        cekmece.kapat();
+        montajiKaldir();
+      };
+      sayac = window.setInterval(() => {
         const simdiki = offerId(location.href);
         if (simdiki === sonOffer) return;
 
         sonOffer = simdiki;
-        window.clearInterval(sayac);
-        chrome.storage.onChanged.removeListener(ayarDinleyicisi);
         akis.sayfaDegisti();
-        cekmece.kapat();
-        montajiKaldir();
+        // Sökme işi `kur()` içindeki tek örnek korumasına bırakılır: iki yerde
+        // ayrı ayrı sökmek, hangisinin çalıştığına bağlı davranış üretirdi.
         kur();
       }, 1000);
 

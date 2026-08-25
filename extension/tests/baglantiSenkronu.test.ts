@@ -230,3 +230,20 @@ describe('D5 — gönder düğmesinin kilidi bağlantıya da bakar', () => {
     expect(gonderDugmesiKapali({ ...temel, baglanti: 'BAGLI', disclosureGerekli: true })).toBe(true);
   });
 });
+
+describe('D10-NİHAİ — alan iskeleti ile gerçek rapor AYRIŞAMAZ', () => {
+  it('ALAN_ADLARI, alanRaporu satırlarıyla birebir aynıdır', async () => {
+    const { ALAN_ADLARI, alanRaporu } = await import('../core/alanRaporu');
+    const sonuc = {
+      raw: { title: '洞洞鞋', breadcrumb: [], normalized_attributes: {} },
+      normalized: { name: 'Terlik', price_yuan: '15.90', price_tiers: [], sku_matrix: [], images: [] },
+      source: { platform: '1688', external_id: '1', url: 'https://detail.1688.com/offer/1.html' },
+    } as unknown as ParseResult;
+    const rapor = alanRaporu(sonuc);
+
+    // İskelet listesi elle yazılmıştır; bu test iki listeyi kilitler. Alan
+    // eklenip iskelete yazılmazsa panel açılışta 16 satır, veri gelince 17
+    // satır gösterirdi — ekran "zıplardı".
+    expect(rapor.satirlar.map((satir) => satir.ad)).toEqual([...ALAN_ADLARI]);
+  });
+});
