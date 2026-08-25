@@ -60,6 +60,22 @@ final class JobRunner
     }
 
     /**
+     * ŞU AN ELDE TUTULAN İŞ (D9-KESİN) — tur yarıda kesilirse serbest bırakmak için.
+     *
+     * `bin/kuyruk.php` bunu shutdown kancasında okur: süreç ölürken iş kirasıyla
+     * birlikte asılı kalmasın, bir SONRAKİ TUR onu alabilsin.
+     *
+     * @return array{id: int, token: string}|null
+     */
+    public function askidakiIs(): ?array
+    {
+        return $this->askidaki;
+    }
+
+    /** @var array{id: int, token: string}|null */
+    private ?array $askidaki = null;
+
+    /**
      * İŞLEYİCİ KİMLİĞİ — süreç fonksiyonlarına GÜVENMEDEN üretilir (D7, 25 Ağu 2026).
      *
      * SAHA BULGUSU: MegaTR paylaşımlı hostingde `ea-php83` CLI'da `disable_functions`
@@ -174,6 +190,7 @@ final class JobRunner
                 // Tanınmayan tür: sessizce tekrar denemek sonsuz döngüdür.
                 // Doğrudan ölü rafına gönderilir ki panelde GÖRÜNSÜN.
                 $this->kuyruk->oldur((int) $is['id'], 'Tanınmayan iş türü: ' . $tur, $now);
+                $this->askidaki = null;
                 $basarisiz++;
                 $this->logger->warning('Kuyrukta tanınmayan iş türü', ['tur' => $tur, 'id' => (int) $is['id']]);
 
@@ -187,10 +204,14 @@ final class JobRunner
             // Kirası dolup devralınan işin eski sahibi buraya geldiğinde token'ı
             // eşleşmez ve sonucu yazamaz — çift koşan işin sonuçları birbirini ezmez.
             $token = is_string($is['kilit_token'] ?? null) ? (string) $is['kilit_token'] : '';
+            // D9-KESİN: elimizdeki iş kayda geçer; süreç burada ölürse shutdown
+            // kancası onu serbest bırakır.
+            $this->askidaki = ['id' => (int) $is['id'], 'token' => $token];
 
             try {
                 $isleyici($yuk, $is);
                 $this->kuyruk->basarili((int) $is['id'], $now, $token);
+                $this->askidaki = null;
                 $basarili++;
             } catch (Throwable $hata) {
                 // B11: hata SINIFLANDIRILIR — kalıcı hata tekrar denenmez, hız

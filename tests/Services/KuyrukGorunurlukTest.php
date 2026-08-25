@@ -157,6 +157,82 @@ final class KuyrukGorunurlukTest extends TestCase
         self::assertSame($this->panelinBekleyenleri(), $this->birTurdaAlinanlar());
     }
 
+    // ── D9-KESİN: yarıda kesilen tur kuyruğu kilitlemez ──────────────────────
+
+    public function testNISKUYRUGAYAZILIR_ARDISIKTURLARDAHEPSIISLENIR(): void
+    {
+        for ($i = 1; $i <= 5; $i++) {
+            $this->kuyruk->ekle('ceviri', 'urun:' . $i, ['urun_id' => $i], $this->simdi);
+        }
+
+        // Her tur EN ÇOK İKİ iş alıyor (sahadaki gibi: uzun LLM istekleri).
+        $islenen = [];
+        for ($tur = 1; $tur <= 3; $tur++) {
+            $kosucu = new JobRunner($this->kuyruk, new NullLogger(), sureSiniri: 50, isSiniri: 2);
+            $kosucu->kaydet('ceviri', static function (array $yuk, array $is) use (&$islenen): void {
+                $islenen[] = (int) $is['id'];
+            });
+            $kosucu->kos($this->simdi, 'cron:' . $tur);
+            $this->simdi = $this->simdi->modify('+5 minutes');
+        }
+
+        // ÜÇ turda beşi de bitmiş olmalı: kuyruk ikinci işten sonra DURMAZ.
+        sort($islenen);
+        self::assertSame([1, 2, 3, 4, 5], $islenen);
+        self::assertSame(0, $this->kuyruk->saglik($this->simdi)['bekleyen']);
+    }
+
+    public function testYARIDAKESILENTURUNISI_SONRAKITURDAALINIR(): void
+    {
+        $id = $this->kuyruk->ekle('ceviri', 'urun:1', ['urun_id' => 1], $this->simdi);
+
+        // Sürecin ÖLÜMÜ taklit edilir: iş alınır, sonuç yazılmaz, sonra
+        // `bin/kuyruk.php`in shutdown kancasının yaptığı çağrılır.
+        $is = $this->kuyruk->sahiplen('olen-tur', $this->simdi);
+        self::assertNotNull($is);
+        self::assertSame(
+            'calisiyor',
+            (string) $this->pdo->query('SELECT durum FROM jobs WHERE id = ' . $id)->fetchColumn(),
+        );
+
+        $birakildi = $this->kuyruk->birak(
+            $id,
+            (string) $is['kilit_token'],
+            $this->simdi,
+            'Tur yarıda kesildi.',
+        );
+        self::assertTrue($birakildi);
+
+        // 2. tur HEMEN alabilmeli — kira dolmasını beklemek yok.
+        self::assertSame([$id], $this->birTurdaAlinanlar());
+    }
+
+    public function testTERKEDILENISSONSUZADONMEZ_OLURAFINADUSER(): void
+    {
+        $id = $this->kuyruk->ekle('ceviri', 'urun:1', ['urun_id' => 1], $this->simdi, 100, 2);
+
+        // İki kez alınır ve iki kez sonuç yazılmadan terk edilir (süreç ölümü).
+        for ($i = 0; $i < 2; $i++) {
+            $this->kuyruk->sahiplen('olen-isci', $this->simdi);
+            $this->simdi = $this->simdi->modify('+' . (JobQueue::KILIT_OMRU_SANIYE + 60) . ' seconds');
+        }
+
+        // Üçüncü devralma denemesi: deneme hakkı bitti → iş ÖLÜ rafına gider,
+        // sessizce dönmeye devam etmez.
+        self::assertNull($this->kuyruk->sahiplen('yeni-isci', $this->simdi));
+
+        $satir = $this->pdo->query('SELECT durum, hata FROM jobs WHERE id = ' . $id)->fetch();
+        self::assertSame('olu', (string) $satir['durum']);
+        self::assertStringContainsString('sonuç yazmadan düştü', (string) $satir['hata']);
+    }
+
+    public function testKIRA_CRON_ARALIGINDANUZUNDEGILDIR(): void
+    {
+        // Kira 15 dakikaydı; cron 5 dakikada bir koşuyor. Ölen bir süreç işi ÜÇ
+        // TUR boyunca görünmez kılıyordu — sahadaki 23 dakikanın sebebi buydu.
+        self::assertLessThanOrEqual(300, JobQueue::KILIT_OMRU_SANIYE);
+    }
+
     public function testKIRASIDOLMUSISDEIKIYUZEYDEDEALINABILIRSAYILIR(): void
     {
         $id = $this->kuyruk->ekle('ceviri', 'urun:1', ['urun_id' => 1], $this->simdi);

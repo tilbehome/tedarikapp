@@ -34,8 +34,20 @@ final class JobQueue
     public const BITTI = 'bitti';
     public const OLU = 'olu';
 
-    /** Bir işleyicinin işi elinde tutabileceği azami süre; sonrasında iş geri alınır. */
-    public const KILIT_OMRU_SANIYE = 900;
+    /**
+     * Bir işleyicinin işi elinde tutabileceği azami süre; sonrasında iş geri alınır.
+     *
+     * D9-KESİN (25 Ağu 2026): 900 sn (15 dk) SAHADA ÇOK UZUNDU. Cron beş dakikada
+     * bir koşuyor; süreç bir işi alıp ölürse (paylaşımlı hostingde CLI süre
+     * sınırı, bellek, koparılan bağlantı) iş ÜÇ TUR boyunca kimseye görünmez.
+     * O üç turda günlüğe "kuyruk boş" düşer — sahada tam olarak bu yaşandı:
+     * beş işten ikisi bitti, kalan üçü 23 dakika boyunca "alınmıyor" göründü.
+     *
+     * Kira artık cron aralığına EŞİT: en kötü hâlde bir tur kaybedilir. Uzun
+     * süren iş `kalpAtisi()` ile kirasını uzatır (B11); uzatamıyorsa zaten
+     * ölmüştür ve işin başkasına geçmesi DOĞRU davranıştır.
+     */
+    public const KILIT_OMRU_SANIYE = 300;
 
     public function __construct(private readonly Connection $connection)
     {
@@ -222,6 +234,34 @@ final class JobQueue
             return null;
         }
 
+        // TERK EDİLMİŞ İŞ (D9-KESİN): kirası dolmuş bir işi devralıyorsak, önceki
+        // sahibi sonuç YAZMADAN düşmüş demektir. Bu sessizce tekrarlanırsa iş
+        // sonsuza kadar "alınıyor ama bitmiyor" döngüsüne girer ve ölü rafında
+        // hiç görünmez — sahada 23 dakika boyunca yaşanan buydu.
+        //
+        // Deneme hakkı bitmişse iş ölü rafına gönderilir: arıza GÖRÜNÜR olur.
+        $terk = $pdo->prepare(
+            'SELECT durum, deneme, max_deneme FROM jobs WHERE id = :id',
+        );
+        $terk->execute(['id' => (int) $id]);
+        $terkSatir = $terk->fetch();
+        if (
+            is_array($terkSatir)
+            && (string) $terkSatir['durum'] === self::CALISIYOR
+            && (int) $terkSatir['deneme'] >= (int) $terkSatir['max_deneme']
+        ) {
+            $this->oldur(
+                (int) $id,
+                'İşleyici sonuç yazmadan düştü; kira ' . (int) $terkSatir['deneme']
+                . ' kez devralındı. Süreç zaman/bellek sınırına takılıyor olabilir.',
+                $now,
+                HataSinifi::KALICI,
+            );
+
+            // Aynı turda sıradaki işe geçilir; tek bir bozuk iş kuyruğu tıkamaz.
+            return $this->sahiplen($isleyiciKimligi, $now);
+        }
+
         // Koşullu sahiplenme: iki işleyici arasındaki yarışı burası çözer.
         //
         // YER TUTUCU DİSİPLİNİ (v0.11.3 dersi): aynı adlı yer tutucu bir SQL
@@ -282,6 +322,40 @@ final class JobQueue
     private function siradakiTurIndeksi(int $turSayisi): int
     {
         return $turSayisi > 0 ? $this->turSayaci++ % $turSayisi : 0;
+    }
+
+    /**
+     * İŞİ SERBEST BIRAK (D9-KESİN) — tur yarıda kesildiğinde çağrılır.
+     *
+     * Kira dolmasını beklemek, işi bir cron turu boyunca görünmez kılar. Süreç
+     * düzgün kapanabiliyorsa (shutdown kancası) işi HEMEN geri bırakır: bir
+     * sonraki tur onu normal biçimde alır.
+     *
+     * `deneme` sayacı GERİ ALINMAZ: iş her seferinde yeniden bırakılıyorsa bu
+     * bir arızadır ve deneme hakkı bitince ölü rafında görünmelidir. Sonsuza
+     * kadar sessizce dönen bir iş, hiç çalışmayan bir işten daha kötüdür.
+     *
+     * @return bool token eşleşmediyse false (iş artık bizim değil)
+     */
+    public function birak(int $id, string $token, DateTimeImmutable $now, string $sebep): bool
+    {
+        $statement = $this->connection->pdo()->prepare(
+            'UPDATE jobs SET durum = :bekliyor, kilit_sahibi = NULL, kilit_token = NULL,
+                    kilitlendi_at = NULL, kilit_bitis = NULL, hata = :hata,
+                    hata_sinifi = :sinif, calisacak_at = :simdi, updated_at = :simdi
+             WHERE id = :id AND kilit_token = :token AND durum = :calisiyor',
+        );
+        $statement->execute([
+            'bekliyor' => self::BEKLIYOR,
+            'calisiyor' => self::CALISIYOR,
+            'hata' => mb_substr($sebep, 0, 2000),
+            'sinif' => HataSinifi::GECICI,
+            'simdi' => Dates::toStorage($now),
+            'id' => $id,
+            'token' => $token,
+        ]);
+
+        return $statement->rowCount() === 1;
     }
 
     /**

@@ -96,6 +96,38 @@ try {
     $kosucu = new JobRunner($kuyruk, $logger, $sure);
     KuyrukIsleyicileri::kaydet($kosucu, $config, $connection, $logger, $basePath);
 
+    // TUR YARIDA KESİLİRSE İŞ ASILI KALMASIN (D9-KESİN, 25 Ağu 2026).
+    //
+    // Paylaşımlı hostingde CLI süreci zaman/bellek sınırına takılıp ölebilir.
+    // Eskiden elindeki iş `calisiyor` durumunda kalır ve KİRA DOLANA KADAR
+    // kimse alamazdı; o süre boyunca her cron turu günlüğe "kuyruk boş" yazardı.
+    // Sahada beş işten üçü 23 dakika boyunca böyle görünmez kaldı.
+    //
+    // Kanca, süreç düzgün kapanabildiği her hâlde (ölümcül hata, exit, süre
+    // sınırı) işi DERHAL geri bırakır. SIGKILL gibi kancasız ölümlerde kira
+    // devreye girer — ama kira artık cron aralığı kadardır (300 sn), üç tur değil.
+    register_shutdown_function(static function () use ($kosucu, $kuyruk, $now): void {
+        $askida = $kosucu->askidakiIs();
+        if ($askida === null) {
+            return;
+        }
+
+        $birakildi = $kuyruk->birak(
+            $askida['id'],
+            $askida['token'],
+            $now,
+            'Tur yarıda kesildi (süreç kapandı); iş bir sonraki turda yeniden alınacak.',
+        );
+        fwrite(
+            STDERR,
+            $birakildi
+                ? sprintf("YARIDA KESİLDİ: #%d serbest bırakıldı, sonraki tur alacak.
+", $askida['id'])
+                : sprintf("YARIDA KESİLDİ: #%d bırakılamadı (kira devralınmış olabilir).
+", $askida['id']),
+        );
+    });
+
     $sonuc = $kosucu->kos($now);
 
     printf(
