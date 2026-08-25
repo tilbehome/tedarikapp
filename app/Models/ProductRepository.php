@@ -404,24 +404,49 @@ final class ProductRepository
     }
 
     /**
-     * ÇEVRİLMEMİŞ ürünler (İE#20 C4 toplu geriye dönük çeviri).
+     * LLM TURU BEKLEYEN ürünler (İE#20 C4 · D6 saha bulgusu, 25 Ağu 2026).
      *
-     * Ölçüt: orijinal başlığı OLAN ama önbellekte o başlık için çeviri BULUNMAYAN
-     * ürünler. "Adı Çince görünüyor" gibi bir tahmine dayanmıyoruz; ölçüt
-     * önbelleğin kendisidir — böylece iki kez kuyruğa alma olmaz.
+     * ESKİ ÖLÇÜT YANLIŞTI: "önbellekte o başlık için HERHANGİ bir satır var mı".
+     * Yakalama anında makine katmanı (MyMemory) TR'yi zaten dolduruyordu; ürün
+     * bu yüzden "çevrilmiş" sayılıyor ve LLM turu ONA HİÇ UĞRAMIYORDU. Saha
+     * kanıtı: TR 4/4 ama sağlayıcı `mymemory` ve kalite düşük ("无脚踏 → Bisiklet
+     * Yok"; doğrusu "pedalsız"), EN 2/4 `llm:deepseek` ve kaliteli. K56'nın
+     * "TR+EN tek LLM isteğinde birlikte" ilkesi fiilen bozuluyordu.
+     *
+     * YENİ ÖLÇÜT: hedef dillerden HERHANGİ BİRİ için LLM'den (ya da onaylı elle
+     * düzeltmeden) gelmiş satır YOKSA ürün LLM turuna girer. Makine çevirisi
+     * artık ne olduğu şeydir: LLM gelene kadarki GEÇİCİ DOLDURMA.
+     *
+     * @param list<string> $hedefDiller boşsa birincil dil (tr) varsayılır
      *
      * @return list<int> ürün kimlikleri
      */
-    public function cevrilmemisler(?int $listeId = null, int $limit = 500): array
+    public function cevrilmemisler(?int $listeId = null, int $limit = 500, array $hedefDiller = ['tr']): array
     {
+        $diller = array_values(array_filter(array_map('trim', $hedefDiller), static fn (string $d): bool => $d !== ''));
+        if ($diller === []) {
+            $diller = ['tr'];
+        }
+
+        $params = [];
+        $dilKosullari = [];
+        foreach ($diller as $sira => $dil) {
+            $ad = 'dil' . $sira;
+            $params[$ad] = $dil;
+            // "Bu dil için KALICI bir çeviri var mı?" — llm:* üretilmiş, `elle`
+            // ise kullanıcı onaylamıştır (K54). İkisi de yoksa tur gerekir.
+            $dilKosullari[] = "NOT EXISTS (
+                      SELECT 1 FROM translation_cache c
+                      WHERE c.source_text = p.name_original
+                        AND c.target_lang = :{$ad}
+                        AND (c.provider LIKE 'llm:%' OR c.provider = '" . TranslationCacheRepository::ELLE_SAGLAYICI . "')
+                  )";
+        }
+
         $sql = "SELECT p.id FROM products p
                 WHERE p.deleted_at IS NULL
                   AND p.name_original IS NOT NULL AND TRIM(p.name_original) <> ''
-                  AND NOT EXISTS (
-                      SELECT 1 FROM translation_cache c
-                      WHERE c.source_text = p.name_original
-                  )";
-        $params = [];
+                  AND (" . implode(' OR ', $dilKosullari) . ')';
         if ($listeId !== null) {
             $sql .= ' AND p.list_id = :list_id';
             $params['list_id'] = $listeId;

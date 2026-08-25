@@ -60,13 +60,55 @@ final class JobRunner
     }
 
     /**
+     * İŞLEYİCİ KİMLİĞİ — süreç fonksiyonlarına GÜVENMEDEN üretilir (D7, 25 Ağu 2026).
+     *
+     * SAHA BULGUSU: MegaTR paylaşımlı hostingde `ea-php83` CLI'da `disable_functions`
+     * `getmypid`'i kapatmış; `bin/kuyruk.php` her turda ölümcül hata veriyor ve kuyruk
+     * cron'dan HİÇ işlemiyordu. Aynı risk `posix_getpid` ve `gethostname` için de
+     * geçerlidir — paylaşımlı hostingde hangisinin açık olduğu VARSAYILAMAZ.
+     *
+     * Kimlikten beklenen tek şey KİRA SAHİPLİĞİNDE BENZERSİZLİKTİR: hangi sürecin işi
+     * sahiplendiğini ayırt etmek. Gerçek PID olması şart değildir; bu yüzden süreç
+     * fonksiyonu yoksa kriptografik rastgele bir ek kullanılır. Sıra bilinçlidir:
+     * varsa PID okunur (aynı sürecin iki turu aynı kimliği kullansın, log okunur
+     * kalsın), yoksa rastgeleye düşülür.
+     */
+    public static function surecKimligi(): string
+    {
+        $makine = function_exists('gethostname') ? (gethostname() ?: '') : '';
+        if ($makine === '') {
+            $makine = 'cron';
+        }
+
+        if (function_exists('getmypid')) {
+            $pid = getmypid();
+            if (is_int($pid) && $pid > 0) {
+                return $makine . ':' . $pid;
+            }
+        }
+
+        if (function_exists('posix_getpid')) {
+            /** @var callable(): int $posix */
+            $posix = 'posix_getpid';
+            $pid = $posix();
+            if ($pid > 0) {
+                return $makine . ':' . $pid;
+            }
+        }
+
+        // Süreç kimliği alınamıyor: benzersizlik rastgelelikten gelir. Kimlik
+        // "pid yok" olduğunu SÖYLER — log okuyan kişi yanlış PID aramasın.
+        return $makine . ':x' . bin2hex(random_bytes(8));
+    }
+
+    /**
      * Bir cron turu koşar.
      *
      * @return array{islenen: int, basarili: int, basarisiz: int, sure: float, durma_nedeni: string}
      */
     public function kos(DateTimeImmutable $now, ?string $isleyiciKimligi = null): array
     {
-        $kimlik = $isleyiciKimligi ?? (gethostname() ?: 'cron') . ':' . getmypid();
+        $kimlik = $isleyiciKimligi ?? self::surecKimligi();
         $baslangic = microtime(true);
         $islenen = 0;
         $basarili = 0;

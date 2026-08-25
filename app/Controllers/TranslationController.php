@@ -207,7 +207,10 @@ final class TranslationController extends ApiController
         $now = $this->clock?->now() ?? new \DateTimeImmutable();
         $listeId = isset($this->body($request)['list_id']) ? (int) $this->body($request)['list_id'] : null;
 
-        $adaylar = $this->urunler->cevrilmemisler($listeId);
+        // D6: adaylık ölçütü HEDEF DİLLERE göredir — TR makine çevirisiyle dolu
+        // diye ürünü atlamak, LLM turunun ona hiç uğramaması demekti.
+        $hedefDiller = $this->ceviriAyarlari?->hedefDiller() ?? ['tr'];
+        $adaylar = $this->urunler->cevrilmemisler($listeId, 500, $hedefDiller);
         $kuyruga = 0;
         foreach ($adaylar as $urunId) {
             $this->kuyruk->ekle(

@@ -343,13 +343,26 @@ final class LlmTranslator implements TranslatorInterface
         return CeviriSurumu::kur($this->ayarlar, $this->glossary)->anahtar();
     }
 
+    /**
+     * Önbelleğe yaz — MAKİNE ÇEVİRİSİNİN ÜZERİNE (D6 saha bulgusu, 25 Ağu 2026).
+     *
+     * İKİ ANAHTAR YAZILIR ve bu bilinçlidir:
+     *   • SÜRÜMLÜ anahtar (B12) — sağlayıcı/model/prompt/sözlük değişince
+     *     kendiliğinden geçersizleşen doğru önbellek satırı.
+     *   • SÜRÜMSÜZ anahtar — makine katmanının (MyMemory) ve eski okuyucuların
+     *     (`bin/ceviri-sinavi.php` dahil) baktığı satır. Yalnız sürümlü satırı
+     *     yazmak sahada işe yaramadı: makine çevirisi sürümsüz anahtarda kalıp
+     *     kullanıcıya o gösterilmeye devam etti.
+     *
+     * `tazele()` makine satırının üzerine yazar, `llm:*` ve `elle` satırlarına
+     * DOKUNMAZ — onaylı çeviri asla ezilmez (K54).
+     */
     private function onbellegeYaz(string $kaynak, string $ceviri, string $kaynakDil, string $hedefDil): void
     {
         $surum = $this->surumAnahtari();
 
         try {
-            $this->cache->store(
-                TranslationCacheRepository::hash($kaynak, $kaynakDil, $hedefDil, $surum),
+            $this->cache->tazeleTumAnahtarlar(
                 $kaynak,
                 $ceviri,
                 $this->name(),
