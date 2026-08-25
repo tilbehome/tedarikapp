@@ -74,11 +74,17 @@ dilim; V3 statülü sekiz şablon **V3-C'ye bağlı** olarak işaretlensin.
 39 olay, 5 grup: kuyruk 9 · liste 12 · paylaşım 7 · çeviri 6 · sistem 5.
 Önem dağılımı: bilgi 20 · uyarı 14 · kritik 5.
 
+> **K82 (25 Ağu 2026):** `NTF-SHARE-EXPIRY-NEAR` ve `NTF-SHARE-EXPIRED` düşer →
+> **kalan 37 olay**, paylaşım grubu 5'e iner. Gerekçe: K62 gereği erişim
+> anahtarının süresi yoktur; olmayan bir kavram için bildirim yazmak, hiç
+> tetiklenmeyecek kod bırakmaktır. Süre kavramı V3-C'de teklif geçerliliğine
+> (`teklifler.valid_until`) bağlanınca **yeni** bir NTF kodu açılacak.
+
 | Grup | Bugün tetik noktası VAR MI | Nereye bağlanır |
 |---|---|---|
 | **kuyruk** (9) | ✅ 7'si hazır | `JobQueue::sahiplen/basarisiz/oldur/dirilt` + `JobRunner::kos()`; `NTF-OFFLINE-QUEUED` eklenti tarafında `extension/core/kuyruk.ts`; `NTF-DUPLICATE-SUPPRESSED` `CaptureApplier` idempotency dalı |
 | **liste** (12) | ⚠️ 5'i hazır | `StateMachine` + `ListController` (`NTF-LIST-CREATED/PRODUCTS-ADDED/REMOVED/STATUS-CHANGED/SENT`). `READY-BLOCKED`, `RATE-DRIFT`, `REVISION-CREATED`, `SUPPLIER-RESPONSE-RECEIVED`, `EXPIRED`, `ARCHIVED` → V3 statü/teklif/revision kavramları gerektirir |
-| **paylaşım** (7) | ⚠️ 4'ü hazır | `ShareController::create()`, anahtar yenileme, `ShareLockPage` hatalı deneme + hız sınırı. `EXPIRY-NEAR`/`EXPIRED` **K62 ile çelişir** — erişim anahtarının süresi yoktur; bu iki olay ya kapsam dışıdır ya da K62 değişir → **PM kararı** |
+| **paylaşım** (7 → **5**) | ⚠️ 4'ü hazır | `ShareController::create()`, anahtar yenileme, `ShareLockPage` hatalı deneme + hız sınırı. `EXPIRY-NEAR`/`EXPIRED` **KATALOGDAN DÜŞTÜ** (K82, 25 Ağu 2026): erişim anahtarının süresi yoktur, K62 aynen kalır. Süre kavramı V3-C'de teklif geçerliliğine bağlanınca YENİ bir NTF açılır. Kalan tetiklenmeyen tek olay: `REVOKED` (iptal ucu yok) |
 | **çeviri** (6) | ⚠️ 3'ü hazır | `LlmTranslator` (başarı/başarısız), `Glossary` içe aktarma. Kota olayları §1'deki kota eksiğine bağlı; `QUALITY-BLOCKED` "Görev #4A kalite kapısı" henüz yok |
 | **sistem** (5) | ⚠️ 3'ü hazır | `SettingsController` (`SETTINGS-CHANGED`), token doğrulama middleware (`TOKEN-INVALID`), kur onayı (`FX-UPDATED` → kur snapshot işine bağlı). `CAPTURE-HEALTH-LOW`/`NO-ACTIVITY` yakalama telemetrisine bağlı |
 
@@ -171,17 +177,23 @@ sayfası dışa açık tek yüzeydir ve önbelleklenmiş bir sürümü asla sunu
 
 | Blok | İçerik | Önkoşul |
 |---|---|---|
-| **A** | Bildirim altyapısı: tablo + `BildirimYayinci` + birleştirme + API ucu + merkez ekranı; **bugün tetiği olan 22 olay** | yok |
+| **A** | Bildirim altyapısı: tablo + `BildirimYayinci` + birleştirme + API ucu + merkez ekranı; **bugün tetiği olan 22 olay** (katalog K82 sonrası 37 olay) | yok |
 | **B** | Panorama iskeleti: 8 bağlanabilir brifing şablonu + boş gün varyantları + aksiyon kartları | yok |
 | **C** | Kur snapshot sürümlemesi (BRF-013/016 + Ayarlar §7 + NTF-FX-UPDATED) | yok |
 | **D** | Ayarlar meta katmanı (arama, iz, kaydedilmemiş uyarısı) + içeriği olan 8 sekmeye taşıma | yok |
 | **E** | PWA (manifest + `/panel/` kapsamlı SW + güncelleme şeridi) | yok |
 | **F** | Test altyapısı: Playwright kurulumu (KT-EK-1..4'ün otomatikleşmesi) + `tests/Http` CI grup ayrımı + `LlmIstemci` arayüzü | yok |
 | **G** _(PM kararına bağlı)_ | Yakalama telemetrisi (BRF-014/015 + iki NTF) | yeni tablo |
-| **— (kapsam dışı önerisi)** | V3 statülü 8 brifing şablonu, 7 liste/paylaşım olayı, sözlük CSV, firma portalı sekmesi | V3-C |
+| **— (kapsam dışı önerisi)** | V3 statülü 8 brifing şablonu, 6 liste + 1 paylaşım olayı (`REVOKED`), sözlük CSV, firma portalı sekmesi | V3-C |
+| **— (düşen)** | `NTF-SHARE-EXPIRY-NEAR`, `NTF-SHARE-EXPIRED` | K82 — kataloğdan çıkarıldı |
 
-**PM'in karar vermesi gereken dört madde:**
+**PM kararı VERİLEN madde:**
+
+- ✅ **(K82, 25 Ağu 2026)** `NTF-SHARE-EXPIRY-NEAR/EXPIRED` **düşer**, süresiz anahtar
+  kalır (K62 değişmez). Süre kavramı V3-C'de teklif geçerliliğine bağlanınca yeni
+  NTF açılır.
+
+**PM'in karar vermesi gereken üç madde (İE#22 derlemesinde okunacak):**
 1. V3 statü sözlüğü panoramaya girecek mi, yoksa V3-C'ye mi bağlanacak? (§0)
-2. `NTF-SHARE-EXPIRY-NEAR/EXPIRED` K62 ile çelişiyor — olaylar mı düşer, K62 mi değişir? (§2)
-3. `bilgi` önemli 20 olay bildirim merkezine düşsün mü, yoksa yalnız panoramada mı görünsün? (§2)
-4. İçeriği olmayan 8 ayar sekmesi baştan görünsün mü, yoksa özellik geldikçe mi açılsın? (§3)
+2. `bilgi` önemli 20 olay bildirim merkezine düşsün mü, yoksa yalnız panoramada mı görünsün? (§2)
+3. İçeriği olmayan 8 ayar sekmesi baştan görünsün mü, yoksa özellik geldikçe mi açılsın? (§3)
