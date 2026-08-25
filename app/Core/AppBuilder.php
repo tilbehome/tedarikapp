@@ -269,6 +269,8 @@ final class AppBuilder
             // Medya bağımlılığı bilinçli olarak boş bırakılır (yakalama medyayı
             // kendi hazırlar); ilan yazıcı adıyla geçilir ki sıra karışmasın.
             ilanlar: new \App\Services\Ilan\IlanYazici($connection),
+            // D11a: galeri görselleri arka planda indirilsin (yakalama beklemez).
+            kuyruk: new \App\Services\Kuyruk\JobQueue($connection),
         );
         $extensionController = new \App\Controllers\ExtensionController($captureService, $inboxRepository, $lists, $services->clock, $basePath, $captureApplier);
         $extensionAuth = new \App\Middleware\ExtensionAuth(

@@ -161,11 +161,23 @@ function Icerik({ veri }: { veri: UrunCekmecesiVerisi }) {
   );
 }
 
+interface GaleriKaresi {
+  adres: string;
+  uzak: boolean;
+}
+
 function Galeri({ urun }: { urun: Product }) {
-  const gorseller = [urun.main_image, ...urun.images.map((gorsel) => gorsel.url)].filter(
-    (adres): adres is string => typeof adres === 'string' && adres !== '',
-  );
+  const gorseller: GaleriKaresi[] = [
+    ...(typeof urun.main_image === 'string' && urun.main_image !== ''
+      ? [{ adres: urun.main_image, uzak: urun.main_image.startsWith('http') }]
+      : []),
+    ...urun.images
+      .filter((gorsel) => gorsel.url !== '')
+      .map((gorsel) => ({ adres: gorsel.url, uzak: gorsel.uzak === true })),
+  ];
   const [secili, setSecili] = useState(0);
+  // D11a: yüklenemeyen görsel SESSİZ KALMAZ; kare "yüklenemedi" der.
+  const [hatali, setHatali] = useState<Record<string, boolean>>({});
   const gosterilen = gorseller[secili] ?? gorseller[0] ?? null;
 
   if (gosterilen === null) {
@@ -176,23 +188,51 @@ function Galeri({ urun }: { urun: Product }) {
     );
   }
 
+  const bekleyen = gorseller.filter((kare) => kare.uzak).length;
+
   return (
     <div data-testid="galeri">
-      <img src={gosterilen} alt="" className="h-48 w-full rounded-xl border border-line object-contain" />
+      {hatali[gosterilen.adres] === true ? (
+        <div
+          className="flex h-48 items-center justify-center rounded-xl border border-line bg-g100 text-sm text-ink-3"
+          data-testid="galeri-hatali"
+        >
+          Görsel yüklenemedi
+        </div>
+      ) : (
+        <img
+          src={gosterilen.adres}
+          alt=""
+          onError={() => setHatali((onceki) => ({ ...onceki, [gosterilen.adres]: true }))}
+          className="h-48 w-full rounded-xl border border-line object-contain"
+        />
+      )}
       {gorseller.length > 1 ? (
         <div className="mt-2 flex gap-2 overflow-x-auto">
-          {gorseller.map((adres, sira) => (
+          {gorseller.map((kare, sira) => (
             <button
-              key={adres}
+              key={kare.adres}
               type="button"
               onClick={() => setSecili(sira)}
-              aria-label={`Görsel ${sira + 1}`}
+              aria-label={`Görsel ${sira + 1}${kare.uzak ? ' (arşive alınıyor)' : ''}`}
               aria-pressed={sira === secili}
-              className={`h-12 w-12 shrink-0 overflow-hidden rounded-lg border ${
+              data-uzak={kare.uzak ? 'evet' : undefined}
+              className={`relative h-12 w-12 shrink-0 overflow-hidden rounded-lg border ${
                 sira === secili ? 'border-navy ring-2 ring-navy/20' : 'border-line'
               }`}
             >
-              <img src={adres} alt="" className="h-full w-full object-cover" />
+              {hatali[kare.adres] === true ? (
+                <span className="flex h-full w-full items-center justify-center bg-g100 text-[10px] text-ink-3">
+                  yok
+                </span>
+              ) : (
+                <img
+                  src={kare.adres}
+                  alt=""
+                  onError={() => setHatali((onceki) => ({ ...onceki, [kare.adres]: true }))}
+                  className="h-full w-full object-cover"
+                />
+              )}
             </button>
           ))}
         </div>
@@ -200,6 +240,12 @@ function Galeri({ urun }: { urun: Product }) {
       <p className="mt-1 text-xs text-ink-3">
         {count(gorseller.length)} görsel{urun.video_url ? ' · video var' : ' · video yok'}
       </p>
+      {bekleyen > 0 ? (
+        <p className="mt-1 text-xs text-warn" data-testid="galeri-uzak">
+          {count(bekleyen)} görsel henüz arşive alınmadı — kaynak siteden gösteriliyor, birkaç
+          dakika içinde indirilecek.
+        </p>
+      ) : null}
     </div>
   );
 }

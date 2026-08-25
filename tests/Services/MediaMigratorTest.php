@@ -103,6 +103,66 @@ final class MediaMigratorTest extends AuthTestCase
         self::assertSame('https://cbu01.alicdn.com/img/ibank/galeri.jpg', $row['source_url']);
     }
 
+    // ── D11a: tek ürünün medyası (yakalama sonrası kuyruk işi) ───────────────
+
+    public function testTEKURUNUNGALERISIINDIRILIR(): void
+    {
+        $ana = 'https://cbu01.alicdn.com/img/ibank/ana.jpg';
+        $this->fetcher->respondWith($ana, $this->jpeg(), 'image/jpeg');
+        $urunId = $this->seedProduct($ana);
+
+        $galeriIdler = [];
+        foreach (['bir', 'iki', 'uc', 'dort'] as $ad) {
+            $url = 'https://cbu01.alicdn.com/img/ibank/' . $ad . '.jpg';
+            $this->fetcher->respondWith($url, $this->jpeg(), 'image/jpeg');
+            $galeriIdler[] = $this->seedGalleryImage($urunId, $url);
+        }
+
+        $sonuc = $this->migrator()->urununMedyasi($urunId);
+
+        // Saha vakası: 5 görselin yalnız 1'i (ana) yereldeydi, 4'ü uzak kalmıştı.
+        self::assertSame(5, $sonuc['indirilen']);
+        self::assertSame([], $sonuc['basarisiz']);
+
+        foreach ($galeriIdler as $id) {
+            $satir = $this->pdo->query(
+                'SELECT storage_mode, path FROM product_images WHERE id = ' . $id,
+            )->fetch(\PDO::FETCH_ASSOC);
+            self::assertSame('local', $satir['storage_mode']);
+            self::assertStringStartsWith('public/media/', (string) $satir['path']);
+        }
+    }
+
+    public function testINDIRILEMEYENGORSELKAYDIBOZMAZ_AMARAPORLANIR(): void
+    {
+        $ana = 'https://cbu01.alicdn.com/img/ibank/ana.jpg';
+        $this->fetcher->respondWith($ana, $this->jpeg(), 'image/jpeg');
+        $urunId = $this->seedProduct($ana);
+        // Yanıt tanımlanmadı: indirme başarısız olur (403/404 taklidi).
+        $id = $this->seedGalleryImage($urunId, 'https://cbu01.alicdn.com/img/ibank/yok.jpg');
+
+        $sonuc = $this->migrator()->urununMedyasi($urunId);
+
+        self::assertSame(1, $sonuc['indirilen'], 'Ana görsel inmeli.');
+        self::assertCount(1, $sonuc['basarisiz'], 'Başarısızlık SESSİZ kalmamalı.');
+        // Kayıt BOZULMAZ: satır remote kalır, arayüz işaretler, sonraki tur dener.
+        $satir = $this->pdo->query('SELECT storage_mode FROM product_images WHERE id = ' . $id)->fetch(\PDO::FETCH_ASSOC);
+        self::assertSame('remote', $satir['storage_mode']);
+    }
+
+    public function testBASKAURUNUNGORSELINEDOKUNULMAZ(): void
+    {
+        $urunA = $this->seedProduct('/media/yerel-a.jpg');
+        $urunB = $this->seedProduct('/media/yerel-b.jpg');
+        $bId = $this->seedGalleryImage($urunB, 'https://cbu01.alicdn.com/img/ibank/b.jpg');
+
+        $sonuc = $this->migrator()->urununMedyasi($urunA);
+
+        self::assertSame(0, $sonuc['indirilen']);
+        $satir = $this->pdo->query('SELECT storage_mode FROM product_images WHERE id = ' . $bId)->fetch(\PDO::FETCH_ASSOC);
+        self::assertSame('remote', $satir['storage_mode']);
+    }
+
     public function testIdempotens_TasinanKayitTekrarIslenmez(): void
     {
         $url = 'https://cbu01.alicdn.com/img/ibank/bir.jpg';

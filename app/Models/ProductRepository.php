@@ -723,10 +723,23 @@ final class ProductRepository
 
         $images = [];
         foreach ($rows as $row) {
+            $path = (string) $row['path'];
+            // D11a: UZAK GÖRSEL BOZUK ADRESE ÇEVRİLİYORDU.
+            //
+            // Galeri satırları arşive taşınana kadar `path` bir TAM ADRESTİR
+            // (https://cdn.alicdn.com/...). Buradaki '/' öneki onu
+            // "/https://cdn.alicdn.com/..." hâline getiriyordu: tarayıcı bunu
+            // kendi alanında arıyor, 404 alıyor ve çekmecede BOŞ KARE kalıyordu.
+            // "5 görsel" yazan sayaç doğruydu, adresler bozuktu.
+            $uzak = str_starts_with($path, 'http://') || str_starts_with($path, 'https://');
             $images[] = [
                 'id' => (int) $row['id'],
-                'url' => '/' . ltrim((string) $row['path'], '/'),
+                'url' => $uzak ? $path : '/' . ltrim($path, '/'),
                 'sort' => (int) $row['sort'],
+                // Arayüz uzak görseli İŞARETLER: kaynak site hotlink'e izin
+                // vermeyebilir (alicdn Referer ACL) ve kare boş kalabilir.
+                // Sessiz boş kare yerine "arşive alınıyor" denir.
+                'uzak' => $uzak,
             ];
         }
 

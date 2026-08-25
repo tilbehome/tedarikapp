@@ -67,6 +67,12 @@ export interface ProductImage {
   id: number;
   url: string;
   sort: number;
+  /**
+   * D11a: görsel henüz arşive alınmadı; adres kaynak sitededir. Kaynak site
+   * hotlink'e izin vermeyebilir (alicdn Referer ACL) — arayüz bunu işaretler,
+   * sessiz boş kare bırakmaz.
+   */
+  uzak?: boolean;
 }
 
 /** C8 HAZIR kapısının eksik dökümü — alan kimliktir, etiket görünen yüzdür. */

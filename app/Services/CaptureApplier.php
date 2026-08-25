@@ -53,6 +53,11 @@ final class CaptureApplier
         // İE#21 B3 (saha bulgusu): ürün≠ilan ayrımı veri akışında da yaşasın —
         // her yakalama ürünün yanında İLAN kaydını da açar.
         private readonly ?\App\Services\Ilan\IlanYazici $ilanlar = null,
+        /**
+         * D11a: galeri görselleri yakalamada indirilmez (ağ, yakalamayı
+         * bekletirdi) — bir MEDYA İŞİ yazılır, kuyruk arka planda indirir.
+         */
+        private readonly ?\App\Services\Kuyruk\JobQueue $kuyruk = null,
     ) {
     }
 
@@ -151,6 +156,7 @@ final class CaptureApplier
             });
 
             $this->medyayiSonlandir($media, true);
+            $this->medyaIsiYaz($sonuc['product_id'], $now);
 
             return $sonuc;
         } catch (PDOException $exception) {
@@ -166,6 +172,35 @@ final class CaptureApplier
             $this->medyayiSonlandir($media, false);
 
             throw $exception;
+        }
+    }
+
+    /**
+     * GALERİ İNDİRME İŞİ (D11a saha bulgusu, 25 Ağu 2026).
+     *
+     * Yakalamada yalnız ana görsel indiriliyordu; galeri satırları alicdn
+     * adresiyle `remote` kalıyor ve tarayıcı onları çizemiyordu (alicdn Referer
+     * ACL) — çekmecede "5 görsel" yazarken dördü boş kare görünüyordu.
+     *
+     * İş kuyruğa yazılır, yakalama BEKLEMEZ. Kuyruk yoksa (eski kurulum, test)
+     * sessizce atlanır: yakalama medya yüzünden başarısız olmamalıdır.
+     */
+    private function medyaIsiYaz(?int $urunId, DateTimeImmutable $now): void
+    {
+        if ($this->kuyruk === null || $urunId === null || $urunId <= 0) {
+            return;
+        }
+
+        try {
+            $this->kuyruk->ekle(
+                \App\Services\Kuyruk\KuyrukIsleyicileri::TUR_MEDYA,
+                'urun:' . $urunId,
+                ['urun_id' => $urunId],
+                $now,
+            );
+        } catch (Throwable) {
+            // Kuyruk yazılamadıysa görseller uzak kalır ve arayüz bunu işaretler;
+            // yakalamayı geri almak orantısız olurdu.
         }
     }
 

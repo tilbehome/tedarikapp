@@ -12,7 +12,10 @@ use App\Core\SystemClock;
 use App\Models\ProductRepository;
 use App\Models\SettingsRepository;
 use App\Models\TranslationCacheRepository;
+use App\Services\CurlMediaFetcher;
 use App\Services\Ilan\SkorHesaplayici;
+use App\Services\MediaMigrator;
+use App\Services\MediaService;
 use App\Services\Translation\CeviriAyarlari;
 use App\Services\Translation\Glossary;
 use App\Services\Translation\LayeredTranslator;
@@ -38,6 +41,8 @@ final class KuyrukIsleyicileri
 {
     public const TUR_CEVIRI = 'ceviri';
     public const TUR_SKOR = 'skor';
+    /** D11a: yakalanan galeri görsellerini arşive indirir. */
+    public const TUR_MEDYA = 'medya';
 
     public static function kaydet(
         JobRunner $kosucu,
@@ -121,6 +126,49 @@ final class KuyrukIsleyicileri
             }
 
             (new SkorHesaplayici($connection, $ayarlarDeposu))->hesaplaVeYaz($urunId, $clock->now());
+        });
+
+        // ── MEDYA (D11a) ─────────────────────────────────────────────────────
+        //
+        // SAHA BULGUSU (25 Ağu 2026): çekmece "5 görsel" diyor ama dördü BOŞ
+        // kare çıkıyordu. Sebep: yakalamada yalnız ANA GÖRSEL indiriliyor,
+        // galeri satırları `storage_mode='remote'` olarak alicdn adresiyle
+        // kalıyordu. alicdn Referer ACL'i yüzünden tarayıcı o adresleri
+        // çizemiyor (MediaService'in kendi yorumunda yazılı olan sebep).
+        //
+        // Taşıma hattı (`MediaMigrator`) zaten vardı ama YALNIZ ELLE koşulan bir
+        // CLI'dan çağrılıyordu; yani pratikte hiç koşmuyordu. Artık her yakalama
+        // bir medya işi yazar ve galeri kendiliğinden yerele iner.
+        //
+        // Neden kuyrukta: 20 görsel indirmek yakalamayı dakikalarca bekletirdi;
+        // eklenti "gönderildi" diyemezdi. Kuyruk bunu arka planda yapar.
+        $kosucu->kaydet(self::TUR_MEDYA, static function (array $yuk) use ($config, $connection, $basePath): void {
+            $urunId = (int) ($yuk['urun_id'] ?? 0);
+            if ($urunId <= 0) {
+                throw new RuntimeException('Medya işi ürün kimliği taşımıyor.');
+            }
+
+            $urlGuard = new UrlGuard(array_map(
+                'trim',
+                explode(',', $config->get('MEDIA_ALLOWED_HOSTS', '')),
+            ));
+            $medya = new MediaService(
+                $basePath,
+                $urlGuard,
+                new CurlMediaFetcher($urlGuard, $config->getPositiveInt('MEDIA_DOWNLOAD_TIMEOUT', 25)),
+                new SettingsRepository($connection),
+                $config->getPositiveInt('MEDIA_MAX_MB', 8) * 1024 * 1024,
+                $config->get('MEDIA_PATH', 'public/media'),
+            );
+
+            // Arşiv modu kapalıysa (klasör yazılamıyor) iş BAŞARISIZ sayılmaz:
+            // indirme mümkün değildir, tekrar denemek de düzeltmez. Kayıtlar
+            // remote kalır ve arayüz bunu "uzak görsel" olarak işaretler.
+            if ($medya->mode() !== MediaService::MODE_DOWNLOAD) {
+                return;
+            }
+
+            (new MediaMigrator($connection, $medya))->urununMedyasi($urunId);
         });
     }
 }
