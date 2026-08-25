@@ -31,6 +31,8 @@ final class ExportSnapshot
     public function __construct(
         private readonly ListPresenter $presenter,
         private readonly ?ValueSet $values = null,
+        /** D11b: gösterilecek ürün adını çözer (elle > kalıcı çeviri > yakalama). */
+        private readonly ?\App\Services\Translation\AdCozumleyici $adlar = null,
     ) {
     }
 
@@ -159,16 +161,14 @@ final class ExportSnapshot
         //
         // `products.name` yakalama anında donar; çeviri turu yalnız belleği
         // tazeler (K54 — öneri, alana yazılmaz). Belge ham `name`i basarsa,
-        // panelde yeni çeviri görünürken firmaya giden dosyada eski metin
-        // kalır. Kullanıcı elle düzelttiyse (`name_elle`) o ad DOKUNULMAZ.
-        if ((int) ($product['name_elle'] ?? 0) !== 1 && $orijinal !== '' && $this->values !== null) {
-            $ceviri = trim($this->values->value($orijinal));
-            if ($ceviri !== '' && $ceviri !== $orijinal) {
-                return $ceviri;
-            }
-        }
+        // panelde yeni çeviri görünürken firmaya giden dosyada eski metin kalır.
+        //
+        // Kararı BURASI VERMEZ: `AdCozumleyici` panel, paylaşım sayfası ve belge
+        // için tek kaynaktır (elle > kalıcı çeviri > yakalama). Üç yüzeyin ayrı
+        // kural yazması, D11b'nin ta kendisiydi.
+        $cozum = $this->adlar?->coz($product, $dil);
 
-        return (string) $product['name'];
+        return $cozum === null ? (string) $product['name'] : $cozum['ad'];
     }
 
     /**

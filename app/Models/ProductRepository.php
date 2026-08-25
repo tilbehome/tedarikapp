@@ -263,7 +263,7 @@ final class ProductRepository
         $params = ['id' => $id, 'updated_at' => Dates::toStorage($now)];
 
         foreach ($fields as $column => $value) {
-            if (!in_array($column, [...self::WRITABLE, 'status', 'sort_no', 'list_id', 'name_elle'], true)) {
+            if (!in_array($column, [...self::WRITABLE, 'status', 'sort_no', 'list_id'], true)) {
                 continue;
             }
             $assignments[] = sprintf('%s = :%s', $column, $column);
@@ -273,7 +273,11 @@ final class ProductRepository
         // D11b: ADI KULLANICI YAZDIYSA İŞARETLENİR. Bu işaret olmadan, çeviri
         // turu tazelendiğinde sunum katmanı kullanıcının düzelttiği adı da
         // "eski çeviri" sanıp üzerine yeni öneriyi basardı (K54 ihlali).
-        if (array_key_exists('name', $fields) && !array_key_exists('name_elle', $fields)) {
+        // `name_elle` UÇTAN YAZILAMAZ (docs/10 §4 sözleşmesi genişletilmedi):
+        // yalnız adın kullanıcı tarafından değiştirilmesiyle 1 olur. Bayrak tek
+        // başına değişmediği için revizyon sözleşmesi de bozulmaz — ad değişimi
+        // zaten revizyonu artırır.
+        if (array_key_exists('name', $fields)) {
             $assignments[] = 'name_elle = :name_elle';
             $params['name_elle'] = 1;
         }

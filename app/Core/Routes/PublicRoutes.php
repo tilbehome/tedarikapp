@@ -95,6 +95,10 @@ final class PublicRoutes
         $sharePage = new SharePage(
             \App\Services\Translation\ValueSetFabrikasi::kur($connection, $config, $basePath),
             $shareDownload,
+            // D11b: ürün adı panel ile AYNI kaynaktan çözülür.
+            adlar: new \App\Services\Translation\AdCozumleyici(
+                new \App\Models\TranslationCacheRepository($connection),
+            ),
         );
         $shareGate = new ShareGate($connection);
         // İE#18 G6 (K62): erişim anahtarı kapısı — "linki bilen görür" dönemi bitti.

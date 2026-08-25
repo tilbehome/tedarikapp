@@ -340,9 +340,12 @@ final class JobQueue
     public function birak(int $id, string $token, DateTimeImmutable $now, string $sebep): bool
     {
         $statement = $this->connection->pdo()->prepare(
+            // YER TUTUCU DİSİPLİNİ (v0.11.3 dersi, `SorguYerTutucuTest` kilitler):
+            // aynı ad bir deyimde İKİ KEZ geçemez — MySQL native prepare HY093
+            // ile reddeder, SQLite emülasyonu gizler. Her sütun AYRI ad alır.
             'UPDATE jobs SET durum = :bekliyor, kilit_sahibi = NULL, kilit_token = NULL,
                     kilitlendi_at = NULL, kilit_bitis = NULL, hata = :hata,
-                    hata_sinifi = :sinif, calisacak_at = :simdi, updated_at = :simdi
+                    hata_sinifi = :sinif, calisacak_at = :calisacak_at, updated_at = :guncelleme_at
              WHERE id = :id AND kilit_token = :token AND durum = :calisiyor',
         );
         $statement->execute([
@@ -350,7 +353,8 @@ final class JobQueue
             'calisiyor' => self::CALISIYOR,
             'hata' => mb_substr($sebep, 0, 2000),
             'sinif' => HataSinifi::GECICI,
-            'simdi' => Dates::toStorage($now),
+            'calisacak_at' => Dates::toStorage($now),
+            'guncelleme_at' => Dates::toStorage($now),
             'id' => $id,
             'token' => $token,
         ]);

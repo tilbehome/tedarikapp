@@ -133,16 +133,17 @@ final class AppBuilder
         $money = new MoneyService();
         $settingsRepository = new SettingsRepository($connection);
         // K4 düzeltmesi: taslak listeler GÜNCEL ayar kurunu gösterir — presenter ayarları bilir.
+        // D11b: panel, paylaşım sayfası ve belge AYNI ad çözümünü kullanır.
+        $adCozumleyici = new \App\Services\Translation\AdCozumleyici(
+            new \App\Models\TranslationCacheRepository($connection),
+        );
         $presenter = new ListPresenter(
             $lists,
             $products,
             $money,
             $services->timezone,
             $settingsRepository,
-            // D11b: ekrandaki ad, çeviri tazelendiğinde güncellenmeli.
-            new \App\Services\Translation\AdCozumleyici(
-                new \App\Models\TranslationCacheRepository($connection),
-            ),
+            $adCozumleyici,
         );
         $validator = new InputValidator($money);
         $stateMachine = new StateMachine();
@@ -238,7 +239,7 @@ final class AppBuilder
             $products,
             new CategoryRepository($connection),
             new \App\Models\ExportRepository($connection),
-            new \App\Services\Export\ExportSnapshot($presenter, $valueSet),
+            new \App\Services\Export\ExportSnapshot($presenter, $valueSet, $adCozumleyici),
             $exportRenderers,
             $services->activity,
             $services->clock,
@@ -368,7 +369,7 @@ final class AppBuilder
             $connection,
             $services,
             $config,
-            new \App\Services\Export\ExportSnapshot($presenter, $valueSet),
+            new \App\Services\Export\ExportSnapshot($presenter, $valueSet, $adCozumleyici),
             $exportRenderers,
             $basePath,
             $logger,

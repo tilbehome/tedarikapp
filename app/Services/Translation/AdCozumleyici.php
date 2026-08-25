@@ -47,8 +47,10 @@ final class AdCozumleyici
      *
      * @return array{ad: string, kaynak: string, saglayici: string|null}
      */
-    public function coz(array $urun): array
+    public function coz(array $urun, ?string $dil = null): array
     {
+        $hedef = $dil ?? $this->hedefDil;
+
         $ad = trim((string) ($urun['name'] ?? ''));
 
         // 1) Elle düzenlenmiş ad hiçbir koşulda değişmez.
@@ -65,7 +67,7 @@ final class AdCozumleyici
         //    burada KULLANILMAZ: `products.name` zaten büyük olasılıkla odur ve
         //    aynı metni "çeviri önerisi" diye ikinci kez göstermek yanıltıcıdır.
         $satir = $this->onbellek->find(
-            TranslationCacheRepository::hash($orijinal, 'zh', $this->hedefDil),
+            TranslationCacheRepository::hash($orijinal, 'zh', $hedef),
         );
         if (
             $satir !== null

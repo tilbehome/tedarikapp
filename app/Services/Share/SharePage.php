@@ -46,6 +46,8 @@ final class SharePage
         // İE#15 A1: indirme bağlantıları sayfa ÜRETİLİRKEN imzalanır; imzalayıcı
         // verilmezse (eski çağrılar, testler) çıktı düğmeleri oturumlu davranışa döner.
         private readonly ?ShareDownload $downloads = null,
+        /** D11b: ürün adı panel/paylaşım/belge için TEK kaynaktan çözülür. */
+        private readonly ?\App\Services\Translation\AdCozumleyici $adlar = null,
     ) {
     }
 
@@ -493,18 +495,8 @@ final class SharePage
         // tazeler (K54). Sayfa ham `name`i basarsa firma, panelde düzelmiş olan
         // adın eski hâlini görür. Kullanıcı elle düzelttiyse (`name_elle`) o ad
         // olduğu gibi kalır — onaylı metin hiçbir turla değişmez.
-        $ad = (string) $product['name'];
-        $orijinalAd = is_string($product['name_original'] ?? null) ? trim((string) $product['name_original']) : '';
-        if (
-            (int) ($product['name_elle'] ?? 0) !== 1
-            && $orijinalAd !== ''
-            && $this->aktifDegerler !== null
-        ) {
-            $ceviriAdi = trim($this->aktifDegerler->value($orijinalAd));
-            if ($ceviriAdi !== '' && $ceviriAdi !== $orijinalAd) {
-                $ad = $ceviriAdi;
-            }
-        }
+        $cozum = $this->adlar?->coz($product, $this->aktifDil);
+        $ad = $cozum === null ? (string) $product['name'] : $cozum['ad'];
         $adHtml = '<span class="pn">' . $e($ad) . '</span>';
         // İE#14 A1: ad ile orijinal AYNIYSA ikinci satır BASILMAZ (ortak kural).
         $orijinalMetin = \App\Services\Translation\ProductNaming::originalOf($product);
