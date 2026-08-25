@@ -1,7 +1,15 @@
 # CI HIZLANDIRMA PLANI + PLAYWRIGHT ALTYAPI ÖNERİSİ
 
-> **Durum:** PLAN. İE#22'de uygulanacak; bu belge kod değişikliği içermez.
+> **Durum:** PLAN — **K19 onayı ALINDI (PM, 25 Ağu 2026)**, uygulama İE#22'dedir.
+> rc5 kilidi sürerken CI'a ve bağımlılıklara dokunulmaz.
 > Ölçümler 25 Ağu 2026 tarihli rc5 ağacında yerel makinede alınmıştır.
+>
+> **Onayın şartları (PM):**
+> 1. CI 5'li matris — **bekçi test ZORUNLU** (§1.4). Dosya sayısı ↔ suite
+>    listeleri tutmuyorsa CI kırmızı. Matris bekçi testsiz kabul edilmez:
+>    "yeşil CI, koşmayan test" riskinin panzehiri budur.
+> 2. Playwright — yalnız **devDependency**, **chromium tek tarayıcı**, senaryo
+>    sırası **2 → 3 → 4 → 1** (görsel regresyon en sona).
 
 ---
 
@@ -171,5 +179,5 @@ Bu dördü geçtiğinde kapsam defteri **74/81 → 78/81** olur; kalan üç sena
    ilk dört senaryo. Kazanç: KT-EK-1..4 manuel maddeleri otomatikleşir, kapsam
    defteri 78/81'e çıkar.
 
-İkisi de **yeni bağımlılık** ya da **CI yapılandırma değişikliği** içerdiği için
-PM onayına tabidir (K19).
+İkisi de **yeni bağımlılık** ya da **CI yapılandırma değişikliği** içeriyordu;
+**K19 onayı 25 Ağu 2026'da alındı** (bekçi test zorunlu şart). Uygulama İE#22'de.

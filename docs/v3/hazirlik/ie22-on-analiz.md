@@ -179,19 +179,31 @@ sayfası dışa açık tek yüzeydir ve önbelleklenmiş bir sürümü asla sunu
 |---|---|---|
 | **A** | Bildirim altyapısı: tablo + `BildirimYayinci` + birleştirme + API ucu + merkez ekranı; **bugün tetiği olan 22 olay** (katalog K82 sonrası 37 olay) | yok |
 | **B** | Panorama iskeleti: 8 bağlanabilir brifing şablonu + boş gün varyantları + aksiyon kartları | yok |
-| **C** | Kur snapshot sürümlemesi (BRF-013/016 + Ayarlar §7 + NTF-FX-UPDATED) | yok |
+| **C** | Kur snapshot sürümlemesi (BRF-013/016 + Ayarlar §7 + NTF-FX-UPDATED) — **PM kararı 25 Ağu: İE#22'DE yapılır**, İE#23 hazır bulur. `lists.yuan_rate` → snapshot geçişi **K4/K48 genişletmesi** olarak karar kaydına yeni madde açılacak (bu emirde) | yok |
 | **D** | Ayarlar meta katmanı (arama, iz, kaydedilmemiş uyarısı) + içeriği olan 8 sekmeye taşıma | yok |
 | **E** | PWA (manifest + `/panel/` kapsamlı SW + güncelleme şeridi) | yok |
-| **F** | Test altyapısı: Playwright kurulumu (KT-EK-1..4'ün otomatikleşmesi) + `tests/Http` CI grup ayrımı + `LlmIstemci` arayüzü | yok |
+| **F** | Test altyapısı: **Playwright** (devDependency, chromium tek tarayıcı, senaryo sırası 2→3→4→1) + **`tests/Http` 5'li CI matrisi + bekçi test (ZORUNLU)** + `LlmIstemci` arayüzü. Ayrıntı: `docs/v3/hazirlik/ci-hizlandirma-plani.md`. **K19 ONAYI ALINDI (PM, 25 Ağu)** | yok |
 | **G** _(PM kararına bağlı)_ | Yakalama telemetrisi (BRF-014/015 + iki NTF) | yeni tablo |
 | **— (kapsam dışı önerisi)** | V3 statülü 8 brifing şablonu, 6 liste + 1 paylaşım olayı (`REVOKED`), sözlük CSV, firma portalı sekmesi | V3-C |
 | **— (düşen)** | `NTF-SHARE-EXPIRY-NEAR`, `NTF-SHARE-EXPIRED` | K82 — kataloğdan çıkarıldı |
 
-**PM kararı VERİLEN madde:**
+**PM kararı VERİLEN maddeler:**
 
 - ✅ **(K82, 25 Ağu 2026)** `NTF-SHARE-EXPIRY-NEAR/EXPIRED` **düşer**, süresiz anahtar
   kalır (K62 değişmez). Süre kavramı V3-C'de teklif geçerliliğine bağlanınca yeni
-  NTF açılır.
+  NTF açılır. **Nüans kayda geçti, karar değişmedi:** paylaşım LİNKİNİN süresi
+  (`lists.share_expires_at`) bugün vardır ve zorlanır; link süresi bildirimi
+  sorusu İE#23 karar listesinde kalır — paylaşım `shares` tablosuna taşınırken
+  o bağlamda karara bağlanacak.
+- ✅ **(PM, 25 Ağu 2026)** **Kur snapshot'ı İE#22'de yapılır** — üç özelliğin
+  (BRF-013/016 · Ayarlar §7 · `NTF-FX-UPDATED`) ortak önkoşulu burada; İE#23
+  hazır bulur. `lists.yuan_rate` → snapshot geçişi K4/K48 genişletmesi olarak
+  karar kaydına **yeni madde** açılarak yazılır.
+- ✅ **(PM, 25 Ağu 2026 · K19 onayı)** **CI 5'li matris** — bekçi test
+  (dosya sayısı ↔ suite listeleri) **zorunlu şarttır**; onsuz matris kabul
+  edilmez. rc5 kilidi sürerken CI'a dokunulmaz, uygulama İE#22'dedir.
+- ✅ **(PM, 25 Ağu 2026 · K19 onayı)** **Playwright** — yalnız devDependency,
+  chromium tek tarayıcı, senaryo sırası 2→3→4→1 (görsel regresyon sona).
 
 **PM'in karar vermesi gereken üç madde (İE#22 derlemesinde okunacak):**
 1. V3 statü sözlüğü panoramaya girecek mi, yoksa V3-C'ye mi bağlanacak? (§0)

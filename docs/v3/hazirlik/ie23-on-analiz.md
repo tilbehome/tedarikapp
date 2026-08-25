@@ -222,17 +222,27 @@ takılır.
 |---|---|---|
 | **A** | Şema: `suppliers`, `supplier_rounds`, `rfq_snapshots(+lines)`, `quote_responses(+lines)`, `quote_price_tiers`, `shares` (paylaşımın `lists`ten çıkması) | — |
 | **B** | Tur durum makinesi: 10 durum, 15 geçiş, sunucuda zorlanır; nihai gönderim kapısı (8 koşul) atomik + idempotent | A |
-| **C** | Kur snapshot'ı + `rate_policy=inherit\|refresh` | A · İE#22-C ile **aynı iş** — hangi emirde yapılacağı netleşmeli |
+| **C** | `rate_policy=inherit\|refresh` (tur bazlı kur seçimi) | A · **Kur snapshot altyapısı İE#22'DE yapılıyor** (PM kararı, 25 Ağu) — İE#23 hazır bulur, yalnız tura bağlar |
 | **D** | Portal istemcisi: 7 ekran, üç dil, otomatik kayıt, çevrimdışı taslak, çakışma ekranı | §0 mimari kararı |
 | **E** | Kör kıyas güvenlik testleri (URL/HTML/Excel/API'de yabancı `firma_id` yok) | B, D |
 | **F** | Excel gel-git: üretim + geri yükleme + `MANIFEST` imzası + aynı doğrulama çekirdeği | A, B |
 | **G** | Yapıştır-ayrıştır (sunucu) + 30 örneklik altın set sınavı (%90 / %0 kapısı) | A |
 | **H** | 6 yeni NTF kodu (`NTF-QUOTE-*`) + katalog güncellemesi | İE#22-A (bildirim altyapısı) |
 
-**PM'in karar vermesi gereken beş madde:**
-1. Portal mimarisi: ayrı Vite girdisi (`/portal/`) mi, sunucu HTML mi? (§0)
-2. Kur snapshot'ı İE#22'de mi İE#23'te mi yapılacak? (iki emir de istiyor — §5, İE#22 §1)
-3. `lists.yuan_rate` → tur bazlı kur: K4/K48 genişletmesi onaylanıyor mu? (§5)
-4. Link süresi (`share_expires_at`) için bildirim istiyor muyuz? K82 anahtar
-   gerekçesiyle yazıldı, link ayrı bir olgu ve verisi zaten var. (§3)
-5. 6 yeni `NTF-QUOTE-*` olayı katalog sürümüne girsin mi? (§7-H)
+**PM kararı VERİLEN maddeler (25 Ağu 2026):**
+
+- ✅ **Kur snapshot'ı İE#22'de yapılır**; İE#23 hazır bulur ve yalnız tura bağlar
+  (`rate_policy`). `lists.yuan_rate` → snapshot geçişi K4/K48 genişletmesi olarak
+  İE#22'de karar kaydına yazılacak. (§5)
+- ✅ **K82 değişmez:** anahtar süresizdir (K62/K82 aynen). Link süresi bildirimi
+  sorusu bu emirde açık kalır; paylaşım `shares` tablosuna taşınırken karara
+  bağlanacak. **PM ön eğilimi:** `EXPIRED` bildirimi düşük değerdedir — firma
+  zaten kilit ekranında görür; `EXPIRY-NEAR` ise "yenile" hatırlatması olarak
+  değerlendirilebilir. (§3)
+
+**PM'in karar vermesi gereken üç madde (İE#23 derlemesinde okunacak):**
+1. **Portal mimarisi:** ayrı Vite girdisi (`/portal/`) mi, sunucu HTML mi? (§0)
+   — PM notu: İE#23 derlemesinde karara bağlanacak, bu analiz masada olacak.
+2. Link süresi (`share_expires_at`) bildirimi: `shares` taşıması bağlamında
+   `EXPIRY-NEAR` "yenile" hatırlatması olarak açılsın mı? (§3)
+3. 6 yeni `NTF-QUOTE-*` olayı katalog sürümüne girsin mi? (§7-H)
