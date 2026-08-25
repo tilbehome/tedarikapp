@@ -95,7 +95,7 @@ final class ExportSnapshot
                 // İE#14 A4: kategori panelden ya da yakalamanın kırıntı yolundan gelir;
                 // yoksa null DONAR ve belgede hücre BOŞ basılır — "Kategorisiz" yazılmaz.
                 'category' => ProductDetails::kategori($product, $categoryNames, $this->values),
-                'name' => self::ad($product, self::dil($options)),
+                'name' => $this->ad($product, self::dil($options)),
                 'name_original' => $product['name_original'],
                 // İE#14 A4: detay yoksa en dolu 3-4 öznitelikten türetilir; o da yoksa null.
                 'detail' => ProductDetails::detay($product, $this->values),
@@ -145,7 +145,7 @@ final class ExportSnapshot
      *
      * @param array<string, mixed> $product
      */
-    private static function ad(array $product, string $dil): string
+    private function ad(array $product, string $dil): string
     {
         $orijinal = is_string($product['name_original'] ?? null) ? trim((string) $product['name_original']) : '';
 
