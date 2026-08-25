@@ -5,6 +5,72 @@ Her release'te bu dosya güncellenir (docs/07 bölüm 4). Kategoriler: Eklendi /
 
 ## [Yayınlanmadı]
 
+## [1.0.0] — TASLAK (kabul turu bekliyor · aday paket v1.0.0-rc5)
+
+> **BU BÖLÜM TASLAKTIR.** v1.0.0 adı, kabul turu (`docs/v3/hazirlik/kabul-turu-v1.md`
+> — KT-001..045 + KT-EK-1..4) Ürün Sahibi tarafından geçilmeden KULLANILMAZ.
+> Aday paket: `dist/tedarikapp-v1.0.0-rc5.zip`
+> · sha256 `92a8276a5e9d48e59df354c2f740c655b383b76656e2aa632c07d8b6c381f260`
+> · panel damgası `v3-faz1 @ 5aead15 (temiz)`.
+> Terfi yolu: `docs/v3/hazirlik/rc5-terfi-proseduru.md` (içerik birebir aynı
+> kalır; yalnız sürüm adı değişir, fark çıkarsa terfi İPTAL).
+
+### Faz 1 neyi kapattı (dilim dilim)
+
+- **Dilim 1 — temel hat (İE#18/19):** panel iskeleti, liste/ürün durum makinesi
+  (docs/04 §5), para disiplini (bcmath · `DECIMAL(12,2)` · kur listeye kilitli),
+  Excel/PDF/paylaşım çıktıları, eklenti v1 (yakalama + Gelen Kutusu).
+- **Dilim 2 — temiz kurulum (İE#20 D2-REV):** `/setup` sihirbazı sekiz durumu
+  adıyla söyleyen teşhis motoruna dönüştü; her arızanın onarımı sihirbazın
+  içinde. Kuyruk sertleştirildi (kira token'ı, kalp atışı, ölü mektup eylemleri).
+- **Dilim 3 — panel v3 ekranları (İE#21 B1–B14):** Keşif havuzu (sistem listesi:
+  hiçbir seçicide görünmez, silinemez/paylaşılamaz), liste komuta merkezi (aşama
+  çubuğu · özet şeridi · uyarı çipleri · toplu eylemler), ürün çekmecesi, Gelen
+  Kutusu deste modu, Paylaş penceresi, kilit ekranı (tazeleme sayacı · WhatsApp
+  köprüsü · deneme hakkı yumuşatma), belge antet/filigran şablonları, skor v1
+  kalibrasyonu, kategori ağacı, sürümlü çeviri belleği, marka kiti.
+- **Dilim 4 — eklenti v2 (İE#21 A1–A8):** sayfa içi panel (kapalı shadow DOM,
+  onaylı mockup'ın birebir uyarlaması), on durumlu akış şeridi, 16+ alan
+  önizlemesi ve doluluk halkası, mükerrerde dört seçenek, kalıcı kuyruk +
+  ölü mektup rozeti, MV3 uyanışında sahipsiz kayıt toparlama, seçici sürümleme,
+  prominent disclosure ve Store beyanlarıyla kelime düzeyinde çapraz denetim.
+
+### Saha düzeltmeleri (D1–D7 — canlı kurulumda bulundu, aynı turda kapatıldı)
+
+| # | Bulgu | Düzeltme |
+|---|---|---|
+| D1 | Kurulum/çeviri hattı canlıda ilk kez koşturuldu | altın set sınavı `bin/ceviri-sinavi.php` (salt okunur ölçüm) |
+| D2 | Sihirbaz her arızayı kendi içinde çözmüyordu | teşhis + onarım merkezi (sekiz durum) |
+| D3 | Tarayıcı otomatik doldurma Ayarlar formlarını sabote ediyordu | alan bazlı autofill kapatma |
+| D4a | Hedef diller alanı yazarken normalize ediliyordu | normalize yalnız blur/kaydet anında |
+| D4b | `bin/release.php` tanımsız bayrağı sessizce yok sayıyordu (`--surum`) | bilinmeyen bayrak artık HATA + doğru bayrak ipucu |
+| D5 | Sayfa içi panel bağlantıyı görmüyordu (popup çalışırken) | `core/baglanti.ts` tek kaynak: `lastError` okunur, geçici hatada yeniden denenir, bağlanınca hedef listesi kendiliğinden dolar; SPA sayaç sızıntısı giderildi |
+| D6 | LLM turu makine çevirisinin üstüne yazmıyordu (TR `mymemory`de donuyordu) | dil-bazlı adaylık + `tazele()` (makine satırının üstüne yazar, `llm:*`/`elle` korunur — K54) + sürümlü ve sürümsüz anahtarın birlikte tazelenmesi |
+| D7 | Kuyruk cron'da hiç işlemiyordu: `getmypid` `disable_functions` ile kapalı | `JobRunner::surecKimligi()` süreç fonksiyonlarına güvenmez; yoksa `random_bytes` tabanlı benzersiz kira kimliği |
+
+### Sayılar
+
+| Ölçü | Değer |
+|---|---|
+| PHPUnit | **1073** test (Http 445 · Services 406 · Core+Setup+Auth+Models+Integration+Support+Production 222) |
+| Vitest — panel | 201 test (23 dosya) |
+| Vitest — eklenti | 122 test (11 dosya) |
+| E2E kapsam defteri | **74/81** kapsandı · 7 bekliyor (gerekçeleri aşağıda) |
+| Statik denetim | PHPStan seviye 6+ temiz · PHP-CS-Fixer 337/337 temiz · tsc + ESLint temiz |
+| Migration | 0001–0030 (ileri yönlü, `Migrator::BASELINE_OBJECTS`) |
+| Karar kaydı | K1–K81 |
+
+### Bilinen eksikler (v1.0 kapsamı DIŞI — devredildi)
+
+- `E2E-PNL-20` (kural rozeti + geri alma) ve `E2E-PNL-50/51` (sözlük CSV içe
+  aktarımı): **özellikleriyle birlikte V3-B'ye** devredildi. Test, özellik
+  yazılmadan kodlanamaz.
+- `E2E-PNL-11/12/14/45`: kabul turuna manuel madde olarak eklendi
+  (KT-EK-1..4). Playwright altyapısı İE#22 kapsamındadır.
+- Bu yedi senaryo defterde **bekliyor** kalır; otomatik kanıtı olmayan senaryo
+  yeşil sayılmaz.
+
+
 ## [1.0.0-rc1] — 23 Ağustos 2026 (İE#21 · Faz 1 kapanış ADAYI)
 
 > **v1.0 HENÜZ İLAN EDİLMEDİ.** Bu bir ADAY sürümdür: Ürün Sahibi + PM kabul turu
