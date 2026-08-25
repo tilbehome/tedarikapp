@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import CeviriAyarlari from './CeviriAyarlari';
 
@@ -58,6 +58,14 @@ vi.mock('../../components/Toast', () => ({
 
 const { ayarlariKaydet, baglantiTesti } = casuslar;
 
+/** İlk kaydetme çağrısının gövdesi. */
+function ilkCagri(): Record<string, unknown> {
+  const cagri = ayarlariKaydet.mock.calls[0];
+  if (cagri === undefined) throw new Error('ayarlariKaydet çağrılmadı');
+
+  return cagri[0] as Record<string, unknown>;
+}
+
 beforeEach(() => {
   ayarlariKaydet.mockClear();
   baglantiTesti.mockClear();
@@ -90,7 +98,7 @@ describe('E2E-PNL-47 — sağlayıcı kaydı ve anahtar maskeleme', () => {
     await kullanici.click(screen.getByRole('button', { name: /Kaydet/i }));
 
     await waitFor(() => expect(ayarlariKaydet).toHaveBeenCalled());
-    expect(ayarlariKaydet.mock.calls[0]?.[0]).not.toHaveProperty('anahtar');
+    expect(ilkCagri()).not.toHaveProperty('anahtar');
   });
 });
 
@@ -124,22 +132,53 @@ describe('E2E-PNL-48 — bağlantı testi hatası EKRANDA kalır', () => {
 });
 
 describe('E2E-PNL-52 — hedef dil listesi', () => {
-  test('mevcut diller virgülle görünür ve değişiklik kaydedilir', async () => {
+  test('mevcut diller virgülle görünür', async () => {
+    render(<CeviriAyarlari />);
+
+    const kutu = await waitFor(() => screen.getByLabelText(/Hedef diller/) as HTMLInputElement);
+
+    expect(kutu.value).toBe('tr, en');
+  });
+
+  test('D4a — HARF HARF yazmak metni BOZMAZ (normalize yalnız blur/kaydet)', async () => {
     const kullanici = userEvent.setup();
     render(<CeviriAyarlari />);
 
     const kutu = await waitFor(() => screen.getByLabelText(/Hedef diller/) as HTMLInputElement);
-    expect(kutu.value).toBe('tr, en');
-
-    // TEK değişim olayı gönderiliyor (yapıştırma eşdeğeri). Harf harf yazmak bu
-    // alanda metni bozuyor: değer her tuşta normalize edilip yeniden basılıyor ve
-    // bileşen `setAnahtar((m) => m)` ile render tetiklemeye çalıştığı için React
-    // güncellemeyi atlıyor. BULGU olarak raporlandı; düzeltme panel kapsamındadır.
     await kullanici.click(kutu);
-    fireEvent.change(kutu, { target: { value: 'tr, en, zh' } });
+    await kullanici.clear(kutu);
+    await kullanici.type(kutu, 'tr, en, zh');
+
+    // Saha kusuru buydu: her tuşta normalize edilip geri yazıldığı için
+    // "tr, en, zh" → "enh" oluyordu. Artık yazılan metin AYNEN durur.
+    expect(kutu.value).toBe('tr, en, zh');
+  });
+
+  test('alan terk edilince liste normalize edilir', async () => {
+    const kullanici = userEvent.setup();
+    render(<CeviriAyarlari />);
+
+    const kutu = await waitFor(() => screen.getByLabelText(/Hedef diller/) as HTMLInputElement);
+    await kullanici.click(kutu);
+    await kullanici.clear(kutu);
+    await kullanici.type(kutu, ' TR ,, en , ZH ');
+    await kullanici.tab();
+
+    // Blur'da tek kural uygulanır: kırp, küçült, boşları at.
+    expect(kutu.value).toBe('tr, en, zh');
+  });
+
+  test("yazıp doğrudan Kaydet'e basmak son dili KAYBETMEZ", async () => {
+    const kullanici = userEvent.setup();
+    render(<CeviriAyarlari />);
+
+    const kutu = await waitFor(() => screen.getByLabelText(/Hedef diller/) as HTMLInputElement);
+    await kullanici.click(kutu);
+    await kullanici.clear(kutu);
+    await kullanici.type(kutu, 'tr, en, zh');
     await kullanici.click(screen.getByRole('button', { name: /Kaydet/i }));
 
     await waitFor(() => expect(ayarlariKaydet).toHaveBeenCalled());
-    expect(ayarlariKaydet.mock.calls[0]?.[0]).toMatchObject({ hedef_diller: ['tr', 'en', 'zh'] });
+    expect(ilkCagri()).toMatchObject({ hedef_diller: ['tr', 'en', 'zh'] });
   });
 });

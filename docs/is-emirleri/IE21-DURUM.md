@@ -112,3 +112,14 @@ tam mockup uyarlaması ayrı bir dilim olarak raporlanacak.
 **Kapsam defteri:** PNL-37/38/40 `kapsandi` (40/81). K81 istisnaları testlerle korunuyor:
 başlık bloğu üç dilli (`testK81_BASLIK_BLOGU_HER_DILDE_UC_DILLI`), K55 orijinal satır
 (`testE2E_PNL_39_ORIJINALSATIRUCDILDEAYNEN`).
+
+- **E2E kalanları (PM kararı, 25 Ağu 2026 — hiçbiri v1.0 blokajı DEĞİL):**
+  - `E2E-PNL-20` (kural rozeti + geri alma) ve `E2E-PNL-50/51` (sözlük CSV içe
+    aktarımı) **özellikleriyle birlikte V3-B'ye** devredildi. Kural motoru zaten
+    "B4 hariç" kabul edilmişti; CSV içe aktarma ucu hiç yazılmadı. Test, özellik
+    yazılmadan kodlanamaz.
+  - `E2E-PNL-11/12/14/45` kabul turuna MANUEL madde olarak eklendi:
+    `docs/v3/hazirlik/kabul-turu-v1.md` → **KT-EK-1..4**. Playwright altyapısı
+    (gerçek tarayıcı + MySQL turu) İE#22 kapsamındadır.
+  - Dördü de kapsam defterinde **bekliyor** kalır; "kapsandı" işaretlenmez —
+    otomatik kanıtı olmayan senaryo yeşil sayılmaz.

@@ -159,3 +159,20 @@ Yalnız aşağıdaki koşulların tamamını sağlayan küçük kusurlar `NOT` i
 - PM ve Ürün Sahibi notu açıkça kabul etmiştir.
 
 Örnek not-düşülüp-geçilebilir kusurlar: küme kartındaki ikincil hizalama farkı, işlevi etkilemeyen boşluk/ikon sorunu veya anlamı değiştirmeyen küçük metin hatası. TR/EN/ZH karışması, yanlış skor/sıralama, eksik verinin sıfır gösterilmesi ve HAZIR/tamamlama kapısının aşılması hiçbir koşulda bu sınıfa girmez.
+
+
+## KT-EK — Otomasyona girmeyen dört madde (PM kararı, 25 Ağu 2026)
+
+Bu dördü `e2e-kapsam-defteri.json`da **bekliyor** kalır ve otomatik koşumda
+aranmaz: ikisi GÖRSEL/dokunsal yargı, ikisi ekran düzeyinde Playwright turu
+ister (altyapı İE#22'de). Kabul turunda ELLE denenir; sonuç bu belgeye yazılır.
+
+| Kod | Karşılığı | Ekran | Nasıl denenir | Geçti sayılır |
+|---|---|---|---|---|
+| KT-EK-1 | E2E-PNL-11 | Keşif | Altı sütunlu matris 1440 ve 1024 genişlikte açılır; sütun başlıkları, hizalama ve dokunma hedefleri (≥44 px) gözle denetlenir | Yatay taşma yok, başlık-veri hizası bozulmuyor, dokunma hedefleri parmakla ıskalanmıyor |
+| KT-EK-2 | E2E-PNL-12 | Keşif | Süzgeç + sıralama seçilir, görünüm kaydedilir; adres çubuğu kopyalanıp yeni sekmede açılır; sonra kayıtlı görünüm yeniden seçilir | Adres durumu ekrana, ekran durumu adrese birebir yansıyor; kayıtlı görünüm aynı sonucu getiriyor |
+| KT-EK-3 | E2E-PNL-14 | Liste detay | 100+ ürünlü listede sayfa sonuna kadar kaydırılır, sonra başa dönülür | Hiçbir ürün iki kez görünmüyor, hiçbiri atlanmıyor, seçim kaydırmada kaybolmuyor |
+| KT-EK-4 | E2E-PNL-45 | Gelen Kutusu / kilit ekranı | Tazeleme sayacı dolana kadar beklenir; tarayıcı ağ sekmesi izlenir | Sayaç dolduğunda TEK istek/yenileme oluyor, yığılma yok |
+
+Bu dördü kritik gruplara dahildir: `NOT` ile geçilmeleri yalnız "Not düşülüp
+geçilebilir" bölümündeki koşulların tamamı sağlanırsa mümkündür.

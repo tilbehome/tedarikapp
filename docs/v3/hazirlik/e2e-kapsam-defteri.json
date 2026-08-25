@@ -243,13 +243,13 @@
       "baslik": "Altı sütunlu matrisin görsel ve dokunsal okunabilirliği",
       "durum": "bekliyor",
       "dosya": "",
-      "test": ""
+      "test": "Kabul turu MANUEL maddesi KT-EK-1 (görsel/dokunsal yargı); Playwright altyapısı İE#22."
     },
     "E2E-PNL-12": {
       "baslik": "Kaydedilmiş görünüm ve URL durumunun çift yönlü eşliği",
       "durum": "bekliyor",
       "dosya": "",
-      "test": ""
+      "test": "Kabul turu MANUEL maddesi KT-EK-2; Playwright altyapısı İE#22."
     },
     "E2E-PNL-13": {
       "baslik": "Boş sonuç durumu ve filtreyi temizleme",
@@ -261,7 +261,7 @@
       "baslik": "Sanal kaydırmada 100 ürünün tekilliği",
       "durum": "bekliyor",
       "dosya": "",
-      "test": ""
+      "test": "Kabul turu MANUEL maddesi KT-EK-3; Playwright altyapısı İE#22."
     },
     "E2E-PNL-15": {
       "baslik": "Eksik metrikte skor GİZLİ",
@@ -297,7 +297,7 @@
       "baslik": "Kural rozeti ve kural eylemini geri alma",
       "durum": "bekliyor",
       "dosya": "",
-      "test": ""
+      "test": "V3-B: kural motoru özelliğiyle birlikte (İE#22 defteri) — özellik yok, test yazılamaz."
     },
     "E2E-PNL-21": {
       "baslik": "Oturum grubunda toplu işlem atomikliği",
@@ -447,7 +447,7 @@
       "baslik": "Tazeleme sayacı tek istek üretir",
       "durum": "bekliyor",
       "dosya": "",
-      "test": ""
+      "test": "Kabul turu MANUEL maddesi KT-EK-4; Playwright altyapısı İE#22."
     },
     "E2E-PNL-46": {
       "baslik": "WhatsApp köprüsü numara ve metni doğru kodlar",
@@ -477,13 +477,13 @@
       "baslik": "Geçerli sözlük CSV içe aktarımı",
       "durum": "bekliyor",
       "dosya": "",
-      "test": ""
+      "test": "V3-B: sözlük CSV içe aktarımı özelliğiyle birlikte (İE#22 defteri)."
     },
     "E2E-PNL-51": {
       "baslik": "Hatalı sözlük CSV mevcut veriyi bozmaz",
       "durum": "bekliyor",
       "dosya": "",
-      "test": ""
+      "test": "V3-B: sözlük CSV içe aktarımı özelliğiyle birlikte (İE#22 defteri)."
     },
     "E2E-PNL-52": {
       "baslik": "Hedef dil listesi değişimi ve bağımlı UI",

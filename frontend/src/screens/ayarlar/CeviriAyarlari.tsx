@@ -24,6 +24,17 @@ export default function CeviriAyarlari() {
   const durum = useAsync((signal) => ceviriApi.ayarlar(signal), []);
   const [anahtar, setAnahtar] = useState('');
   const [kaydediliyor, setKaydediliyor] = useState(false);
+  /**
+   * D4a (saha bulgusu, 25 Ağu 2026): "Hedef diller" alanı HER TUŞ VURUŞUNDA
+   * listeyi normalize edip (`split/trim/filter` → `join(', ')`) kutuya geri
+   * yazıyordu. Sonuç: "tr, en, zh" yazmaya çalışan kullanıcı virgülden sonraki
+   * boşluğu kaybediyor, imleç sona atlıyor ve metin bozuluyordu.
+   *
+   * Çözüm: kutu SERBEST METİN taslağı tutar; listeye çevirme yalnız alan
+   * terk edilince (blur) ya da kaydederken yapılır. Yazarken kimse araya
+   * girmez — düzenleme bittiğinde biçim düzelir.
+   */
+  const [dillerTaslak, setDillerTaslak] = useState<string | null>(null);
   // D1: test sonucu EKRANDA kalır. Toast baloncuğu kaçırılabilir; bir hata
   // mesajının (ör. "model_not_found") okunup model alanına yansıtılması gerekir.
   const [test, setTest] = useState<{ basarili: boolean; mesaj: string } | null>(null);
@@ -38,12 +49,16 @@ export default function CeviriAyarlari() {
     event.preventDefault();
     if (!veri) return;
 
+    // Kullanıcı alanı terk etmeden Kaydet'e basmış olabilir: taslak ÖNCE işlenir,
+    // yoksa son yazdığı dil kaydedilmeden gider.
+    const hedefDiller = dilleriIsle();
+
     setKaydediliyor(true);
     try {
       await ceviriApi.ayarlariKaydet({
         saglayici: veri.saglayici,
         model: veri.model_ham,
-        hedef_diller: veri.hedef_diller,
+        hedef_diller: hedefDiller,
         acik: veri.acik,
         ...(anahtar.trim() ? { anahtar: anahtar.trim() } : {}),
       });
@@ -55,6 +70,23 @@ export default function CeviriAyarlari() {
     } finally {
       setKaydediliyor(false);
     }
+  };
+
+  /** "tr, en , ZH" → ['tr','en','zh'] — tek kural, iki çağıran (blur + kaydet). */
+  const dilleriAyristir = (metin: string): string[] =>
+    metin
+      .split(',')
+      .map((d) => d.trim().toLowerCase())
+      .filter(Boolean);
+
+  /** Taslağı listeye işler ve taslağı bırakır (kutu yine sunucu verisini gösterir). */
+  const dilleriIsle = (): string[] => {
+    if (dillerTaslak === null) return veri?.hedef_diller ?? [];
+    const diller = dilleriAyristir(dillerTaslak);
+    guncelle({ hedef_diller: diller });
+    setDillerTaslak(null);
+
+    return diller;
   };
 
   const guncelle = (yama: Partial<NonNullable<typeof veri>>) => {
@@ -149,15 +181,10 @@ export default function CeviriAyarlari() {
               {...otomatikDoldurmaKapali('hedef-diller')}
               {...dillerKalkani}
               className="field-input"
-              value={veri.hedef_diller.join(', ')}
-              onChange={(event) =>
-                guncelle({
-                  hedef_diller: event.target.value
-                    .split(',')
-                    .map((d) => d.trim().toLowerCase())
-                    .filter(Boolean),
-                })
-              }
+              // D4a: yazarken TASLAK gösterilir; kayıtlı liste yalnız taslak yokken basılır.
+              value={dillerTaslak ?? veri.hedef_diller.join(', ')}
+              onChange={(event) => setDillerTaslak(event.target.value)}
+              onBlur={() => dilleriIsle()}
             />
           </Field>
 
