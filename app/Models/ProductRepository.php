@@ -17,7 +17,7 @@ use DateTimeImmutable;
 final class ProductRepository
 {
     private const COLUMNS = 'id, list_id, sort_no, category_id, platform, external_id,
-        name, name_original, detail, url, vendor_name, vendor_url, sku_selection, sku_matrix,
+        name, name_original, name_elle, detail, url, vendor_name, vendor_url, sku_selection, sku_matrix,
         main_image, main_image_source, video_url, qty, price_yuan, price_ddp_usd, price_target_try,
         units_per_carton, tracking_no,
         raw_attributes, country_of_origin, country_of_dispatch,
@@ -263,11 +263,19 @@ final class ProductRepository
         $params = ['id' => $id, 'updated_at' => Dates::toStorage($now)];
 
         foreach ($fields as $column => $value) {
-            if (!in_array($column, [...self::WRITABLE, 'status', 'sort_no', 'list_id'], true)) {
+            if (!in_array($column, [...self::WRITABLE, 'status', 'sort_no', 'list_id', 'name_elle'], true)) {
                 continue;
             }
             $assignments[] = sprintf('%s = :%s', $column, $column);
             $params[$column] = $value;
+        }
+
+        // D11b: ADI KULLANICI YAZDIYSA İŞARETLENİR. Bu işaret olmadan, çeviri
+        // turu tazelendiğinde sunum katmanı kullanıcının düzelttiği adı da
+        // "eski çeviri" sanıp üzerine yeni öneriyi basardı (K54 ihlali).
+        if (array_key_exists('name', $fields) && !array_key_exists('name_elle', $fields)) {
+            $assignments[] = 'name_elle = :name_elle';
+            $params['name_elle'] = 1;
         }
         if ($assignments === []) {
             return;

@@ -145,10 +145,26 @@ final class ExportSnapshot
      */
     private static function ad(array $product, string $dil): string
     {
+        $orijinal = is_string($product['name_original'] ?? null) ? trim((string) $product['name_original']) : '';
+
         if ($dil === 'zh') {
-            $orijinal = $product['name_original'] ?? null;
-            if (is_string($orijinal) && trim($orijinal) !== '') {
-                return trim($orijinal);
+            if ($orijinal !== '') {
+                return $orijinal;
+            }
+
+            return (string) $product['name'];
+        }
+
+        // D11b: BELGE DE TAZELENEN ÇEVİRİYİ GÖSTERİR.
+        //
+        // `products.name` yakalama anında donar; çeviri turu yalnız belleği
+        // tazeler (K54 — öneri, alana yazılmaz). Belge ham `name`i basarsa,
+        // panelde yeni çeviri görünürken firmaya giden dosyada eski metin
+        // kalır. Kullanıcı elle düzelttiyse (`name_elle`) o ad DOKUNULMAZ.
+        if ((int) ($product['name_elle'] ?? 0) !== 1 && $orijinal !== '' && $this->values !== null) {
+            $ceviri = trim($this->values->value($orijinal));
+            if ($ceviri !== '' && $ceviri !== $orijinal) {
+                return $ceviri;
             }
         }
 

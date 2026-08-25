@@ -1,4 +1,5 @@
 import { Trash2 } from 'lucide-react';
+import { urunAdi } from '../../lib/urunAdi';
 import type { Product, ProductStatus, SupplyList } from '../../api/types';
 import { count, money } from '../../lib/format';
 import { productStatusLabels } from '../../locales/tr';
@@ -107,7 +108,7 @@ export default function UrunTablosu(props: Props) {
                     <input
                       type="checkbox"
                       className="h-4 w-4"
-                      aria-label={`${urun.name} seç`}
+                      aria-label={`${urunAdi(urun)} seç`}
                       checked={secili.includes(urun.id)}
                       onChange={(olay) =>
                         onSecili(
@@ -128,7 +129,7 @@ export default function UrunTablosu(props: Props) {
                       onClick={() => onAc(urun)}
                       data-testid="urun-adi"
                     >
-                      {urun.name}
+                      {urunAdi(urun)}
                     </button>
                     {urun.detail ? <span className="block truncate text-xs text-ink-3">{urun.detail}</span> : null}
                     <SatirUyarilari urun={urun} />
@@ -238,7 +239,7 @@ function SUTUN_TANIMLARI(siralamaBasligi: Props['siralamaBasligi']): SutunTanimi
       hucre: (urun, ctx) => (
         <MiktarHucresi
           deger={urun.qty}
-          etiket={urun.name}
+          etiket={urunAdi(urun)}
           kapali={ctx.liste.status === 'completed' || ctx.liste.status === 'cancelled'}
           onKaydet={(yeni) => ctx.eylemler.onMiktar(urun, yeni)}
         />

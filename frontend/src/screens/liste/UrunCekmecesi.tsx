@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { urunAdi } from '../../lib/urunAdi';
 import { Link } from 'react-router-dom';
 import { ExternalLink, Pencil, X } from 'lucide-react';
 import { products as productsApi } from '../../api/endpoints';
@@ -57,7 +58,7 @@ export default function UrunCekmecesi({ urunId, onKapat }: Props) {
       >
         <header className="sticky top-0 flex items-center justify-between gap-2 border-b border-line bg-surface px-4 py-3">
           <h2 className="truncate text-sm font-semibold text-ink">
-            {durum.data?.urun.name ?? 'Ürün'}
+            {durum.data?.urun === undefined ? 'Ürün' : urunAdi(durum.data.urun)}
           </h2>
           <div className="flex items-center gap-1">
             {durum.data ? (

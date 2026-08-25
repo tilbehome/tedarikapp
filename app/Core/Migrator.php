@@ -78,6 +78,10 @@ final class Migrator
             ['column' => ['listings', 'skor']],
             ['column' => ['translation_cache', 'guven']],
         ],
+        // D11b: ürün adını kullanıcı mı yazdı? (çeviri tazelemesi onaylı adı ezmesin)
+        '0031_urun_adi_elle' => [
+            ['column' => ['products', 'name_elle']],
+        ],
         // İE#21 B1: Keşif havuzu — küme anahtarı ve normalize arama alanı.
         '0030_kesif_havuzu' => [
             ['column' => ['listings', 'kume_anahtari']],

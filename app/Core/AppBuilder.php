@@ -133,7 +133,17 @@ final class AppBuilder
         $money = new MoneyService();
         $settingsRepository = new SettingsRepository($connection);
         // K4 düzeltmesi: taslak listeler GÜNCEL ayar kurunu gösterir — presenter ayarları bilir.
-        $presenter = new ListPresenter($lists, $products, $money, $services->timezone, $settingsRepository);
+        $presenter = new ListPresenter(
+            $lists,
+            $products,
+            $money,
+            $services->timezone,
+            $settingsRepository,
+            // D11b: ekrandaki ad, çeviri tazelendiğinde güncellenmeli.
+            new \App\Services\Translation\AdCozumleyici(
+                new \App\Models\TranslationCacheRepository($connection),
+            ),
+        );
         $validator = new InputValidator($money);
         $stateMachine = new StateMachine();
         $mutationPolicy = new ListMutationPolicy();

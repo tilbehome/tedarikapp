@@ -83,6 +83,15 @@ export interface Product {
   platform: string | null;
   external_id: string | null;
   name: string;
+  /**
+   * D11b: EKRANDA gösterilecek ad. `name` saklanan kayıttır; çeviri turu onu
+   * ezmez (K54). Bu alan en güncel kalıcı çeviriyi taşır — eski sürümlerle
+   * uyum için isteğe bağlıdır, yoksa `name` kullanılır.
+   */
+  ad_gosterim?: string;
+  /** 'elle' | 'ceviri' | 'yakalama' — arayüz rozeti bunu okur. */
+  ad_kaynak?: 'elle' | 'ceviri' | 'yakalama';
+  ad_saglayici?: string | null;
   name_original: string | null;
   detail: string | null;
   url: string | null;

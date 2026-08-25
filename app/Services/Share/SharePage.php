@@ -487,7 +487,24 @@ final class SharePage
         // İE#15 D1 — LİNK DİSİPLİNİ: ürün adı DÜZ METİNDİR. Sayfadan dış siteye
         // çıkan TEK öğe "Ürüne git" düğmesidir; firma yanlışlıkla kaynak siteye
         // düşmesin, çıkış bilinçli ve tek noktadan olsun.
+        // D11b: PAYLAŞIM SAYFASI DA TAZELENEN ÇEVİRİYİ GÖSTERİR.
+        //
+        // `products.name` yakalama anında donar; LLM turu yalnız çeviri belleğini
+        // tazeler (K54). Sayfa ham `name`i basarsa firma, panelde düzelmiş olan
+        // adın eski hâlini görür. Kullanıcı elle düzelttiyse (`name_elle`) o ad
+        // olduğu gibi kalır — onaylı metin hiçbir turla değişmez.
         $ad = (string) $product['name'];
+        $orijinalAd = is_string($product['name_original'] ?? null) ? trim((string) $product['name_original']) : '';
+        if (
+            (int) ($product['name_elle'] ?? 0) !== 1
+            && $orijinalAd !== ''
+            && $this->aktifDegerler !== null
+        ) {
+            $ceviriAdi = trim($this->aktifDegerler->value($orijinalAd));
+            if ($ceviriAdi !== '' && $ceviriAdi !== $orijinalAd) {
+                $ad = $ceviriAdi;
+            }
+        }
         $adHtml = '<span class="pn">' . $e($ad) . '</span>';
         // İE#14 A1: ad ile orijinal AYNIYSA ikinci satır BASILMAZ (ortak kural).
         $orijinalMetin = \App\Services\Translation\ProductNaming::originalOf($product);
