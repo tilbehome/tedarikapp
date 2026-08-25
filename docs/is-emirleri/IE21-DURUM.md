@@ -123,3 +123,44 @@ başlık bloğu üç dilli (`testK81_BASLIK_BLOGU_HER_DILDE_UC_DILLI`), K55 orij
     (gerçek tarayıcı + MySQL turu) İE#22 kapsamındadır.
   - Dördü de kapsam defterinde **bekliyor** kalır; "kapsandı" işaretlenmez —
     otomatik kanıtı olmayan senaryo yeşil sayılmaz.
+
+---
+
+## D5 SAHA BULGUSU (25 Ağu 2026) — sayfa içi panel bağlantıyı görmüyordu
+
+**Belirti (canlı, Çince `detail.1688.com`, panel rc'ye bağlı):** toolbar popup
+"bağlı ✓" derken sayfa içi panelde Hedef listesi BOŞ, "Yakala ve Gönder" pasif.
+
+**Kök neden — üç ayrı kusur üst üste:**
+
+1. `bridge.content.ts` → `arkaPlan()` **`chrome.runtime.lastError` okumuyordu**.
+   MV3 service worker uykudan kalkarken ilk mesaj düşer; callback yanıtsız
+   çağrılır ve eski kod bunu `BILINMEYEN_HATA` sanıyordu. Popup bu kontrolü
+   baştan beri yapıyordu — iki yüzey arasındaki farkın asıl kaynağı budur.
+2. `listeler()` ve `duranlar()` hatayı **yutup boş dizi** dönüyordu: "bağlantı
+   yok" ile "liste yok" ayırt edilemiyor, kullanıcıya sebep söylenmiyordu.
+3. `Akis.ac()` listeleri **açılışta bir kez** (`listeler.length === 0`) çekiyordu;
+   yeniden deneme yok, bağlantı kavramı yok, ayar sonradan girilse haber alan yok.
+
+**Düzeltme (rc4):**
+
+| Değişiklik | Dosya |
+|---|---|
+| Tek kaynak: durum sınıflandırma + yeniden deneme (`AYAR_EKSIK`/`YETKI` denenmez) | `extension/core/baglanti.ts` (yeni) |
+| `lastError` okunur; liste hatası fırlatılır; `storage.onChanged` ile otomatik tazeleme; SPA aralık sızıntısı giderildi | `extension/entrypoints/bridge.content.ts` |
+| Bağlantı durumu görünüme girdi, `baglantiyiTazele()`, önce-çiz açılış, bağlanınca son liste seçimi geri gelir | `extension/ui/v2/akis.ts` |
+| Bağlantı şeridi + "Yeniden dene"; boş seçici "Bağlantı bekleniyor…" der; `gonderDugmesiKapali()` saf kural | `extension/ui/v2/panel.ts`, `stil.ts`, `cekmece.ts` |
+
+**Ek olarak giderilen:** her SPA yönlendirmesinde `kur()` yeni bir 1 sn'lik
+`setInterval` açıyordu (sayaçlar üst üste birikiyordu); artık eski sayaç ve
+storage dinleyicisi sökülüyor.
+
+**Test:** `extension/tests/baglantiSenkronu.test.ts` — 11 test (sınıflandırma,
+geçici hatada yeniden deneme, kalıcı hatada denememe, açılışta otomatik dolan
+hedef listesi + son seçim, token sonradan girilince tazeleme, bağlantısızken de
+önizleme üretilmesi, gönder düğmesi kilidi). DOM'suz koşar: jsdom bağımlılığı
+eklenmedi (K19).
+
+**Sayfa varyantı notu:** global (TR arayüzlü) 1688 görünümünde ayrıştırıcı hiç
+uyanmıyor; Çince detay görünümü v1.0 için yeterlidir. Ayrıntı ve devir:
+`docs/v3/hazirlik/v3-e/platform-veri-kanali-raporu.md` §9 → V3-E/K.

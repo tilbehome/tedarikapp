@@ -284,3 +284,18 @@ Trendyol, Görev #17 platform matrisi kapsamına sokulmamıştır. Buradaki ama�
 ## 8. Sonuç
 
 PARTİ 1’de ana çıkarım kanalı Alibaba için `window.detailData`, Amazon için `/dp/` DOM’u, Tmall için SSR SKU paneli, Yiwugo için `window.__INITIAL_STATE__`, Trendyol için `window.__envoy__` olarak kapandı. Amazon fiyatı ile Yiwugo fiyat ölçeği özellikle belirsiz işaretlendi. Tmall ve Yiwugo’nun mevcut Görev #17 matrisinde satırı olmadığı doğrulandı; bu iki kanıt hiçbir mevcut platform hücresine varsayımla yazılmadı.
+
+## 9. EK — 1688 SAYFA VARYANTI (saha bulgusu D5, 25 Ağu 2026)
+
+Canlı denemede 1688 ürün sayfasının **iki ayrı sunumu** olduğu doğrulandı:
+
+| Varyant | Örnek adres | Gömülü durum | v1.0 kapsamı |
+|---|---|---|---|
+| Çince detay görünümü | `detail.1688.com/offer/<id>.html` | `window.__GLOBAL_DATA__` / `result.global.globalData.model` — ayrıştırıcı uyanıyor | **KAPSAM İÇİ** |
+| Global (TR arayüzlü) görünüm | 1688 global yönlendirmesi | Aynı model yolu **bulunamadı**; ayrıştırıcı hiç uyanmadı | Kapsam DIŞI → V3-E/K |
+
+Karar: v1.0 için Çince detay görünümü yeterlidir (Ürün Sahibi çalışma akışı bu
+görünüm üzerinden ilerliyor). Global varyantın veri kanalı **araştırılmadı**;
+varsayımla yol yazmak yerine burada `kanıtlanmadı` olarak duruyor. Global varyant
+adaptörü V3-E fikstür turunda (kanal tespiti) ve V3-K eklenti kataloğunda
+(adaptör sürümleme) ele alınacaktır.
