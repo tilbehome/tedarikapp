@@ -167,14 +167,15 @@ migration olup olmadığını da denetler. SQL yolu bu denetimi atlar.
 
 ### İE#22'ye devir (kozmetik, kalıcı çözüm)
 
-Sihirbaza bu durum için tek satırlık bir onay eklenir. İki seçenek var, PM
-seçmelidir:
+**PM KARARI (25 Ağu 2026): SEÇENEK B ONAYLI.** Sekiz durumlu teşhis sözleşmesi
+(D2-REV) **bozulmaz**; yeni durum açılmaz. Yapılacak iki şey:
 
-| Seçenek | Ne demek |
-|---|---|
-| **A — yeni durum** | `SAGLIKLI` içinde ayrı bir alt hâl: "Sağlıklı, ancak sürüm damgası eski" (rozet `iyi` kalır, uyarı satırı eklenir) + `damgayi_esitle` eylemi |
-| **B — SAĞLIKLI'ya ek eylem** | Durum kümesine dokunulmaz; `eylemler()` SAĞLIKLI dalına, yalnız `surum['ayni'] === false` iken görünen `damgayi_esitle` eylemi eklenir |
+1. `SetupSituation::eylemler()` SAĞLIKLI dalına, **yalnız `surum['ayni'] === false`
+   iken görünen** `damgayi_esitle` eylemi eklenir (yıkıcı değil; `POST /api/setup/update`
+   ucunu çağırır — uç zaten var).
+2. SAĞLIKLI açıklaması fark varsa **iki değeri birden** basar: "dosya X · kurulu Y".
+   Bugün yalnız `surum['kurulu']` basılıyor, yani ekranda eski damga "kurulu sürüm"
+   diye görünüyor — bulgunun ikinci yarısı budur.
 
-Öneri: **B** — sekiz durumlu teşhis sözleşmesi (D2-REV) korunur, tek satırlık
-eylem eklenir. Her iki durumda da SAĞLIKLI metni artık eski damgayı "kurulu
-sürüm" diye basmamalı; fark varsa iki değeri de göstermelidir.
+Reddedilen seçenek (kayıt için): `SAGLIKLI` içinde ayrı bir alt hâl açmak — teşhis
+sözleşmesini sekiz durumdan fazlasına çıkarırdı.

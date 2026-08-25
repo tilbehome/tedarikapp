@@ -248,7 +248,8 @@ Terfi sonrası adım 7 olarak zorunlu: sahiplik doğrulaması → `POST /api/set
 (yıkıcı değil; bekleyen yoksa yalnız damgayı tazeler) → `/setup`te dosya = kurulu
 doğrulaması. Son çare olarak tek satırlık SQL yolu da yazıldı, tercih edilmez.
 
-**Kalıcı çözüm:** İE#22, blok **H** (kozmetik). Öneri: sekiz durumlu teşhis
-sözleşmesi korunur; SAĞLIKLI eylemlerine yalnız `surum['ayni'] === false` iken
-görünen `damgayi_esitle` eklenir ve SAĞLIKLI metni fark varsa iki değeri birden
-basar.
+**Kalıcı çözüm:** İE#22, blok **H** (kozmetik) — **PM kararı 25 Ağu: seçenek B
+onaylı.** Sekiz durumlu teşhis sözleşmesi korunur; SAĞLIKLI eylemlerine yalnız
+`surum['ayni'] === false` iken görünen `damgayi_esitle` eklenir ve SAĞLIKLI metni
+fark varsa iki değeri birden basar ("dosya X · kurulu Y"). Terfi prosedürü
+§5 + adım 7 yolu (sihirbaz üzerinden; SQL son çare) v1.0.0 terfisinde koşulacak.

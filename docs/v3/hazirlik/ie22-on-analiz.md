@@ -184,7 +184,7 @@ sayfası dışa açık tek yüzeydir ve önbelleklenmiş bir sürümü asla sunu
 | **E** | PWA (manifest + `/panel/` kapsamlı SW + güncelleme şeridi) | yok |
 | **F** | Test altyapısı: **Playwright** (devDependency, chromium tek tarayıcı, senaryo sırası 2→3→4→1) + **`tests/Http` 5'li CI matrisi + bekçi test (ZORUNLU)** + `LlmIstemci` arayüzü. Ayrıntı: `docs/v3/hazirlik/ci-hizlandirma-plani.md`. **K19 ONAYI ALINDI (PM, 25 Ağu)** | yok |
 | **G** _(PM kararına bağlı)_ | Yakalama telemetrisi (BRF-014/015 + iki NTF) | yeni tablo |
-| **H** _(kozmetik, küçük)_ | **D8:** sihirbaz SAĞLIKLI durumunda "dosya sürümü ≠ DB damgası" farkını görmezden geliyor. `eylemler()` SAĞLIKLI dalına, yalnız `surum['ayni'] === false` iken görünen `damgayi_esitle` eylemi eklenir; SAĞLIKLI metni fark varsa İKİ değeri birden basar. Uç zaten var (`POST /api/setup/update` → `surumKaydet()`). Ayrıntı ve terfi arası çözüm: `rc5-terfi-proseduru.md` §5 | yok |
+| **H** _(kozmetik, küçük · **PM ONAYLI, seçenek B**)_ | **D8:** sihirbaz SAĞLIKLI durumunda "dosya sürümü ≠ DB damgası" farkını görmezden geliyor. Karar: sekiz durumlu teşhis sözleşmesi (D2-REV) BOZULMAZ; `eylemler()` SAĞLIKLI dalına yalnız `surum['ayni'] === false` iken görünen `damgayi_esitle` eylemi eklenir ve SAĞLIKLI metni fark varsa İKİ değeri birden basar ("dosya X · kurulu Y"). Uç zaten var (`POST /api/setup/update` → `surumKaydet()`). Ayrıntı: `rc5-terfi-proseduru.md` §5 | yok |
 | **— (kapsam dışı önerisi)** | V3 statülü 8 brifing şablonu, 6 liste + 1 paylaşım olayı (`REVOKED`), sözlük CSV, firma portalı sekmesi | V3-C |
 | **— (düşen)** | `NTF-SHARE-EXPIRY-NEAR`, `NTF-SHARE-EXPIRED` | K82 — kataloğdan çıkarıldı |
 
