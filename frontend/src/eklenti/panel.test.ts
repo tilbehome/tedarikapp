@@ -63,6 +63,7 @@ function eylemler(): PanelEylemleri {
     onDisclosure: vi.fn(),
     onKuyruk: vi.fn(),
     onPaneldeAc: vi.fn(),
+    onBaglantiyiDene: vi.fn(),
   };
 }
 
@@ -318,6 +319,48 @@ describe('E2E-EKL-13 — başarıda panelde aç', () => {
     const { govde } = ciz();
 
     expect(govde.querySelector('[data-eylem="panelde-ac"]')).toBeNull();
+  });
+});
+
+describe('D5 — bağlantı şeridi ve boş hedef seçici (saha bulgusu)', () => {
+  test('bağlıyken şerit ÇİZİLMEZ — gürültü yapmaz', () => {
+    const { govde } = ciz({ baglanti: 'BAGLI', baglantiMesaj: 'Panele bağlı' });
+
+    expect(govde.querySelector('[data-baglanti]')).toBeNull();
+  });
+
+  test('ulaşılamıyorsa sebep yazılır ve "Yeniden dene" düğmesi çıkar', () => {
+    const { govde, eylem } = ciz({
+      baglanti: 'ERISILEMIYOR',
+      baglantiMesaj: 'Panele ulaşılamıyor — yakalama kuyrukta bekler, bağlanınca gönderilir.',
+    });
+    const serit = govde.querySelector('[data-baglanti]') as HTMLElement;
+
+    expect(serit).not.toBeNull();
+    expect(serit.textContent).toContain('kuyrukta bekler');
+    (serit.querySelector('[data-eylem="baglanti-dene"]') as HTMLButtonElement).click();
+
+    expect(eylem.onBaglantiyiDene).toHaveBeenCalled();
+  });
+
+  test('deneme sürerken "yeniden dene" gösterilmez — iki kez tetiklenmesin', () => {
+    const { govde } = ciz({ baglanti: 'DENENIYOR', baglantiMesaj: 'Bağlantı deneniyor…' });
+
+    expect(govde.querySelector('[data-eylem="baglanti-dene"]')).toBeNull();
+  });
+
+  test('liste henüz gelmediyse seçici BOŞ değil, sebebini söyler', () => {
+    const { govde } = ciz({ listeler: [], baglanti: 'DENENIYOR', baglantiMesaj: 'Bağlantı deneniyor…' });
+    const secim = govde.querySelector('#tdk-liste') as HTMLSelectElement;
+
+    expect(secim.disabled).toBe(true);
+    expect(secim.options[0]?.textContent).toBe('Bağlantı bekleniyor…');
+  });
+
+  test('disclosure ekranında bağlantı şeridi çizilmez — tek mesaj, tek karar', () => {
+    const { govde } = ciz({ disclosureGerekli: true, baglanti: 'ERISILEMIYOR', baglantiMesaj: 'yok' });
+
+    expect(govde.querySelector('[data-baglanti]')).toBeNull();
   });
 });
 

@@ -58,7 +58,10 @@ function kur(fark: Partial<AkisBagimliliklari> = {}) {
     gonder: vi.fn(async (): Promise<GonderimYaniti> => ({ sonuc: 'BASARILI', urunId: 42 })),
     onayliMi: vi.fn(async () => true),
     duranlar: vi.fn(async () => []),
-    listeler: vi.fn(async () => [{ id: null, ad: 'Gelen Kutusu' }]),
+    // D5: bağımlılık artık HAM listeyi döner ve hata fırlatır; varsayılan hedefi
+    // `core/baglanti` başa ekler.
+    listeleriGetir: vi.fn(async () => []),
+    bekle: async () => {},
     kimlikUret: () => `cap-${++sayac}`,
     sonListeyiOku: vi.fn(async () => sonListe),
     sonListeyiYaz: vi.fn(async (id: number | null) => {
@@ -307,13 +310,12 @@ describe('E2E-EKL-22 — hedef liste ve son seçim', () => {
     const sonListeyiOku = vi.fn(async () => 7);
     const { akis } = kur({
       sonListeyiOku,
-      listeler: vi.fn(async () => [
-        { id: null, ad: 'Gelen Kutusu' },
-        { id: 7, ad: 'MUTFAK' },
-      ]),
+      listeleriGetir: vi.fn(async () => [{ id: 7, name: 'MUTFAK' }]),
     });
 
     await akis.ac();
+    // D5: açılış bağlantıyı BEKLEMEZ (önizleme gecikmesin); tazeleme ayrı biter.
+    await akis.baglantiyiTazele();
 
     expect(akis.gorunum().listeler).toHaveLength(2);
     expect(akis.gorunum().hedef.listeId).toBe(7);
@@ -322,10 +324,11 @@ describe('E2E-EKL-22 — hedef liste ve son seçim', () => {
   test('artık var olmayan liste hatırlanmaz — silinmiş listeye gönderilmez', async () => {
     const { akis } = kur({
       sonListeyiOku: vi.fn(async () => 99),
-      listeler: vi.fn(async () => [{ id: null, ad: 'Gelen Kutusu' }]),
+      listeleriGetir: vi.fn(async () => []),
     });
 
     await akis.ac();
+    await akis.baglantiyiTazele();
 
     expect(akis.gorunum().hedef.listeId).toBeNull();
   });
