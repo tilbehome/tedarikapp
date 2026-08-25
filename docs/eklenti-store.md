@@ -1,6 +1,6 @@
 # Chrome Web Store Yayın Paketi (İE#11 C5 — K38: Liste dışı/Unlisted)
 
-> Zip: `extension/dist/tedarikapp-eklenti-1.0.0-chrome.zip` (CI her PR'da yeniden üretir;
+> Zip: `extension/dist/tedarikapp-eklenti-2.0.0-chrome.zip` (CI her PR'da yeniden üretir;
 > yükleme öncesi lokalde `cd extension && npm run zip`).
 > Yayın türü: **Unlisted** — yalnız linki bilen kurabilir; mağaza aramasında görünmez.
 > Sabit extension ID yayında oluşur → `EXTENSION_ALLOWED_ORIGINS` config'ine
