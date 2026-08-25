@@ -225,3 +225,30 @@ süreç/sistem fonksiyonu çağrısı KALMADI (tarandı: `getmypid`, `posix_*`,
 ad-alanı düzeyinde taklit edilir (`App\Services\Kuyruk\function_exists`), yani
 fonksiyon-yok senaryosu gerçek sunucuya gitmeden koşar. Asıl kabul: ölümcül hata
 YOK ve 50 kimlik çakışmıyor.
+
+---
+
+## D8 SAHA BULGUSU (25 Ağu 2026) — sihirbaz eski sürüm damgasını SAĞLIKLI sayıyor
+
+**Belirti (canlı):** dosyalar `1.0.0-rc5`, veritabanındaki kurulu sürüm kaydı
+`0.12.1-beta`; sihirbaz durumu **SAĞLIKLI** raporluyor ve damga eşitleme adımı
+sunmuyor.
+
+**Kök neden (koddan doğrulandı):** `SetupSituation::kararVer()` içinde
+`SURUM_UYUSMAZLIGI` yalnız **bekleyen migration > 0** iken üretilir. Bekleyen 0 +
+damga eski → `SAGLIKLI`. Üstelik SAĞLIKLI açıklaması `$surum['kurulu']` değerini,
+yani eski damgayı "kurulu sürüm" diye basıyor.
+
+**Etki:** veri ve şema etkilenmez — damga bir ayar kaydıdır
+(`settings['system.app_version']`). Etkilenen şey teşhisin doğruluğudur.
+
+**Şimdiki çözüm (rc5 kilidi sürüyor, koda dokunulmadı):** terfi prosedürüne
+**§5 — DB sürüm damgası** bölümü eklendi (`docs/v3/hazirlik/rc5-terfi-proseduru.md`).
+Terfi sonrası adım 7 olarak zorunlu: sahiplik doğrulaması → `POST /api/setup/update`
+(yıkıcı değil; bekleyen yoksa yalnız damgayı tazeler) → `/setup`te dosya = kurulu
+doğrulaması. Son çare olarak tek satırlık SQL yolu da yazıldı, tercih edilmez.
+
+**Kalıcı çözüm:** İE#22, blok **H** (kozmetik). Öneri: sekiz durumlu teşhis
+sözleşmesi korunur; SAĞLIKLI eylemlerine yalnız `surum['ayni'] === false` iken
+görünen `damgayi_esitle` eklenir ve SAĞLIKLI metni fark varsa iki değeri birden
+basar.

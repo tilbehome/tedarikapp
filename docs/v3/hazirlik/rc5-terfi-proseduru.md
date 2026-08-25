@@ -121,3 +121,60 @@ maddeleri** yeniden koşulur (PM hangi maddelerin yeniden koşulacağına karar 
    ekran görüntüleri (kabul turu SONRASI panel dolu haldeyken Ürün Sahibi
    çekecek) `docs/eklenti-store.md` yönergesiyle yüklenir.
 6. Canlıya kurulum: `docs/07-deploy-runbook.md` + temiz kurulum eki.
+7. **DB SÜRÜM DAMGASINI EŞİTLE** — aşağıdaki §5. Atlanırsa sihirbaz
+   "dosyalar 1.0.0 · veritabanı 0.12.1-beta" der ve bunu SAĞLIKLI sayar.
+
+## 5) DB SÜRÜM DAMGASI (D8 saha bulgusu, 25 Ağu 2026)
+
+**Bulgu:** canlıda dosyalar `1.0.0-rc5`, veritabanındaki kurulu sürüm kaydı
+`0.12.1-beta` kaldı. Sihirbaz bunu **SAĞLIKLI** raporluyor ve eşitleme adımı
+sunmuyor.
+
+**Sebep (koddan doğrulandı):** `SetupSituation::kararVer()` içinde
+`SURUM_UYUSMAZLIGI` yalnız **bekleyen migration varken** üretilir
+(`if ($bekleyen > 0) { if (sürüm farklı) return SURUM_UYUSMAZLIGI; }`).
+Bekleyen 0 + damga eski → akış `SAGLIKLI`ye düşer ve SAĞLIKLI metni
+`$surum['kurulu']` değerini, yani **eski damgayı** basar. Damgayı tazeleyen
+uç (`POST /api/setup/update` → `surumKaydet()`) vardır ama SAĞLIKLI durumunda
+kullanıcıya sunulan eylemler yalnız "Panele git" ve "Temiz kurulum"dur.
+
+**Bu, veriyi etkilemez** — damga bir kayıttır, şema değil. Ama teşhis motorunun
+tek işi "hangi sürüm kurulu?" sorusuna doğru cevap vermektir; yanlış cevap veren
+teşhis, bir sonraki arızada yanıltır.
+
+### Terfi sonrası eşitleme (v1.0.0 kurulduktan sonra, canlıda)
+
+| Adım | Ne yapılır | Doğrulama |
+|---|---|---|
+| 1 | `/setup` açılır | Teşhis rozetinde sürüm satırı okunur: "dosya X · kurulu Y" |
+| 2 | X = Y ise **yapılacak bir şey yok** | — |
+| 3 | X ≠ Y ise: sahiplik doğrulaması (`Sahipliği doğrula` → parola + hesapta 2FA varsa kod) ile **yeniden kurulum bileti** alınır | Bilet alındı |
+| 4 | `POST /api/setup/update` koşulur ("Güncellemeyi çalıştır" eylemi bu ucu çağırır) | Yanıtta `onceki_surum` ve yeni sürüm görünür |
+| 5 | `/setup` yenilenir | Sürüm satırında dosya = kurulu |
+
+> Uç **yıkıcı değildir**: bekleyen migration yoksa `Migrator::run()` hiçbir şey
+> yapmaz, yalnız `settings['system.app_version']` tazelenir.
+
+**Son çare (yalnız sihirbaz erişilemiyorsa, PM onayıyla):** damga tek satırlık
+bir ayar kaydıdır ve elle yazılabilir —
+
+```sql
+UPDATE settings SET value = '1.0.0' WHERE `key` = 'system.app_version';
+```
+
+Bu yol **tercih edilmez**: sihirbaz üzerinden gitmek, aynı anda bekleyen
+migration olup olmadığını da denetler. SQL yolu bu denetimi atlar.
+
+### İE#22'ye devir (kozmetik, kalıcı çözüm)
+
+Sihirbaza bu durum için tek satırlık bir onay eklenir. İki seçenek var, PM
+seçmelidir:
+
+| Seçenek | Ne demek |
+|---|---|
+| **A — yeni durum** | `SAGLIKLI` içinde ayrı bir alt hâl: "Sağlıklı, ancak sürüm damgası eski" (rozet `iyi` kalır, uyarı satırı eklenir) + `damgayi_esitle` eylemi |
+| **B — SAĞLIKLI'ya ek eylem** | Durum kümesine dokunulmaz; `eylemler()` SAĞLIKLI dalına, yalnız `surum['ayni'] === false` iken görünen `damgayi_esitle` eylemi eklenir |
+
+Öneri: **B** — sekiz durumlu teşhis sözleşmesi (D2-REV) korunur, tek satırlık
+eylem eklenir. Her iki durumda da SAĞLIKLI metni artık eski damgayı "kurulu
+sürüm" diye basmamalı; fark varsa iki değeri de göstermelidir.
