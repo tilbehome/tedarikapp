@@ -47,11 +47,23 @@ function sayfaVerisiniOku(): Promise<PageData> {
   });
 }
 
+/**
+ * Background'a mesaj (D5 düzeltmesi).
+ *
+ * `chrome.runtime.lastError` OKUNMALIDIR: service worker uykudayken ya da
+ * yeniden yüklenirken ilk mesaj düşer ve callback yanıtsız çağrılır. Eskiden
+ * bu durum "BILINMEYEN_HATA"ya dönüşüyor, üstelik konsolda "Unchecked
+ * runtime.lastError" gürültüsü bırakıyordu. Popup bunu baştan beri okuyordu;
+ * sayfa içi panelin okumaması iki yüzey arasındaki farkın kaynağıydı.
+ */
 function arkaPlan<T>(type: string, payload?: unknown): Promise<T> {
   return new Promise((resolve, reject) => {
     chrome.runtime.sendMessage({ type, payload }, (yanit: { ok: boolean; data?: T; error?: string }) => {
-      if (yanit?.ok === true) resolve(yanit.data as T);
-      else reject(new Error(yanit?.error ?? 'BILINMEYEN_HATA'));
+      const hata = chrome.runtime.lastError;
+      if (hata) return reject(new Error(hata.message ?? 'MESAJ_ULASMADI'));
+      if (yanit?.ok === true) return resolve(yanit.data as T);
+
+      return reject(new Error(yanit?.error ?? 'BILINMEYEN_HATA'));
     });
   });
 }
@@ -138,15 +150,9 @@ export default defineContentScript({
             return [];
           }
         },
-        listeler: async () => {
-          try {
-            const liste = await arkaPlan<{ id: number; name: string }[]>('LISTS');
-
-            return [{ id: null, ad: 'Gelen Kutusu (varsayılan)' }, ...liste.map((l) => ({ id: l.id, ad: l.name }))];
-          } catch {
-            return [{ id: null, ad: 'Gelen Kutusu (varsayılan)' }];
-          }
-        },
+        // D5: hata YUTULMAZ; sınıflandırmayı ve yeniden denemeyi `core/baglanti`
+        // yapar, sonucu kullanıcı şeritte görür.
+        listeleriGetir: () => arkaPlan<{ id: number; name: string }[]>('LISTS'),
         kimlikUret: () => crypto.randomUUID(),
         // EKL-22: son hedef liste hatırlanır (cihaz yerelinde).
         sonListeyiOku: async () => {
@@ -186,6 +192,7 @@ export default defineContentScript({
             ).then(() => akis.disclosureKarari(onay));
           },
           onPaneldeAc: () => akis.paneldeAc(),
+          onBaglantiyiDene: () => void akis.baglantiyiTazele(),
           onKuyruk: (captureId, eylem) => {
             void arkaPlan('KUYRUK_EYLEM', { captureId, eylem }).then(() => akis.duranlariTazele());
           },
@@ -196,23 +203,47 @@ export default defineContentScript({
       const montaj = montajYap({
         onTikla: () => {
           cekmece.ac();
+          // Sayfayı okumak BAĞLANTIDAN bağımsızdır (panel kapalıyken de önizleme
+          // görülebilmeli) ama ONAYDAN bağımsız DEĞİLDİR: disclosure alınmadan
+          // sayfa okunmaz (A8).
           void akis.ac().then(() => {
             if (!akis.gorunum().disclosureGerekli) void akis.tara();
           });
         },
       });
 
+      // D5: ayarlar (panel adresi / token) sonradan girilir ya da düzeltilirse
+      // sayfa içi panel bunu KENDİLİĞİNDEN görür. Eskiden yalnız açılışta bir kez
+      // sorulduğu için, popup'tan token girildikten sonra bile sayfa içi panel
+      // "bağlantı yok" kalıyordu.
+      const ayarDinleyicisi = (
+        degisiklikler: Record<string, chrome.storage.StorageChange>,
+        alan: string,
+      ): void => {
+        if (alan !== 'local') return;
+        if (!('panelUrl' in degisiklikler) && !('token' in degisiklikler)) return;
+        void akis.baglantiyiTazele();
+      };
+      chrome.storage.onChanged.addListener(ayarDinleyicisi);
+
       // SPA yönlendirmesi: offer değişince önizleme temizlenir (EKL-23).
+      //
+      // ARALIK SIZINTISI DÜZELTMESİ (D5 turu): `kur()` her yönlendirmede yeniden
+      // çağrıldığı için her seferinde YENİ bir interval açılıyordu; on yönlendirme
+      // sonra sayfada on sayaç dönüyor, hepsi aynı işi tekrar tekrar yapıyordu.
+      // Artık eski sayaç ve dinleyici sökülür.
       let sonOffer = offerId(location.href);
-      window.setInterval(() => {
+      const sayac = window.setInterval(() => {
         const simdiki = offerId(location.href);
-        if (simdiki !== sonOffer) {
-          sonOffer = simdiki;
-          akis.sayfaDegisti();
-          cekmece.kapat();
-          montajiKaldir();
-          kur();
-        }
+        if (simdiki === sonOffer) return;
+
+        sonOffer = simdiki;
+        window.clearInterval(sayac);
+        chrome.storage.onChanged.removeListener(ayarDinleyicisi);
+        akis.sayfaDegisti();
+        cekmece.kapat();
+        montajiKaldir();
+        kur();
       }, 1000);
 
       if (montaj.tur === 'YOK') {

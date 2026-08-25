@@ -15,6 +15,7 @@ import {
   type MukerrerSecenegi,
 } from '../../core/durumMakinesi';
 import { alanRaporu, gonderimiEngelleyenler, type AlanRaporu } from '../../core/alanRaporu';
+import { baglantiMesaji, baglantiyiDene, type BaglantiDurumu } from '../../core/baglanti';
 import type { ParseResult } from '../../core/types';
 import type { DuranKayit, HedefSecimi, PanelGorunumu } from './panel';
 
@@ -27,8 +28,13 @@ export interface AkisBagimliliklari {
   onayliMi: () => Promise<boolean>;
   /** Kuyrukta duran (hakkı bitmiş) kayıtlar. */
   duranlar: () => Promise<DuranKayit[]>;
-  /** Hedef liste seçenekleri. */
-  listeler: () => Promise<{ id: number | null; ad: string }[]>;
+  /**
+   * Panelden hedef listeleri ÇEKER ve hata FIRLATIR.
+   *
+   * D5: eskiden burada hata yutulup boş dizi dönüyordu; bağlantı yokluğu ile
+   * "liste yok" ayırt edilemiyordu. Artık sınıflandırmayı `core/baglanti` yapar.
+   */
+  listeleriGetir: () => Promise<{ id: number; name: string }[]>;
   /** Yeni yakalama kimliği (UUID). */
   kimlikUret: () => string;
   /** Son seçilen hedef listeyi hatırlar (EKL-22). */
@@ -38,6 +44,8 @@ export interface AkisBagimliliklari {
   paneldeAc: (urunId: number | null) => void;
   /** Görünüm değişince çağrılır — arayüz kendini yeniden çizer. */
   ciz: (gorunum: PanelGorunumu) => void;
+  /** Yeniden denemeler arasındaki bekleme (testte anında döner). */
+  bekle?: (ms: number) => Promise<void>;
 }
 
 export type GonderimYaniti =
@@ -65,6 +73,11 @@ export class Akis {
 
   private disclosureGerekli = false;
 
+  /** D5: bağlantı popup ile AYNI kaynaktan okunur ve ekranda görünür. */
+  private baglanti: BaglantiDurumu = 'BILINMIYOR';
+
+  private baglantiMesaj = baglantiMesaji('BILINMIYOR');
+
   /** Gönderim/mükerrer yanıtından gelen ürün kimliği — "Panelde aç" bunu kullanır. */
   private urunId: number | null = null;
 
@@ -87,6 +100,8 @@ export class Akis {
       duranlar: this.duranlar,
       disclosureGerekli: this.disclosureGerekli,
       urunId: this.urunId,
+      baglanti: this.baglanti,
+      baglantiMesaj: this.baglantiMesaj,
     };
   }
 
@@ -103,26 +118,72 @@ export class Akis {
     this.bagimliliklar.ciz(this.gorunum());
   }
 
-  /** Panel açılışı: onay durumu, listeler ve duran kayıtlar okunur. */
+  /**
+   * Panel açılışı. ÖNCE ÇİZ, sonra yükle: kullanıcı boş bir kabuk görmemeli
+   * (D5'te panel, veriler gelene kadar bağlantısız görünüyordu).
+   */
   public async ac(): Promise<void> {
-    this.disclosureGerekli = !(await this.bagimliliklar.onayliMi());
-    this.duranlar = await this.bagimliliklar.duranlar();
-    if (!this.disclosureGerekli && this.listeler.length === 0) {
-      this.listeler = await this.bagimliliklar.listeler();
-      // EKL-22: son seçim hatırlanır — her yakalamada listeyi yeniden seçmek,
-      // aynı listeye 30 ürün ekleyen kullanıcı için 30 kez tekrarlanan bir zahmettir.
+    this.yayinla();
+
+    this.disclosureGerekli = !(await this.bagimliliklar.onayliMi().catch(() => false));
+    // Duran kayıt okunamazsa panel açılmayı sürdürür: kuyruk rozetinin yokluğu,
+    // bağlantı şeridinin söylediği şeyi ikinci kez söylemesin.
+    this.duranlar = await this.bagimliliklar.duranlar().catch(() => []);
+    this.yayinla();
+
+    // Bağlantı denemesi BEKLENMEZ: tarama onu beklerse, panele ulaşılamayan
+    // kullanıcı önizlemeyi saniyelerce geç görür. Sonuç geldiğinde şerit ve
+    // hedef listesi kendiliğinden tazelenir.
+    if (!this.disclosureGerekli) {
+      void this.baglantiyiTazele();
+    }
+  }
+
+  /**
+   * BAĞLANTIYI DENE (D5): sonuç ne olursa olsun EKRANA yazılır.
+   *
+   * Geçici hatada tekrar denenir (`core/baglanti`); bağlanınca hedef listesi
+   * kendiliğinden dolar ve son seçim geri gelir. Kullanıcının "yeniden dene"ye
+   * basması gerekmez — basmak isterse düğme de vardır.
+   */
+  public async baglantiyiTazele(): Promise<void> {
+    this.baglanti = 'DENENIYOR';
+    this.baglantiMesaj = baglantiMesaji('DENENIYOR');
+    this.yayinla();
+
+    const sonuc = await baglantiyiDene({
+      listeleriGetir: this.bagimliliklar.listeleriGetir,
+      bekle: this.bagimliliklar.bekle,
+    });
+    this.baglanti = sonuc.durum;
+    this.baglantiMesaj = sonuc.mesaj;
+
+    if (sonuc.durum === 'BAGLI') {
+      this.listeler = sonuc.listeler;
+      // EKL-22: son seçim hatırlanır — aynı listeye 30 ürün ekleyen kullanıcı
+      // listeyi 30 kez seçmemeli.
       const sonListe = await this.bagimliliklar.sonListeyiOku();
       if (this.listeler.some((liste) => liste.id === sonListe)) {
         this.hedef = { ...this.hedef, listeId: sonListe };
       }
     }
+
     this.yayinla();
+  }
+
+  /**
+   * Gönderim mümkün mü? Ulaşılamıyorsa MÜMKÜNDÜR — kuyruk devreye girer.
+   * Ayar/token eksikse değildir: kuyruk aynı hatayı biriktirmekten başka bir şey
+   * yapamaz.
+   */
+  public gonderilebilirMi(): boolean {
+    return this.baglanti !== 'AYAR_EKSIK' && this.baglanti !== 'YETKI';
   }
 
   public async disclosureKarari(onay: boolean): Promise<void> {
     this.disclosureGerekli = !onay;
     if (onay) {
-      this.listeler = await this.bagimliliklar.listeler();
+      await this.baglantiyiTazele();
       await this.tara();
 
       return;

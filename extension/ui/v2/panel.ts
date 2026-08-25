@@ -23,6 +23,7 @@ import {
 } from '../../core/durumMakinesi';
 import { DISCLOSURE_METNI } from '../../core/disclosure';
 import { dolulukYuzdesi, type AlanRaporu } from '../../core/alanRaporu';
+import type { BaglantiDurumu } from '../../core/baglanti';
 
 export interface HedefSecimi {
   listeId: number | null;
@@ -50,6 +51,9 @@ export interface PanelGorunumu {
   disclosureGerekli: boolean;
   /** Gönderim/mükerrer yanıtından gelen ürün kimliği (varsa "Panelde aç"). */
   urunId?: number | null;
+  /** D5: bağlantı durumu — popup ile aynı kaynaktan. */
+  baglanti?: BaglantiDurumu;
+  baglantiMesaj?: string;
 }
 
 export interface PanelEylemleri {
@@ -64,6 +68,8 @@ export interface PanelEylemleri {
   onKuyruk: (captureId: string, eylem: 'YENIDEN' | 'DUZELT' | 'VAZGEC') => void;
   /** Paneldeki kaydı açar (başarı ve mükerrer durumlarında). */
   onPaneldeAc: () => void;
+  /** Bağlantıyı yeniden dener (D5). */
+  onBaglantiyiDene: () => void;
 }
 
 function el<K extends keyof HTMLElementTagNameMap>(
@@ -85,6 +91,61 @@ export function durumSeridi(durum: Durum): HTMLElement {
   serit.setAttribute('role', 'status');
   serit.setAttribute('aria-live', 'polite');
   serit.append(el('span', 'nokta'), el('span', 'metin', DURUM_METINLERI[durum]));
+
+  return serit;
+}
+
+/**
+ * GÖNDER DÜĞMESİ KİLİDİ (D5) — saf kural, çizimden ayrı.
+ *
+ * Durum makinesi gönderime izin vermeli ve disclosure onayı alınmış olmalıdır.
+ *
+ * BAĞLANTI KOŞULU İNCEDİR: panele ULAŞILAMIYOR olmak gönderimi engellemez —
+ * yakalama cihaz kuyruğunda bekler ve bağlanınca gider (alt bilgideki söz budur).
+ * Engelleyen tek şey, kullanıcı eylemi olmadan ÇÖZÜLEMEYECEK durumlardır: ayar
+ * girilmemişse gönderilecek adres yoktur, token geçersizse kuyruk yalnız aynı
+ * hatayı biriktirir. D5'te düğme her bağlantısızlıkta pasifti; sebebi de
+ * yazmıyordu — kullanıcı eklentiyi bozuk sanıyordu.
+ *
+ * Ayrı fonksiyon olması bilinçlidir: kural DOM'suz test edilebilir.
+ */
+export const GONDERILEBILIR_DURUMLAR = ['D3_ONIZLEME', 'D4_KISMI', 'D8_MUKERRER', 'D10_SUNUCU_HATASI'];
+
+export const GONDERIMI_ENGELLEYEN_BAGLANTILAR = ['AYAR_EKSIK', 'YETKI'];
+
+export function gonderDugmesiKapali(gorunum: PanelGorunumu): boolean {
+  if (!GONDERILEBILIR_DURUMLAR.includes(gorunum.makine.durum)) return true;
+  if (gorunum.disclosureGerekli) return true;
+
+  return GONDERIMI_ENGELLEYEN_BAGLANTILAR.includes(gorunum.baglanti ?? 'BILINMIYOR');
+}
+
+/**
+ * BAĞLANTI ŞERİDİ (D5).
+ *
+ * Popup "bağlı ✓" derken sayfa içi panelin sessizce bağlantısız kalması, bu
+ * şeridin yokluğundandı: kullanıcı ne olduğunu göremiyordu. Şerit üç şey söyler —
+ * durum, sebep ve (gerekiyorsa) ne yapılacağı.
+ */
+export function baglantiSeridi(
+  durum: BaglantiDurumu,
+  mesaj: string,
+  onDene: () => void,
+): HTMLElement | null {
+  if (durum === 'BAGLI') return null;
+
+  const serit = el('div', 'tdk-baglanti');
+  serit.setAttribute('data-baglanti', durum);
+  serit.setAttribute('role', 'status');
+  serit.append(el('span', 'metin', mesaj));
+
+  if (durum !== 'DENENIYOR') {
+    const dugme = el('button', undefined, 'Yeniden dene');
+    dugme.type = 'button';
+    dugme.setAttribute('data-eylem', 'baglanti-dene');
+    dugme.addEventListener('click', onDene);
+    serit.append(dugme);
+  }
 
   return serit;
 }
@@ -265,6 +326,13 @@ export function hedefBolumu(
   listeEtiket.htmlFor = 'tdk-liste';
   const secim = el('select');
   secim.id = 'tdk-liste';
+  if (gorunum.listeler.length === 0) {
+    // Boş seçici "liste yok" gibi görünüyordu; artık NEDEN boş olduğunu söyler.
+    const bekleme = el('option', undefined, 'Bağlantı bekleniyor…');
+    bekleme.value = '';
+    secim.append(bekleme);
+    secim.disabled = true;
+  }
   for (const liste of gorunum.listeler) {
     const secenek = el('option', undefined, liste.ad);
     secenek.value = liste.id === null ? '' : String(liste.id);
@@ -325,6 +393,13 @@ export function hedefBolumu(
 export function panelGovdesi(gorunum: PanelGorunumu, eylemler: PanelEylemleri): HTMLElement {
   const govde = el('div', 'tdk-govde');
   govde.append(durumSeridi(gorunum.makine.durum));
+
+  const baglanti = baglantiSeridi(
+    gorunum.baglanti ?? 'BILINMIYOR',
+    gorunum.baglantiMesaj ?? '',
+    eylemler.onBaglantiyiDene,
+  );
+  if (baglanti !== null && !gorunum.disclosureGerekli) govde.append(baglanti);
 
   if (gorunum.disclosureGerekli) {
     govde.append(disclosureBolumu(eylemler.onDisclosure));

@@ -138,6 +138,16 @@ button { font: inherit; cursor: pointer; border: 0; }
   padding: 8px 10px; font-size: 12.5px; color: var(--n900); }
 .tdk-mukerrer button:hover { border-color: var(--lacivert); }
 
+/* ── BAĞLANTI ŞERİDİ (D5) ───────────────────────────────────────────── */
+.tdk-baglanti { display: flex; align-items: center; gap: 8px; font-size: 12px; padding: 9px 12px;
+  border-radius: var(--r8); background: var(--sari-zemin); color: var(--sari); border: 1px solid #F3E2BE; }
+.tdk-baglanti[data-baglanti="DENENIYOR"] { background: #EEF2FF; color: #3730A3; border-color: #DDE3FF; }
+.tdk-baglanti[data-baglanti="ERISILEMIYOR"], .tdk-baglanti[data-baglanti="YETKI"] {
+  background: #FDECEA; color: var(--kirmizi); border-color: #F3C6C0; }
+.tdk-baglanti .metin { flex: 1; }
+.tdk-baglanti button { background: #fff; border: 1px solid currentColor; border-radius: var(--r8);
+  padding: 4px 10px; font-size: 11.5px; color: inherit; }
+
 /* ── KUYRUK ROZETİ (dead-letter ikizi) ──────────────────────────────── */
 .tdk-kuyruk { display: grid; gap: 6px; border: 1px solid #F3C6C0; background: #FDECEA; border-radius: var(--r12);
   padding: 10px 12px; font-size: 12px; color: var(--kirmizi); }

@@ -9,7 +9,7 @@
  * içeri, bizimki dışarı sızmaz (EKL-26).
  */
 
-import { panelGovdesi, type PanelEylemleri, type PanelGorunumu } from './panel';
+import { gonderDugmesiKapali, panelGovdesi, type PanelEylemleri, type PanelGorunumu } from './panel';
 import { V2_CSS } from './stil';
 
 export interface Cekmece {
@@ -123,9 +123,10 @@ export function cekmeceKur(secenekler: CekmeceSecenekleri): Cekmece {
     ciz(gorunum: PanelGorunumu) {
       govdeKabi.replaceChildren(panelGovdesi(gorunum, secenekler.eylemler));
       // Gönder düğmesi yalnız gönderilebilir durumlarda etkindir; kilidi
-      // durum makinesi belirler, arayüz kendi kuralını uydurmaz.
-      const gonderilebilirDurumlar = ['D3_ONIZLEME', 'D4_KISMI', 'D8_MUKERRER', 'D10_SUNUCU_HATASI'];
-      gonder.disabled = !gonderilebilirDurumlar.includes(gorunum.makine.durum) || gorunum.disclosureGerekli;
+      // durum makinesi + bağlantı belirler (bkz. `gonderDugmesiKapali`), arayüz
+      // kendi kuralını uydurmaz. D5: bağlantı yoksa düğme kapalıdır ama SEBEBİ
+      // şeritte yazar; sessiz pasif düğme "eklenti bozuk" izlenimi veriyordu.
+      gonder.disabled = gonderDugmesiKapali(gorunum);
     },
   };
 }
