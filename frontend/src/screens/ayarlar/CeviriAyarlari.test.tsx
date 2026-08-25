@@ -33,7 +33,7 @@ const casuslar = vi.hoisted(() => ({
     acik: true,
     bekleyen: 3,
   })),
-  ayarlariKaydet: vi.fn(async () => ({})),
+  ayarlariKaydet: vi.fn(async (_govde: Record<string, unknown>) => ({})),
   baglantiTesti: vi.fn(async () => ({
     basarili: true,
     saglayici: 'deepseek',
