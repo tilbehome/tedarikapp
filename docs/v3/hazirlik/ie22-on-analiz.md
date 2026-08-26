@@ -210,3 +210,29 @@ sayfası dışa açık tek yüzeydir ve önbelleklenmiş bir sürümü asla sunu
 1. V3 statü sözlüğü panoramaya girecek mi, yoksa V3-C'ye mi bağlanacak? (§0)
 2. `bilgi` önemli 20 olay bildirim merkezine düşsün mü, yoksa yalnız panoramada mı görünsün? (§2)
 3. İçeriği olmayan 8 ayar sekmesi baştan görünsün mü, yoksa özellik geldikçe mi açılsın? (§3)
+
+---
+
+## 8. rc6 DENETİMİNDEN GELEN DÜZELTME MADDELERİ
+
+> Bu bölüm İE#22'nin madde listesidir; rc6 PM denetiminde bulunan, **rc6'yı
+> bloklamayan** ama kapatılması gereken kalıntılar buraya yazılır. rc6 paketi ve
+> damgası bu kayıtla DEĞİŞMEZ; rc7 kararı PM'e aittir.
+
+### İE22-D9-1 — `JobRunner::kos()` catch dalında `askidaki` temizlenmiyor (D9-KESİN kalıntısı)
+
+`JobRunner::kos()` catch dalında `$this->askidaki = null` **eksik**. `basarisiz()`
+token'ı sildikten sonra tur o işle biterse shutdown kancası eski token'la
+`birak()` çağırır, eşleşmez ve STDERR'e
+`YARIDA KESİLDİ: #N bırakılamadı (kira devralınmış olabilir)` yazar — **yanlış
+teşhis**. İşin kendisi doğru işlenmiştir (`basarisiz()` durumu zaten yazmıştır);
+zarar, günlüğe okuyanı yanıltan bir satır düşmesidir: operatör olmayan bir kira
+devralmasını arar.
+
+- **Düzeltme:** catch dalında `basarisiz()` çağrısından sonra `$this->askidaki = null;`
+  (başarı dalında ve tanınmayan-tür dalında zaten var — eksik olan yalnız bu dal).
+- **Test:** hata veren tek işlik turda `askidakiIs()` **null** döner.
+- **Boyut:** tek satır + tek test. Kod değişikliği rc7 kararına bağlıdır.
+- **Doğrulama (26 Ağu 2026):** kaynak okundu, bulgu teyit edildi —
+  `app/Services/Kuyruk/JobRunner.php` içinde `askidaki = null` yalnız başarı
+  dalında ve tanınmayan-tür dalında var; catch dalında yok.
