@@ -267,8 +267,12 @@ final class AppBuilder
             $products,
             new \App\Services\ListMutationPolicy(),
             $services->activity,
-            // Medya bağımlılığı bilinçli olarak boş bırakılır (yakalama medyayı
-            // kendi hazırlar); ilan yazıcı adıyla geçilir ki sıra karışmasın.
+            // rc8-01 (F-01): MEDYA SERVİSİ ZORUNLUDUR. Eskiden buraya hiçbir şey
+            // geçilmiyor ve yorum bunu "bilinçli" diye açıklıyordu; sonuç, arşiv
+            // modunda her yakalamanın diske `.tmp` bırakması ve veritabanına
+            // çözülemeyen bir `/media/...` adresi yazmasıydı.
+            $mediaService,
+            $logger,
             ilanlar: new \App\Services\Ilan\IlanYazici($connection),
             // D11a: galeri görselleri arka planda indirilsin (yakalama beklemez).
             kuyruk: new \App\Services\Kuyruk\JobQueue($connection),

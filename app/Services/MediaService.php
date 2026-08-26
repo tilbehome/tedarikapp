@@ -86,6 +86,20 @@ final class MediaService
     }
 
     /**
+     * Adres SSRF beyaz listesinden geçiyor mu? (rc8-01 / F-16)
+     *
+     * `store()` indirmeden önce zaten denetler; bu metot İNDİRMEDEN denetlemek
+     * içindir — galeri satırları kayda girerken indirilmez ama sonradan medya
+     * işi tarafından indirilir ve kullanıcıya servis edilir.
+     *
+     * @throws MediaDeniedException adres reddedildiyse
+     */
+    public function assertAllowed(string $url): void
+    {
+        $this->guard->assertAllowed($url);
+    }
+
+    /**
      * ERTELENMİŞ YAZIM (İE#19 E7): dosya önce `.tmp` adına yazılır; kalıcı ada
      * ancak veritabanı işlemi COMMIT olunca taşınır.
      *
@@ -97,20 +111,37 @@ final class MediaService
      *
      * @param array{mode: string, path: string|null, url: string, temp?: string|null} $stored
      */
-    public function commit(array $stored): void
+    /**
+     * @return bool kalıcı dosya YERİNDE mi? (rc8-01 / F-13)
+     *
+     * Eskiden dönüş yoktu ve `@rename()` hatası yutuluyordu: ürün kaydı diskte
+     * bulunmayan bir `/media/...` adresine işaret etmeye devam ediyordu. Çağıran
+     * artık sonucu görür ve kaydı kaynak adrese düşürebilir.
+     *
+     * Ertelenmemiş yazımda (temp yok) dosya zaten kalıcı adındadır; bu durumda
+     * "yapacak iş yok" da bir BAŞARIDIR — çağıran için ayrım yoktur.
+     */
+    public function commit(array $stored): bool
     {
         $temp = $stored['temp'] ?? null;
         if (!is_string($temp) || $temp === '' || !is_string($stored['path'])) {
-            return;
+            return true;
         }
 
+        $hedef = $this->basePath . '/' . $stored['path'];
         $tempMutlak = $this->basePath . '/' . $temp;
         if (!is_file($tempMutlak)) {
-            return;
+            // Geçici dosya yok: ya zaten taşınmış (idempotent çağrı) ya da hiç
+            // yazılamamış. Kalıcı dosyanın VARLIĞI belirler.
+            return is_file($hedef);
         }
 
-        @rename($tempMutlak, $this->basePath . '/' . $stored['path']);
-        @chmod($this->basePath . '/' . $stored['path'], 0644);
+        if (@rename($tempMutlak, $hedef) === false) {
+            return false;
+        }
+        @chmod($hedef, 0644);
+
+        return is_file($hedef);
     }
 
     /**
