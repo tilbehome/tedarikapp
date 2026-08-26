@@ -146,7 +146,17 @@ Sonraki sürümler: sihirbaz YOK — zip yüklenir, admin girişinde "veritaban�
 
 ## 7. Yedekleme
 
-- cPanel cron, her gece: DB dump + `public/media/` → tarihli arşiv → `~/backups/` (son 14 gün tutulur).
+- cPanel cron, her gece: **`bin/backup.php`** — üretilen set şudur:
+  - `yedek-<damga>.sql.enc` → veritabanı dökümü (şifreli),
+  - `yedek-<damga>.files.enc` → `config.php` (ya da eski `.env`) + `storage/sozluk-*.php`.
+  Son 14 gün tutulur; off-site (FTP/SMTP) aktarımına **yalnız `.sql.enc`** gider.
+- ⚠️ **`public/media/` YEDEĞE GİRMEZ** (dış denetim F-03, 26 Ağu 2026). Bu satır
+  önceden "DB dump + `public/media/`" diyordu; kod bunu hiç yapmıyordu ve
+  belge okuyan operatör yanlış güvence alıyordu. Sunucu kaybında ürün
+  görselleri geri gelmez; kaynak adresler süreli olduğundan hepsi yeniden
+  indirilemeyebilir. **Ara çözüm:** medya klasörünü ayrı bir cron ile
+  arşivleyin (`tar -czf ~/backups/media-$(date +%F).tar.gz public/media`).
+  Kalıcı çözüm (tek manifestli paket) **İE#22** kapsamındadır.
 - **Çöp kutusu temizliği (K15, İE#6):** `bin/purge-trash.php` saklama süresi (`TRASH_RETENTION_DAYS`, varsayılan 30 gün) dolan soft-delete kayıtlarını kalıcı siler. Cron önerisi — yedekten SONRA koşsun ki silinen kayıt en az bir gece yedeğe girmiş olsun:
   ```
   0 4 * * *  /usr/local/bin/php /home/<kullanıcı>/<alan-adı>/bin/purge-trash.php
