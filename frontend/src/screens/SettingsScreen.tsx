@@ -12,6 +12,7 @@ import IslemDurumu from '../components/IslemDurumu';
 import { useUzunIslem } from '../lib/useUzunIslem';
 import BelgeAntedi from './ayarlar/BelgeAntedi';
 import PaylasimIletisimi from './ayarlar/PaylasimIletisimi';
+import UygulamaAdresi from './ayarlar/UygulamaAdresi';
 import CeviriAyarlari from './ayarlar/CeviriAyarlari';
 import KuyrukDurumu from './ayarlar/KuyrukDurumu';
 
@@ -146,6 +147,12 @@ export default function SettingsScreen() {
         <>
           <BelgeAntedi mevcut={settingsState.data.document_header} onSaved={settingsState.reload} />
           <PaylasimIletisimi mevcut={settingsState.data.share_contact_phone} onSaved={settingsState.reload} />
+          {/* rc8/K4 (F-08): paylaşım/QR tabanı — eksikse kırmızı şerit basar. */}
+          <UygulamaAdresi
+            mevcut={settingsState.data.app_url}
+            kanonik={settingsState.data.app_url_kanonik}
+            onSaved={settingsState.reload}
+          />
         </>
       ) : null}
 

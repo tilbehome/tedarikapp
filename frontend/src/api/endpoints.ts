@@ -333,6 +333,16 @@ export const categories = {
 
 export const settings = {
   read: () => api.get<Settings>('/api/settings'),
+  /**
+   * rc8/K4: panelin dışa verilen adresi. PAROLA TEKRARI ister — açık oturumu
+   * ele geçiren biri tek alanla tüm paylaşım linklerini kendi sunucusuna
+   * yönlendirebilirdi.
+   */
+  updateAppUrl: (appUrl: string, password: string) =>
+    api.put<{ app_url: string; app_url_kanonik: boolean }>('/api/settings/app-url', {
+      app_url: appUrl,
+      password,
+    }),
   /** İE#11: eklenti token'ı — tam değer yalnız üretim yanıtında bir kez. */
   extensionTokenCreate: () =>
     api.post<{ token: string; extension_token_preview: string }>('/api/settings/extension-token'),

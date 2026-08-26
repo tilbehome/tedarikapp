@@ -215,6 +215,7 @@ final class AppBuilder
             $services->activity,
             $services->clock,
             $services->timezone,
+            $services->passwords,
         );
         $categoryController = new CategoryController(
             new CategoryRepository($connection),

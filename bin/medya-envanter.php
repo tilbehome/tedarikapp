@@ -23,6 +23,7 @@ declare(strict_types=1);
  * Çıkış kodu: 0 temiz · 2 bulgu var · 1 çalıştırılamadı.
  */
 
+use App\Core\AppUrl;
 use App\Core\Config;
 use App\Core\Connection;
 use App\Core\Database;
@@ -76,6 +77,19 @@ $yaz = static function (string $metin) use (&$satirlar): void {
 
 $yaz('MEDYA ENVANTERİ — ' . $now->format('Y-m-d H:i:s P'));
 $yaz('Dizin: ' . $medyaYolu . ($onar ? ' · MOD: ONARIM' : ' · MOD: yalnız rapor'));
+
+// rc8/K4 (F-08): TABAN ADRES RAPORUN BAŞINDA DURUR.
+//
+// Kırık görsel avında ilk sorulan şey "adres neye göre üretildi" olur; envanter
+// çıktısı destek ekibine gidiyorsa bu satır olmadan yorumlanamaz. Betiği
+// DURDURMAZ — burada ölçülen medya, adres değil.
+$appUrlHam = $config->get('APP_URL', '');
+$yaz(sprintf(
+    'Uygulama adresi: %s — kanonik %s',
+    $appUrlHam === '' ? '(yok)' : $appUrlHam,
+    AppUrl::kanonik($appUrlHam) === null ? '⚠' : '✓',
+));
+
 $yaz(str_repeat('-', 72));
 
 // ── 1) .tmp dosyaları ────────────────────────────────────────────────────────
