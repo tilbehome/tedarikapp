@@ -112,6 +112,14 @@ final class CaptureApplier
             'hedef' => $tutamak['path'],
         ]);
 
+        // rc8/E1: BAŞARISIZ TAŞIMANIN `.tmp`Sİ DİSKTE BIRAKILMAZ.
+        //
+        // `commit()` false döndüğünde geçici dosya hâlâ yerinde duruyordu.
+        // Kayıt kaynak adrese düştüğü için o dosyaya bir daha kimse
+        // bakmayacak; F-14 envanteri ise her başarısız taşımada yeni bir
+        // kalıntı sayar. Yetim dosyayı üreten yol temizler.
+        $this->media->discard($tutamak);
+
         // ÜRÜN KAYDI `.tmp`YE İŞARET ETMEZ: kaynak adres (hotlink) yazılır.
         // Görsel uzak sunucudan gelir; D11a'nın medya işi bir sonraki turda
         // yeniden indirmeyi dener ve arayüz bu satırı "uzak" diye işaretler.

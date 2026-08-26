@@ -194,6 +194,11 @@ final class CaptureService
         // rc8-01 (F-13): taşıma başarısızsa kayıt `.tmp`ye işaret etmesin —
         // ürün adresi kaynak adrese düşer, görsel kaybolmaz.
         if (!$this->media->commit($this->mediaHandle($media))) {
+            // rc8/E1: yetim `.tmp` diskte bırakılmaz — kayıt kaynak adrese
+            // düştüğü için o dosyaya bir daha bakılmayacak, F-14 envanteri
+            // ise her başarısız taşımada yeni kalıntı sayardı.
+            $this->media->discard($this->mediaHandle($media));
+
             $kaynak = is_string($media['main_source'] ?? null) ? (string) $media['main_source'] : null;
             if ($kaynak !== null && $kaynak !== '') {
                 $this->products->update(

@@ -20,8 +20,15 @@ use App\Models\SettingsRepository;
  *
  * **Neden rastgele ad:** kaynak dosya adı saldırgan kontrolündedir (`../`, `.php`,
  * çok uzun ad). Ad sunucuda üretilir, kaynaktan hiçbir şey taşınmaz.
+ *
+ * **Neden `final` değil (rc8/E1):** `commit()`in başarısız `rename()` dalı
+ * gerçek dosya sisteminde taşınabilir biçimde tetiklenemiyor — hedef adı
+ * rastgele üretiliyor (önceden engel konulamaz) ve Windows'ta salt-okunur
+ * dizin `rename()`i durdurmuyor. Süit sözleşmeyi taklit eden bir alt sınıf
+ * verebilsin diye sınıf açık bırakıldı; ÜRETİMDE ALT SINIF YOKTUR.
+ * İE#22 için not: doğru çözüm bir `MediaStore` arayüzü çıkarmaktır.
  */
-final class MediaService
+class MediaService
 {
     public const MODE_DOWNLOAD = 'download';
     public const MODE_HOTLINK = 'hotlink';

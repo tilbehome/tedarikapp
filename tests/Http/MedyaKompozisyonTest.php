@@ -4,9 +4,13 @@ declare(strict_types=1);
 
 namespace Tests\Http;
 
+use App\Core\Connection;
 use App\Middleware\Csrf;
+use App\Models\SettingsRepository;
+use App\Services\UrlGuard;
 use Tests\Support\AuthTestCase;
 use Tests\Support\FakeMediaFetcher;
+use Tests\Support\TasinamayanMediaService;
 
 /**
  * rc8-01 / DIŞ DENETİM F-01 — MEDYA HATTI GERÇEK KOMPOZİSYONLA SINANIR.
@@ -177,6 +181,57 @@ final class MedyaKompozisyonTest extends AuthTestCase
         self::assertGreaterThan(0, $urunId, 'Gelen Kutusu kaydı ürüne bağlanmalı.');
 
         $this->medyaKanitla($urunId);
+    }
+
+    /**
+     * rc8/E1 — TAŞIMA BAŞARISIZSA: KAYIT KAYNAK ADRESE DÜŞER, `.tmp` KALMAZ.
+     *
+     * `commit()` false döndüğünde ürün kaydı zaten kaynak adrese düşüyordu
+     * (rc8-01/F-13) ama geçici dosya diskte kalıyordu: kimsenin bakmayacağı
+     * bir yetim, F-14 envanterinde her seferinde yeni bir kalıntı.
+     */
+    public function testTASIMABASARISIZSA_KAYNAGADUSULUR_VE_TMPSILINIR(): void
+    {
+        $oncekiTmpler = $this->tmpDosyalari();
+
+        $this->mediaService = new TasinamayanMediaService(
+            dirname(__DIR__, 2),
+            new UrlGuard(['alicdn.com', '1688.com']),
+            $this->mediaFetcher ?? new FakeMediaFetcher(),
+            new SettingsRepository(Connection::fromCallable(fn (): \PDO => $this->pdo)),
+            8 * 1024 * 1024,
+        );
+
+        $yanit = $this->call('POST', '/api/capture', $this->yuk('aa110000-1111-4222-8333-000000000004', [
+            'target_list_id' => $this->listeId,
+        ]), ['Authorization' => 'Bearer ' . $this->eklentiTokeni]);
+
+        self::assertSame(201, $yanit->getStatusCode(), (string) $yanit->getBody());
+        $urunId = (int) $this->json($yanit)['data']['product_id'];
+
+        $anaGorsel = (string) $this->pdo->query(
+            'SELECT main_image FROM products WHERE id = ' . $urunId,
+        )->fetchColumn();
+        self::assertSame(
+            'https://cbu01.alicdn.com/img/ibank/aa110000-1111-4222-8333-000000000004-ana.jpg',
+            $anaGorsel,
+            'Taşıma başarısızken kayıt KAYNAK adrese düşmeli — `.tmp` adresi yazılamaz.',
+        );
+
+        self::assertSame(
+            [],
+            array_values(array_diff($this->tmpDosyalari(), $oncekiTmpler)),
+            'Yetim `.tmp` diskte kaldı (E1).',
+        );
+    }
+
+    /** @return list<string> */
+    private function tmpDosyalari(): array
+    {
+        return array_values(array_filter(
+            $this->medyaDosyalari(),
+            static fn (string $yol): bool => str_ends_with($yol, '.tmp'),
+        ));
     }
 
     public function testGALERIADRESLERISSRFBEYAZLISTESINDENGECER(): void
