@@ -15,6 +15,7 @@ use App\Services\ListImmutableException;
 use App\Services\ListMutationPolicy;
 use App\Services\MediaService;
 use App\Services\UrlGuard;
+use Psr\Log\NullLogger;
 use Tests\Support\AuthTestCase;
 use Tests\Support\FakeMediaFetcher;
 
@@ -59,7 +60,10 @@ final class YakalamaIdempotansTest extends AuthTestCase
             $this->products,
             new ListMutationPolicy(),
             new ActivityLog($this->connection),
+            // rc8-01: MediaService ve kayitci ZORUNLU — eksik wiring artik
+            // TEST ZAMANINDA patlar (F-01'in kalici korumasi).
             $media,
+            new NullLogger(),
         );
     }
 
