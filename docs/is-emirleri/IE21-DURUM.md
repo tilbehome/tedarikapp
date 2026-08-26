@@ -463,3 +463,71 @@ kaynaktır.
 okumaz — okusalardı `RevizyonSozlesmesiTest` gereği alanın hem revizyon listesine
 hem API sözleşmesine girmesi gerekirdi. Karar tek merkezde (`AdCozumleyici`)
 kaldı; API sözleşmesi genişletilmedi (PM kararı gerektirir).
+
+---
+
+## rc7 (26 Ağu 2026) — D10 kabul reddi sonrası kök nedenler
+
+### D10-c + EK-1 §5 — panel her yüklemede kendiliğinden AÇIK görünüyordu
+
+**Kök neden (koddan kanıtlandı, testle yeniden üretildi):**
+`stil.ts` içindeki `.tdk-cekmece { display: flex }` bir **yazar kuralıdır** ve
+tarayıcının `[hidden] { display: none }` kuralını **ezer**. Çekmece
+`panel.hidden = true` ile "kapatılıyordu" — yani hiçbir zaman kapanmadı.
+Bundan üç görünür sonuç doğdu:
+
+| Saha kanıtı | Açıklama |
+|---|---|
+| K4: panel açık ama İÇİ BOŞ | Gövde yalnız `ciz()` ile dolar; tıklama olmadığı için çizim hiç yapılmamıştı |
+| K4: pill yedeği görünmüyor | 448 px genişliğindeki çekmece sağ alt köşeyi örtüyordu |
+| EK-1 §5: "her yüklemede açılıyor" | Açılmıyordu — hiç kapanmamıştı |
+
+**Düzeltme:** görünürlük SINIFLA yönetilir (`tdk-acik`); varsayılan
+`display: none`. `hidden` özniteliği erişilebilirlik için korunur ama görünürlük
+ona bağlı değildir.
+
+### D10-c + EK-1 §6 — "Ürün okunuyor…" ve "Bağlantı bilinmiyor" dakikalarca
+
+**Kök neden:** `arkaPlan()` mesajlarının ÜST SÜRESİ YOKTU. MV3 service worker
+mesajı alıp yanıt yazmadan uykuya dalarsa ne yanıt ne `lastError` gelir; söz
+sonsuza kadar askıda kalır. K1'de `SELECTORS`, K3'te `KUYRUK_DURANLAR` bekliyordu
+— ikisi de hata değil, **bekleyen bir `await`**ti. Deneme penceresi de 4,6 sn ile
+çok kısaydı (400+1200+3000).
+
+**Düzeltme:**
+
+| Değişiklik | Etki |
+|---|---|
+| Her arka plan mesajına **4 sn** üst süre | Askıda kalan söz yok; hata olarak döner ve yeniden deneme devreye girer |
+| Pencere **28,4 sn** (400·800·1600·3200·6400·8000·8000) | Geç yüklenen sayfa ve uykudan kalkan SW için yeterli |
+| `hazirla()` — bağlantı + okuma **panel KAPALIYKEN** başlar | Tıklandığında sonuç çoğu zaman hazırdır |
+| `taramayiSurdur()` — okuma üstel geri çekilmeyle tekrarlanır | 1688'in geç gelen veri bloğu yakalanır |
+| Duran kayıt sorgusu kritik yoldan çıkarıldı | İkincil bilgi birincil akışı rehin alamaz |
+| "Yeniden dene" yalnız pencere tükenince | Olağan akışta kullanıcı elle müdahale etmez |
+
+### D10-b — yatay taşma (K2)
+
+**Kök neden:** grid ve flex ögeleri varsayılan `min-width: auto` alır; zincirin
+bir halkasında bile bu kural yoksa taşma yukarı büyür. Ölçüldü: 448 px panel
+içinde alan satırı **967 px**. Kırpma (overflow:hidden) sorunu çözmez, yalnız
+gizler — öğe hâlâ panelin dışındadır.
+
+**Düzeltme:** `min-width: 0` zinciri (gövde > kart > alanlar > satır > değer) +
+grid sütunları `minmax(0, 1fr)` + adresler tek satıra kırpılır (tam değer
+`title`da) + varyant çipleri kırpılır. Ölçüm sonrası: satır **390 px**.
+
+### §4 — kategori yolu
+
+Parser dört gömülü yolu (`categoryPath`, `categoryPathList`, `breadCrumbList`,
+`detailModel...`) ve DOM kırıntısını okuyor; hepsi testle doğrulandı. Hiçbirinde
+yoksa **uydurulmaz**: `raw.breadcrumb` boş kalır ve rapor satırı "sayfada yok"
+der. Özet satırının dili de düzeltildi: "N alan eksik" → **"N alan sayfada yok"**
+(sayı aynı; etiket artık kullanıcıya düzeltilebilir bir kusur varmış izlenimi
+vermiyor). Oturumsuz sayfada kırıntının GERÇEKTEN bulunup bulunmadığı ancak o
+sayfanın ham yakalaması (K32) incelenerek kesinleşir — bu bir sonraki saha
+turunda ürünü yakalayıp `raw_attributes` içine bakmakla doğrulanabilir.
+
+### İE22-D9-1
+
+`JobRunner::kos()` catch dalında `askidaki = null` eklendi. Artık hata veren tek
+işlik turdan sonra shutdown kancası yanlış "YARIDA KESİLDİ" satırı yazmıyor.
