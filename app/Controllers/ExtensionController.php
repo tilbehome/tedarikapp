@@ -64,16 +64,20 @@ final class ExtensionController extends ApiController
 
         if ($errors !== []) {
             // Doğrulanamayan gövde HAM haliyle kuyruğa düşer — veri kaybolmaz (docs/04 §2c).
-            $inboxId = $this->inbox->create(
+            // rc8-03 (F-07): HATA YOLU DA ATOMİK. Ön kontrol bir okumadır; iki
+            // eşzamanlı tekrar isteği onu geçebilir. UNIQUE ihlali burada bir
+            // hata değil, "bu capture zaten kayıtlı" cevabıdır.
+            $rezervasyon = $this->inbox->rezerveEtVeyaBul(
                 $this->capture->inboxFields($payload, 'error', implode(' · ', $errors)),
                 $now,
             );
 
             return Response::success($response, [
-                'inbox_id' => $inboxId,
+                'inbox_id' => $rezervasyon['id'],
                 'status' => 'error',
                 'product_id' => null,
                 'duplicate' => $duplicate,
+                'idempotent_replay' => !$rezervasyon['yeni'],
             ], [], 201);
         }
 
@@ -108,13 +112,15 @@ final class ExtensionController extends ApiController
             ], [], 201);
         }
 
-        $inboxId = $this->inbox->create($this->capture->inboxFields($payload), $now);
+        // rc8-03 (F-07): VARSAYILAN GELEN KUTUSU YOLU DA ATOMİK.
+        $rezervasyon = $this->inbox->rezerveEtVeyaBul($this->capture->inboxFields($payload), $now);
 
         return Response::success($response, [
-            'inbox_id' => $inboxId,
+            'inbox_id' => $rezervasyon['id'],
             'status' => 'pending',
             'product_id' => null,
             'duplicate' => $duplicate,
+            'idempotent_replay' => !$rezervasyon['yeni'],
         ], [], 201);
     }
 
