@@ -55,3 +55,9 @@ extension/.wxt/
 e2e/node_modules/
 e2e/playwright-report/
 e2e/test-results/
+
+# Playwright çıktıları ve e2e köprü paketi (üretilmiş dosyalar)
+e2e/dist/
+e2e/test-results/
+e2e/playwright-report/
+frontend/test-results/

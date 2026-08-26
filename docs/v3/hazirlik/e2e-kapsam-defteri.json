@@ -490,6 +490,20 @@
       "durum": "kapsandi",
       "dosya": "frontend/src/screens/ayarlar/CeviriAyarlari.test.tsx",
       "test": "E2E-PNL-52 — hedef dil listesi"
+    },
+    "E2E-EKL-30": {
+      "baslik": "Panel içeriği yatay taşmaz (uzun URL + 6 varyant çipi)",
+      "durum": "kapsandi",
+      "dosya": "e2e/tests/08-eklenti-paneli.spec.ts",
+      "test": "E2E-EKL-30 — panel yatay TAŞMAZ (rc7 D10-b)",
+      "not": "Gerçek tarayıcı ölçümü (scrollWidth/clientWidth + öğe sınırı); jsdom yerleşim hesaplamaz."
+    },
+    "E2E-EKL-31": {
+      "baslik": "Panel varsayılan KAPALI; düğme her yüklemede basılır",
+      "durum": "kapsandi",
+      "dosya": "e2e/tests/08-eklenti-paneli.spec.ts",
+      "test": "E2E-EKL-31 — panel varsayılan KAPALI (rc7 EK-1 §5)",
+      "not": "5 ardışık yükleme; hesaplanmış display ölçülür. Montaj hedefi yoksa sağ-alt pill yedeği."
     }
   }
 }

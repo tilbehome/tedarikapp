@@ -597,6 +597,49 @@ Sahte sayfa otomasyonu gerçek 1688 URL’sine çıkmamalıdır. İstek, Playwri
 
 **Durum sonucu:** 10/10 durum ve tanımlı geçişlerin tamamı kapsanmıştır.
 
+## 7B. rc7 SAHA BULGULARINDAN DOĞAN SENARYOLAR (26 Ağu 2026)
+
+Bu iki senaryo, Ürün Sahibi'nin rc6 ekranında gördüğü iki kusurdan doğdu ve
+GERÇEK TARAYICI ister: ikisi de hesaplanmış düzen (computed layout) ölçer,
+jsdom bunu üretmez.
+
+### E2E-EKL-30 — Panel içeriği yatay taşmaz
+
+**Amaç:** Uzun ilan/satıcı adresleri ve 30+ karakterlik varyant çipleri panel
+genişliğini aşmasın; yatay kaydırma çubuğu çıkmasın.
+
+**Ön koşul / hazırlık:** Tam önizleme; `offerId`, `hotSaleSkuId`, `spm` ekli
+gerçek uzunlukta ilan adresi; altı uzun varyant adı; 1440 px ve 360 px görünüm.
+
+**Adımlar:** Panel çizilir ve açılır → gövdenin `scrollWidth`/`clientWidth`
+değerleri okunur → gövdedeki HER öğenin sağ kenarı panelin sağ kenarıyla
+karşılaştırılır.
+
+**Beklenen:** `scrollWidth ≤ clientWidth`; panel sınırını aşan öğe YOK.
+Kırpma (overflow gizleme) tek başına yeterli sayılmaz — öğe gerçekten panelin
+içinde kalmalıdır.
+
+**Otomasyon notu:** `e2e/tests/08-eklenti-paneli.spec.ts`. Ölçüm birimi piksel;
+1688'e istek çıkmaz, arayüz boş sayfaya monte edilir.
+
+### E2E-EKL-31 — Panel varsayılan KAPALI, düğme her yüklemede basılır
+
+**Amaç:** Sayfa yüklendiğinde panel AÇILMAMALI; görünen tek şey satır içi
+"TedarikApp'e Ekle" düğmesi (montaj hedefi yoksa sağ-alt pill) olmalı.
+
+**Ön koşul / hazırlık:** Beş ardışık sayfa yüklemesi; biri montaj hedefi olan,
+biri olmayan sayfa.
+
+**Adımlar:** Her yüklemede arayüz kurulur → `acikMi()` ve panelin HESAPLANMIŞ
+`display` değeri okunur → düğme kabının varlığı ve montaj türü doğrulanır →
+hedefsiz sayfada pill düğmesinin ölçülebilir kutusu ve konumu kontrol edilir.
+
+**Beklenen:** 5/5 kapalı (`display: none`), 5/5 düğme var; hedefsiz sayfada
+`PILL` türü ve sağ altta görünür düğme.
+
+**Otomasyon notu:** `e2e/tests/08-eklenti-paneli.spec.ts`. rc6'da hesaplanmış
+değer `flex`ti: `hidden` özniteliği yazar `display` kuralı tarafından eziliyordu.
+
 ## 8. Claude Code için uygulama notları
 
 1. Yeni senaryolar mevcut `e2e/` süitinin tek worker ve Chromium düzenine uymalıdır.

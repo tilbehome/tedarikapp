@@ -69,8 +69,21 @@ export function baglantiMesaji(durum: BaglantiDurumu): string {
   }
 }
 
-/** Yeniden deneme aralıkları (ms) — artan, ama kullanıcıyı bekletmeyecek kadar kısa. */
-export const DENEME_ARALIKLARI = [400, 1200, 3000];
+/**
+ * YENİDEN DENEME PENCERESİ (ms) — rc7 EK-1 §6.
+ *
+ * SAHA BULGUSU: eski pencere 4,6 saniyeydi (400+1200+3000). MV3 service worker
+ * uykudan kalkarken, 1688'in veri bloğu geç yüklenirken ya da ağ yavaşken bu
+ * süre dolmuş oluyor ve panel "bilinmiyor"da donup kalıyordu; kullanıcıdan
+ * "Yeniden dene"ye basması bekleniyordu.
+ *
+ * Ürün Sahibi şartı: kullanıcı HİÇBİR üründe elle yeniden denememeli. Pencere
+ * üstel geri çekilmeyle ~30 saniyeye çıkarıldı; "Yeniden dene" ancak bu pencere
+ * GERÇEKTEN tükendikten sonra görünür.
+ *
+ * Toplam: 0,4 + 0,8 + 1,6 + 3,2 + 6,4 + 8 + 8 = 28,4 sn bekleme + 7 deneme.
+ */
+export const DENEME_ARALIKLARI = [400, 800, 1600, 3200, 6400, 8000, 8000];
 
 export interface BaglantiSecenekleri<T extends PanelListeKaydi = PanelListeKaydi> {
   /** Panelden liste çeker; hata fırlatır. */

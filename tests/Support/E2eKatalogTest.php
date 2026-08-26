@@ -65,9 +65,12 @@ final class E2eKatalogTest extends TestCase
         return $senaryolar;
     }
 
-    public function testEKLENTIKATALOGU29SENARYO(): void
+    public function testEKLENTIKATALOGU31SENARYO(): void
     {
-        self::assertCount(29, $this->katalogKimlikleri(self::EKLENTI_KATALOG));
+        // 29 → 31 (rc7, 26 Ağu 2026): saha bulgularından iki senaryo doğdu —
+        // EKL-30 (panel yatay taşmaz) ve EKL-31 (panel varsayılan kapalı).
+        // İkisi de GERÇEK TARAYICI ister; jsdom yerleşim hesaplamaz.
+        self::assertCount(31, $this->katalogKimlikleri(self::EKLENTI_KATALOG));
     }
 
     public function testPANELKATALOGU52SENARYO(): void

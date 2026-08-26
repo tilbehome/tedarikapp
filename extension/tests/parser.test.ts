@@ -321,3 +321,55 @@ describe('playableVideoUrl — oynatılabilir video adresi (İE#15 E2)', () => {
     expect(sonuc.normalized.video_url).toBe('https://cloud.video.taobao.com/play/x.mp4');
   });
 });
+
+describe('rc7 §4 — kategori yolu: dört gömülü yol + DOM yedeği', () => {
+  const YOLLAR = [
+    'categoryPath',
+    'categoryPathList',
+    'breadCrumbList',
+  ];
+
+  it.each(YOLLAR)('%s anahtarından kırıntı okunur', (anahtar) => {
+    const sonuc = parse1688(
+      {
+        result: {
+          global: {
+            globalData: {
+              model: {
+                offerDetail: { offerId: 1, subject: 'X', [anahtar]: ['首页', '家居鞋', '拖鞋'] },
+              },
+            },
+          },
+        },
+      },
+      selectorsJson as unknown as SelectorSet,
+      'https://detail.1688.com/offer/1.html',
+    );
+
+    expect(sonuc.raw.breadcrumb).toEqual(['首页', '家居鞋', '拖鞋']);
+  });
+
+  it('gömülü veride yoksa DOM kırıntısı kullanılır', () => {
+    const sonuc = parse1688(
+      { result: { global: { globalData: { model: { offerDetail: { offerId: 1, subject: 'X' } } } } } },
+      selectorsJson as unknown as SelectorSet,
+      'https://detail.1688.com/offer/1.html',
+      // `content.ts` kırıntıyı DİZİ olarak toplar (querySelectorAll → metinler).
+      { breadcrumb: ['首页', '家居鞋'] },
+    );
+
+    expect(sonuc.raw.breadcrumb).toEqual(['首页', '家居鞋']);
+  });
+
+  it('hiçbir kaynakta yoksa UYDURULMAZ: boş kalır ve alan raporu "sayfada yok" der', () => {
+    const sonuc = parse1688(
+      { result: { global: { globalData: { model: { offerDetail: { offerId: 1, subject: 'X' } } } } } },
+      selectorsJson as unknown as SelectorSet,
+      'https://detail.1688.com/offer/1.html',
+    );
+
+    // Oturumsuz 1688 sayfasında kırıntı gerçekten bulunmayabilir; parser bunu
+    // tahmin etmez (K67). Rapor satırı da "eksik" değil "sayfada yok" der.
+    expect(sonuc.raw.breadcrumb).toEqual([]);
+  });
+});

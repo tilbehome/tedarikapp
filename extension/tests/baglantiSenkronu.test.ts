@@ -40,6 +40,21 @@ function bosSonuc(): ParseResult {
   } as unknown as ParseResult;
 }
 
+/** Ayrıştırıcının BAŞARILI çıktısı — `alanRaporu()` bunu okuyabilmeli. */
+function tamSonuc(): ParseResult {
+  return {
+    raw: { title: '洞洞鞋', breadcrumb: ['家居鞋'], normalized_attributes: { 材质: 'EVA' } },
+    normalized: {
+      name: 'Terlik',
+      price_yuan: '15.90',
+      price_tiers: [{ min_qty: 1, price_yuan: '15.90' }],
+      sku_matrix: [{ props: { renk: 'siyah' } }],
+      images: ['a.jpg'],
+    },
+    source: { platform: '1688', external_id: '1', url: 'https://detail.1688.com/offer/1.html' },
+  } as unknown as ParseResult;
+}
+
 function akisKur(
   ustyaz: Partial<AkisBagimliliklari>,
 ): { akis: Akis; gorunumler: PanelGorunumu[] } {
@@ -245,5 +260,102 @@ describe('D10-NİHAİ — alan iskeleti ile gerçek rapor AYRIŞAMAZ', () => {
     // eklenip iskelete yazılmazsa panel açılışta 16 satır, veri gelince 17
     // satır gösterirdi — ekran "zıplardı".
     expect(rapor.satirlar.map((satir) => satir.ad)).toEqual([...ALAN_ADLARI]);
+  });
+});
+
+describe('rc7 D10-c — soğuk başlangıç: asılı kalan mesaj paneli dondurmaz', () => {
+  /** Hiç yanıt vermeyen arka plan (SW uykuda: ne yanıt ne lastError). */
+  const asilidaKalan = () => new Promise<never>(() => {});
+
+  it('bağlantı sorgusu YANIT GELMESE DE biter ve durum kesinleşir', async () => {
+    const { akis } = akisKur({
+      // `arkaPlan` zaman aşımı olmasaydı bu söz hiç çözülmez, panel sonsuza
+      // kadar "Bağlantı durumu bilinmiyor" gösterirdi (saha kanıtı K3).
+      listeleriGetir: async () => {
+        throw new Error('ZAMAN_ASIMI: arka plan LISTS mesajına yanıt vermedi.');
+      },
+    });
+
+    await akis.baglantiyiTazele();
+
+    expect(akis.gorunum().baglanti).toBe('ERISILEMIYOR');
+    expect(akis.gorunum().otomatikSuruyor).toBe(false);
+  });
+
+  it('duran kayıt sorgusu HİÇ DÖNMESE de hazırlık tamamlanır (K3)', async () => {
+    const { akis } = akisKur({
+      // Kuyruk rozeti ikincil bilgidir; birincil akışı rehin alamaz.
+      duranlar: asilidaKalan,
+      listeleriGetir: async () => [{ id: 3, name: 'Liste' }],
+      ayristir: async () => tamSonuc(),
+    });
+
+    const zamanAsimi = new Promise<'ASILI'>((coz) => setTimeout(() => coz('ASILI'), 500));
+    const sonuc = await Promise.race([akis.hazirla().then(() => 'BITTI' as const), zamanAsimi]);
+
+    expect(sonuc).toBe('BITTI');
+    expect(akis.gorunum().baglanti).toBe('BAGLI');
+    expect(akis.gorunum().rapor).not.toBeNull();
+  });
+});
+
+describe('rc7 EK-1 §6 — otomatik pencere dolmadan "Yeniden dene" ÇIKMAZ', () => {
+  it('deneme sürerken görünüm "otomatik sürüyor" der', async () => {
+    const { akis, gorunumler } = akisKur({
+      listeleriGetir: async () => {
+        throw new Error('Failed to fetch');
+      },
+    });
+
+    const tazeleme = akis.baglantiyiTazele();
+    // İlk yayında pencere açıktır: arayüz düğme değil ilerleme gösterir.
+    expect(gorunumler.at(-1)?.otomatikSuruyor).toBe(true);
+
+    await tazeleme;
+    // Pencere tükendi: karar artık kullanıcınındır.
+    expect(gorunumler.at(-1)?.otomatikSuruyor).toBe(false);
+    expect(akis.gorunum().baglanti).toBe('ERISILEMIYOR');
+  });
+
+  it('pencere ~30 saniyedir: yedi deneme, toplam 28,4 sn bekleme', () => {
+    expect(DENEME_ARALIKLARI).toEqual([400, 800, 1600, 3200, 6400, 8000, 8000]);
+    expect(DENEME_ARALIKLARI.reduce((a, b) => a + b, 0)).toBe(28400);
+  });
+});
+
+describe('rc7 D10-c — okuma geç gelen sayfada KENDİLİĞİNDEN tamamlanır', () => {
+  it('ilk denemede boş, üçüncüde dolu: kullanıcı müdahalesi YOK', async () => {
+    let deneme = 0;
+    const { akis } = akisKur({
+      ayristir: async () => {
+        deneme += 1;
+        // 1688'in gömülü veri bloğu ilk saniyelerde henüz yazılmamış olabilir.
+        if (deneme < 3) throw new Error('SAYFA_OKUNAMADI');
+
+        return tamSonuc();
+      },
+    });
+
+    await akis.taramayiSurdur();
+
+    expect(deneme).toBe(3);
+    expect(akis.gorunum().rapor).not.toBeNull();
+    expect(akis.gorunum().otomatikSuruyor).toBe(false);
+  });
+
+  it('sayfa hiç okunamazsa pencere tükenir ve durum OKUMA HATASI kalır', async () => {
+    let deneme = 0;
+    const { akis } = akisKur({
+      ayristir: async () => {
+        deneme += 1;
+        throw new Error('SAYFA_OKUNAMADI');
+      },
+    });
+
+    await akis.taramayiSurdur();
+
+    expect(deneme).toBe(DENEME_ARALIKLARI.length + 1);
+    expect(akis.durum().durum).toBe('D5_OKUMA_HATASI');
+    expect(akis.gorunum().otomatikSuruyor).toBe(false);
   });
 });

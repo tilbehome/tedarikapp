@@ -76,10 +76,23 @@ button { font: inherit; cursor: pointer; border: 0; }
 .tdk-serit[data-durum="D10_SUNUCU_HATASI"] .nokta { background: var(--kirmizi); }
 
 /* ── ÇEKMECE ────────────────────────────────────────────────────────── */
-.tdk-ortu { position: fixed; inset: 0; background: rgba(10,26,63,.42); z-index: 2147483000; }
+/* GORUNURLUK SINIFLA YONETILIR (rc7 EK-1 §5 — saha bulgusu).
+ *
+ * Eskiden cekmece "panel.hidden = true" ile kapatiliyordu. Ama asagidaki
+ * display:flex bir YAZAR kuralidir ve tarayicinin [hidden]{display:none}
+ * kuralini EZER: "kapali" panel hicbir zaman kapanmadi. 448 px genisligindeki
+ * cekmece her sayfa yuklemesinde ekranda kaldi, sag alt kosedeki pill yedegini
+ * de orttu; govde yalniz ciz() ile doldugu icin de BOS gorundu.
+ *
+ * Artik varsayilan display:none; acilis .tdk-acik sinifiyla olur. hidden
+ * ozniteligi erisilebilirlik icin korunur ama gorunurluk ona BAGLI DEGILDIR. */
+.tdk-ortu { position: fixed; inset: 0; background: rgba(10,26,63,.42); z-index: 2147483000;
+  display: none; }
+.tdk-ortu.tdk-acik { display: block; }
 .tdk-cekmece { position: fixed; top: 0; right: 0; bottom: 0; width: 448px; max-width: 100vw;
   background: #fff; z-index: 2147483001; box-shadow: var(--golge-modal);
-  display: flex; flex-direction: column; font-family: system-ui, sans-serif; color: var(--n900); }
+  display: none; flex-direction: column; font-family: system-ui, sans-serif; color: var(--n900); }
+.tdk-cekmece.tdk-acik { display: flex; }
 .tdk-ust { background: var(--lacivert); color: #fff; padding: 14px 18px; display: flex; align-items: center; gap: 11px;
   border-bottom: 3px solid var(--altin); }
 .tdk-ust .kup { width: 26px; height: 26px; border-radius: 7px;
@@ -89,32 +102,60 @@ button { font: inherit; cursor: pointer; border: 0; }
 .tdk-kapat { margin-left: auto; background: transparent; color: #B9C3DE; font-size: 20px; line-height: 1;
   padding: 4px 8px; border-radius: 6px; }
 .tdk-kapat:hover { background: rgba(255,255,255,.12); color: #fff; }
-.tdk-govde { flex: 1; overflow-y: auto; padding: 14px 16px 16px; background: var(--n50); display: grid; gap: 12px; }
-.tdk-alt { border-top: 1px solid var(--n150); padding: 12px 16px; background: #fff; display: grid; gap: 8px; }
+.tdk-govde { flex: 1; overflow-y: auto; padding: 14px 16px 16px; background: var(--n50);
+  display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+.tdk-alt { border-top: 1px solid var(--n150); padding: 12px 16px; background: #fff;
+  display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
 
 /* ── ÜRÜN + DOLULUK ─────────────────────────────────────────────────── */
 .tdk-kart { background: #fff; border: 1px solid var(--n150); border-radius: var(--r12); padding: 12px; }
-.tdk-ad { font-weight: 700; font-size: 14px; line-height: 1.35; }
-.tdk-zh { font-size: 12px; color: var(--n500); margin-top: 3px; }
+.tdk-ad { font-weight: 700; font-size: 14px; line-height: 1.35; overflow-wrap: anywhere; }
+.tdk-zh { font-size: 12px; color: var(--n500); margin-top: 3px; overflow-wrap: anywhere; }
 .tdk-doluluk { display: flex; align-items: center; gap: 12px; }
 .tdk-halka { width: 54px; height: 54px; border-radius: 50%; flex: none; display: grid; place-items: center;
   font-size: 12px; font-weight: 800; color: var(--lacivert);
   background: conic-gradient(var(--yesil) calc(var(--oran,0) * 1%), var(--n150) 0); }
 .tdk-halka span { width: 42px; height: 42px; border-radius: 50%; background: #fff; display: grid; place-items: center; }
-.tdk-alanlar { display: grid; gap: 4px; max-height: 260px; overflow-y: auto; }
+/* GRID SUTUNU AÇIKÇA SINIRLANIR: varsayilan auto sutun max-content'e gore
+ * buyur; icindeki satir 448 px panelde 967 px olabilir (olculdu). minmax(0,1fr)
+ * sutunu panele baglar, min-width:0 zinciri de icerigi kirar. */
+.tdk-alanlar { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px;
+  max-height: 260px; overflow-y: auto; }
+.tdk-alanlar > * { min-width: 0; }
+/* TASMA DISIPLINI (rc7 D10-b — saha bulgusu K2).
+ *
+ * Ilan adresi ve satici adresi gibi UZUN, BOSLUKSUZ metinler paneli yatay
+ * kaydiriyordu; cipler panel disina tasiyordu. Kural: hicbir deger panelin
+ * genisligini asamaz.
+ *   - iki sutunlu esnek satirda deger sutunu min-width:0 almazsa flex ogesi
+ *     kendi icerigi kadar genisler (varsayilan min-width:auto) — tasmanin
+ *     teknik sebebi budur;
+ *   - kesintisiz metin overflow-wrap:anywhere ile kirilir;
+ *   - adresler tek satira kirpilir, tam degeri title'da durur (veri kaybolmaz). */
+/* min-width:0 ZİNCİRİ: grid ve flex ogeleri VARSAYILAN olarak min-width:auto
+ * alir, yani icerigi kadar genisler. Zincirin tek bir halkasinda bu kural
+ * eksikse tasma yukari dogru buyur ve en disdaki kirpma yalnizca GIZLER —
+ * icerik hala panelin disindadir. Zincir: govde > kart > alanlar > satir > deger. */
+.tdk-govde { min-width: 0; }
+.tdk-govde > * { min-width: 0; max-width: 100%; }
+.tdk-kart, .tdk-alanlar { min-width: 0; max-width: 100%; }
 .tdk-alan { display: flex; align-items: baseline; gap: 8px; font-size: 12px; padding: 4px 0;
-  border-bottom: 1px solid var(--n100); }
-.tdk-alan .ad { color: var(--n700); min-width: 108px; }
-.tdk-alan .deger { color: var(--n900); flex: 1; }
+  border-bottom: 1px solid var(--n100); max-width: 100%; }
+.tdk-alan .ad { color: var(--n700); min-width: 108px; flex: 0 0 108px; }
+.tdk-alan .deger { color: var(--n900); flex: 1 1 auto; min-width: 0;
+  overflow-wrap: anywhere; word-break: break-word; }
+.tdk-alan .deger.tek-satir { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tdk-alan .kanal { flex: 0 0 auto; }
 .tdk-alan .kanal { font-size: 9.5px; font-weight: 700; letter-spacing: .4px; color: var(--n500);
   background: var(--n100); border-radius: 999px; padding: 2px 7px; }
 .tdk-alan.eksik { color: var(--sari); }
 .tdk-alan.eksik .ad, .tdk-alan.eksik .deger { color: var(--sari); }
 
 /* ── SEÇİLEN VARYANT ────────────────────────────────────────────────── */
-.tdk-varyant { display: flex; flex-wrap: wrap; gap: 6px; }
+.tdk-varyant { display: flex; flex-wrap: wrap; gap: 6px; max-width: 100%; }
 .tdk-varyant .cip { border: 1px solid var(--n200); border-radius: 999px; padding: 4px 10px; font-size: 12px;
-  background: #fff; color: var(--n700); }
+  background: #fff; color: var(--n700); max-width: 100%; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap; }
 .tdk-varyant .cip[aria-pressed="true"] { background: var(--lacivert); color: #fff; border-color: var(--lacivert); }
 
 /* ── HEDEF ALANLARI ─────────────────────────────────────────────────── */

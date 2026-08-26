@@ -56,14 +56,42 @@ function sayfaVerisiniOku(): Promise<PageData> {
  * runtime.lastError" gürültüsü bırakıyordu. Popup bunu baştan beri okuyordu;
  * sayfa içi panelin okumaması iki yüzey arasındaki farkın kaynağıydı.
  */
+/** Arka plan mesajı için üst süre — bundan sonrası "yanıt gelmedi" sayılır. */
+const ARKAPLAN_ZAMAN_ASIMI_MS = 4000;
+
 function arkaPlan<T>(type: string, payload?: unknown): Promise<T> {
   return new Promise((resolve, reject) => {
+    // ZAMAN AŞIMI ZORUNLUDUR (rc7 D10-c saha bulgusu).
+    //
+    // `sendMessage` geri çağrısı BAZEN HİÇ ÇAĞRILMAZ: service worker mesajı
+    // alıp yanıt yazmadan uykuya dalarsa ne yanıt gelir ne `lastError`. Söz
+    // (promise) sonsuza kadar askıda kalır. Sahada sonucu şuydu: panel
+    // dakikalarca "Ürün okunuyor…" ve "Bağlantı durumu bilinmiyor" gösterdi —
+    // ikisi de bekleyen bir `await` yüzündendi, hata yüzünden değil.
+    //
+    // Artık her mesajın bir üst süresi var; süre dolarsa HATA olarak döner ve
+    // yeniden deneme mekanizması devreye girer. Askıda kalan bir söz, hata
+    // veren bir sözden çok daha kötüdür: kimse fark etmez.
+    let bitti = false;
+    const sayac = setTimeout(() => {
+      if (bitti) return;
+      bitti = true;
+      reject(new Error('ZAMAN_ASIMI: arka plan ' + type + ' mesajına yanıt vermedi.'));
+    }, ARKAPLAN_ZAMAN_ASIMI_MS);
+
+    const bitir = (islem: () => void): void => {
+      if (bitti) return;
+      bitti = true;
+      clearTimeout(sayac);
+      islem();
+    };
+
     chrome.runtime.sendMessage({ type, payload }, (yanit: { ok: boolean; data?: T; error?: string }) => {
       const hata = chrome.runtime.lastError;
-      if (hata) return reject(new Error(hata.message ?? 'MESAJ_ULASMADI'));
-      if (yanit?.ok === true) return resolve(yanit.data as T);
+      if (hata) return bitir(() => reject(new Error(hata.message ?? 'MESAJ_ULASMADI')));
+      if (yanit?.ok === true) return bitir(() => resolve(yanit.data as T));
 
-      return reject(new Error(yanit?.error ?? 'BILINMEYEN_HATA'));
+      return bitir(() => reject(new Error(yanit?.error ?? 'BILINMEYEN_HATA')));
     });
   });
 }
@@ -212,19 +240,25 @@ export default defineContentScript({
 
       const montaj = montajYap({
         onTikla: () => {
-          // D10-NİHAİ: ÖNCE ÇİZ, SONRA AÇ. Çekmece hiçbir koşulda boş açılmaz;
-          // veri yoksa iskelet görünür. Panel VARSAYILAN KAPALIDIR ve yalnız bu
-          // tıklamayla açılır.
+          // rc7 EK-1 §5/§6: TIKLAMA YALNIZ AÇAR.
+          //
+          // Bağlantı ve okuma sayfa yüklenir yüklenmez arka planda başladı
+          // (aşağıdaki `hazirla()`); tıklandığında sonuç çoğu zaman hazırdır.
+          // Hazır değilse iskelet + ilerleme görünür ve dolunca kendiliğinden
+          // güncellenir — kullanıcıdan elle bir şey beklenmez.
           cekmece.ciz(akis.gorunum());
           cekmece.ac();
-          // Sayfayı okumak BAĞLANTIDAN bağımsızdır (panel kapalıyken de önizleme
-          // görülebilmeli) ama ONAYDAN bağımsız DEĞİLDİR: disclosure alınmadan
-          // sayfa okunmaz (A8).
-          void akis.ac().then(() => {
-            if (!akis.gorunum().disclosureGerekli) void akis.tara();
-          });
+
+          // Onay ekranı açıksa okuma yapılmaz (A8); onay verilince akış
+          // `disclosureKarari()` üzerinden kendiliğinden sürer.
+          if (akis.gorunum().disclosureGerekli) return;
+          if (akis.gorunum().rapor === null) void akis.taramayiSurdur();
         },
       });
+
+      // rc7 EK-1 §6: HAZIRLIK SAYFA YÜKLENİNCE BAŞLAR, PANEL KAPALIYKEN.
+      // Panel AÇILMAZ; yalnız veriler toplanır ve çizim güncellenir.
+      void akis.hazirla();
 
       // D5: ayarlar (panel adresi / token) sonradan girilir ya da düzeltilirse
       // sayfa içi panel bunu KENDİLİĞİNDEN görür. Eskiden yalnız açılışta bir kez

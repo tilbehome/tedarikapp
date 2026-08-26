@@ -15,7 +15,12 @@ import {
   type MukerrerSecenegi,
 } from '../../core/durumMakinesi';
 import { alanRaporu, gonderimiEngelleyenler, type AlanRaporu } from '../../core/alanRaporu';
-import { baglantiMesaji, baglantiyiDene, type BaglantiDurumu } from '../../core/baglanti';
+import {
+  DENEME_ARALIKLARI,
+  baglantiMesaji,
+  baglantiyiDene,
+  type BaglantiDurumu,
+} from '../../core/baglanti';
 import type { ParseResult } from '../../core/types';
 import type { DuranKayit, HedefSecimi, PanelGorunumu } from './panel';
 
@@ -78,6 +83,15 @@ export class Akis {
 
   private baglantiMesaj = baglantiMesaji('BILINMIYOR');
 
+  /**
+   * OTOMATİK HAZIRLIK SÜRÜYOR MU? (rc7 EK-1 §6)
+   *
+   * Kullanıcı hiçbir üründe elle "Yeniden dene"ye basmamalı. Otomatik pencere
+   * (~30 sn) açıkken arayüz İLERLEME gösterir; düğme ancak pencere gerçekten
+   * tükenince çıkar.
+   */
+  private otomatikSuruyor = false;
+
   /** Gönderim/mükerrer yanıtından gelen ürün kimliği — "Panelde aç" bunu kullanır. */
   private urunId: number | null = null;
 
@@ -102,6 +116,7 @@ export class Akis {
       urunId: this.urunId,
       baglanti: this.baglanti,
       baglantiMesaj: this.baglantiMesaj,
+      otomatikSuruyor: this.otomatikSuruyor,
     };
   }
 
@@ -149,6 +164,7 @@ export class Akis {
   public async baglantiyiTazele(): Promise<void> {
     this.baglanti = 'DENENIYOR';
     this.baglantiMesaj = baglantiMesaji('DENENIYOR');
+    this.otomatikSuruyor = true;
     this.yayinla();
 
     const sonuc = await baglantiyiDene({
@@ -168,7 +184,79 @@ export class Akis {
       }
     }
 
+    // Pencere bitti: bundan sonrası kullanıcının kararı ("Yeniden dene").
+    this.otomatikSuruyor = false;
     this.yayinla();
+  }
+
+  /**
+   * SAYFA YÜKLENİR YÜKLENMEZ HAZIRLA (rc7 EK-1 §6) — panel KAPALIYKEN çalışır.
+   *
+   * Kullanıcı düğmeye bastığında sonuç çoğu zaman HAZIR olsun diye bağlantı ve
+   * okuma arka planda başlar. Sahada tersi yaşandı: her şey tıklamadan sonra
+   * başlıyor, kullanıcı önce boş panele sonra dakikalarca "okunuyor…"a bakıyordu.
+   *
+   * Çekmece BURADA AÇILMAZ; yalnız çizilir. Açma kararı kullanıcınındır (EK-1 §5).
+   */
+  public async hazirla(): Promise<void> {
+    this.disclosureGerekli = !(await this.bagimliliklar.onayliMi().catch(() => false));
+    this.yayinla();
+
+    // KUYRUK ROZETİ KRİTİK YOLDA DEĞİLDİR: duran kayıt sorgusu gecikirse ya da
+    // hiç dönmezse bağlantı ve okuma BEKLEMEZ. Sahada (K3) iki iş birbirini
+    // bekliyordu; ikincil bir bilgi, birincil akışı rehin alamaz.
+    void this.bagimliliklar
+      .duranlar()
+      .then((duranlar) => {
+        this.duranlar = duranlar;
+        this.yayinla();
+      })
+      .catch(() => {
+        /* duran kayıt okunamadı: rozet çıkmaz, akış sürer. */
+      });
+
+    if (this.disclosureGerekli) return; // A8: onay yoksa sayfa OKUNMAZ.
+
+    // İkisi paralel: bağlantı yokken de sayfa okunur (D5 dersi), okuma
+    // beklerken de bağlantı kurulur.
+    await Promise.all([this.baglantiyiTazele(), this.taramayiSurdur()]);
+  }
+
+  /**
+   * OKUMAYI SÜRDÜR (rc7 D10-c) — 1688'in veri bloğu geç gelebilir.
+   *
+   * Sayfa açılır açılmaz okunan gömülü veri bazen henüz yazılmamış olur; tek
+   * denemede "okuma hatası" demek, saniyeler sonra hazır olacak bir sayfayı
+   * kalıcı olarak kusurlu ilan etmektir. Üstel geri çekilmeyle ~30 sn denenir.
+   */
+  public async taramayiSurdur(): Promise<void> {
+    this.otomatikSuruyor = true;
+
+    for (let deneme = 0; deneme <= DENEME_ARALIKLARI.length; deneme++) {
+      await this.tara();
+      if (this.rapor !== null && this.makine.durum !== 'D5_OKUMA_HATASI') {
+        this.otomatikSuruyor = false;
+        this.yayinla();
+
+        return;
+      }
+
+      const aralik = DENEME_ARALIKLARI[deneme];
+      if (aralik === undefined) break;
+      await this.bekle(aralik);
+      // Yeniden denemek için makineyi hazır konuma al; aksi hâlde `tara()`
+      // "ikinci tık" sayıp hiçbir şey yapmaz.
+      this.makine = baslangicDurumu();
+    }
+
+    this.otomatikSuruyor = false;
+    this.yayinla();
+  }
+
+  private bekle(ms: number): Promise<void> {
+    const bekleyici = this.bagimliliklar.bekle;
+
+    return bekleyici === undefined ? new Promise<void>((r) => setTimeout(r, ms)) : bekleyici(ms);
   }
 
   /**

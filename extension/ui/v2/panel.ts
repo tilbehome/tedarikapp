@@ -54,6 +54,12 @@ export interface PanelGorunumu {
   /** D5: bağlantı durumu — popup ile aynı kaynaktan. */
   baglanti?: BaglantiDurumu;
   baglantiMesaj?: string;
+  /**
+   * rc7 EK-1 §6: otomatik hazırlık penceresi (~30 sn) sürüyor mu? Sürüyorsa
+   * arayüz İLERLEME gösterir, "Yeniden dene" düğmesi ÇIKMAZ — kullanıcıdan elle
+   * müdahale beklenmez.
+   */
+  otomatikSuruyor?: boolean;
 }
 
 export interface PanelEylemleri {
@@ -131,15 +137,17 @@ export function baglantiSeridi(
   durum: BaglantiDurumu,
   mesaj: string,
   onDene: () => void,
+  otomatikSuruyor = false,
 ): HTMLElement | null {
   if (durum === 'BAGLI') return null;
 
   const serit = el('div', 'tdk-baglanti');
-  serit.setAttribute('data-baglanti', durum);
+  serit.setAttribute('data-baglanti', otomatikSuruyor ? 'DENENIYOR' : durum);
   serit.setAttribute('role', 'status');
-  serit.append(el('span', 'metin', mesaj));
+  // rc7 EK-1 §6: pencere sürerken kullanıcıya "bekle" denir, iş buyrulmaz.
+  serit.append(el('span', 'metin', otomatikSuruyor ? 'Bağlantı kuruluyor…' : mesaj));
 
-  if (durum !== 'DENENIYOR') {
+  if (durum !== 'DENENIYOR' && !otomatikSuruyor) {
     const dugme = el('button', undefined, 'Yeniden dene');
     dugme.type = 'button';
     dugme.setAttribute('data-eylem', 'baglanti-dene');
@@ -176,7 +184,11 @@ export function dolulukBolumu(rapor: AlanRaporu | null): HTMLElement {
       'tdk-zh',
       rapor.eksikler.length === 0
         ? 'Tüm alanlar yakalandı.'
-        : `${rapor.eksikler.length} alan eksik: ${rapor.eksikler.slice(0, 3).join(', ')}${rapor.eksikler.length > 3 ? '…' : ''}`,
+        // rc7 §4: "EKSİK" ile "SAYFADA YOK" aynı şey değildir. Kategori yolu gibi
+        // alanlar oturumsuz 1688 sayfasında GERÇEKTEN bulunmaz; bunu "eksik" diye
+        // raporlamak, kullanıcıya düzeltebileceği bir kusur varmış izlenimi verir.
+        // Sayı aynı kalır (dolu/toplam dürüsttür), etiket düzelir.
+        : `${rapor.eksikler.length} alan sayfada yok: ${rapor.eksikler.slice(0, 3).join(', ')}${rapor.eksikler.length > 3 ? '…' : ''}`,
     ),
   );
 
@@ -185,7 +197,13 @@ export function dolulukBolumu(rapor: AlanRaporu | null): HTMLElement {
   const liste = el('div', 'tdk-alanlar');
   for (const satir of rapor.satirlar) {
     const satirDugumu = el('div', satir.dolu ? 'tdk-alan' : 'tdk-alan eksik');
-    satirDugumu.append(el('span', 'ad', satir.ad), el('span', 'deger', satir.deger));
+    // D10-b: ADRESLER TEK SATIRA KIRPILIR, tam değer `title`da durur.
+    // Kırpmak veri kaybı değildir; panelin genişliğini aşmak ise kullanıcının
+    // ekranını yatay kaydırmaya zorlar (saha bulgusu K2).
+    const adresMi = /^https?:\/\//.test(satir.deger);
+    const deger = el('span', adresMi ? 'deger tek-satir' : 'deger', satir.deger);
+    if (adresMi) deger.title = satir.deger;
+    satirDugumu.append(el('span', 'ad', satir.ad), deger);
     if (satir.kanal !== null) {
       satirDugumu.append(el('span', 'kanal', satir.kanal));
     }
@@ -296,6 +314,8 @@ export function varyantBolumu(
   for (const varyant of varyantlar.slice(0, 12)) {
     const cip = el('button', 'cip', varyant);
     cip.type = 'button';
+    // D10-b: 30+ karakterlik varyant adları çipte kırpılır; tam ad title'da.
+    cip.title = varyant;
     cip.setAttribute('aria-pressed', String(varyant === secili));
     cip.addEventListener('click', () => onSec(varyant));
     sarmal.append(cip);
@@ -489,6 +509,7 @@ export function panelGovdesi(gorunum: PanelGorunumu, eylemler: PanelEylemleri): 
     gorunum.baglanti ?? 'BILINMIYOR',
     gorunum.baglantiMesaj ?? '',
     eylemler.onBaglantiyiDene,
+    gorunum.otomatikSuruyor === true,
   );
   if (baglanti !== null && !gorunum.disclosureGerekli) govde.append(baglanti);
 

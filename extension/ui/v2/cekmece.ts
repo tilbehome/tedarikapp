@@ -105,6 +105,10 @@ export function cekmeceKur(secenekler: CekmeceSecenekleri): Cekmece {
 
   const kapat = (): void => {
     acik = false;
+    // Görünürlük SINIFLA yönetilir; `hidden` yalnız erişilebilirlik içindir
+    // (gerekçe: `stil.ts` görünürlük bloğu — rc7 EK-1 §5).
+    ortu.classList.remove('tdk-acik');
+    panel.classList.remove('tdk-acik');
     ortu.hidden = true;
     panel.hidden = true;
     secenekler.eylemler.onKapat();
@@ -125,6 +129,8 @@ export function cekmeceKur(secenekler: CekmeceSecenekleri): Cekmece {
   return {
     ac() {
       acik = true;
+      ortu.classList.add('tdk-acik');
+      panel.classList.add('tdk-acik');
       ortu.hidden = false;
       panel.hidden = false;
       kapatDugmesi.focus();

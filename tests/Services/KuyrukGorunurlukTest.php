@@ -226,6 +226,41 @@ final class KuyrukGorunurlukTest extends TestCase
         self::assertStringContainsString('sonuç yazmadan düştü', (string) $satir['hata']);
     }
 
+    public function testHATAVERENISTENSONRAASKIDAKAYITKALMAZ(): void
+    {
+        // İE22-D9-1: `basarisiz()` token'ı siler. Askıdaki kayıt temizlenmezse
+        // shutdown kancası eski token'la `birak()` çağırır, eşleşmez ve günlüğe
+        // "YARIDA KESİLDİ ... bırakılamadı" düşer — YANLIŞ TEŞHİS.
+        $id = $this->kuyruk->ekle('ceviri', 'urun:1', ['urun_id' => 1], $this->simdi);
+
+        $kosucu = new JobRunner($this->kuyruk, new NullLogger(), sureSiniri: 50, isSiniri: 5);
+        $kosucu->kaydet('ceviri', static function (): void {
+            throw new \RuntimeException('sağlayıcı hatası');
+        });
+        $sonuc = $kosucu->kos($this->simdi, 'test:1');
+
+        self::assertSame(1, $sonuc['basarisiz']);
+        self::assertNull($kosucu->askidakiIs(), 'Hata yazıldıktan sonra askıda iş KALMAMALI.');
+
+        // Kanca yine de çalışsa bile ortada bırakılacak iş yoktur; kayıt
+        // `basarisiz()` tarafından zaten yeniden denemeye alınmıştır.
+        $satir = $this->pdo->query('SELECT durum, hata FROM jobs WHERE id = ' . $id)->fetch();
+        self::assertSame('bekliyor', (string) $satir['durum']);
+        self::assertStringContainsString('sağlayıcı hatası', (string) $satir['hata']);
+    }
+
+    public function testBASARILIISTENSONRADAASKIDAKAYITKALMAZ(): void
+    {
+        $this->kuyruk->ekle('ceviri', 'urun:1', ['urun_id' => 1], $this->simdi);
+
+        $kosucu = new JobRunner($this->kuyruk, new NullLogger(), sureSiniri: 50, isSiniri: 5);
+        $kosucu->kaydet('ceviri', static function (): void {
+        });
+        $kosucu->kos($this->simdi, 'test:1');
+
+        self::assertNull($kosucu->askidakiIs());
+    }
+
     public function testKIRA_CRON_ARALIGINDANUZUNDEGILDIR(): void
     {
         // Kira 15 dakikaydı; cron 5 dakikada bir koşuyor. Ölen bir süreç işi ÜÇ

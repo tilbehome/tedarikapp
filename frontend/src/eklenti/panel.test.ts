@@ -2,6 +2,7 @@ import { describe, expect, test, vi } from 'vitest';
 
 import { panelGovdesi, type PanelEylemleri, type PanelGorunumu } from '../../../extension/ui/v2/panel';
 import { alanRaporu } from '../../../extension/core/alanRaporu';
+import { V2_CSS } from '../../../extension/ui/v2/stil';
 import { baslangicDurumu, gecis, type MakineDurumu } from '../../../extension/core/durumMakinesi';
 import type { ParseResult } from '../../../extension/core/types';
 
@@ -439,6 +440,74 @@ describe('D10-NİHAİ — panel HER AÇILIŞTA mockup içeriğini gösterir', ()
 
     expect(govde.querySelector('.tdk-bilgi')?.getAttribute('data-bilgi')).toBe('mukerrer');
     expect(govde.textContent).toContain('panelde ZATEN VAR');
+  });
+});
+
+describe('rc7 D10-b — panel içeriği yatay taşmaz', () => {
+  const UZUN_ADRES =
+    'https://detail.1688.com/offer/1062644236710.html?offerId=1062644236710&hotSaleSkuId=5310981234567&spm=a260k.home2024.recommendpart.9';
+
+  test('adres değerleri TEK SATIRA kırpılır, tam değer title özniteliğinde durur', () => {
+    const rapor = alanRaporu(
+      ayristirma({
+        source: {
+          platform: '1688',
+          external_id: '1062644236710',
+          url: UZUN_ADRES,
+          seller_url: 'https://shop1234567890.1688.com/page/offerlist.htm?spm=a2615.7691456.wp_pc_common_topnav_38975102',
+          seller_name: '义乌市盎燕电子商务有限公司',
+          captured_at: '2026-08-26T10:00:00+03:00',
+        } as ParseResult['source'],
+      }),
+    );
+    const { govde } = ciz({ rapor });
+
+    const adresler = [...govde.querySelectorAll('.tdk-alan .deger')].filter((d) =>
+      (d.textContent ?? '').startsWith('http'),
+    );
+    expect(adresler.length).toBeGreaterThanOrEqual(2);
+    for (const deger of adresler) {
+      // Kırpma sınıfı + tam değer: veri kaybolmaz, panel de taşmaz.
+      expect(deger.classList.contains('tek-satir')).toBe(true);
+      expect((deger as HTMLElement).title).toBe(deger.textContent);
+    }
+  });
+
+  test('uzun varyant adları çipte kırpılır ve tam adı title taşır', () => {
+    const varyantlar = [
+      '绿色【足弓支撑 久站不累脚】加厚底 38/39',
+      '蓝色【足弓支撑 久站不累脚】加厚底 40/41',
+      '灰色【足弓支撑 久站不累脚】加厚底 42/43',
+      '黑色【足弓支撑 久站不累脚】加厚底 44/45',
+      '粉色【足弓支撑 久站不累脚】加厚底 36/37',
+      '米色【足弓支撑 久站不累脚】加厚底 46/47',
+    ];
+    const { govde } = ciz({ varyantlar, seciliVaryant: varyantlar[0] });
+
+    // Etiket şeridi de aynı çip sınıfını kullanır; varyantları uzunluklarıyla ayır.
+    const cipler = [...govde.querySelectorAll('.tdk-varyant .cip')].filter(
+      (cip) => (cip.textContent ?? '').includes('足弓支撑'),
+    );
+    expect(cipler).toHaveLength(6);
+    for (const cip of cipler) {
+      expect((cip as HTMLElement).title).toBe(cip.textContent);
+      expect((cip.textContent ?? '').length).toBeGreaterThan(20);
+    }
+  });
+
+  test('CSS taşma disiplini: değer sütunu min-width:0, kesintisiz metin kırılır', () => {
+    // jsdom yerleşim hesaplamaz; bu yüzden KURALIN VARLIĞI sınanır. Gerçek
+    // ölçüm Playwright senaryosundadır (EKL-30).
+    expect(V2_CSS).toMatch(/\.tdk-alan \.deger \{[^}]*min-width:\s*0/);
+    expect(V2_CSS).toMatch(/\.tdk-alan \.deger \{[^}]*overflow-wrap:\s*anywhere/);
+    expect(V2_CSS).toMatch(/\.tdk-alan \.deger\.tek-satir \{[^}]*text-overflow:\s*ellipsis/);
+    expect(V2_CSS).toMatch(/\.tdk-varyant \{[^}]*flex-wrap:\s*wrap/);
+    // Taşmanın teknik sebebi grid/flex ögelerinin varsayılan `min-width: auto`
+    // değeridir; kırpma (overflow:hidden) sorunu ÇÖZMEZ, yalnız gizler. Bu
+    // yüzden sınanan şey sütunun açıkça sınırlanmasıdır (gerçek ölçüm: EKL-30).
+    expect(V2_CSS).toMatch(/\.tdk-govde \{[^}]*grid-template-columns:\s*minmax\(0, 1fr\)/);
+    expect(V2_CSS).toMatch(/\.tdk-alanlar \{[^}]*grid-template-columns:\s*minmax\(0, 1fr\)/);
+    expect(V2_CSS).toMatch(/\.tdk-govde > \* \{[^}]*min-width:\s*0/);
   });
 });
 

@@ -227,6 +227,13 @@ final class JobRunner
                     $saglayiciBeklemesi,
                     $token,
                 );
+                // İE22-D9-1 (rc6 denetim bulgusu): `basarisiz()` token'ı SİLER.
+                // Askıdaki kaydı temizlemezsek ve tur bu işle biterse, shutdown
+                // kancası eski token'la `birak()` çağırır; eşleşmez ve günlüğe
+                // "YARIDA KESİLDİ: #N bırakılamadı (kira devralınmış olabilir)"
+                // düşer. İş aslında doğru işlenmiştir — yalnız operatör olmayan
+                // bir kira devralması arar. Yanlış teşhis, teşhissizlikten kötüdür.
+                $this->askidaki = null;
                 $basarisiz++;
                 $this->logger->error('Kuyruk işi başarısız', [
                     'tur' => $tur,
