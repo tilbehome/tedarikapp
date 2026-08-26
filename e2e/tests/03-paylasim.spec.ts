@@ -61,7 +61,10 @@ test.describe('Paylaşım sayfası', () => {
     expect(imzasiz.status(), 'İmzasız indirme 404 olmalı').toBe(404);
 
     // ── İptal: eski link ANINDA ölür (K51) ──
-    await page.getByRole('button', { name: 'Linki iptal et' }).click();
+    // rc8/K2: düğme metni "Bağlantıyı iptal et" oldu ve iki ayrı dalda
+    // (adres görünürken / gizliyken) basılıyor — ikisi de aynı kimliği taşır,
+    // aynı anda yalnız biri render edilir.
+    await page.getByTestId('paylas-iptal').click();
     await expect(gorunen(page.getByText(/iptal edildi/i))).toBeVisible();
 
     const iptalSonrasi = await misafirSayfa.goto(url);
