@@ -647,6 +647,22 @@ jobs:
       - name: ESLint
         run: npm run lint
 
+      # rc8: EKLENTİ TİP KÖKÜ HAZIRLANIR.
+      #
+      # `frontend/src/eklenti/*` testleri `extension/` kaynaklarını doğrudan
+      # içe aktarır; vitest bu dosyalar için `extension/tsconfig.json`u çözer ve
+      # o dosya WXT'nin ÜRETTİĞİ `.wxt/tsconfig.json`u miras alır. Üretilmiş
+      # dosya repoda yoktur: temiz checkout'ta dört süit "Cannot find module
+      # './.wxt/tsconfig.json'" ile düşer. Geliştirici makinesinde dosya bir kez
+      # üretildiği için sorun YEREL KOŞUMDA GÖRÜNMEZ — CI'nın yakaladığı sınıf
+      # tam olarak budur.
+      - name: Eklenti tip kökünü hazırla (WXT)
+        working-directory: extension
+        run: |
+          npm ci --silent
+          npx wxt prepare
+          test -f .wxt/tsconfig.json
+
       - name: Birim testleri (vitest — İE#20 C11)
         # Kapsam BİLİNÇLİ OLARAK DAR: token bekçileri + davranışı olan bileşenler
         # (B11 eylem düğmesi). K35'in "ekran kabulü manueldir" kuralı duruyor;
