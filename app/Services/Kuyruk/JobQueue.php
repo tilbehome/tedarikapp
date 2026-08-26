@@ -579,6 +579,7 @@ final class JobQueue
      *
      * @return array{
      *     bekleyen: int, calisan: int, olu: int, en_eski_bekleyen_dakika: int|null,
+     *     alinabilir: int, ileri_tarihli: int, en_yakin_calisacak_dakika: int|null,
      *     turler: array<string, int>, saatlik_biten: int, saatlik_olen: int,
      *     hata_orani_yuzde: int, yeniden_denenen: int
      * }

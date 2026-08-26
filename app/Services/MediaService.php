@@ -120,6 +120,8 @@ final class MediaService
      *
      * Ertelenmemiş yazımda (temp yok) dosya zaten kalıcı adındadır; bu durumda
      * "yapacak iş yok" da bir BAŞARIDIR — çağıran için ayrım yoktur.
+     *
+     * @param array{mode: string, path: string|null, url: string, temp?: string|null} $stored
      */
     public function commit(array $stored): bool
     {

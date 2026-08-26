@@ -532,6 +532,15 @@ jobs:
           npx playwright install chromium
           npx playwright --version
 
+      # rc8: EKLENTİ ARAYÜZ KÖPRÜSÜ DERLENİR (EKL-30/31 senaryoları bunu yükler).
+      # `e2e/dist/` üretilmiş bir çıktıdır ve repoya girmez; CI'da derlenmezse
+      # senaryolar "ENOENT arayuz.js" ile düşer — rc7'de tam olarak bu oldu.
+      - name: E2E arayüz köprüsünü derle
+        run: |
+          npm ci --prefix frontend --silent
+          ./frontend/node_modules/.bin/esbuild e2e/arayuz-giris.ts             --bundle --outfile=e2e/dist/arayuz.js --format=iife
+          test -s e2e/dist/arayuz.js
+
       - name: Uygulamayı başlat
         run: |
           php -S 127.0.0.1:8099 -t public e2e/router.php > /tmp/e2e-server.log 2>&1 &
