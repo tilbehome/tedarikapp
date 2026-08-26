@@ -14,10 +14,18 @@ test.describe('Paylaşım sayfası', () => {
     await urunEkle(page, listId, 'Paylaşılan ürün', 12);
 
     await page.goto(`/panel/listeler/${listId}`);
-    await page.getByRole('button', { name: 'Paylaş' }).click();
-    await page.getByRole('button', { name: 'Link üret' }).click();
+    // rc8/K2 (F43 disiplini): seçiciler METİNDEN kimliğe taşındı.
+    //
+    // Eski hâl `getByRole('button', { name: 'Paylaş' })` idi; B6 Paylaş
+    // penceresi eklendikten sonra aynı ada iki öğe uyuyor ve Playwright strict
+    // mode ihlali veriyordu. Düğme adı da değişmişti: "Link üret" artık
+    // "Bağlantı üret" (ve mevcut linkte "Bağlantıyı yenile"). Metne yaslanan
+    // seçici, arayüz her tazelendiğinde kırılır — kimlik kırılmaz.
+    await page.getByTestId('paylas-ac').click();
+    await expect(page.getByTestId('paylas-penceresi')).toBeVisible();
+    await page.getByTestId('paylas-uret').click();
 
-    const linkMetni = page.locator('p.font-mono');
+    const linkMetni = page.getByTestId('paylas-adres');
     await expect(linkMetni).toBeVisible();
     const url = ((await linkMetni.textContent()) ?? '').trim();
     // İE#18 G5: kanonik ön ek /liste (eski /p alias olarak yaşamaya devam eder).

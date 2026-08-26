@@ -239,7 +239,12 @@ export default function ListDetailScreen() {
             </Link>
             {/* İE#11 Görev E: üretim CSRF'li POST · İE#13 F2/F5/F6: kopya türü, durum filtresi, QR. */}
             <CiktiSecenekleri listId={listId} onDone={refresh} />
-            <button type="button" className="btn-ghost" onClick={() => setShareOpen((value) => !value)}>
+            <button
+              type="button"
+              className="btn-ghost"
+              data-testid="paylas-ac"
+              onClick={() => setShareOpen((value) => !value)}
+            >
               <Share2 className="h-4 w-4" aria-hidden />
               Paylaş
             </button>
