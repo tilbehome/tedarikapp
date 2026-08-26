@@ -72,6 +72,46 @@ final class AppUrlKanonikTest extends TestCase
         self::assertNull(AppUrl::kanonik($adres), $gerekce);
     }
 
+    /**
+     * rc8/K3 — KONTROL KARAKTERLERİ TEK TEK SINANIR.
+     *
+     * Sınıf `\x00-\x20\x7F` olarak yazılıdır; bu süit onun UÇLARINI değil,
+     * saldırıda fiilen kullanılan dört karakteri (sekme, CR, LF, NUL) ve
+     * DEL'i adresin ORTASINA gömerek sınar — `trim()` yalnız uçları
+     * temizlediği için gömülü karakter doğrulamaya kadar gelir.
+     *
+     * @return list<array{0: string, 1: string}>
+     */
+    public static function kontrolKarakterleri(): array
+    {
+        return [
+            ["https://ornek\tcom", 'sekme (\x09)'],
+            ["https://ornek\rcom", 'CR (\x0D)'],
+            ["https://ornek\ncom", 'LF (\x0A) — başlık enjeksiyonu'],
+            ["https://ornek\0com", 'NUL (\x00) — C katmanı kesmesi'],
+            ["https://ornek\x7Fcom", 'DEL (\x7F)'],
+            ['https://ornek com', 'boşluk (\x20)'],
+            ["https://ornek.com\r\nSet-Cookie: a=b", 'CRLF ile başlık ekleme'],
+        ];
+    }
+
+    #[DataProvider('kontrolKarakterleri')]
+    public function testGOMULUKONTROLKARAKTERIREDDEDILIR(string $adres, string $gerekce): void
+    {
+        self::assertNull(AppUrl::kanonik($adres), $gerekce);
+    }
+
+    public function testUCLARDAKIBOSLUKTEMIZLENIR(): void
+    {
+        // `trim()` uçlardaki sekme/CR/LF/NUL'ü siler; geriye kanonik adres
+        // kalır. Bu bilinçli davranıştır: .env satırının sonuna kaçan CRLF
+        // kurulumu bozmamalı. Tehlike GÖMÜLÜ karakterdedir, uçtakinde değil.
+        self::assertSame(
+            'https://tedarik.ornek.com',
+            AppUrl::kanonik("\t https://tedarik.ornek.com/\r\n\0"),
+        );
+    }
+
     public function testURETIMDEAPPURLYOKSA_ACIKHATA(): void
     {
         // Sessiz Host yedeği yerine görünür arıza: kullanıcı ayarı girer.
