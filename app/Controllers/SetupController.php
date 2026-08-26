@@ -655,7 +655,15 @@ final class SetupController
 
         // K44 disksiz mod: config.php yalnız DB+APP_KEY taşır — kalan uygulama ayarları
         // (APP_URL, LOG_DRIVER, TZ) settings tablosuna yazılır; Config bunları DB'den okur.
-        $this->rememberAppSettings();
+        // rc8-04: APP_URL yazılamazsa BURADA durulur — kilit YAZILMAZ, kurulum
+        // "yarım" kalır ve sihirbaz kaldığı yerden devam ettirilebilir.
+        try {
+            $this->rememberAppSettings();
+        } catch (RuntimeException $e) {
+            return Response::error($response, 'SERVER_ERROR', $e->getMessage(), 500, [], [
+                'diagnostics' => $this->diagnosticsFor('finish', $e),
+            ]);
+        }
 
         // K33: medya modu kurulum anında ölçülür ve ayara yazılır — panel rozeti bunu okur.
         $mediaMode = $this->rememberMediaMode();
@@ -751,14 +759,35 @@ final class SetupController
     }
 
     /** K44: dosyada tutulmayan uygulama ayarlarını settings tablosuna yazar. */
+    /**
+     * @throws RuntimeException APP_URL yazılamazsa (rc8-04 / dış denetim F-08)
+     */
     private function rememberAppSettings(): void
     {
+        // rc8-04: APP_URL YAZILAMAZSA KURULUM TAMAMLANMAZ.
+        //
+        // Eskiden buradaki her hata yutuluyor, kurulum yine de KİLİTLENİYORDU.
+        // Sonuç: APP_URL'siz "tamamlanmış" bir kurulum ve `AppUrl`in istemci
+        // `Host` başlığına düşmesi — yani paylaşım linkinin ve QR'ın saldırgan
+        // tarafından belirlenebilmesi. Diğer ayarlar (LOG_DRIVER, TZ, sürüm
+        // damgası) hâlâ "kolaylık"tır ve hataları kurulumu durdurmaz.
+        $appUrl = $this->state->get(self::DATA_APP_URL);
+        if (is_string($appUrl) && $appUrl !== '') {
+            try {
+                (new SettingsRepository($this->connection()))->set('APP_URL', $appUrl);
+            } catch (Throwable $hata) {
+                throw new RuntimeException(
+                    'Uygulama adresi (APP_URL) veritabanına yazılamadı: ' . $hata->getMessage()
+                    . ' — kurulum tamamlanmadı. Bu ayar olmadan paylaşım bağlantıları ve QR '
+                    . 'kodları istemcinin gönderdiği adresle üretilirdi.',
+                    0,
+                    $hata,
+                );
+            }
+        }
+
         try {
             $settings = new SettingsRepository($this->connection());
-            $appUrl = $this->state->get(self::DATA_APP_URL);
-            if (is_string($appUrl) && $appUrl !== '') {
-                $settings->set('APP_URL', $appUrl);
-            }
             $settings->set('LOG_DRIVER', 'db'); // K33/K44: üretimde log daima DB
             $settings->set('TZ', 'Europe/Istanbul');
             // D2-REV: KURULU SÜRÜM kaydı. Teşhis motoru "dosyalar yeni, şema eski"
