@@ -504,6 +504,27 @@
       "dosya": "e2e/tests/08-eklenti-paneli.spec.ts",
       "test": "E2E-EKL-31 — panel varsayılan KAPALI (rc7 EK-1 §5)",
       "not": "5 ardışık yükleme; hesaplanmış display ölçülür. Montaj hedefi yoksa sağ-alt pill yedeği."
+    },
+    "E2E-EKL-32": {
+      "baslik": "Panel gövdesi kendi içinde kaydırılır; alt aksiyon çubuğu sabit",
+      "durum": "kapsandi",
+      "dosya": "e2e/tests/08-eklenti-paneli.spec.ts",
+      "test": "E2E-EKL-32 — panel gövdesi KENDİ İÇİNDE kaydırılır (v1.0 saha bulgusu, 27 Ağu)",
+      "not": "1366x768 ve 1920x1080; elementFromPoint ile tıklanabilirlik. Görünürlük tek başına yetmez."
+    },
+    "E2E-EKL-33": {
+      "baslik": "Panel metin disiplini: yanıltıcı rozet yok, HTML varlığı çözülür, title balonu yok",
+      "durum": "kapsandi",
+      "dosya": "e2e/tests/08-eklenti-paneli.spec.ts",
+      "test": "E2E-EKL-33 — panel metin disiplini (v1.0 A2/A3/A4, saha 27 Ağu)",
+      "not": "XSS regresyonu dâhil; birim karşılığı extension/tests/metin.test.ts."
+    },
+    "E2E-EKL-34": {
+      "baslik": "Inline düğme satın alma bloğunun üstünde; dil geçişinde kaybolmaz",
+      "durum": "kapsandi",
+      "dosya": "e2e/tests/08-eklenti-paneli.spec.ts",
+      "test": "E2E-EKL-34 — inline düğme SATIN ALMA BLOĞUNUN ÜSTÜNDE (v1.0 A5/A8)",
+      "not": "İki DOM fikstürü (1688 ZH + AliTrading TR) SENTETİKTİR; gerçek dökümle değiştirilmesi İE#22 maddesidir."
     }
   }
 }
