@@ -28,7 +28,12 @@ export interface AkisBagimliliklari {
   /** Sayfayı okuyup ayrıştırır (bridge + parser). */
   ayristir: () => Promise<ParseResult>;
   /** Yakalamayı background üzerinden gönderir. */
-  gonder: (yuk: { captureId: string; hedef: HedefSecimi; sonuc: ParseResult }) => Promise<GonderimYaniti>;
+  gonder: (yuk: {
+    captureId: string;
+    hedef: HedefSecimi;
+    sonuc: ParseResult;
+    onNot?: (not: string | null) => void;
+  }) => Promise<GonderimYaniti>;
   /** Disclosure onayı var mı? */
   onayliMi: () => Promise<boolean>;
   /** Kuyrukta duran (hakkı bitmiş) kayıtlar. */
@@ -95,6 +100,9 @@ export class Akis {
   /** Gönderim/mükerrer yanıtından gelen ürün kimliği — "Panelde aç" bunu kullanır. */
   private urunId: number | null = null;
 
+  /** A7: gönderim uzadığında panele düşen ilerleme notu. */
+  private gonderimNotu: string | null = null;
+
   public constructor(private readonly bagimliliklar: AkisBagimliliklari) {}
 
   public durum(): MakineDurumu {
@@ -117,6 +125,7 @@ export class Akis {
       baglanti: this.baglanti,
       baglantiMesaj: this.baglantiMesaj,
       otomatikSuruyor: this.otomatikSuruyor,
+      gonderimNotu: this.gonderimNotu,
     };
   }
 
@@ -339,7 +348,14 @@ export class Akis {
       captureId: this.makine.captureId,
       hedef: this.hedef,
       sonuc: this.sonuc,
+      // A7: gönderim 30 sn'yi aşarsa köprü buradan haber verir; panel D6'da
+      // kalır ama kullanıcı ne beklediğini bilir.
+      onNot: (not) => {
+        this.gonderimNotu = not;
+        this.yayinla();
+      },
     });
+    this.gonderimNotu = null;
 
     switch (yanit.sonuc) {
       case 'BASARILI':
