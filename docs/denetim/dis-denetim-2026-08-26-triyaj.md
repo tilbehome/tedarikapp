@@ -258,3 +258,24 @@ canlı sunucunun PHP sürümü **ölçülsün** (`php -v` + cPanel MultiPHP ekra
    giriyor (`.files.enc`). Medya ve off-site kapsamı ise doğru.
 5. F-27 **RET** önerilir: düz metin paylaşım kodu bilinçli bir karardır (K62);
    6 hane bir parola değil, kullanıcının firmaya ilettiği koddur.
+
+---
+
+## 6. rc8 UYGULAMA SONUCU (26 Ağu 2026)
+
+Triyaj §3'teki dört aday **rc8'de kapatıldı** (dal `is-emri-rc8-denetim-p0`):
+
+| Madde | Bulgular | Kanıt |
+|---|---|---|
+| rc8-01 | F-01 · F-13 · F-14 · F-16 · F-32 | `tests/Http/MedyaKompozisyonTest.php` — GERÇEK `AppBuilder` ile üç yol: nihai dosya var · `.tmp` yok · adres diski gösteriyor |
+| rc8-02 | F-02 | `tests/Setup/SetupLockTest.php` +4 — tablo yok / SELECT yetkisi yok / bozuk kolon / SQLite metni |
+| rc8-03 | F-07 | `tests/Http/IdempotansYollariTest.php` — GK ve hata yollarında iki tekrar tek satır; yarışı kaybeden istek 500 almaz |
+| rc8-04 | F-08 | `tests/Core/AppUrlKanonikTest.php` +18 — kanonik doğrulama; üretimde `AppUrlYokException` |
+
+**Sözleşme değişikliği (rapora değer):** `AppUrl` artık üretimde Host'a
+düşmüyor. Eski `AppUrlTest`teki üç test bu davranışı "bilinçli yedek" diye
+kodluyordu; silinmediler, **yeni sözleşmeye taşındılar** (yedek yalnız açık
+bayrakla). Davranış değişikliği testte görünür kaldı.
+
+Kalan bulgular (F-03, F-05, F-15, F-17, F-19, F-22, F-24, F-28, F-29) **İE#22**
+kapsamındadır; F-27 RET; F-11/F-20/F-30/F-33 hâlâ **doğrulanmadı**.

@@ -249,7 +249,12 @@ final class ShareController extends ApiController
         // İE#19 E5: adres AYARLARDAKİ APP_URL'den üretilir. Eskiden isteğin Host
         // başlığından türetiliyordu; Host istemcinin yazdığı bir değerdir ve sahte
         // bir Host, firmaya gidecek QR'a yabancı bir alan adı bastırabilirdi.
-        $shareUrl = \App\Core\AppUrl::to($this->appConfig?->get('APP_URL'), $request, '/liste/' . $token);
+        $shareUrl = \App\Core\AppUrl::to(
+            $this->appConfig?->get('APP_URL'),
+            $request,
+            '/liste/' . $token,
+            \App\Core\AppUrl::hostYedegiIzinli($this->appConfig?->get('APP_ENV')),
+        );
 
         return Response::success($response, [
             'share_url' => $shareUrl,

@@ -44,10 +44,16 @@ test.describe('Panel temel akışı', () => {
     await expect(gorunen(page.getByText('E2E Ürünü'))).toBeVisible();
 
     // ── Liste durumunu ilerlet: Taslak → İletildi (K48: kur BU ANDA kilitlenir) ──
-    await expect(gorunen(page.getByText('Liste durumunu ilerlet:'))).toBeVisible();
-    await page.getByRole('button', { name: 'İletildi', exact: true }).click();
+    //
+    // rc8/K2 (F43 disiplini): İE#21 B2'de "Liste durumunu ilerlet:" metinli
+    // düğme kümesi AŞAMA ÇUBUĞUYLA değişti. Aşamalar artık `data-testid`
+    // taşır (`asama-<durum kodu>`) ve etiket `sr-only`dur; metne bakan eski
+    // seçici hiçbir şey bulamıyordu.
+    await expect(page.getByTestId('asama-cubugu')).toBeVisible();
+    await page.getByTestId('asama-sent').click();
 
-    // Durum rozeti "İletildi"ye döner (ilerletme düğmesi artık listede yoktur).
-    await expect(gorunen(page.getByText('İletildi'))).toBeVisible();
+    // Aşama çubuğu "İletildi" adımını AKTİF gösterir (rozet metni değil,
+    // bileşenin kendi durum niteliği sınanır).
+    await expect(page.getByTestId('asama-sent')).toHaveAttribute('data-durum', 'aktif');
   });
 });

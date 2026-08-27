@@ -7,6 +7,7 @@ namespace App\Models;
 use App\Core\Connection;
 use App\Core\Dates;
 use DateTimeImmutable;
+use PDOException;
 
 /**
  * inbox_items erişimi (İE#11 Faz 3 — docs/04 §2c v2).
@@ -38,6 +39,40 @@ final class InboxRepository
         $row = $statement->fetch();
 
         return is_array($row) ? $row : null;
+    }
+
+    /**
+     * REZERVE ET YA DA MEVCUDU DÖNDÜR — idempotansın TEK ilkeli (rc8-03 / F-07).
+     *
+     * SAHA SÖZLEŞMESİ (K25): "aynı `capture_id` ikinci kez gelirse İLK sonucun
+     * aynısı döner". Eskiden bu söz yalnız hedef-listeli yolda tutuluyordu;
+     * varsayılan Gelen Kutusu ve doğrulama-hatası yolları doğrudan `create()`
+     * çağırıyordu. Controller'daki ön kontrol bir OKUMADIR: iki eşzamanlı tekrar
+     * isteği de onu geçebilir, UNIQUE yarışını kaybeden ham `PDOException` alır
+     * ve eklentiye 500 döner. Eklenti kuyruğu (A5) tekrar denediği için bu yarış
+     * teorik değildir.
+     *
+     * Burada yazma DENENİR; UNIQUE ihlali bir HATA DEĞİL, "zaten var" cevabıdır.
+     *
+     * @param array<string, mixed> $fields
+     *
+     * @return array{id: int, yeni: bool} `yeni=false` ise satır zaten vardı
+     */
+    public function rezerveEtVeyaBul(array $fields, DateTimeImmutable $now): array
+    {
+        $captureId = is_string($fields['capture_id'] ?? null) ? (string) $fields['capture_id'] : '';
+
+        try {
+            return ['id' => $this->create($fields, $now), 'yeni' => true];
+        } catch (PDOException $exception) {
+            // Yarışı kaybettik: satır BAŞKASI tarafından yazılmış olmalı.
+            $mevcut = $captureId === '' ? null : $this->findByCaptureId($captureId);
+            if ($mevcut === null) {
+                throw $exception; // UNIQUE dışı gerçek bir hata — yutulmaz.
+            }
+
+            return ['id' => (int) $mevcut['id'], 'yeni' => false];
+        }
     }
 
     /**

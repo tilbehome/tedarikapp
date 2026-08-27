@@ -95,6 +95,9 @@
     }
     lines.push('Uygulama: ' + (env.app_version || '?') + ' · PHP ' + (env.php_version || '?') + ' (' + (env.sapi || '?') + ')');
     lines.push('Sunucu: ' + (env.os || '?') + ' · MySQL: ' + (env.mysql_version || 'alınamadı'));
+    // rc8/K4 (F-08): paylaşım bağlantısının/QR'ın tabanı. BİLGİ SATIRIDIR,
+    // kurulumu durdurmaz — ama eksikse burada görünür.
+    lines.push('Uygulama adresi: ' + (env.app_url || '(yok)') + ' — kanonik ' + (env.app_url_kanonik ? '✓' : '⚠'));
     var extensions = env.extensions || {};
     lines.push('Eklentiler: ' + Object.keys(extensions).map(function (name) {
       return name + '=' + extensions[name];

@@ -236,3 +236,23 @@ devralmasını arar.
 - **Doğrulama (26 Ağu 2026):** kaynak okundu, bulgu teyit edildi —
   `app/Services/Kuyruk/JobRunner.php` içinde `askidaki = null` yalnız başarı
   dalında ve tanınmayan-tür dalında var; catch dalında yok.
+
+---
+
+## EK — PHP TABANI: ÖNCE SUNUCU, SONRA KOD (K84-EK, 26 Ağu 2026)
+
+Saha ölçümü: **canlı web PHP 8.1.34** (K84 taslağı 8.3 varsayıyordu). Karar
+değişmez — taban `^8.2`ye çıkar — ama İE#22'de sıra şudur ve **ters
+çevrilemez**:
+
+1. cPanel > MultiPHP Manager'da alan adı **PHP 8.3**'e alınır.
+2. `php -v` ve panel > Sistem durumu ile doğrulanır (ikisi de 8.3 göstermeli).
+3. Eklenti setleri yeni sürümde kontrol edilir: `pdo_mysql, curl, gd, mbstring,
+   zip, intl, bcmath, fileinfo, openssl` — MultiPHP geçişi eklentileri
+   sıfırlayabilir.
+4. Ancak bundan **sonra** `composer.json` tabanı `^8.2` yapılır,
+   `platform-check` geri açılır, `php81-uyum` CI işi düşer ve
+   `RequirementChecker::MIN_PHP_VERSION` 8.2.0 olur.
+
+Sıra bozulursa ilk deploy'da canlı site 500 verir: `platform-check` çalışma
+zamanında 8.1'i reddeder ve panel açılmaz.

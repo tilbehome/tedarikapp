@@ -191,9 +191,53 @@ final class CaptureService
             throw $e;
         }
 
-        $this->media->commit($this->mediaHandle($media));
+        // rc8-01 (F-13): taşıma başarısızsa kayıt `.tmp`ye işaret etmesin —
+        // ürün adresi kaynak adrese düşer, görsel kaybolmaz.
+        if (!$this->media->commit($this->mediaHandle($media))) {
+            // rc8/E1: yetim `.tmp` diskte bırakılmaz — kayıt kaynak adrese
+            // düştüğü için o dosyaya bir daha bakılmayacak, F-14 envanteri
+            // ise her başarısız taşımada yeni kalıntı sayardı.
+            $this->media->discard($this->mediaHandle($media));
+
+            $kaynak = is_string($media['main_source'] ?? null) ? (string) $media['main_source'] : null;
+            if ($kaynak !== null && $kaynak !== '') {
+                $this->products->update(
+                    $productId,
+                    ['main_image' => $kaynak, 'main_image_source' => $kaynak],
+                    $now,
+                );
+            }
+        }
 
         return $productId;
+    }
+
+    /**
+     * Galeri adreslerini SSRF beyaz listesinden geçirir (rc8-01 / F-16).
+     *
+     * Reddedilen adres SESSİZCE düşürülür ve yakalama SÜRER: tek bir kötü
+     * galeri satırı yüzünden ürünü reddetmek, kullanıcıya "yakalama bozuk"
+     * dedirtirdi. Ana görsel reddedilirse akış zaten `MediaDeniedException`
+     * ile durur — orası veri kaybıdır, burası değil.
+     *
+     * @param list<string> $adresler
+     *
+     * @return list<string>
+     */
+    private function guvenliGaleri(array $adresler): array
+    {
+        $gecenler = [];
+        foreach ($adresler as $adres) {
+            try {
+                $this->media->assertAllowed($adres);
+                $gecenler[] = $adres;
+            } catch (MediaDeniedException) {
+                // Beyaz liste dışı / iç ağ adresi: kayda GİRMEZ.
+                continue;
+            }
+        }
+
+        return $gecenler;
     }
 
     /**
@@ -257,7 +301,12 @@ final class CaptureService
         ], $now);
 
         // Kalan görseller REMOTE galeri satırları — K47 arşive-taşıma hattı sonra indirir.
-        $this->products->addRemoteImages($productId, array_slice($images, 0, 20));
+        //
+        // rc8-01 (F-16): GALERİ ADRESLERİ DE SSRF DENETİMİNDEN GEÇER. Eskiden
+        // yalnız `https://` ön-eki ve uzunluk bakılıyordu; ana görsel `UrlGuard`
+        // görüyor, galeri görmüyordu. Bu satırlar hem kullanıcıya servis edilir
+        // hem de medya işi tarafından İNDİRİLİR — yani iç ağa çıkma yüzeyidir.
+        $this->products->addRemoteImages($productId, $this->guvenliGaleri(array_slice($images, 0, 20)));
         $this->lists->bumpRevision($listId, $now);
 
         return $productId;
