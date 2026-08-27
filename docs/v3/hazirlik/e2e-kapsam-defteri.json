@@ -524,7 +524,7 @@
       "durum": "kapsandi",
       "dosya": "e2e/tests/08-eklenti-paneli.spec.ts",
       "test": "E2E-EKL-34 — inline düğme SATIN ALMA BLOĞUNUN ÜSTÜNDE (v1.0 A5/A8)",
-      "not": "İki DOM fikstürü (1688 ZH + AliTrading TR) SENTETİKTİR; gerçek dökümle değiştirilmesi İE#22 maddesidir."
+      "not": "Ürün Sahibi'nin GERÇEK sayfa dökümleri (e2e/fixtures/1688, 27 Ağu 2026, oturumsuz). Dış CSS/JS yok, ağ route.abort() ile kapalı: ağaç gerçek, düzen gerçek sayfanın pikseli değil."
     }
   }
 }

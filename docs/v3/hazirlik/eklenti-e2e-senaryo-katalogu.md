@@ -686,18 +686,25 @@ kopyala düğmesi var.
 mağaza adı satırını örtmesin. Hedef bulunamazsa pill yedeği görünsün. Sayfa
 kendini yeniden çizse (dil geçişi, geç çizim) düğme kaybolmasın.
 
-**Ön koşul / hazırlık:** İki DOM fikstürü — `e2e/fikstur/1688-zh.html` (立即订购 /
-加入进货单) ve `e2e/fikstur/alitrading-tr.html` ("Giriş yaparak…" / "Sepete
-ekle"). Fikstürler v1.0'da SENTETİKTİR; gerçek dökümle değiştirilmesi İE#22
-maddesidir.
+**Ön koşul / hazırlık:** Ürün Sahibi'nin GERÇEK sayfa dökümleri —
+`e2e/fixtures/1688/detay-zh.html` ve `detay-tr-alitrading.html` ("Web Sayfası,
+Tamamı" kaydı, 27 Ağu 2026). `_files` klasörleri repoya girmez; dış CSS/JS
+yüklenmez ve Playwright ağı `route.abort()` ile kapatır (K61). Sonuç: DÜZEN
+gerçek sayfanın pikseli değildir, AĞAÇ gerçektir. İki döküm de OTURUMSUZ
+alındı — sipariş düğmelerinin yerinde giriş çağrısı (登录查看全部规格 /
+"Giriş yaparak hepsini görün") vardır; sipariş modülü
+(`[data-spm="submitOrder"]`) iki skinde de aynı düğümdür.
 
 **Adımlar:** Her fikstürde 5 ardışık montaj → düğme kutusu satın alma bloğunun
 üst kenarıyla ve mağaza satırıyla kesişim açısından karşılaştırılır → sağ sütun
 `innerHTML` ile yeniden çizilerek dil geçişi taklit edilir ve nöbetin düğmeyi
 geri bastığı beklenir → hedefsiz sayfada pill 5/5 ölçülür.
 
-**Beklenen:** 5/5 `SATIRICI`, düğme bloğun ÜSTÜNDE, hiçbir komşuyla kesişim yok,
-genişlik tam; 5/5 dil geçişinde düğme geri gelir; hedefsizde 5/5 görünür pill.
+**Beklenen:** 5/5 `SATIRICI`, düğme bloğun ÜSTÜNDE, satın alma bloğu ve önceki
+komşuyla kesişim YOK, üstteki içerik KAYMAZ, blok aşağı itilir (yön sınanır —
+kaç piksel ittiği değil: kenar boşluğu birleşmesi yüzünden itilme düğme
+yüksekliğine eşit olmak zorunda değil), sayfada TEK kap, genişlik tam; 5/5 dil
+geçişinde düğme geri gelir; hedefsizde 5/5 görünür pill.
 
 **Otomasyon notu:** `e2e/tests/08-eklenti-paneli.spec.ts`. A8'in kökü iki
 parçalıydı: tek seferlik montaj + adres değişmeden yapılan yeniden çizim.

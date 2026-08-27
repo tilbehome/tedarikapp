@@ -272,5 +272,9 @@ işlenecek. Hiçbiri v1.0'ı bloke etmez; hepsi süreç/altyapı borcudur.
 | 3 | **MariaDB işi koşula bağlanır (K5)** | iş bugün KOŞULSUZ atlanıyor; yeşil görünen ama hiç koşmayan bir kapı | matris koşulu düzeltilir; atlama yalnız açık bir gerekçeyle ve raporlanarak olur |
 | 4 | **"PHP 8.1 uyum" ruleset'ten düşer** | taban 8.2'ye çıkınca bu iş anlamsızlaşır | madde 1 tamamlandıktan SONRA workflow'dan ve ruleset'in zorunlu listesinden çıkarılır |
 
-Ek olarak: **A5/A8 DOM fikstürleri** (v1.0'da sentetik) Ürün Sahibi'nin gerçek
-sayfa dökümleriyle değiştirilir — bkz. `docs/is-emirleri/IE21-KAPANIS-RAPORU.md` §6.
+~~Ek olarak: **A5/A8 DOM fikstürleri** (v1.0'da sentetik) Ürün Sahibi'nin gerçek
+sayfa dökümleriyle değiştirilir.~~ **KAPANDI (27 Ağu 2026):** gerçek dökümler
+`e2e/fixtures/1688/` altına alındı, EKL-34 onlara bağlandı ve seçiciler gerçek
+DOM'a göre düzeltildi (`[data-spm="submitOrder"]` + oturumsuz görünümün giriş
+metinleri). Test gevşetilmedi; aksine komşu denetimi sınıf adından ağaca
+taşındı.

@@ -102,11 +102,15 @@ gönderilebilir hâlde üretildi.
 
 ### İE#22 defterine devredilenler
 
-- **A5/A8 fikstürleri sentetiktir.** İki DOM fikstürü (`e2e/fikstur/1688-zh.html`,
-  `e2e/fikstur/alitrading-tr.html`) 1688'in bilinen yapısından türetildi; canlı
-  sayfanın birebir dökümü değildir. Ürün Sahibi'nin ekranlarının HTML dökümü
-  alındığında fikstürler birebir hâliyle değiştirilecek ve senaryolar aynen
-  koşulacak.
+- ~~A5/A8 fikstürleri sentetiktir.~~ **KAPANDI (27 Ağu 2026):** Ürün Sahibi'nin
+  gerçek sayfa dökümleri (`e2e/fixtures/1688/detay-zh.html`,
+  `detay-tr-alitrading.html`) repoya alındı ve EKL-34 onlara bağlandı. Gerçek
+  DOM iki şeyi düzeltti: sipariş modülü iki skinde de `[data-spm="submitOrder"]`
+  düğümüdür ve dökümler OTURUMSUZ alındığı için sipariş düğmelerinin yerinde
+  giriş çağrısı vardır — yalnız 立即订购/加入进货单 metinlerine bakan liste bu
+  sayfalarda hiçbir şey bulamazdı. Kalan sınır: `_files` klasörleri repoya
+  girmediği için dış CSS yüklenmiyor; ağaç gerçek, DÜZEN gerçek sayfanın
+  pikseli değil.
 - MultiPHP 8.3 kurulum adımı (K84-EK) · medya yedeği (F-03) · MariaDB işinin
   koşula bağlanması (K5) · "PHP 8.1 uyum" işinin ruleset'ten düşürülmesi —
   ayrıntı `docs/v3/hazirlik/ie22-on-analiz.md`.
