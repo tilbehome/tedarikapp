@@ -446,19 +446,42 @@ test.describe('E2E-EKL-33 — panel metin disiplini (v1.0 A2/A3/A4, saha 27 Ağu
 });
 
 /**
- * FİKSTÜRLER (A5/A8): Ürün Sahibi'nin iki ekranının yapısı. Sentetiktir —
- * gerçek DOM dökümü geldiğinde İE#22'de birebir hâliyle değiştirilir.
+ * FİKSTÜRLER (A5/A8) — ÜRÜN SAHİBİ'NİN GERÇEK SAYFA DÖKÜMLERİ (27 Ağu 2026).
+ *
+ * "Web Sayfası, Tamamı" kaydından alınan render edilmiş DOM'lar. `_files`
+ * klasörleri repoya GİRMEZ: dış CSS/JS/görsel yüklenmez, Playwright ağı zaten
+ * bloklar. Sonuç: DÜZEN gerçek sayfanın pikseli değildir, ama AĞAÇ gerçektir —
+ * bu senaryonun sınadığı şey de zaten hedefin bulunup bulunmadığı ve düğmenin
+ * hangi düğümün önüne girdiğidir.
+ *
+ * İki döküm de OTURUMSUZ alındı: sipariş düğmelerinin yerinde giriş çağrısı
+ * var. Sipariş modülü (`[data-spm="submitOrder"]`) iki skinde de aynı düğümdür.
  */
 const FIKSTURLER = [
-  { ad: '1688 ZH', dosya: '1688-zh.html', satinAlma: '.od-pc-offer-trade', komsu: '.od-pc-offer-shop' },
-  { ad: 'AliTrading TR', dosya: 'alitrading-tr.html', satinAlma: '.purchase-area', komsu: '.store-row' },
+  { ad: '1688 ZH', dosya: 'detay-zh.html', satinAlma: '[data-spm="submitOrder"]', komsu: '.module-od-shop' },
+  {
+    ad: 'AliTrading TR',
+    dosya: 'detay-tr-alitrading.html',
+    satinAlma: '[data-spm="submitOrder"]',
+    komsu: '.module-od-shop',
+  },
 ];
 
 function fiksturHtml(dosya: string): string {
-  return readFileSync(fileURLToPath(new URL(`../fikstur/${dosya}`, import.meta.url)), 'utf8');
+  return readFileSync(fileURLToPath(new URL(`../fixtures/1688/${dosya}`, import.meta.url)), 'utf8');
 }
 
 test.describe('E2E-EKL-34 — inline düğme SATIN ALMA BLOĞUNUN ÜSTÜNDE (v1.0 A5/A8)', () => {
+  /**
+   * AĞ KAPALI (K61). Dökümler gerçek sayfadan geldiği için içlerinde 1688 ve
+   * CDN adresleri var. Hiçbiri istenmez: dış istek hem CI'yı ağa bağımlı kılar
+   * hem de senaryoyu 1688'in o günkü hâline teslim ederdi. İstekler kaynağında
+   * durdurulur; enjekte edilen köprü dosyadan gelir, ağ gerektirmez.
+   */
+  test.beforeEach(async ({ page }) => {
+    await page.route('**/*', (yol) => void yol.abort());
+  });
+
   for (const fikstur of FIKSTURLER) {
     test(`${fikstur.ad}: 5/5 yüklemede düğme blok üstünde ve hiçbir öğeyi örtmez`, async ({ page }) => {
       await page.setViewportSize({ width: 1440, height: 900 });
@@ -467,44 +490,62 @@ test.describe('E2E-EKL-34 — inline düğme SATIN ALMA BLOĞUNUN ÜSTÜNDE (v1.
         await page.setContent(fiksturHtml(fikstur.dosya));
         await page.addScriptTag({ path: KOPRU_YOLU });
 
-        const olcum = await page.evaluate(
-          ([satinAlmaSecici, komsuSecici]) => {
-            const api = (window as unknown as { TDK: Record<string, unknown> }).TDK;
-            const montaj = (api.montajYap as (s: unknown) => { tur: string; dugme: HTMLElement | null })({
-              adres: 'https://detail.1688.com/offer/1062644236710.html',
-              onTikla: () => {},
-            });
+        const olcum = await page.evaluate((satinAlmaSecici) => {
+          const kutuAl = (dugum: Element | null | undefined): DOMRect | null =>
+            dugum?.getBoundingClientRect() ?? null;
+          const blokDugumu = document.querySelector(satinAlmaSecici);
+          if (blokDugumu === null) return { hedefYok: true } as Record<string, unknown>;
 
-            const dugme = montaj.dugme;
-            const kutu = dugme?.getBoundingClientRect();
-            const blok = document.querySelector(satinAlmaSecici)?.getBoundingClientRect();
-            const komsu = document.querySelector(komsuSecici)?.getBoundingClientRect();
-            const kesisir = (a?: DOMRect, b?: DOMRect): boolean =>
-              a !== undefined &&
-              b !== undefined &&
-              a.left < b.right &&
-              a.right > b.left &&
-              a.top < b.bottom &&
-              a.bottom > b.top;
+          // KOMŞU SINIF ADIYLA DEĞİL, AĞAÇTAN alınır: sipariş modülünün hemen
+          // ÖNÜNDEKİ kardeş, sayfanın kendi düzenindeki gerçek komşudur ve
+          // dağıtım sınıf adı değiştirse de yerinde kalır.
+          const oncekiKardes = blokDugumu.previousElementSibling;
+          const oncesiKardesUst = kutuAl(oncekiKardes)?.top ?? null;
+          const oncesiBlokUst = kutuAl(blokDugumu)?.top ?? null;
 
-            return {
-              tur: montaj.tur,
-              genislik: kutu?.width ?? 0,
-              blokUstunde: (kutu?.bottom ?? Number.MAX_SAFE_INTEGER) <= (blok?.top ?? 0) + 1,
-              komsuylaKesisir: kesisir(kutu, komsu),
-              blokKesisir: kesisir(kutu, blok),
-              // Mağaza satırı yerinde mi — düğme onu itip kaydırmamalı, örtmemeli.
-              komsuGorunur: (komsu?.height ?? 0) > 0,
-            };
-          },
-          [fikstur.satinAlma, fikstur.komsu],
-        );
+          const api = (window as unknown as { TDK: Record<string, unknown> }).TDK;
+          const montaj = (api.montajYap as (s: unknown) => { tur: string; dugme: HTMLElement | null })({
+            adres: 'https://detail.1688.com/offer/1062644236710.html',
+            onTikla: () => {},
+          });
 
+          const kutu = kutuAl(montaj.dugme);
+          const blok = kutuAl(blokDugumu);
+          const kardesUst = kutuAl(oncekiKardes)?.top ?? null;
+          const kesisir = (a: DOMRect | null, b: DOMRect | null): boolean =>
+            a !== null && b !== null && a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+
+          return {
+            hedefYok: false,
+            tur: montaj.tur,
+            genislik: kutu?.width ?? 0,
+            yukseklik: kutu?.height ?? 0,
+            // Düğme bloğun ÜSTÜNDE: alt kenarı bloğun üst kenarını geçmez.
+            blokUstunde: (kutu?.bottom ?? Number.MAX_SAFE_INTEGER) <= (blok?.top ?? 0) + 1,
+            blokKesisir: kesisir(kutu, blok),
+            kardesKesisir: kesisir(kutu, kutuAl(oncekiKardes)),
+            // Önceki kardeş YERİNDEN OYNAMADI: düğme yalnız kendinden SONRASINI
+            // iter; üstteki içerik (mağaza satırı dâhil) kaymaz, örtülmez.
+            kardesKaydi: oncesiKardesUst === null || kardesUst === null ? false : Math.abs(kardesUst - oncesiKardesUst) > 1,
+            // Blok gerçekten aşağı itildi: düğme akışa GİRDİ, üstüne binmedi.
+            // Kaç piksel ittiği İDDİA EDİLMEZ — kenar boşluğu birleşmesi (margin
+            // collapsing) yüzünden itilme düğme yüksekliğine eşit olmak zorunda
+            // değildir (ölçüldü: 46 px düğme, 32 px itme). Sınanan şey yön.
+            blokItildi: oncesiBlokUst === null || blok === null ? false : blok.top - oncesiBlokUst > 0,
+            // Sayfada TEK kap vardır (SPA yönlendirmelerinde çoğalmamalı).
+            kapSayisi: document.querySelectorAll('#tedarikapp-v2-kap').length,
+          };
+        }, fikstur.satinAlma);
+
+        expect(olcum.hedefYok, `yükleme ${yukleme}: satın alma bloğu fikstürde bulunmalı`).toBe(false);
         expect(olcum.tur, `yükleme ${yukleme}: montaj türü`).toBe('SATIRICI');
         expect(olcum.blokUstunde, `yükleme ${yukleme}: satın alma bloğunun ÜSTÜNDE`).toBe(true);
-        expect(olcum.komsuylaKesisir, `yükleme ${yukleme}: mağaza satırını ÖRTMEZ`).toBe(false);
         expect(olcum.blokKesisir, `yükleme ${yukleme}: satın alma bloğunu ÖRTMEZ`).toBe(false);
-        expect(olcum.komsuGorunur, `yükleme ${yukleme}: mağaza satırı yerinde`).toBe(true);
+        expect(olcum.kardesKesisir, `yükleme ${yukleme}: önceki komşuyu ÖRTMEZ`).toBe(false);
+        expect(olcum.kardesKaydi, `yükleme ${yukleme}: üstteki içerik KAYMAZ`).toBe(false);
+        expect(olcum.blokItildi, `yükleme ${yukleme}: düğme araya girdi (blok aşağı itildi)`).toBe(true);
+        expect(olcum.kapSayisi, `yükleme ${yukleme}: sayfada tek kap`).toBe(1);
+        expect(olcum.yukseklik, `yükleme ${yukleme}: düğme ölçülebilir`).toBeGreaterThan(0);
         expect(olcum.genislik, `yükleme ${yukleme}: tam genişlik`).toBeGreaterThan(300);
       }
     });
@@ -529,7 +570,7 @@ test.describe('E2E-EKL-34 — inline düğme SATIN ALMA BLOĞUNUN ÜSTÜNDE (v1.
         // 1688'in dil geçişi sağ sütunu YENİDEN ÇİZER: adres değişmez, bizim
         // düğümümüz sökülür. Sahada düğme bir daha geri gelmiyordu.
         await page.evaluate(() => {
-          const sutun = document.querySelector('.od-pc-offer-column, .product-column');
+          const sutun = document.querySelector('[data-spm="submitOrder"]')?.parentElement ?? null;
           if (sutun !== null) sutun.innerHTML = sutun.innerHTML;
         });
 

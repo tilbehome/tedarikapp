@@ -41,6 +41,13 @@ export function offerId(adres: string): string | null {
  * yalnız sınıfa bakan eski liste ZH görünümünde hiçbir şey bulamıyordu).
  */
 export const SATINALMA_HEDEFLERI = [
+  // GERÇEK DOM'DAN (27 Ağu dökümleri, e2e/fixtures/1688): sipariş modülü iki
+  // skinde de AYNI düğümdür ve sayfada TEK kez geçer. Kullanıcı oturumsuzken
+  // içi "登录查看全部规格 / Giriş yaparak hepsini görün" olur, oturumluyken
+  // 立即订购 / 加入进货单 düğmeleri gelir — kap değişmez.
+  '[data-spm="submitOrder"]',
+  '.module-od-submit-order',
+  // Eski dağıtımlar / olası varyantlar.
   '.od-pc-offer-trade',
   '.obj-action',
   '.order-container',
@@ -51,11 +58,17 @@ export const SATINALMA_HEDEFLERI = [
 
 /** Satın alma düğmelerinin iki skindeki metinleri (küçük harfe indirgenmiş). */
 export const SATINALMA_METINLERI = [
+  // Oturumlu görünüm.
   '立即订购',
   '加入进货单',
   '立即购买',
   'sepete ekle',
-  'hemen sipariş ver',
+  'hemen sipariş',
+  // OTURUMSUZ görünüm: sipariş düğmelerinin yerini giriş çağrısı alır. Ürün
+  // Sahibi'nin dökümleri bu hâldeydi; yalnız sipariş metinlerine bakan bir
+  // liste burada hiçbir şey bulamazdı.
+  '登录查看全部规格',
+  '一键登录',
   'giriş yaparak',
 ];
 
