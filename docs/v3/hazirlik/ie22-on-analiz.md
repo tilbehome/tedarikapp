@@ -256,3 +256,21 @@ değişmez — taban `^8.2`ye çıkar — ama İE#22'de sıra şudur ve **ters
 
 Sıra bozulursa ilk deploy'da canlı site 500 verir: `platform-check` çalışma
 zamanında 8.1'i reddeder ve panel açılmaz.
+
+
+---
+
+## EK 2 — v1.0 İLANIYLA BİRLİKTE DEFTERE GİRENLER (27 Ağustos 2026)
+
+Aşağıdaki dört madde v1.0 kapsamı DIŞINDA bırakıldı ve İE#22'de sırayla
+işlenecek. Hiçbiri v1.0'ı bloke etmez; hepsi süreç/altyapı borcudur.
+
+| # | Madde | Neden şimdi değil | İE#22'deki iş |
+|---|---|---|---|
+| 1 | **MultiPHP 8.3 kurulum adımı (K84-EK)** | canlı web PHP 8.1.34; taban yükseltmesi ÖNCE sunucu işidir | cPanel MultiPHP 8.3 → eklenti seti doğrulaması → ancak sonra `composer.json` tabanı `^8.2` |
+| 2 | **Medya yedeği (F-03)** | runbook düzeltildi ama yedek betiği görselleri hâlâ almıyor | `public/media/` yedek akışına dâhil edilir; geri yükleme tatbikatı runbook'a yazılır |
+| 3 | **MariaDB işi koşula bağlanır (K5)** | iş bugün KOŞULSUZ atlanıyor; yeşil görünen ama hiç koşmayan bir kapı | matris koşulu düzeltilir; atlama yalnız açık bir gerekçeyle ve raporlanarak olur |
+| 4 | **"PHP 8.1 uyum" ruleset'ten düşer** | taban 8.2'ye çıkınca bu iş anlamsızlaşır | madde 1 tamamlandıktan SONRA workflow'dan ve ruleset'in zorunlu listesinden çıkarılır |
+
+Ek olarak: **A5/A8 DOM fikstürleri** (v1.0'da sentetik) Ürün Sahibi'nin gerçek
+sayfa dökümleriyle değiştirilir — bkz. `docs/is-emirleri/IE21-KAPANIS-RAPORU.md` §6.

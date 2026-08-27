@@ -640,6 +640,68 @@ hedefsiz sayfada pill düğmesinin ölçülebilir kutusu ve konumu kontrol edili
 **Otomasyon notu:** `e2e/tests/08-eklenti-paneli.spec.ts`. rc6'da hesaplanmış
 değer `flex`ti: `hidden` özniteliği yazar `display` kuralı tarafından eziliyordu.
 
+### E2E-EKL-32 — Panel gövdesi kendi içinde kaydırılır (v1.0 A1)
+
+**Amaç:** İçerik viewport'tan uzun olduğunda "Nereye gitsin" ve "Yakala ve
+Gönder" ekran dışında kalmasın; çekmece kendi içinde kaysın.
+
+**Ön koşul / hazırlık:** Bol içerikli önizleme (24 varyant, dolu alan listesi);
+1366×768 ve 1920×1080 görünüm.
+
+**Adımlar:** Panel çizilir ve açılır → panel yüksekliği viewport ile
+karşılaştırılır → gövde kaydırıcısının `scrollHeight`/`clientHeight` okunur →
+"Yakala ve Gönder" düğmesinin kutusu ölçülür ve merkezinde `elementFromPoint`
+ile gerçekten o düğmenin durduğu doğrulanır → gövde sonuna kaydırılıp üst
+başlığın ve alt çubuğun yerinden oynamadığı kontrol edilir.
+
+**Beklenen:** Panel ≤ viewport; gövde taşıyor (`scrollHeight > clientHeight`);
+düğme viewport içinde ve TIKLANABİLİR; kaydırmada üst/alt çubuk sabit.
+
+**Otomasyon notu:** `e2e/tests/08-eklenti-paneli.spec.ts`. Görünürlük tek başına
+yetmez: başka bir katmanın altında kalan düğme de "görünür"dür.
+
+### E2E-EKL-33 — Panel metin disiplini (v1.0 A2/A3/A4)
+
+**Amaç:** Yanıltıcı rozet, literal HTML varlığı ve ekran dışına taşan ipucu
+balonu kalmasın.
+
+**Ön koşul / hazırlık:** (a) öneri = orijinal olan görünüm, (b) öneri ≠ orijinal
+olan görünüm, (c) `A&gt;B` ve `&lt;img src=x onerror=…&gt;` varyantları.
+
+**Adımlar:** Üç görünüm çizilir → rozet ve açıklama satırının varlığı okunur →
+çip metinleri okunur ve DOM'da `<img>` düğümü OLUŞMADIĞI doğrulanır → panelde
+`title` özniteliği taşıyan öğe kalmadığı ve adres satırında kopyala düğmesi
+bulunduğu kontrol edilir.
+
+**Beklenen:** Öneri = orijinal ise rozet YOK + "sunucuda üretilir" notu VAR;
+`A&gt;B` → `A>B`; enjekte edilen işaretleme METİN olarak basılır; `title` yok,
+kopyala düğmesi var.
+
+**Otomasyon notu:** `e2e/tests/08-eklenti-paneli.spec.ts` + birim:
+`extension/tests/metin.test.ts` (XSS regresyonu dâhil).
+
+### E2E-EKL-34 — Inline düğme satın alma bloğunun üstünde (v1.0 A5/A8)
+
+**Amaç:** Düğme sağ ürün sütununda, satın alma bloğunun hemen üstünde dursun;
+mağaza adı satırını örtmesin. Hedef bulunamazsa pill yedeği görünsün. Sayfa
+kendini yeniden çizse (dil geçişi, geç çizim) düğme kaybolmasın.
+
+**Ön koşul / hazırlık:** İki DOM fikstürü — `e2e/fikstur/1688-zh.html` (立即订购 /
+加入进货单) ve `e2e/fikstur/alitrading-tr.html` ("Giriş yaparak…" / "Sepete
+ekle"). Fikstürler v1.0'da SENTETİKTİR; gerçek dökümle değiştirilmesi İE#22
+maddesidir.
+
+**Adımlar:** Her fikstürde 5 ardışık montaj → düğme kutusu satın alma bloğunun
+üst kenarıyla ve mağaza satırıyla kesişim açısından karşılaştırılır → sağ sütun
+`innerHTML` ile yeniden çizilerek dil geçişi taklit edilir ve nöbetin düğmeyi
+geri bastığı beklenir → hedefsiz sayfada pill 5/5 ölçülür.
+
+**Beklenen:** 5/5 `SATIRICI`, düğme bloğun ÜSTÜNDE, hiçbir komşuyla kesişim yok,
+genişlik tam; 5/5 dil geçişinde düğme geri gelir; hedefsizde 5/5 görünür pill.
+
+**Otomasyon notu:** `e2e/tests/08-eklenti-paneli.spec.ts`. A8'in kökü iki
+parçalıydı: tek seferlik montaj + adres değişmeden yapılan yeniden çizim.
+
 ## 8. Claude Code için uygulama notları
 
 1. Yeni senaryolar mevcut `e2e/` süitinin tek worker ve Chromium düzenine uymalıdır.

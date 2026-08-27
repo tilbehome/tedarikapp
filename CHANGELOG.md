@@ -5,15 +5,54 @@ Her release'te bu dosya güncellenir (docs/07 bölüm 4). Kategoriler: Eklendi /
 
 ## [Yayınlanmadı]
 
-## [1.0.0] — TASLAK (kabul turu bekliyor · aday paket v1.0.0-rc5)
+## [1.0.0] — 27 Ağustos 2026
 
-> **BU BÖLÜM TASLAKTIR.** v1.0.0 adı, kabul turu (`docs/v3/hazirlik/kabul-turu-v1.md`
-> — KT-001..045 + KT-EK-1..4) Ürün Sahibi tarafından geçilmeden KULLANILMAZ.
-> Aday paket: `dist/tedarikapp-v1.0.0-rc5.zip`
-> · sha256 `92a8276a5e9d48e59df354c2f740c655b383b76656e2aa632c07d8b6c381f260`
-> · panel damgası `v3-faz1 @ 5aead15 (temiz)`.
-> Terfi yolu: `docs/v3/hazirlik/rc5-terfi-proseduru.md` (içerik birebir aynı
-> kalır; yalnız sürüm adı değişir, fark çıkarsa terfi İPTAL).
+**tedarikapp'in ilk tam sürümü.** 1688 tedarik listelerini tarayıcıdan yakalayıp
+panelde yönetmenin, fiyatı TL'ye çevirmenin ve firmaya paylaşılabilir bir sayfa
+göndermenin uçtan uca çalıştığı ilk sürümdür.
+
+> Aday paketler rc1'den rc8'e kadar sahada koşturuldu; her turda Ürün Sahibi'nin
+> bulduğu kusurlar aynı tura kapatıldı. v1.0.0, rc8'in üzerine 27 Ağustos saha
+> turunun eklenti düzeltmeleriyle birlikte ilan edilmiştir.
+
+### Bu sürümde ne var
+
+- **Ürünü tarayıcıdan yakala.** 1688 ürün sayfasında "TedarikApp'e Ekle"
+  düğmesi çıkar; tek tıkla ürünün adı, fiyatı, varyantları, görselleri ve
+  satıcı bilgisi panele düşer. Bağlantı yoksa yakalama cihazda bekler,
+  bağlanınca kendiliğinden gönderilir.
+- **Listeler ve durumlar.** Ürün `Verilecek → Verildi → Yolda → Geldi` yolunu
+  izler; liste `Taslak → İletildi → Sipariş Verildi → Tamamlandı`. Atlama yoktur;
+  yanlış tıklama tek adım geri alınabilir.
+- **Kur listeye kilitlenir.** Liste iletildiği anda o günün kuru listeye yazılır;
+  kur sonradan değişse bile o listenin TL tutarları oynamaz.
+- **Çıktılar.** Excel, PDF ve firmaya gönderilen paylaşım sayfası; hepsi aynı
+  veriden, aynı revizyon numarasıyla üretilir.
+- **Paylaşım sayfası.** Girişsiz açılır, süresizdir, iptal edildiği an ölür;
+  isteğe bağlı erişim anahtarıyla korunur.
+- **Türkçeleştirme.** Çince ürün adları ve özellik değerleri sözlük + çeviri
+  belleğiyle Türkçeleşir; orijinal satır her zaman korunur.
+- **Kurulum sihirbazı.** `/setup` sekiz arıza durumunu adıyla söyler ve
+  onarımını kendi içinde sunar.
+
+### Dış denetim düzeltmeleri (rc8)
+
+Bağımsız dış denetimin P0 bulguları kapatıldı: yakalanan görsel artık her
+durumda diske kalıcı yazılır ya da kaynağa düşer (yetim geçici dosya kalmaz),
+aynı yakalama iki kez gönderilse bile tek kayıt açar, kurulum uygulama adresi
+girilmeden tamamlanmaz ve bu adres Ayarlar'dan değiştirilebilir.
+
+### 27 Ağustos saha turu — eklenti 2.0.2
+
+| # | Bulgu | Düzeltme |
+|---|---|---|
+| A1 | Sayfa içi çekmece ekrana sığmıyor, "Yakala ve Gönder" düğmesine ulaşılamıyordu | çekmece ekran yüksekliğine sabitlendi; başlık ve alt düğme çubuğu sabit, orta bölüm kendi içinde kayıyor |
+| A2 | Türkçe karşılık bulunamadığında bile "TR önerisi" rozeti konuyordu | rozet yalnız gerçek öneri varsa; yoksa "Türkçe ad gönderim sonrası sunucuda üretilir" notu |
+| A3 | Varyant adlarında `&gt;` gibi işaretler harfiyen görünüyordu | metin sunuma girmeden bir kez çözülür (sunucudaki kuralın aynısı) |
+| A4 | Uzun adresin ipucu balonu ekran dışına taşıyordu | balon kaldırıldı; yerine "Kopyala" düğmesi |
+| A5 | "TedarikApp'e Ekle" mağaza adının üstüne biniyordu | düğme sağ sütunda, satın alma bloğunun hemen üstünde, tam genişlikte |
+| A7 | Yavaş gönderimde "TedarikApp yanıt vermiyor" deniyor, oysa ürün eklenmişti | gönderim 30 sn bekler; aşarsa aynı kimlikle kontrol edilir ve sonuç "listeye eklendi" gösterilir |
+| A8 | Çince görünümde ne düğme ne yedek düğme çıkıyordu | montaj nöbeti: düğme silinirse ya da sayfa geç çizilirse yeniden basılır |
 
 ### Faz 1 neyi kapattı (dilim dilim)
 

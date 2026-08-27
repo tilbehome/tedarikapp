@@ -70,13 +70,44 @@
 | `tedarikapp-v1.0.0-rc5.zip` | `92a8276a…f260` | Kabul turu adayı; terfi prosedürü `docs/v3/hazirlik/rc5-terfi-proseduru.md` |
 | `tedarikapp-eklenti-2.0.0-chrome.zip` | `6d90bad0…9546a` | Unlisted yayın; ekran görüntüleri kabul turu sonrası çekilecek |
 
-## 6. KABUL SONUCU — _(kabul turu sonrası doldurulacak)_
+## 6. KABUL SONUCU — v1.0 KAPANIŞ (27 Ağustos 2026)
 
-| Alan | Değer |
+**Ürün Sahibi kararı: v1.0 İLAN EDİLDİ.**
+
+Kabul, KT listesinin madde madde işaretlenmesiyle değil, **gerçek ürünlerle
+gerçek bir liste ve gerçek bir paylaşım bağlantısı** üretilerek verildi (Ürün
+Sahibi kararı): 1688'den yakalanan ürünler listeye düştü, TL karşılıkları
+listenin kilitli kuruyla hesaplandı, çıktı ve paylaşım sayfası firmaya
+gönderilebilir hâlde üretildi.
+
+| Kalem | Sonuç |
 |---|---|
-| Tur tarihi | _(doldurulacak)_ |
-| KT-001..045 | _(geçen / kalan)_ |
-| KT-EK-1..4 | _(geçen / kalan)_ |
-| Bulgular | _(varsa madde madde, karar ve düzeltme commit'i ile)_ |
-| Ürün Sahibi kararı | _(v1.0 İLAN / rc6 turu)_ |
-| Final paket | _(v1.0.0 sha256 + terfi denetimi çıktısı)_ |
+| Kabul yöntemi | Saha koşumu — gerçek ürün, gerçek liste, gerçek paylaşım bağlantısı |
+| rc8 canlıda | 27 Ağustos 2026 |
+| Sürüm adı | `1.0.0` (tek kaynak `App\Core\AppVersion`) |
+| Eklenti | `2.0.2` |
+| Kalan bulgular | İE#22 defterine devredildi (aşağıda) |
+
+### 27 Ağustos saha turu — kapanan bulgular
+
+| # | Bulgu | Durum |
+|---|---|---|
+| A1 | Sayfa içi çekmece kaydırılamıyor, "Yakala ve Gönder"e ulaşılamıyor | **kapandı** — çekmece 100vh, gövde kendi içinde kaydırılıyor (E2E-EKL-32) |
+| A2 | Eşleşme yokken de "TR önerisi" rozeti konuyor | **kapandı** — rozet yalnız gerçek öneride (E2E-EKL-33) |
+| A3 | Varyant çiplerinde HTML varlıkları literal görünüyor | **kapandı** — G9'un eklenti ikizi `core/metin.ts` (E2E-EKL-33 + birim) |
+| A4 | Native `title` balonu ekran dışına taşıyor | **kapandı** — balon kaldırıldı, kopyala düğmesi kondu (E2E-EKL-33) |
+| A5 | Inline düğme mağaza adının üstüne biniyor | **kapandı** — düğme satın alma bloğunun üstünde, tam genişlik (E2E-EKL-34) |
+| A7 | 4 sn zaman aşımı yavaş gönderimi "hata" gösteriyor | **kapandı** — 30 sn + aynı kimlikle idempotent kontrol (birim: `gonderim.test.ts`) |
+| A8 | ZH görünümde ne düğme ne pill çıkıyor | **kapandı** — montaj nöbeti (MutationObserver) + metin tabanlı hedef (E2E-EKL-34) |
+
+### İE#22 defterine devredilenler
+
+- **A5/A8 fikstürleri sentetiktir.** İki DOM fikstürü (`e2e/fikstur/1688-zh.html`,
+  `e2e/fikstur/alitrading-tr.html`) 1688'in bilinen yapısından türetildi; canlı
+  sayfanın birebir dökümü değildir. Ürün Sahibi'nin ekranlarının HTML dökümü
+  alındığında fikstürler birebir hâliyle değiştirilecek ve senaryolar aynen
+  koşulacak.
+- MultiPHP 8.3 kurulum adımı (K84-EK) · medya yedeği (F-03) · MariaDB işinin
+  koşula bağlanması (K5) · "PHP 8.1 uyum" işinin ruleset'ten düşürülmesi —
+  ayrıntı `docs/v3/hazirlik/ie22-on-analiz.md`.
+
