@@ -467,13 +467,20 @@ describe('rc7 D10-b — panel içeriği yatay taşmaz', () => {
     );
     expect(adresler.length).toBeGreaterThanOrEqual(2);
     for (const deger of adresler) {
-      // Kırpma sınıfı + tam değer: veri kaybolmaz, panel de taşmaz.
+      // Kırpma sınıfı: panel taşmaz.
       expect(deger.classList.contains('tek-satir')).toBe(true);
-      expect((deger as HTMLElement).title).toBe(deger.textContent);
+      // v1.0/A4: TAM DEĞER ARTIK `title` BALONUNDA DEĞİL.
+      //
+      // Native balon 448 px'lik panelde ekranın dışına taşıyordu (saha bulgusu
+      // 27 Ağu): kullanıcı kırpılan adresi yine okuyamıyordu. Veri kaybı yok —
+      // satırın yanına, adresi panoya alan bir düğme kondu.
+      expect((deger as HTMLElement).title).toBe('');
+      const satir = deger.closest('.tdk-alan');
+      expect(satir?.querySelector('[data-eylem="kopyala"]')).not.toBeNull();
     }
   });
 
-  test('uzun varyant adları çipte kırpılır ve tam adı title taşır', () => {
+  test('uzun varyant adları çipte kırpılır; tam adı erişilebilirlik katmanı taşır', () => {
     const varyantlar = [
       '绿色【足弓支撑 久站不累脚】加厚底 38/39',
       '蓝色【足弓支撑 久站不累脚】加厚底 40/41',
@@ -490,7 +497,10 @@ describe('rc7 D10-b — panel içeriği yatay taşmaz', () => {
     );
     expect(cipler).toHaveLength(6);
     for (const cip of cipler) {
-      expect((cip as HTMLElement).title).toBe(cip.textContent);
+      // v1.0/A4: `title` yok (balon ekran dışına taşıyordu); tam ad
+      // `aria-label`dadır — ekran okuyucu ve otomasyon için erişilebilir kalır.
+      expect((cip as HTMLElement).title).toBe('');
+      expect(cip.getAttribute('aria-label')).toBe(cip.textContent);
       expect((cip.textContent ?? '').length).toBeGreaterThan(20);
     }
   });

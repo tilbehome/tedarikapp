@@ -21,6 +21,7 @@ import {
   type MakineDurumu,
   type MukerrerSecenegi,
 } from '../../core/durumMakinesi';
+import { metinNormalize } from '../../core/metin';
 import { DISCLOSURE_METNI } from '../../core/disclosure';
 import { ALAN_ADLARI, dolulukYuzdesi, type AlanRaporu } from '../../core/alanRaporu';
 import type { BaglantiDurumu } from '../../core/baglanti';
@@ -60,6 +61,12 @@ export interface PanelGorunumu {
    * müdahale beklenmez.
    */
   otomatikSuruyor?: boolean;
+  /**
+   * A7: gönderim uzarsa kullanıcıya düşen ilerleme notu ("gönderildi mi
+   * kontrol ediliyor…"). Durum makinesi D6'da kalır — bu bir HATA DEĞİL,
+   * belirsizlik bildirimidir.
+   */
+  gonderimNotu?: string | null;
 }
 
 export interface PanelEylemleri {
@@ -197,13 +204,22 @@ export function dolulukBolumu(rapor: AlanRaporu | null): HTMLElement {
   const liste = el('div', 'tdk-alanlar');
   for (const satir of rapor.satirlar) {
     const satirDugumu = el('div', satir.dolu ? 'tdk-alan' : 'tdk-alan eksik');
-    // D10-b: ADRESLER TEK SATIRA KIRPILIR, tam değer `title`da durur.
-    // Kırpmak veri kaybı değildir; panelin genişliğini aşmak ise kullanıcının
-    // ekranını yatay kaydırmaya zorlar (saha bulgusu K2).
-    const adresMi = /^https?:\/\//.test(satir.deger);
-    const deger = el('span', adresMi ? 'deger tek-satir' : 'deger', satir.deger);
-    if (adresMi) deger.title = satir.deger;
+    // D10-b: ADRESLER TEK SATIRA KIRPILIR — panelin genişliğini aşmak
+    // kullanıcıyı yatay kaydırmaya zorluyordu (saha bulgusu K2).
+    //
+    // A3 (saha 27 Ağu): değer sunuma girmeden ÖNCE bir kez çözülür; 1688
+    // "英文版&gt;1" gibi entity'li metin veriyor ve çipte harfiyen görünüyordu.
+    const gosterilecek = metinNormalize(satir.deger);
+    const adresMi = /^https?:\/\//.test(gosterilecek);
+    const deger = el('span', adresMi ? 'deger tek-satir' : 'deger', gosterilecek);
     satirDugumu.append(el('span', 'ad', satir.ad), deger);
+    if (adresMi) {
+      // A4 (saha 27 Ağu): NATIVE `title` BALONU KALDIRILDI. 448 px'lik panel
+      // ekranın sağ kenarındadır; tarayıcının ipucu balonu uzun adreste
+      // görünür alanın DIŞINA taşıyor, kullanıcı adresi yine okuyamıyordu.
+      // Yerine gerçekten işe yarayan eylem konur: tek tıkla panoya kopyala.
+      satirDugumu.append(kopyalaDugmesi(gosterilecek));
+    }
     if (satir.kanal !== null) {
       satirDugumu.append(el('span', 'kanal', satir.kanal));
     }
@@ -246,6 +262,36 @@ export function iskeletBolumu(): HTMLElement {
 }
 
 /**
+ * A4 — KIRPILMIŞ ADRESİN YANINDAKİ KOPYALA DÜĞMESİ.
+ *
+ * Kırpılan metnin tamamını göstermenin iki yolu vardı: balon ya da eylem.
+ * Balon (native `title`) sahada ekran dışına taştı; panel zaten sağ kenarda
+ * duruyor. Eylem taşmaz ve kullanıcının asıl yapmak istediği şeydir — adresi
+ * bir yere yapıştırmak.
+ */
+function kopyalaDugmesi(deger: string): HTMLElement {
+  const dugme = el('button', 'tdk-kopyala', 'Kopyala');
+  (dugme as HTMLButtonElement).type = 'button';
+  dugme.setAttribute('aria-label', 'Adresi kopyala');
+  dugme.setAttribute('data-eylem', 'kopyala');
+  dugme.addEventListener('click', () => {
+    // Pano izni yoksa ya da reddedilirse SESSİZ KALINMAZ: düğme durumu söyler.
+    void navigator.clipboard
+      ?.writeText(deger)
+      .then(() => {
+        dugme.textContent = 'Kopyalandı';
+        dugme.setAttribute('data-durum', 'tamam');
+      })
+      .catch(() => {
+        dugme.textContent = 'Kopyalanamadı';
+        dugme.setAttribute('data-durum', 'hata');
+      });
+  });
+
+  return dugme;
+}
+
+/**
  * ÜRÜN KARTI (mockup `c-urun`) — HER AÇILIŞTA çizilir.
  *
  * Mockup'ta üç şey var ve üçü de bilgi taşır: orijinal Çince satır (K55),
@@ -269,8 +315,23 @@ export function urunKarti(urunAdi: string | null, orijinalAd: string | null): HT
   if (urunAdi !== null) {
     const satir = el('div', 'tdk-ad');
     satir.append(document.createTextNode(urunAdi));
-    satir.append(el('span', 'tdk-oneri', 'TR önerisi'));
+    // A2 (saha 27 Ağu): ROZET YALNIZ GERÇEK BİR ÖNERİ VARSA KONUR.
+    //
+    // Yerel sözlük eşleşmediğinde eklenti orijinal başlığı AYNEN basıp yanına
+    // "TR önerisi" yazıyordu. Kullanıcı Çince bir başlığın Türkçe öneri diye
+    // sunulduğunu görüyor ve etikete güvenini kaybediyordu. Öneri orijinalle
+    // aynıysa ortada öneri yoktur; olan şey sunucuda üretilecektir (K54: çeviri
+    // bir öneridir, gönderimden sonra sunucu hattı çalışır).
+    const gercekOneri = orijinalAd === null || metinNormalize(urunAdi) !== metinNormalize(orijinalAd);
+    if (gercekOneri) {
+      satir.append(el('span', 'tdk-oneri', 'TR önerisi'));
+    }
     kart.append(satir);
+    if (!gercekOneri) {
+      kart.append(
+        el('div', 'tdk-not', 'Türkçe ad gönderim sonrası sunucuda üretilir.'),
+      );
+    }
   }
 
   return kart;
@@ -312,10 +373,12 @@ export function varyantBolumu(
 
   const sarmal = el('div', 'tdk-varyant');
   for (const varyant of varyantlar.slice(0, 12)) {
-    const cip = el('button', 'cip', varyant);
+    // A3: entity'li varyant adı ("英文版&gt;1") çipte harfiyen görünüyordu.
+    const cip = el('button', 'cip', metinNormalize(varyant));
     cip.type = 'button';
-    // D10-b: 30+ karakterlik varyant adları çipte kırpılır; tam ad title'da.
-    cip.title = varyant;
+    // Uzun ad çipte kırpılır; tam adı erişilebilirlik katmanı taşır. `title`
+    // KULLANILMAZ (A4): balon panel dışına taşıyor.
+    cip.setAttribute('aria-label', metinNormalize(varyant));
     cip.setAttribute('aria-pressed', String(varyant === secili));
     cip.addEventListener('click', () => onSec(varyant));
     sarmal.append(cip);
@@ -504,6 +567,10 @@ export function hedefBolumu(
 export function panelGovdesi(gorunum: PanelGorunumu, eylemler: PanelEylemleri): HTMLElement {
   const govde = el('div', 'tdk-govde');
   govde.append(durumSeridi(gorunum.makine.durum));
+  if (typeof gorunum.gonderimNotu === 'string' && gorunum.gonderimNotu !== '') {
+    // A7: yavaş sunucu "yanıt vermiyor" DEĞİLDİR; kullanıcı beklediğini bilsin.
+    govde.append(el('div', 'tdk-not', gorunum.gonderimNotu));
+  }
 
   const baglanti = baglantiSeridi(
     gorunum.baglanti ?? 'BILINMIYOR',

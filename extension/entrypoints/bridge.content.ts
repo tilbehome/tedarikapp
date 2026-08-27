@@ -20,7 +20,12 @@ import { fiksturdenGecer } from '../core/fiksturKapisi';
 import { parse1688 } from '../modules/m1688/parser';
 import { Akis, type GonderimYaniti } from '../ui/v2/akis';
 import { cekmeceKur } from '../ui/v2/cekmece';
-import { montajYap, montajiKaldir, offerId } from '../ui/v2/montaj';
+import { montajNobeti, montajYap, montajiKaldir, offerId } from '../ui/v2/montaj';
+import {
+  GONDERIM_ZAMAN_ASIMI_MS,
+  gonderimiYurut,
+  type CaptureYaniti,
+} from '../core/gonderim';
 import type { PageData, ParseResult, SelectorSet } from '../core/types';
 import type { DuranKayit, HedefSecimi } from '../ui/v2/panel';
 
@@ -59,7 +64,7 @@ function sayfaVerisiniOku(): Promise<PageData> {
 /** Arka plan mesajı için üst süre — bundan sonrası "yanıt gelmedi" sayılır. */
 const ARKAPLAN_ZAMAN_ASIMI_MS = 4000;
 
-function arkaPlan<T>(type: string, payload?: unknown): Promise<T> {
+function arkaPlan<T>(type: string, payload?: unknown, zamanAsimiMs = ARKAPLAN_ZAMAN_ASIMI_MS): Promise<T> {
   return new Promise((resolve, reject) => {
     // ZAMAN AŞIMI ZORUNLUDUR (rc7 D10-c saha bulgusu).
     //
@@ -77,7 +82,7 @@ function arkaPlan<T>(type: string, payload?: unknown): Promise<T> {
       if (bitti) return;
       bitti = true;
       reject(new Error('ZAMAN_ASIMI: arka plan ' + type + ' mesajına yanıt vermedi.'));
-    }, ARKAPLAN_ZAMAN_ASIMI_MS);
+    }, zamanAsimiMs);
 
     const bitir = (islem: () => void): void => {
       if (bitti) return;
@@ -161,24 +166,18 @@ export default defineContentScript({
       oncekiSokum?.();
       const akis = new Akis({
         ayristir,
-        gonder: async ({ captureId, hedef, sonuc }): Promise<GonderimYaniti> => {
+        gonder: async ({ captureId, hedef, sonuc, onNot }): Promise<GonderimYaniti> => {
           const surum = chrome.runtime.getManifest().version;
-          try {
-            const yanit = await arkaPlan<{ inbox_id?: number; product_id?: number | null; duplicate?: boolean }>(
-              'CAPTURE',
-              yukKur(captureId, hedef, sonuc, surum),
-            );
+          const yuk = yukKur(captureId, hedef, sonuc, surum);
 
-            return yanit.duplicate === true
-              ? { sonuc: 'MUKERRER', urunId: yanit.product_id ?? null }
-              : { sonuc: 'BASARILI', urunId: yanit.product_id ?? null };
-          } catch (hata) {
-            const mesaj = hata instanceof Error ? hata.message : String(hata);
-
-            return /401|403|AYAR_EKSIK|YETKI/i.test(mesaj)
-              ? { sonuc: 'YETKI' }
-              : { sonuc: 'SUNUCU', hata: mesaj };
-          }
+          // A7: GÖNDERİM 30 SN BEKLER (durum/liste sorguları 4 sn'de kalır).
+          // Süre dolarsa hata değil, AYNI capture_id ile idempotent tekrar
+          // yapılır — sınıflandırma ve tekrar mantığı `core/gonderim`de.
+          return gonderimiYurut({
+            istek: () =>
+              arkaPlan<CaptureYaniti>('CAPTURE', yuk, GONDERIM_ZAMAN_ASIMI_MS),
+            onNot,
+          });
         },
         onayliMi: () => disclosure.onayliMi(),
         duranlar: async (): Promise<DuranKayit[]> => {
@@ -238,8 +237,7 @@ export default defineContentScript({
         tetikleyici: null,
       });
 
-      const montaj = montajYap({
-        onTikla: () => {
+      const dugmeyeTiklandi = () => {
           // rc7 EK-1 §5/§6: TIKLAMA YALNIZ AÇAR.
           //
           // Bağlantı ve okuma sayfa yüklenir yüklenmez arka planda başladı
@@ -253,8 +251,13 @@ export default defineContentScript({
           // `disclosureKarari()` üzerinden kendiliğinden sürer.
           if (akis.gorunum().disclosureGerekli) return;
           if (akis.gorunum().rapor === null) void akis.taramayiSurdur();
-        },
-      });
+      };
+
+      const monteEt = () => montajYap({ onTikla: dugmeyeTiklandi }).tur;
+      const montaj = { tur: monteEt() };
+      // A8: sayfa kendi yeniden çiziminde düğmeyi söküyor ya da hedef sonradan
+      // beliriyor; nöbet ikisini de yakalar (adres değişmese bile).
+      const nobetiBirak = montajNobeti(monteEt);
 
       // rc7 EK-1 §6: HAZIRLIK SAYFA YÜKLENİNCE BAŞLAR, PANEL KAPALIYKEN.
       // Panel AÇILMAZ; yalnız veriler toplanır ve çizim güncellenir.
@@ -283,6 +286,7 @@ export default defineContentScript({
       let sonOffer = offerId(location.href);
       let sayac = 0;
       oncekiSokum = (): void => {
+        nobetiBirak();
         window.clearInterval(sayac);
         chrome.storage.onChanged.removeListener(ayarDinleyicisi);
         cekmece.kapat();
