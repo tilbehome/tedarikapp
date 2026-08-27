@@ -33,13 +33,28 @@ final class AppUrl
      *
      * @return string sondaki eğik çizgi olmadan taban adres
      */
-    public static function base(?string $configured, ServerRequestInterface $request): string
-    {
-        $aday = is_string($configured) ? trim($configured) : '';
-        $aday = rtrim($aday, '/');
-
-        if ($aday !== '' && $aday !== self::YER_TUTUCU && preg_match('#^https?://[^\s/]+#i', $aday) === 1) {
+    public static function base(
+        ?string $configured,
+        ServerRequestInterface $request,
+        bool $hostYedegiIzinli = false,
+    ): string {
+        $aday = self::kanonik($configured);
+        if ($aday !== null) {
             return $aday;
+        }
+
+        // rc8-04 (dış denetim F-08): HOST YEDEĞİ YALNIZ GELİŞTİRMEDE.
+        //
+        // Üretimde APP_URL yoksa link üretmek, istemcinin `Host` başlığını
+        // belgeye basmak demektir. Eskiden bu sessizce yapılıyordu; kod yorumu
+        // "sistem zaten yapılandırılmamıştır" diyerek riski küçültüyordu — ama
+        // üretilen QR firmaya gidiyor. Artık üretimde AÇIK HATA verilir:
+        // görünmeyen bir zafiyet yerine görünen bir arıza.
+        if (!$hostYedegiIzinli) {
+            throw new AppUrlYokException(
+                'APP_URL yapılandırılmamış: dış bağlantı üretilemez. '
+                . 'Ayarlar > Genel ekranından uygulama adresini girin.',
+            );
         }
 
         $uri = $request->getUri();
@@ -47,9 +62,89 @@ final class AppUrl
         return rtrim($uri->getScheme() . '://' . $uri->getAuthority(), '/');
     }
 
-    /** Taban + yol (yol başındaki eğik çizgi zorunlu değil). */
-    public static function to(?string $configured, ServerRequestInterface $request, string $path): string
+    /**
+     * TAM KANONİK DOĞRULAMA (rc8-04 / F-08) — geçerliyse normalize adres, değilse null.
+     *
+     * Eski denetim `preg_match('#^https?://[^\s/]+#i')` idi: yalnız BAŞLANGICI
+     * doğruluyordu. `https://ornek.com/x?y=<script>` gibi bir değer geçiyor ve
+     * belgeye olduğu gibi basılıyordu. Reddedilenler:
+     *   · şema http/https dışında,
+     *   · userinfo (`https://kullanici:parola@host`) — kimlik bilgisi link'e girmez,
+     *   · fragment ya da query — taban adres bunları TAŞIMAZ,
+     *   · yol (`/panel`) — taban köktür; yol çağıran tarafından eklenir,
+     *   · kontrol karakteri / boşluk,
+     *   · yer tutucu (`https://localhost`).
+     */
+    public static function kanonik(?string $configured): ?string
     {
-        return self::base($configured, $request) . '/' . ltrim($path, '/');
+        $aday = is_string($configured) ? trim($configured) : '';
+        $aday = rtrim($aday, '/');
+
+        if ($aday === '' || $aday === self::YER_TUTUCU) {
+            return null;
+        }
+
+        // Kontrol karakteri ya da boşluk: adres olamaz.
+        //
+        // rc8/K3: karakter sınıfı AÇIK KAÇIŞLA yazılır. Önceki hâlde aralığın
+        // uçları HAM BAYTTI (NUL, SP ve DEL kaynakta görünmez biçimde
+        // duruyordu); satır okunamıyor, kopyala-yapıştırda sessizce
+        // bozulabiliyordu. \x00-\x20 aralığı sekme/CR/LF dâhil tüm C0
+        // kontrollerini ve boşluğu kapsar, \x7F ise DEL'i ekler.
+        if (preg_match('/[\x00-\x20\x7F]/', $aday) === 1) {
+            return null;
+        }
+
+        $parca = parse_url($aday);
+        if (!is_array($parca) || !isset($parca['scheme'], $parca['host'])) {
+            return null;
+        }
+
+        $sema = mb_strtolower((string) $parca['scheme']);
+        if ($sema !== 'http' && $sema !== 'https') {
+            return null;
+        }
+
+        // Kimlik bilgisi, sorgu, parça ve yol taban adreste bulunmaz.
+        if (isset($parca['user'], $parca['pass']) || isset($parca['user'])) {
+            return null;
+        }
+        if (isset($parca['query']) || isset($parca['fragment'])) {
+            return null;
+        }
+        if (isset($parca['path']) && $parca['path'] !== '' && $parca['path'] !== '/') {
+            return null;
+        }
+
+        $host = (string) $parca['host'];
+        if ($host === '' || filter_var($aday, FILTER_VALIDATE_URL) === false) {
+            return null;
+        }
+
+        $port = isset($parca['port']) ? ':' . (int) $parca['port'] : '';
+
+        return $sema . '://' . $host . $port;
+    }
+
+    /**
+     * Host yedeği bu kurulumda serbest mi? (rc8-04)
+     *
+     * KARAR ORTAM TAHMİNİNE BIRAKILMAZ. `PHP_SAPI === 'cli'` gibi bir sezgi,
+     * korumayı bütün test süitinde ve bakım betiklerinde sessizce kapatırdı —
+     * yani sınanamaz bir güvenlik kuralı olurdu. Kaynak tek: `APP_ENV` ayarı.
+     */
+    public static function hostYedegiIzinli(?string $appEnv): bool
+    {
+        return in_array(mb_strtolower(trim((string) $appEnv)), ['local', 'dev', 'development'], true);
+    }
+
+    /** Taban + yol (yol başındaki eğik çizgi zorunlu değil). */
+    public static function to(
+        ?string $configured,
+        ServerRequestInterface $request,
+        string $path,
+        bool $hostYedegiIzinli = false,
+    ): string {
+        return self::base($configured, $request, $hostYedegiIzinli) . '/' . ltrim($path, '/');
     }
 }

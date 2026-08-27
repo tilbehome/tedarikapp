@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Setup;
 
+use App\Core\AppUrl;
 use App\Core\AppVersion;
 use App\Core\Connection;
+use App\Models\SettingsRepository;
 use Throwable;
 
 /**
@@ -43,6 +45,8 @@ final class SetupDiagnostics
             $extensions[$extension] = extension_loaded($extension) ? 'VAR' : 'YOK';
         }
 
+        $appUrl = $this->appUrl($connection);
+
         return [
             'app_version' => AppVersion::VALUE,
             'php_version' => PHP_VERSION,
@@ -50,8 +54,28 @@ final class SetupDiagnostics
             'os' => php_uname('s') . ' ' . php_uname('r') . ' (' . php_uname('m') . ')',
             'extensions' => $extensions,
             'mysql_version' => $this->mysqlVersion($connection),
+            // rc8/K4 (F-08): paylaşım bağlantısının tabanı. RAPOR SATIRIDIR —
+            // kurulumu DURDURMAZ; eksikliği burada görünür olsun ki destek
+            // "linkler neden yanlış adrese gidiyor" sorusunu tek bakışta
+            // cevaplayabilsin.
+            'app_url' => $appUrl,
+            'app_url_kanonik' => AppUrl::kanonik($appUrl) !== null,
             'timestamp' => date(DATE_ATOM),
         ];
+    }
+
+    /** `settings.APP_URL` — tablo/bağlantı yoksa null (teşhis üretimi hata üretemez). */
+    private function appUrl(?Connection $connection): ?string
+    {
+        if ($connection === null) {
+            return null;
+        }
+
+        try {
+            return (new SettingsRepository($connection))->get('APP_URL');
+        } catch (Throwable) {
+            return null;
+        }
     }
 
     /**

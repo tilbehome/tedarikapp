@@ -82,6 +82,9 @@ abstract class AuthTestCase extends TestCase
     /** Testlerin sahte çevirmen kullanması için (İE#13 C1) — null ise gerçek cURL sağlayıcısı. */
     protected ?\App\Services\Translation\TranslationClient $translationClient = null;
 
+    /** rc8/E1: taşıma başarısızlığını taklit eden süitler kendi servisini verir. */
+    protected ?\App\Services\MediaService $mediaService = null;
+
     /** @return \Slim\App<\Psr\Container\ContainerInterface|null> */
     /**
      * @param \Psr\Log\LoggerInterface|null $logger İE#17 G6: teşhis logunu sınayan
@@ -100,6 +103,7 @@ abstract class AuthTestCase extends TestCase
             null,
             $this->mediaFetcher,
             $this->translationClient,
+            $this->mediaService,
         );
     }
 

@@ -1,0 +1,29 @@
+# GITLEAKS YAPILANDIRMASI — DAR MUAFİYET (PM kararı K1, 26 Ağu 2026)
+#
+# Varsayılan kural seti AYNEN geçerlidir; aşağıdaki tek muafiyet dışında
+# hiçbir şey gevşetilmez. Bir sır tarayıcısını susturmak, taramayı hiç
+# yapmamaktan daha tehlikelidir: yeşil görünür ama kimse bakmaz.
+#
+# MUAFİYETİN GEREKÇESİ (kanıtlı): `docs/v3/hazirlik/demo-urun-seti.json`
+# KURGUSAL bir demo ürün setidir ve satırları şöyledir:
+#
+#     "cluster_key": "CK-BAMBU-HAVLU-70X140"
+#
+# `generic-api-key` kuralı, alan ADINDA "key" gördüğü için bunu sır sanıyor.
+# Değer bir küme etiketidir (aynı ürünün farklı satıcı sürümlerini bağlar,
+# bkz. dosyanın `cluster_rule` alanı); ne bir anahtar ne de bir kimlik bilgisi.
+# 23 Ağu 2026'da `d9fd803` ile girdi; dokuz bulgunun dokuzu da bu tek desendir.
+#
+# SINIR: muafiyet TEK DOSYA ve TEK KURAL içindir. Başka bir dosya ya da başka
+# bir kural buraya eklenmeden önce bulgunun yanlış pozitif olduğu KANITLANIR.
+title = "tedarikapp gitleaks"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "generic-api-key"
+
+  [rules.allowlist]
+  description = "Kurgusal demo veri setindeki cluster_key alan adı (yanlış pozitif)"
+  paths = ['''docs/v3/hazirlik/demo-urun-seti\.json''']

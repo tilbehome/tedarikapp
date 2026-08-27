@@ -213,6 +213,58 @@ final class SetupEndpointsTest extends TestCase
         self::assertFalse($this->lock()->isLocked(), 'Sıra dışı çağrı kilidi YAZMAMALI.');
     }
 
+    // ─────────────── APP_URL kapısı (rc8/E2) ───────────────
+
+    /**
+     * Sihirbazı "kurtarma bitti" durumuna getirir; kurulum verisini test yazar.
+     *
+     * @param array<string, mixed> $veri
+     */
+    private function kurtarmaAdimindaBirak(array $veri): void
+    {
+        $this->session->set('setup_step', SetupState::STEP_RECOVERY);
+        $this->session->set('setup_data', array_merge(['totp_skipped' => true], $veri));
+    }
+
+    /**
+     * rc8/E2 — APP_URL YOKSA KİLİT YAZILMAZ.
+     *
+     * Eski dal "değer varsa yaz" diyordu: adım atlanmış ya da oturumu düşmüş
+     * bir kurulum buradan sessizce geçip kilitleniyordu. rc8-04'ten sonra böyle
+     * bir kurulum İLK PAYLAŞIMDA `AppUrlYokException` ile patlar — arıza,
+     * düzeltilebileceği andan saatler sonra ve müşterinin önünde çıkardı.
+     */
+    public function testAPPURLYOKSAFINISH500DONER_VE_KILITYAZILMAZ(): void
+    {
+        $this->kurtarmaAdimindaBirak([]);
+
+        $response = $this->call('POST', '/api/setup/finish', ['codes_saved' => true], [
+            SetupCsrf::HEADER => $this->token(),
+        ]);
+
+        self::assertSame(500, $response->getStatusCode());
+        $body = $this->json($response);
+        self::assertSame('SERVER_ERROR', $body['error']['code']);
+        self::assertStringContainsString('Uygulama adresi', (string) $body['error']['message']);
+        self::assertFalse($this->lock()->isLocked(), 'APP_URL yokken kilit YAZILMAMALI.');
+    }
+
+    /** Yer tutucu ya da kanonik olmayan değer de "yok" sayılır. */
+    public function testKANONIKOLMAYANAPPURLDEFINISH500DONER(): void
+    {
+        foreach (['https://localhost', 'https://ornek.test/panel', 'ornek.test', ''] as $bozuk) {
+            $this->session = new ArraySession();
+            $this->kurtarmaAdimindaBirak(['env_app_url' => $bozuk]);
+
+            $response = $this->call('POST', '/api/setup/finish', ['codes_saved' => true], [
+                SetupCsrf::HEADER => $this->token(),
+            ]);
+
+            self::assertSame(500, $response->getStatusCode(), $bozuk . ' kabul edilmemeli.');
+            self::assertFalse($this->lock()->isLocked(), $bozuk . ' için kilit YAZILMAMALI.');
+        }
+    }
+
     // ─────────────── Gereksinim denetimi ───────────────
 
     public function testGereksinimDenetimiEksikleriIsimIsimListeler(): void

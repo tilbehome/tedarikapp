@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Auth\PasswordHasher;
+use App\Core\AppUrl;
 use App\Core\ClientIp;
 use App\Core\Clock;
 use App\Core\Connection;
@@ -37,8 +39,14 @@ final class SettingsController extends ApiController
         private readonly ActivityLog $activity,
         private readonly Clock $clock,
         private readonly DateTimeZone $timezone,
+        // rc8/K4: APP_URL değişikliği parola tekrarı ister — yapıcının SONUNA
+        // eklenir, konumsal çağrılar bozulmaz.
+        private readonly PasswordHasher $passwords,
     ) {
     }
+
+    /** `settings` tablosundaki taban adres anahtarı (kurulum sihirbazı da bunu yazar). */
+    private const KEY_APP_URL = 'APP_URL';
 
     /** GET /api/settings */
     public function show(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
@@ -57,6 +65,67 @@ final class SettingsController extends ApiController
             // İE#21 EK-4 (B7): kilit ekranındaki "yeni anahtar iste" köprüsünün
             // hedefi. Boşsa düğme basılmaz.
             'share_contact_phone' => $this->settings->get(SettingsRepository::KEY_SHARE_CONTACT_PHONE),
+            // rc8/K4 (dış denetim F-08): paylaşım bağlantısının ve QR'ın tabanı.
+            // Ekran hem DEĞERİ hem de KANONİK olup olmadığını gösterir; eksikse
+            // kırmızı şerit basar — çünkü bu ayar olmadan paylaşım üretilemez.
+            'app_url' => $this->settings->get(self::KEY_APP_URL),
+            'app_url_kanonik' => AppUrl::kanonik($this->settings->get(self::KEY_APP_URL)) !== null,
+        ]);
+    }
+
+    /**
+     * PUT /api/settings/app-url — panelin DIŞA VERİLEN adresi (rc8/K4, F-08).
+     *
+     * Bu değer paylaşım bağlantısının, QR kodunun ve e-postaya kopyalanan
+     * adresin tabanıdır. Yanlışsa müşteriye çalışmayan bir link gider; boşsa
+     * uygulama link üretmeyi tümden reddeder (`AppUrlYokException`) — yani
+     * alan sessiz kalamaz.
+     *
+     * PAROLA TEKRARI İSTENİR: açık oturumu ele geçiren biri bu tek alanı
+     * değiştirerek bundan sonraki tüm paylaşım linklerini kendi sunucusuna
+     * yönlendirebilirdi. Doğrulama, oturumun değil KULLANICININ kararı
+     * olduğunu garanti eder.
+     */
+    public function updateAppUrl(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        $body = $this->body($request);
+        $ham = is_string($body['app_url'] ?? null) ? trim((string) $body['app_url']) : '';
+        $parola = is_string($body['password'] ?? null) ? (string) $body['password'] : '';
+
+        $kullanici = $this->user($request);
+        if ($parola === '' || !$this->passwords->verify($parola, $kullanici->passwordHash)) {
+            return Response::error($response, 'VALIDATION', 'Doğrulama hatası', 422, [
+                'password' => 'Parolanız doğrulanamadı; adres değiştirilmedi.',
+            ]);
+        }
+
+        $kanonik = AppUrl::kanonik($ham);
+        if ($kanonik === null) {
+            return Response::error($response, 'VALIDATION', 'Doğrulama hatası', 422, [
+                'app_url' => 'Panelin tam adresini şema ile girin; yol, sorgu ya da '
+                    . 'kullanıcı adı içeremez (örnek: https://tedarik.firma.com).',
+            ]);
+        }
+
+        $onceki = $this->settings->get(self::KEY_APP_URL);
+        $this->settings->set(self::KEY_APP_URL, $kanonik);
+
+        $this->activity->record(
+            'settings',
+            null,
+            'app_url_updated',
+            // Adresin kendisi kayda GİRER: bu bir sır değil, denetim izidir —
+            // "linkler ne zaman nereye bakmaya başladı" sorusu cevaplanabilmeli.
+            ($onceki === null || $onceki === '' ? '(boş)' : $onceki) . ' → ' . $kanonik,
+            ClientIp::from($request),
+            $this->clock->now(),
+            ActivityLog::ACTOR_ADMIN,
+            $kullanici->id,
+        );
+
+        return Response::success($response, [
+            'app_url' => $kanonik,
+            'app_url_kanonik' => true,
         ]);
     }
 

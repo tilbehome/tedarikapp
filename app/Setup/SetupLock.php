@@ -7,6 +7,7 @@ namespace App\Setup;
 use App\Core\Connection;
 use App\Core\Dates;
 use DateTimeImmutable;
+use PDOException;
 use RuntimeException;
 use Throwable;
 
@@ -67,7 +68,7 @@ final class SetupLock
         if ($this->connection !== null) {
             try {
                 $stored = $this->readFromDatabaseStrict();
-            } catch (Throwable) {
+            } catch (Throwable $hata) {
                 // İE#19 G1 DÜZELTMESİ — "okunamadı" İKİ FARKLI DURUMDUR:
                 //
                 //  (a) veritabanı yanıt vermiyor  → gerçekten bilinmiyor, fail-closed,
@@ -79,7 +80,21 @@ final class SetupLock
                 //      yakaladı) ve K45'in "kurulum hiçbir koşulda bloklanmaz"
                 //      sözünü çiğnerdi.
                 //
-                // Ayrımı tek ucuz yoklama verir.
+                // rc8-02 (dış denetim F-02) — AYRIM HATA SINIFINDAN OKUNUR.
+                //
+                // Eski kod yalnız "bağlantı yaşıyor mu?" diye soruyordu: SELECT
+                // yetkisinin olmaması, kolon/şema uyuşmazlığı, bozuk bir view ya
+                // da geçici bir sorgu hatası da KİLİTSİZ sayılıyordu. Kurulu bir
+                // sistemde kurulum rotaları açılabiliyordu — üstelik yorum
+                // fail-closed iddiasındaydı, yani operatör yanlış güvence alıyordu.
+                //
+                // Artık yalnız DOĞRULANMIŞ "tablo yok" kilitsiz sayılır. Belirsizlik
+                // KAPALI tarafa yazılır: güvenlik sınırında "bilmiyorum" demek,
+                // "açıktır" demekten daima ucuzdur.
+                if (!$this->tabloYokHatasi($hata)) {
+                    return self::STATE_UNKNOWN;
+                }
+
                 return $this->connectionResponds() ? self::STATE_UNLOCKED : self::STATE_UNKNOWN;
             }
 
@@ -89,6 +104,32 @@ final class SetupLock
         }
 
         return $this->readFromLegacyFile() !== null ? self::STATE_LOCKED : self::STATE_UNLOCKED;
+    }
+
+    /**
+     * Hata GERÇEKTEN "tablo yok" mu? (rc8-02 / F-02)
+     *
+     * Üç kaynağa bakılır, çünkü tek kaynak her sürücüde güvenilir değildir:
+     *   1. SQLSTATE `42S02` — standart "base table or view not found",
+     *   2. MySQL/MariaDB sürücü kodu `1146`,
+     *   3. SQLite'ın metinsel `no such table` bildirimi (testler ve yerel kurulum).
+     *
+     * Bunların DIŞINDAKİ her hata — yetki reddi (`42000`/1142), bozuk şema,
+     * bağlantı düşmesi — belirsizdir ve `STATE_UNKNOWN` üretir.
+     */
+    private function tabloYokHatasi(Throwable $hata): bool
+    {
+        if ($hata instanceof PDOException) {
+            $sqlState = is_string($hata->errorInfo[0] ?? null) ? (string) $hata->errorInfo[0] : (string) $hata->getCode();
+            $suruculKod = (int) ($hata->errorInfo[1] ?? 0);
+
+            if ($sqlState === '42S02' || $suruculKod === 1146) {
+                return true;
+            }
+        }
+
+        // SQLite sürücüsü SQLSTATE olarak HY000 verir; ayrımı yalnız metin taşır.
+        return str_contains(mb_strtolower($hata->getMessage()), 'no such table');
     }
 
     /** Veritabanının kendisi yanıt veriyor mu? ("tablo yok" ile "sunucu yok" ayrımı) */

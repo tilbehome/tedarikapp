@@ -42,14 +42,21 @@ final class AppUrlTest extends TestCase
         );
     }
 
-    public function testAyarYokkenIstegeDUSULUR(): void
+    public function testAyarYokkenGELISTIRMEDE_ISTEGEDUSULUR(): void
     {
-        // Yapılandırılmamış sistemde link üretmemek yerine çalışan bir adres vermek
-        // daha az zararlıdır; bu bilinçli yedektir.
+        // rc8-04 (F-08): yedek ARTIK OTOMATİK DEĞİL. Geliştirme profilinde açık
+        // izinle çalışır; üretimde açık hata verir (aşağıdaki test).
         self::assertSame(
             'https://kendi.test/liste/abc',
-            AppUrl::to(null, $this->istek('https://kendi.test/x'), '/liste/abc'),
+            AppUrl::to(null, $this->istek('https://kendi.test/x'), '/liste/abc', true),
         );
+    }
+
+    public function testAyarYokkenURETIMDE_HATAVERIR(): void
+    {
+        // Sessiz Host yedeği, saldırganın belirlediği adresi QR'a bastırabiliyordu.
+        $this->expectException(\App\Core\AppUrlYokException::class);
+        AppUrl::to(null, $this->istek('https://kendi.test/x'), '/liste/abc');
     }
 
     public function testKurulumYerTutucusuKULLANILMAZ(): void
@@ -58,7 +65,7 @@ final class AppUrlTest extends TestCase
         // "https://localhost" yazar. Bu bir adres değil, bir yer tutucudur.
         self::assertSame(
             'https://gercek.test/liste/abc',
-            AppUrl::to('https://localhost', $this->istek('https://gercek.test/y'), '/liste/abc'),
+            AppUrl::to('https://localhost', $this->istek('https://gercek.test/y'), '/liste/abc', true),
         );
     }
 
@@ -66,7 +73,7 @@ final class AppUrlTest extends TestCase
     {
         self::assertSame(
             'https://gercek.test/qr',
-            AppUrl::to('bu-bir-adres-degil', $this->istek('https://gercek.test/z'), '/qr'),
+            AppUrl::to('bu-bir-adres-degil', $this->istek('https://gercek.test/z'), '/qr', true),
         );
     }
 }

@@ -82,11 +82,19 @@ final class ErisimAnahtariTest extends AuthTestCase
         self::assertStringContainsString('Erişim anahtarı', $html);
         self::assertStringContainsString('data-anahtar-haneler', $html);
 
+        // KIRILGANLIK DÜZELTMESİ (rc8, CI'da yakalandı): paylaşım TOKEN'I sayfada
+        // geçer (form eylemi) ve 64 haneli rastgele bir hex dizisidir. Kısa sayısal
+        // değerler ("240", "12.00") o dizinin içinde TESADÜFEN oluşabilir ve test
+        // rastgele koşumlarda kırmızıya döner — CI'daki token gerçekten "240"
+        // içeriyordu. Token, sızıntı aranan metinden ÇIKARILIR: sınanan şey
+        // listeye ait verinin basılıp basılmadığıdır, token'ın kendisi değil.
+        $govde = str_replace($this->token, '', $html);
+
         // VERİ SINIRI: ürün adı, orijinal başlık, fiyat, adet — HİÇBİRİ yok.
-        self::assertStringNotContainsString('Termos Yemek Kabı', $html, 'Ürün adı sızmamalı.');
-        self::assertStringNotContainsString('保温饭盒', $html, 'Orijinal başlık sızmamalı.');
-        self::assertStringNotContainsString('12.00', $html, 'Fiyat sızmamalı.');
-        self::assertStringNotContainsString('240', $html, 'Adet sızmamalı.');
+        self::assertStringNotContainsString('Termos Yemek Kabı', $govde, 'Ürün adı sızmamalı.');
+        self::assertStringNotContainsString('保温饭盒', $govde, 'Orijinal başlık sızmamalı.');
+        self::assertStringNotContainsString('12.00', $govde, 'Fiyat sızmamalı.');
+        self::assertStringNotContainsString('240', $govde, 'Adet sızmamalı.');
         // Toplamlar ve KPI şeridi de yok.
         self::assertStringNotContainsString('GENEL TOPLAM', $html);
         self::assertStringNotContainsString('class="kpis"', $html);

@@ -1,3 +1,5 @@
+import { fileURLToPath } from 'node:url';
+
 import { expect, test } from '@playwright/test';
 
 import { alanRaporu } from '../../extension/core/alanRaporu';
@@ -84,6 +86,17 @@ function gorunum(fark: Partial<PanelGorunumu> = {}): PanelGorunumu {
   };
 }
 
+/**
+ * Köprü paketinin MUTLAK yolu.
+ *
+ * Önceki hâl `new URL(...).pathname.replace(/^\//, '')` idi: Windows'ta
+ * `/C:/...` → `C:/...` düzeltmesi doğru çalışıyor, Linux'ta ise `/home/...`
+ * → `home/...` olup GÖRECELİ bir yola dönüşüyordu. CI'da dört senaryo
+ * "ENOENT home/runner/..." ile düştü; yerelde hiç görünmedi. `fileURLToPath`
+ * bu ayrımı platformun kendisine bırakır.
+ */
+const KOPRU_YOLU = fileURLToPath(new URL('../dist/arayuz.js', import.meta.url));
+
 test.describe('E2E-EKL-31 — panel varsayılan KAPALI (rc7 EK-1 §5)', () => {
   test('beş ardışık yüklemede 5/5 kapalı başlar ve düğme görünür', async ({ page }) => {
     for (let yukleme = 1; yukleme <= 5; yukleme++) {
@@ -91,7 +104,7 @@ test.describe('E2E-EKL-31 — panel varsayılan KAPALI (rc7 EK-1 §5)', () => {
       await page.setContent(
         '<!doctype html><html><body><div class="price-content">¥15.90</div><div id="kok"></div></body></html>',
       );
-      await page.addScriptTag({ path: new URL('../dist/arayuz.js', import.meta.url).pathname.replace(/^\//, '') });
+      await page.addScriptTag({ path: KOPRU_YOLU });
 
       const sonuc = await page.evaluate(() => {
         const api = (window as unknown as { TDK: Record<string, unknown> }).TDK;
@@ -120,7 +133,7 @@ test.describe('E2E-EKL-31 — panel varsayılan KAPALI (rc7 EK-1 §5)', () => {
 
   test('montaj hedefi yoksa sağ-alt pill yedeği basılır ve GÖRÜNÜR', async ({ page }) => {
     await page.setContent('<!doctype html><html><body></body></html>');
-    await page.addScriptTag({ path: new URL('../dist/arayuz.js', import.meta.url).pathname.replace(/^\//, '') });
+    await page.addScriptTag({ path: KOPRU_YOLU });
 
     const sonuc = await page.evaluate(() => {
       const api = (window as unknown as { TDK: Record<string, unknown> }).TDK;
@@ -156,7 +169,7 @@ test.describe('E2E-EKL-30 — panel yatay TAŞMAZ (rc7 D10-b)', () => {
   test('en uzun URL ve 6 varyant çipiyle yatay kaydırma YOK', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.setContent('<!doctype html><html><body></body></html>');
-    await page.addScriptTag({ path: new URL('../dist/arayuz.js', import.meta.url).pathname.replace(/^\//, '') });
+    await page.addScriptTag({ path: KOPRU_YOLU });
 
     const olcum = await page.evaluate((gorunumJson) => {
       const api = (window as unknown as { TDK: Record<string, unknown> }).TDK;
@@ -197,7 +210,7 @@ test.describe('E2E-EKL-30 — panel yatay TAŞMAZ (rc7 D10-b)', () => {
   test('dar görünümde (360 px) de taşma yok', async ({ page }) => {
     await page.setViewportSize({ width: 360, height: 780 });
     await page.setContent('<!doctype html><html><body></body></html>');
-    await page.addScriptTag({ path: new URL('../dist/arayuz.js', import.meta.url).pathname.replace(/^\//, '') });
+    await page.addScriptTag({ path: KOPRU_YOLU });
 
     const olcum = await page.evaluate((gorunumJson) => {
       const api = (window as unknown as { TDK: Record<string, unknown> }).TDK;

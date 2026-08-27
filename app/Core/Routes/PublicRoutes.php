@@ -153,7 +153,7 @@ final class PublicRoutes
                             // hatalı deneme uyarısı için bağlam.
                             'iletisim' => (new \App\Models\SettingsRepository($connection))->shareContactPhone(),
                             'ardisik_hata' => $shareGate->anahtarDenemeSayisi($token, $ip, $now),
-                            'adres' => \App\Core\AppUrl::to($config->get('APP_URL'), $request, self::KANONIK_ON_EK . '/' . $token),
+                            'adres' => \App\Core\AppUrl::to($config->get('APP_URL'), $request, self::KANONIK_ON_EK . '/' . $token, \App\Core\AppUrl::hostYedegiIzinli($config->get('APP_ENV'))),
                         ]),
                     );
 
@@ -172,7 +172,7 @@ final class PublicRoutes
                 // Kanonik adres (İE#18 G5 · İE#19 E5): sayfanın kendi bağlantısı, QR ve
                 // kanal metinleri /liste/ taşır — /p/ ile açılmış olsa bile — ve taban
                 // adres AYARLARDAN gelir, isteğin Host başlığından DEĞİL.
-                \App\Core\AppUrl::to($config->get('APP_URL'), $request, self::KANONIK_ON_EK . '/' . $token),
+                \App\Core\AppUrl::to($config->get('APP_URL'), $request, self::KANONIK_ON_EK . '/' . $token, \App\Core\AppUrl::hostYedegiIzinli($config->get('APP_ENV'))),
                 // İE#13 F4: paylaşım sayfası da belge antedini taşır (aynı kurumsal dil).
                 (new \App\Models\SettingsRepository($connection))->documentHeader(),
                 false,
@@ -260,7 +260,7 @@ final class PublicRoutes
                     $kilitSayfasi->render($presenter->list($row), $token, $surum, true, $dil, [
                         'iletisim' => $settingsRepo->shareContactPhone(),
                         'ardisik_hata' => $shareGate->anahtarDenemeSayisi($token, $ip, $now),
-                        'adres' => \App\Core\AppUrl::to($config->get('APP_URL'), $request, self::KANONIK_ON_EK . '/' . $token),
+                        'adres' => \App\Core\AppUrl::to($config->get('APP_URL'), $request, self::KANONIK_ON_EK . '/' . $token, \App\Core\AppUrl::hostYedegiIzinli($config->get('APP_ENV'))),
                     ]),
                 );
 
@@ -340,7 +340,7 @@ final class PublicRoutes
 
             $dil = \App\Services\Share\ShareTexts::dil($request->getQueryParams()['lang'] ?? null);
             // E5: QR'ın taşıdığı adres ayarlardaki APP_URL'den üretilir.
-            $adres = \App\Core\AppUrl::to($config->get('APP_URL'), $request, self::KANONIK_ON_EK . '/' . $token)
+            $adres = \App\Core\AppUrl::to($config->get('APP_URL'), $request, self::KANONIK_ON_EK . '/' . $token, \App\Core\AppUrl::hostYedegiIzinli($config->get('APP_ENV')))
                 . ($dil === 'tr' ? '' : '?lang=' . $dil);
 
             $png = \App\Services\Export\QrImage::png($adres);

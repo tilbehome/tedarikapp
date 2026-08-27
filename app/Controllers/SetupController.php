@@ -8,6 +8,7 @@ use App\Auth\PasswordHasher;
 use App\Auth\RecoveryCodeService;
 use App\Auth\TotpService;
 use App\Auth\UserRepository;
+use App\Core\AppUrl;
 use App\Core\Clock;
 use App\Core\Config;
 use App\Core\Connection;
@@ -362,14 +363,21 @@ final class SetupController
         if ($appUrl === '') {
             $appUrl = $this->guessAppUrl($request);
         }
-        if (preg_match('#^https?://[^\s/]+#i', $appUrl) !== 1) {
+        // rc8/E2 + K85: doğrulama TEK KAYNAKTAN yapılır. Buradaki eski desen
+        // (`^https?://[^\s/]+`) yalnız BAŞLANGICI görüyordu; `AppUrl::kanonik()`
+        // yol/sorgu/fragment/userinfo/kontrol karakteri ve yer tutucuyu da
+        // eler. İki ayrı ölçüt, sihirbazın kabul ettiği ama uygulamanın
+        // reddettiği bir adres demekti.
+        $kanonik = AppUrl::kanonik($appUrl);
+        if ($kanonik === null) {
             return Response::error($response, 'VALIDATION', 'Doğrulama hatası', 422, [
-                'app_url' => 'Panel adresi http:// veya https:// ile başlamalı.',
+                'app_url' => 'Panel adresi http:// veya https:// ile başlamalı; '
+                    . 'yol, sorgu ya da kullanıcı adı içeremez (örnek: https://tedarik.firma.com).',
             ]);
         }
 
         $writer = $this->configWriter();
-        $appUrl = rtrim($appUrl, '/');
+        $appUrl = $kanonik;
         // APP_URL config.php'ye GİRMEZ (K44: dosyada yalnız DB + APP_KEY) —
         // finish adımında settings tablosuna yazılır.
         $this->state->put(self::DATA_APP_URL, $appUrl);
@@ -655,7 +663,15 @@ final class SetupController
 
         // K44 disksiz mod: config.php yalnız DB+APP_KEY taşır — kalan uygulama ayarları
         // (APP_URL, LOG_DRIVER, TZ) settings tablosuna yazılır; Config bunları DB'den okur.
-        $this->rememberAppSettings();
+        // rc8-04: APP_URL yazılamazsa BURADA durulur — kilit YAZILMAZ, kurulum
+        // "yarım" kalır ve sihirbaz kaldığı yerden devam ettirilebilir.
+        try {
+            $this->rememberAppSettings();
+        } catch (RuntimeException $e) {
+            return Response::error($response, 'SERVER_ERROR', $e->getMessage(), 500, [], [
+                'diagnostics' => $this->diagnosticsFor('finish', $e),
+            ]);
+        }
 
         // K33: medya modu kurulum anında ölçülür ve ayara yazılır — panel rozeti bunu okur.
         $mediaMode = $this->rememberMediaMode();
@@ -751,14 +767,51 @@ final class SetupController
     }
 
     /** K44: dosyada tutulmayan uygulama ayarlarını settings tablosuna yazar. */
+    /**
+     * @throws RuntimeException APP_URL yazılamazsa (rc8-04 / dış denetim F-08)
+     */
     private function rememberAppSettings(): void
     {
+        // rc8-04: APP_URL YAZILAMAZSA KURULUM TAMAMLANMAZ.
+        //
+        // Eskiden buradaki her hata yutuluyor, kurulum yine de KİLİTLENİYORDU.
+        // Sonuç: APP_URL'siz "tamamlanmış" bir kurulum ve `AppUrl`in istemci
+        // `Host` başlığına düşmesi — yani paylaşım linkinin ve QR'ın saldırgan
+        // tarafından belirlenebilmesi. Diğer ayarlar (LOG_DRIVER, TZ, sürüm
+        // damgası) hâlâ "kolaylık"tır ve hataları kurulumu durdurmaz.
+        // rc8/E2: DEĞER YOKSA DA KURULUM TAMAMLANMAZ.
+        //
+        // Önceki hâlde koşul yalnız "değer varsa yaz" diyordu: state'te APP_URL
+        // olmayan bir kurulum (adım atlanmış, oturum düşmüş, yer tutucu
+        // kalmış) bu daldan SESSİZCE geçip kilidi yazıyordu. rc8-04'ten sonra
+        // böyle bir kurulum ilk paylaşımda `AppUrlYokException` ile patlıyor —
+        // yani arıza, düzeltilebileceği andan saatler sonra ve son kullanıcının
+        // önünde ortaya çıkıyordu. Kapı burada kapanır.
+        $ham = $this->state->get(self::DATA_APP_URL);
+        $kanonik = AppUrl::kanonik(is_string($ham) ? $ham : null);
+        if ($kanonik === null) {
+            throw new RuntimeException(
+                'Uygulama adresi (APP_URL) eksik ya da geçersiz — kurulum tamamlanmadı. '
+                . 'Bu ayar olmadan paylaşım bağlantıları ve QR kodları istemcinin '
+                . 'gönderdiği adresle üretilirdi. Sihirbazın "Uygulama" adımına dönüp '
+                . 'panelin tam adresini girin (örnek: https://tedarik.firma.com).',
+            );
+        }
+
+        try {
+            (new SettingsRepository($this->connection()))->set('APP_URL', $kanonik);
+        } catch (Throwable $hata) {
+            throw new RuntimeException(
+                'Uygulama adresi (APP_URL) veritabanına yazılamadı: ' . $hata->getMessage()
+                . ' — kurulum tamamlanmadı. Bu ayar olmadan paylaşım bağlantıları ve QR '
+                . 'kodları istemcinin gönderdiği adresle üretilirdi.',
+                0,
+                $hata,
+            );
+        }
+
         try {
             $settings = new SettingsRepository($this->connection());
-            $appUrl = $this->state->get(self::DATA_APP_URL);
-            if (is_string($appUrl) && $appUrl !== '') {
-                $settings->set('APP_URL', $appUrl);
-            }
             $settings->set('LOG_DRIVER', 'db'); // K33/K44: üretimde log daima DB
             $settings->set('TZ', 'Europe/Istanbul');
             // D2-REV: KURULU SÜRÜM kaydı. Teşhis motoru "dosyalar yeni, şema eski"

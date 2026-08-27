@@ -79,6 +79,11 @@ final class AppBuilder
         ?string $basePath = null,
         ?\App\Services\MediaFetcher $mediaFetcher = null,
         ?\App\Services\Translation\TranslationClient $translationClient = null,
+        // rc8/E1 TEST DİKİŞİ: `commit()` başarısızlığı gerçek dosya sisteminde
+        // taşınabilir biçimde tetiklenemiyor (hedef adı rastgele; Windows'ta
+        // salt-okunur dizin rename'i engellemiyor). Süit bu parametreyle
+        // sözleşmeyi taklit eden bir MediaService verir; üretimde daima null.
+        ?MediaService $mediaService = null,
     ): App {
         $requestContext ??= new RequestContext();
         $basePath ??= dirname(__DIR__, 2);
@@ -151,7 +156,7 @@ final class AppBuilder
 
         $allowedHosts = array_map('trim', explode(',', $config->get('MEDIA_ALLOWED_HOSTS', 'alicdn.com,1688.com')));
         $urlGuard = new UrlGuard($allowedHosts);
-        $mediaService = new MediaService(
+        $mediaService ??= new MediaService(
             $basePath,
             $urlGuard,
             $mediaFetcher ?? new CurlMediaFetcher($urlGuard, $config->getPositiveInt('MEDIA_DOWNLOAD_TIMEOUT', 25)),
@@ -210,6 +215,7 @@ final class AppBuilder
             $services->activity,
             $services->clock,
             $services->timezone,
+            $services->passwords,
         );
         $categoryController = new CategoryController(
             new CategoryRepository($connection),
@@ -267,8 +273,12 @@ final class AppBuilder
             $products,
             new \App\Services\ListMutationPolicy(),
             $services->activity,
-            // Medya bağımlılığı bilinçli olarak boş bırakılır (yakalama medyayı
-            // kendi hazırlar); ilan yazıcı adıyla geçilir ki sıra karışmasın.
+            // rc8-01 (F-01): MEDYA SERVİSİ ZORUNLUDUR. Eskiden buraya hiçbir şey
+            // geçilmiyor ve yorum bunu "bilinçli" diye açıklıyordu; sonuç, arşiv
+            // modunda her yakalamanın diske `.tmp` bırakması ve veritabanına
+            // çözülemeyen bir `/media/...` adresi yazmasıydı.
+            $mediaService,
+            $logger,
             ilanlar: new \App\Services\Ilan\IlanYazici($connection),
             // D11a: galeri görselleri arka planda indirilsin (yakalama beklemez).
             kuyruk: new \App\Services\Kuyruk\JobQueue($connection),

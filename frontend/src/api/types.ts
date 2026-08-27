@@ -189,6 +189,13 @@ export interface Settings {
   media_writable: boolean | null;
   /** İE#21 EK-4: kilit ekranındaki anahtar talebi köprüsünün numarası (boş olabilir). */
   share_contact_phone: string | null;
+  /**
+   * rc8/K4 (F-08): paylaşım bağlantısının ve QR'ın tabanı — `settings.APP_URL`.
+   * `app_url_kanonik` false ise uygulama link üretmeyi reddeder; ekran kırmızı
+   * şerit basar.
+   */
+  app_url: string | null;
+  app_url_kanonik: boolean;
   /** İE#13 F1: çıktı ve paylaşım sayfası üst bandındaki firma kimliği. */
   document_header: {
     company: string | null;

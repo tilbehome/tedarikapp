@@ -155,6 +155,7 @@ export default function PaylasPenceresi({
                     className="btn-ghost !min-h-9 !text-xs"
                     disabled={mesgul}
                     onClick={() => void iptal()}
+                    data-testid="paylas-iptal"
                   >
                     Bağlantıyı iptal et
                   </button>
@@ -195,6 +196,7 @@ export default function PaylasPenceresi({
                       className="btn-ghost !min-h-9 !text-xs"
                       disabled={mesgul}
                       onClick={() => void iptal()}
+                      data-testid="paylas-iptal"
                     >
                       Bağlantıyı iptal et
                     </button>
