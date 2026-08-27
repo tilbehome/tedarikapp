@@ -40,6 +40,9 @@ button { font: inherit; cursor: pointer; border: 0; }
   font-size: 14.5px; font-weight: 600; letter-spacing: .2px;
   box-shadow: var(--golge-kart); transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
 }
+/* A5: satin alma blogunun ustunde TAM GENISLIK. 1688'in kendi dugmeleriyle
+ * ayni yukseklikte durur; yarim genislikte bir dugme oraya "yamanmis" gorunur. */
+.tdk-btn--blok { width: 100%; justify-content: center; min-height: 44px; }
 .tdk-btn:hover { background: var(--lacivert-koyu); box-shadow: var(--golge-acilir); transform: translateY(-1px); }
 .tdk-btn:focus-visible { outline: 3px solid var(--altin); outline-offset: 2px; }
 .tdk-btn[disabled] { opacity: .6; cursor: default; transform: none; }
@@ -89,11 +92,34 @@ button { font: inherit; cursor: pointer; border: 0; }
 .tdk-ortu { position: fixed; inset: 0; background: rgba(10,26,63,.42); z-index: 2147483000;
   display: none; }
 .tdk-ortu.tdk-acik { display: block; }
+/* DIKEY DUZEN (v1.0/A1 — saha bulgusu 27 Agu).
+ *
+ * SAHA: 1080p ekranda cekmece icerigi viewport'tan uzundu; "Nereye gitsin" ve
+ * "Yakala ve Gonder" ekranin ALTINDA kaliyor, cekmece kendi icinde kaydirmiyor,
+ * sayfa kaydirmasi da onu tasimiyordu (panel position:fixed). Kullanici gonder
+ * dugmesine ulasamiyor, eklenti islevsiz kaliyordu.
+ *
+ * KOK NEDEN: .tdk-govdenin flex:1; overflow-y:auto kurali, yuksekligi
+ * TANIMSIZ bir sarmalayicinin ([data-govde]) icindeydi. Sarmalayici icerikle
+ * buyuyor, .tdk-alti asagi itiyor, kaydirici hic devreye girmiyordu. rc7'de
+ * kapatilan yatay min-width:auto kusurunun DIKEY ikizi.
+ *
+ * KURAL: yukseklik panelde SABITLENIR (100vh); ust baslik ve alt aksiyon
+ * cubugu flex: none ile kaydirma alaninin DISINDA durur; tek kaydirici
+ * ortadaki sarmalayicidir. position: sticky KULLANILMADI: bu iki oge zaten
+ * kaydirilan kabin kardesi, cocugu degil — sticky yazmak, saglamadigi bir
+ * davranisi ima eden olu kural olurdu (K85). */
 .tdk-cekmece { position: fixed; top: 0; right: 0; bottom: 0; width: 448px; max-width: 100vw;
+  height: 100vh; max-height: 100vh; overflow: hidden;
   background: #fff; z-index: 2147483001; box-shadow: var(--golge-modal);
   display: none; flex-direction: column; font-family: system-ui, sans-serif; color: var(--n900); }
+/* TEK KAYDIRICI: sarmalayici. min-height: 0 sart — flex ogesinin varsayilan
+ * min-height: autosu, icerikten kucuk olmasini engeller ve overflow hic
+ * tetiklenmez (kusurun tam olarak kendisi). */
+.tdk-cekmece > [data-govde] { flex: 1 1 auto; min-height: 0; overflow-y: auto;
+  overscroll-behavior: contain; }
 .tdk-cekmece.tdk-acik { display: flex; }
-.tdk-ust { background: var(--lacivert); color: #fff; padding: 14px 18px; display: flex; align-items: center; gap: 11px;
+.tdk-ust { flex: none; background: var(--lacivert); color: #fff; padding: 14px 18px; display: flex; align-items: center; gap: 11px;
   border-bottom: 3px solid var(--altin); }
 .tdk-ust .kup { width: 26px; height: 26px; border-radius: 7px;
   background: linear-gradient(135deg,#fff 0%,#fff 55%,var(--altin) 55%); }
@@ -102,9 +128,12 @@ button { font: inherit; cursor: pointer; border: 0; }
 .tdk-kapat { margin-left: auto; background: transparent; color: #B9C3DE; font-size: 20px; line-height: 1;
   padding: 4px 8px; border-radius: 6px; }
 .tdk-kapat:hover { background: rgba(255,255,255,.12); color: #fff; }
-.tdk-govde { flex: 1; overflow-y: auto; padding: 14px 16px 16px; background: var(--n50);
+/* Kaydirma artik SARMALAYICIDA; bu katman yalnizca duzen ve zemindir. Ikinci
+ * bir overflow-y:auto ic ice kaydirici uretir ve tekerlek hangi katmani
+ * surukleyecegini sasirir. */
+.tdk-govde { padding: 14px 16px 16px; background: var(--n50);
   display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
-.tdk-alt { border-top: 1px solid var(--n150); padding: 12px 16px; background: #fff;
+.tdk-alt { flex: none; border-top: 1px solid var(--n150); padding: 12px 16px; background: #fff;
   display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
 
 /* ── ÜRÜN + DOLULUK ─────────────────────────────────────────────────── */
@@ -119,8 +148,13 @@ button { font: inherit; cursor: pointer; border: 0; }
 /* GRID SUTUNU AÇIKÇA SINIRLANIR: varsayilan auto sutun max-content'e gore
  * buyur; icindeki satir 448 px panelde 967 px olabilir (olculdu). minmax(0,1fr)
  * sutunu panele baglar, min-width:0 zinciri de icerigi kirar. */
+/* A1: onizleme listesi kendi kaydiricisini KORUR ama kisalir (260 -> 168 px):
+ * govde kaydiricisiyla ic ice calisirken 260 px'lik ikinci bir kaydirma alani,
+ * kullanicinin tekerlegini "hangi liste kayiyor" belirsizligine sokuyordu.
+ * overscroll-behavior: contain ic listenin sonuna gelince kaydirmanin disa
+ * SICRAMASINI da keser. */
 .tdk-alanlar { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px;
-  max-height: 260px; overflow-y: auto; }
+  max-height: 168px; overflow-y: auto; overscroll-behavior: contain; }
 .tdk-alanlar > * { min-width: 0; }
 /* TASMA DISIPLINI (rc7 D10-b — saha bulgusu K2).
  *
@@ -185,6 +219,17 @@ button { font: inherit; cursor: pointer; border: 0; }
 .iskelet-metin { color: var(--n400); }
 .tdk-oneri { margin-left: 8px; font-size: 10px; font-weight: 700; letter-spacing: .3px;
   color: var(--yesil); background: #E9F7F0; border-radius: 999px; padding: 2px 8px; vertical-align: middle; }
+/* A2: rozet konulamayan durumun aciklamasi. Sessiz kalmak, kullaniciyi
+ * "Turkce ad neden yok" sorusuyla bas basa birakirdi. */
+.tdk-not { margin-top: 4px; font-size: 11px; color: var(--n500); }
+/* A4: kirpilmis adresin yanindaki eylem. Native title balonu ekran disina
+ * tasiyordu; yerine tasmayan ve ise yarayan bir dugme kondu. */
+.tdk-kopyala { flex: none; margin-left: 6px; font-size: 10px; font-weight: 700; letter-spacing: .2px;
+  color: var(--lacivert); background: var(--n100); border: 1px solid var(--n150);
+  border-radius: 999px; padding: 2px 8px; cursor: pointer; }
+.tdk-kopyala:hover { background: var(--n150); }
+.tdk-kopyala[data-durum="tamam"] { color: var(--yesil); background: #E9F7F0; border-color: #CDEBDD; }
+.tdk-kopyala[data-durum="hata"] { color: var(--kirmizi); background: #FBEAEA; border-color: #F1CFCF; }
 .tdk-bilgi { display: flex; align-items: center; gap: 8px; font-size: 12px; padding: 8px 12px;
   border-radius: var(--r8); background: var(--n100); color: var(--n700); border: 1px solid var(--n150); }
 .tdk-bilgi[data-bilgi="mukerrer"] { background: var(--sari-zemin); color: var(--sari); border-color: #F3E2BE; }

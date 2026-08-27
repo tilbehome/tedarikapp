@@ -6,6 +6,6 @@
  * bundle'ına girmez (`extension/entrypoints` dışındadır).
  */
 import { cekmeceKur } from '../extension/ui/v2/cekmece';
-import { montajYap } from '../extension/ui/v2/montaj';
+import { montajNobeti, montajYap } from '../extension/ui/v2/montaj';
 
-(window as unknown as { TDK: unknown }).TDK = { cekmeceKur, montajYap };
+(window as unknown as { TDK: unknown }).TDK = { cekmeceKur, montajYap, montajNobeti };
