@@ -91,10 +91,16 @@ jobs:
       - name: Depoyu al
         uses: actions/checkout@v7
 
-      - name: PHP 8.3 kur
+      - name: PHP 8.4 kur
+        # GELISTIRME ZINCIRI 8.4 ISTER: php-cs-fixer'in cektigi symfony/console
+        # v8 "php >= 8.4.1" beyan ediyor; dev bagimliliklariyla 8.3'te composer
+        # kurulumu "lock uyumsuz" deyip isi kurulum adiminda dusuruyordu
+        # (olculdu). Kalite job'i da bu yuzden 8.4 kullaniyor; dilimler onunla
+        # ayni zeminde kosar. Uygulamanin CALISMA ZAMANI tabani ayri bir istir:
+        # php-taban-uyum, 8.2 + 8.3 matrisi (K84).
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: '8.4'
           extensions: bcmath, curl, fileinfo, gd, intl, mbstring, openssl, pdo_mysql, pdo_sqlite, sodium, zip
           coverage: none
 
