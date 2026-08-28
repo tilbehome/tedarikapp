@@ -87,7 +87,7 @@ final class CeviriButcesiTest extends TestCase
     {
         // Bütçe 0 sn: ilk dil bitince kalan süre ZATEN tükenmiş sayılır.
         // Böylece "kısmen" yolu saniye beklemeden kanıtlanır.
-        $cevirmen = new YavasCevirmen($this->pdo);
+        $cevirmen = new ButceYavasCevirmen($this->pdo);
         $sonuc = $this->yurutucu($cevirmen)->urunuTamamla(1, 0);
 
         self::assertNotSame([], $sonuc['eksikti'], 'Ürünün eksik dilleri olmalı.');
@@ -107,7 +107,7 @@ final class CeviriButcesiTest extends TestCase
     public function testBUTCESIZCAGRIHEPSINITEKTURDAISTER(): void
     {
         // Kuyruk işçisi bütçesiz çağırır: kullanıcı beklemiyor, hepsi istenir.
-        $cevirmen = new YavasCevirmen($this->pdo);
+        $cevirmen = new ButceYavasCevirmen($this->pdo);
         $sonuc = $this->yurutucu($cevirmen)->urunuTamamla(1, null);
 
         self::assertSame([], $sonuc['kalan'], 'Bütçesiz çağrıda kalan dil OLMAMALI.');
@@ -118,7 +118,7 @@ final class CeviriButcesiTest extends TestCase
     {
         // "Kısmen" ancak diller ayrı ayrı istenirse mümkündür: hepsini tek
         // istekte sormak bütçeyi ilk yanıtta aşar ve kısmi sonuç doğmaz.
-        $cevirmen = new YavasCevirmen($this->pdo);
+        $cevirmen = new ButceYavasCevirmen($this->pdo);
         $this->yurutucu($cevirmen)->urunuTamamla(1, 0);
 
         self::assertGreaterThanOrEqual(1, $cevirmen->cagriSayisi);
@@ -129,7 +129,7 @@ final class CeviriButcesiTest extends TestCase
 
     public function testCEVIRMENPATLARSAHATASOYLENIRVEDILLERKALIR(): void
     {
-        $sonuc = $this->yurutucu(new PatlayanCevirmen())->urunuTamamla(1, 0);
+        $sonuc = $this->yurutucu(new ButcePatlayanCevirmen())->urunuTamamla(1, 0);
 
         self::assertNotNull($sonuc['hata'], 'Sağlayıcı arızası SESSİZ geçilemez.');
         self::assertSame([], $sonuc['cevrilen']);
@@ -140,11 +140,16 @@ final class CeviriButcesiTest extends TestCase
 /**
  * Bütçeyi aşan sağlayıcı taklidi.
  *
+ * ADI "Butce" ÖNEKLİDİR ve olmak zorunda: `CeviriYurutucuTest` içinde de
+ * `PatlayanCevirmen` adında bir taklit var. PHPUnit tüm test dosyalarını AYNI
+ * süreçte yükler; aynı ada sahip iki sınıf "Cannot redeclare" ile TÜM SÜİTİ
+ * düşürür. Tek dosya koşarken görülmez — CI'da görülür.
+ *
  * Gerçekten UYUMAZ: test süresini uzatmak davranışı daha iyi kanıtlamaz ve
  * süite saniyeler ekler. Bütçe 0 verildiğinde ilk dilden sonra süre zaten
  * dolmuş sayılır; sınanan mantık aynıdır.
  */
-final class YavasCevirmen implements TranslatorInterface
+final class ButceYavasCevirmen implements TranslatorInterface
 {
     public int $cagriSayisi = 0;
 
@@ -209,7 +214,7 @@ final class YavasCevirmen implements TranslatorInterface
 }
 
 /** Sağlayıcı arızası. */
-final class PatlayanCevirmen implements TranslatorInterface
+final class ButcePatlayanCevirmen implements TranslatorInterface
 {
     /**
      * @param  array<string, mixed> $product
