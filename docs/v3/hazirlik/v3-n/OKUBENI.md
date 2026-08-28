@@ -19,3 +19,11 @@ PM şerhleri (V3-N emrinde uygulanacak, demo bu halleriyle ÖRNEK sayılmaz):
 
 Raporun §9.2 "görünmezlik her katmanda" bölümü V3-N emrine bağlayıcı madde
 olarak girecektir.
+
+## gorev-27 — Müşteri Paneli Metin Paketi
+
+27A hukuki/işlemsel metinler TASLAKTIR — hukuk danışmanı onayı olmadan
+yayımlanmaz; yer tutucular gerçek şirket/veri envanteriyle doldurulmadan
+kaldırılmaz. 27B yalnız TR'dir; EN/ZH üretimi ve kullanılmayan anahtar
+temizliği V3-N emrinde yapılır (kanonik üç dil kuralı). 27C (KT-N-001..034)
+V3-N kabul turunun temel senaryo setidir.
