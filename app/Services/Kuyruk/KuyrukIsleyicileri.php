@@ -111,7 +111,12 @@ final class KuyrukIsleyicileri
             $degerler = \App\Services\Translation\CevrilecekDegerler::topla($urun);
 
             $cevirmen->translateProduct([
-                'name' => (string) $urun['name'],
+                // D12: kuyruk yolu da ORİJİNAL metni çevirir. `name` alanı çoğu
+                // kayıtta makine çevirisi bir Türkçe addır ve kalıcılık ölçütü
+                // `name_original` üzerinden bakar; ekrandaki adı göndermek,
+                // üretilen satırın hiç aranmayan bir anahtara yazılması demekti.
+                // İki yol (senkron ve kuyruk) aynı metni çevirir — tek kaynak.
+                'name' => (string) ($urun['name_original'] ?? $urun['name']),
                 'category' => null,
                 'source_lang' => Glossary::detect((string) ($urun['name_original'] ?? $urun['name'])),
                 'attributes' => $degerler,

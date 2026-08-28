@@ -63,7 +63,16 @@ final class CeviriYurutucu
 
         try {
             $this->cevirmen->translateProduct([
-                'name' => (string) $urun['name'],
+                // ÇEVRİLECEK METİN ORİJİNALDİR, EKRANDAKİ AD DEĞİL.
+                //
+                // Buraya `name` göndermek iki hata birden yapardı: (1) `name`
+                // çoğu kayıtta zaten makine çevirisi bir Türkçe addır — Türkçeyi
+                // Türkçeye çevirmek; (2) kalıcılık ölçütü `name_original`
+                // üzerinden bakar, dolayısıyla üretilen satır BAŞKA bir anahtara
+                // yazılır ve ürün sonsuza dek "eksik" kalırdı. Mock sağlayıcıyla
+                // yapılan kanıt turunda tam olarak bu görüldü: satırlar yazıldı,
+                // aday listesi hiç boşalmadı.
+                'name' => $orijinal,
                 'category' => null,
                 'source_lang' => $kaynakDil,
                 // D12: hedef diller ÜRÜNDEN gelir — ayarlardaki tek listeden değil.
