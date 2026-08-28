@@ -49,6 +49,8 @@ export default function UrunCekmecesi({ urunId, onKapat, onTazele }: Props) {
    * dilleri ister.
    */
   const [ceviriyor, setCeviriyor] = useState(false);
+  /** İE#22 B2: bütçeye sığmayan diller — satırda canlı gösterilir. */
+  const [kalanDiller, setKalanDiller] = useState<string[]>([]);
   const push = useToast((state) => state.push);
 
   const cevir = async (): Promise<void> => {
@@ -57,14 +59,23 @@ export default function UrunCekmecesi({ urunId, onKapat, onTazele }: Props) {
       const sonuc = await urunCevirApi.urunuCevir(urunId);
       durum.reload();
       onTazele?.();
-      // ÜÇ DURUM AYRI SÖYLENİR (saha kanıtı 28 Ağu): çeviri üretilemediğinde
-      // "zaten tamamdı" demek, kullanıcıya işin bittiğini sandırıyordu.
+      // DÖRT DURUM AYRI SÖYLENİR (İE#22 B2 · D12 saha kanıtı).
+      //
+      // Gerçek LLM'de üç dil 20-40 sn sürüyor; uç artık bütçesini doldurunca
+      // kalanı kuyruğa yazıp DURUM döndürüyor. Arayüz spinner'ı sonsuza kadar
+      // döndürmez — ne olduğunu söyler ve kalanı satırda canlı gösterir.
+      setKalanDiller(sonuc.kalan);
       if (sonuc.eksikti.length === 0) {
         push('Bu ürünün üç dili zaten tamamdı.');
-      } else if (sonuc.cevrilen.length > 0) {
+      } else if (sonuc.durum === 'tamamlandi') {
         push(`Çevrildi: ${sonuc.cevrilen.map((dil) => dil.toUpperCase()).join(' + ')}`);
+      } else if (sonuc.durum === 'kismen') {
+        push(
+          `${sonuc.cevrilen.map((dil) => dil.toUpperCase()).join(' + ')} çevrildi; ` +
+            `kalan ${sonuc.kalan.map((dil) => dil.toUpperCase()).join(', ')} arka planda tamamlanacak.`,
+        );
       } else {
-        push(sonuc.engel ?? 'Çeviri üretilemedi.', 'error');
+        push(sonuc.engel ?? 'Çeviri sıraya alındı; panele girdikçe tamamlanacak.', sonuc.engel !== null ? 'error' : 'success');
       }
     } catch (hata) {
       push(messageOf(hata), 'error');
@@ -115,6 +126,11 @@ export default function UrunCekmecesi({ urunId, onKapat, onTazele }: Props) {
                 )}
                 {ceviriyor ? 'Çevriliyor…' : 'Çevir'}
               </button>
+            ) : null}
+            {kalanDiller.length > 0 && !ceviriyor ? (
+              <span className="text-xs text-warn" data-testid="cekmece-ceviri-suruyor">
+                çeviri sürüyor — kalan: {kalanDiller.map((dil) => dil.toUpperCase()).join(', ')}
+              </span>
             ) : null}
             {durum.data ? (
               <Link

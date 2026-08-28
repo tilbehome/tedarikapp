@@ -41,7 +41,7 @@ final class CeviriYurutucu
      *
      * @return array{urun_id: int, kaynak_dil: string|null, eksikti: list<string>, cevrilen: list<string>, kalan: list<string>, zaten_vardi: list<string>, hata: string|null}
      */
-    public function urunuTamamla(int $urunId): array
+    public function urunuTamamla(int $urunId, ?int $butceSaniye = null): array
     {
         $urun = $this->urunler->find($urunId);
         if ($urun === null) {
@@ -59,6 +59,44 @@ final class CeviriYurutucu
         $eksikler = $this->eksikDiller($orijinal, $kaynakDil);
         if ($eksikler === []) {
             return $this->sonuc($urunId, $kaynakDil, [], [], [], KanonikDiller::uretilecekler($kaynakDil), null);
+        }
+
+        // İE#22 B2 — ZAMAN BÜTÇESİ.
+        //
+        // SAHA (28 Ağu): gerçek LLM'de üç dil 20-40 sn sürüyor; paylaşımlı
+        // hosting isteği kesiyor ve arayüz SONSUZ SPINNER'da kalıyordu. Bütçe
+        // verildiğinde yürütücü, bütçeye sığdırabildiği dilleri bitirir ve
+        // kalanı ÇAĞIRANA SÖYLER — çağıran onları kuyruğa yazar. Bütçe yoksa
+        // (kuyruk işçisi) eski davranış sürer: hepsi tek turda istenir.
+        $baslangic = microtime(true);
+        $istenecekler = $eksikler;
+        if ($butceSaniye !== null && count($eksikler) > 1) {
+            // Bütçeli çağrıda diller TEK TEK istenir: ilki bitince kalan süreye
+            // bakılır. Hepsini tek istekte sormak, bütçeyi ilk yanıtta aşar ve
+            // "kısmen tamamlandı" diye bir şey mümkün olmazdı.
+            $istenecekler = [];
+            foreach ($eksikler as $dil) {
+                if ($istenecekler !== [] && (microtime(true) - $baslangic) >= $butceSaniye) {
+                    break;
+                }
+                $istenecekler[] = $dil;
+                $tekSonuc = $this->diliDene($urun, $kaynakDil, [$dil]);
+                if ($tekSonuc !== null) {
+                    return $this->sonuc($urunId, $kaynakDil, $eksikler, [], $eksikler, [], $tekSonuc);
+                }
+            }
+
+            $kalanBudceli = $this->eksikDiller($orijinal, $kaynakDil);
+
+            return $this->sonuc(
+                $urunId,
+                $kaynakDil,
+                $eksikler,
+                array_values(array_diff($eksikler, $kalanBudceli)),
+                $kalanBudceli,
+                array_values(array_diff(KanonikDiller::uretilecekler($kaynakDil), $eksikler)),
+                null,
+            );
         }
 
         try {
@@ -110,6 +148,35 @@ final class CeviriYurutucu
             array_values(array_diff(KanonikDiller::uretilecekler($kaynakDil), $eksikler)),
             null,
         );
+    }
+
+    /**
+     * Tek dil için çevirmeni çağırır; hata olursa mesajı döndürür (yoksa null).
+     *
+     * @param array<string, mixed> $urun
+     * @param list<string>         $diller
+     */
+    private function diliDene(array $urun, ?string $kaynakDil, array $diller): ?string
+    {
+        try {
+            $this->cevirmen->translateProduct([
+                'name' => (string) ($urun['name_original'] ?? $urun['name']),
+                'category' => null,
+                'source_lang' => $kaynakDil,
+                'target_langs' => $diller,
+                'attributes' => CevrilecekDegerler::topla($urun),
+            ]);
+        } catch (Throwable $hata) {
+            $this->logger->warning('Ürün çevirisi başarısız (bütçeli tur)', [
+                'urun_id' => $urun['id'] ?? null,
+                'dil' => implode(',', $diller),
+                'hata' => $hata->getMessage(),
+            ]);
+
+            return $hata->getMessage();
+        }
+
+        return null;
     }
 
     /**

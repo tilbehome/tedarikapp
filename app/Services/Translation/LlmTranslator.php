@@ -59,7 +59,10 @@ final class LlmTranslator implements TranslatorInterface
     public function __construct(
         private readonly Glossary $glossary,
         private readonly CeviriAyarlari $ayarlar,
-        private readonly LlmIstemci $istemci,
+        // İE#22 E2: somut sınıf yerine ARAYÜZ. Üretimde yine `LlmIstemci`
+        // geçilir; testler kendi uygulamasını verebilir (D12'de mock ihtiyacı
+        // bu bağı zorlamıştı).
+        private readonly LlmIstemciInterface $istemci,
         private readonly TranslationCacheRepository $cache,
         private readonly Clock $clock,
         private readonly LoggerInterface $logger,

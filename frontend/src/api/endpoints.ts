@@ -184,6 +184,8 @@ export const ceviri = {
       /** Hâlâ eksik kalanlar — boş değilse `engel` sebebi söyler. */
       kalan: string[];
       zaten_vardi: string[];
+      /** İE#22 B2: tamamlandi | kismen | kuyruga_alindi. */
+      durum: 'tamamlandi' | 'kismen' | 'kuyruga_alindi';
       engel: string | null;
     }>(`/api/products/${urunId}/translate`),
 };

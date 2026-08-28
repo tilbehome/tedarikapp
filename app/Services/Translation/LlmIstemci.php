@@ -24,7 +24,7 @@ use SensitiveParameter;
  *  • Yanıt gövdesi tavanla okunur (devasa gövde bellek şişiremez).
  *  • API anahtarı hiçbir log satırına, hiçbir istisna mesajına GİRMEZ.
  */
-final class LlmIstemci
+final class LlmIstemci implements LlmIstemciInterface
 {
     public const MAX_RESPONSE_BYTES = 512 * 1024;
 

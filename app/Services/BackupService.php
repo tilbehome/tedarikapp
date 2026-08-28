@@ -66,7 +66,7 @@ final class BackupService
     /**
      * Yedek üretir: dump → şifrele → storage/backups'a yaz.
      *
-     * @return array{name: string, size: int, sha256: string, created_at: string}
+     * @return array{name: string, size: int, sha256: string, created_at: string, files_name: string|null, files_included: list<string>, media_manifest: string|null, media_archive: string|null, media_files: int, media_bytes: int, media_skipped: bool}
      */
     public function create(): array
     {
@@ -92,6 +92,8 @@ final class BackupService
         @chmod($path, 0600);
 
         $dosyalar = $this->dosyaYedegiYaz($damga);
+        // İE#22 E4 (F-03): görseller de yedeğe girer.
+        $medya = $this->medyaYedegiYaz($damga);
 
         return [
             'name' => $name,
@@ -100,6 +102,13 @@ final class BackupService
             'created_at' => date(DATE_ATOM),
             'files_name' => $dosyalar['name'],
             'files_included' => $dosyalar['included'],
+            // İE#22 E4: medya yedeğinin sonucu ÇAĞIRANA taşınır — gece koşusu
+            // özetinde görünsün diye. Arşiv atlandıysa bu da raporlanır.
+            'media_manifest' => $medya['manifest'],
+            'media_archive' => $medya['arsiv'],
+            'media_files' => $medya['dosya_sayisi'],
+            'media_bytes' => $medya['toplam_bayt'],
+            'media_skipped' => $medya['atlandi'],
         ];
     }
 
@@ -121,6 +130,97 @@ final class BackupService
      *
      * @return array{name: string|null, included: list<string>}
      */
+    /**
+     * MEDYA YEDEĞİ (İE#22 E4 · dış denetim F-03).
+     *
+     * BULGU: runbook "yedek alınıyor" diyordu ama betik YALNIZ veritabanını ve
+     * ayar dosyalarını alıyordu. Sunucu kaybında ürün görselleri geri gelmez;
+     * kaynak adresler süreli olduğu için hepsi yeniden indirilemez.
+     *
+     * İKİ PARÇA, İKİ AYRI DEĞER:
+     *   · MANİFEST (her zaman): dosya adı + boyut + sha256 listesi. Küçüktür,
+     *     her gece yazılır ve "hangi görsel vardı, bozuldu mu" sorusunu
+     *     yanıtlar. Arşiv alınamasa bile bu liste kayıp tespitini sağlar.
+     *   · ARŞİV (boyut sınırlı): `BACKUP_MEDIA_MAX_MB` (varsayılan 200) altında
+     *     kalıyorsa ZipArchive ile paketlenir. Sınır bilinçlidir: paylaşımlı
+     *     hostingde gecelik cron'u gigabaytlarca dosyayla boğmak, yedeğin
+     *     kendisini başarısız kılar. Sınır aşılırsa manifest yine yazılır ve
+     *     durum RAPORLANIR — sessizce atlanmaz.
+     *
+     * @return array{manifest: string|null, arsiv: string|null, dosya_sayisi: int, toplam_bayt: int, atlandi: bool}
+     */
+    private function medyaYedegiYaz(string $damga): array
+    {
+        $medyaKok = $this->basePath . '/public/media';
+        $bos = ['manifest' => null, 'arsiv' => null, 'dosya_sayisi' => 0, 'toplam_bayt' => 0, 'atlandi' => false];
+        if (!is_dir($medyaKok)) {
+            return $bos;
+        }
+
+        $dosyalar = array_values(array_filter(
+            glob($medyaKok . '/*') ?: [],
+            static fn (string $yol): bool => is_file($yol) && !str_ends_with($yol, '.htaccess'),
+        ));
+        if ($dosyalar === []) {
+            return $bos;
+        }
+
+        $satirlar = [];
+        $toplam = 0;
+        foreach ($dosyalar as $yol) {
+            $boyut = (int) @filesize($yol);
+            $toplam += $boyut;
+            $satirlar[] = sprintf('%s  %d  %s', hash_file('sha256', $yol) ?: '-', $boyut, basename($yol));
+        }
+
+        $manifestAdi = 'yedek-' . $damga . '.media-manifest.txt';
+        @file_put_contents(
+            $this->directory() . '/' . $manifestAdi,
+            "# tedarikapp medya manifesti
+# sha256  bayt  dosya
+" . implode("
+", $satirlar) . "
+",
+        );
+
+        $sinirMb = $this->config->getPositiveInt('BACKUP_MEDIA_MAX_MB', 200);
+        if ($toplam > $sinirMb * 1024 * 1024 || !class_exists(\ZipArchive::class)) {
+            return [
+                'manifest' => $manifestAdi,
+                'arsiv' => null,
+                'dosya_sayisi' => count($dosyalar),
+                'toplam_bayt' => $toplam,
+                'atlandi' => true,
+            ];
+        }
+
+        $arsivAdi = 'yedek-' . $damga . '.media.zip';
+        $zip = new \ZipArchive();
+        if ($zip->open($this->directory() . '/' . $arsivAdi, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
+            return [
+                'manifest' => $manifestAdi,
+                'arsiv' => null,
+                'dosya_sayisi' => count($dosyalar),
+                'toplam_bayt' => $toplam,
+                'atlandi' => true,
+            ];
+        }
+        foreach ($dosyalar as $yol) {
+            $zip->addFile($yol, 'media/' . basename($yol));
+        }
+        $zip->close();
+        @chmod($this->directory() . '/' . $arsivAdi, 0600);
+
+        return [
+            'manifest' => $manifestAdi,
+            'arsiv' => $arsivAdi,
+            'dosya_sayisi' => count($dosyalar),
+            'toplam_bayt' => $toplam,
+            'atlandi' => false,
+        ];
+    }
+
+    /** @return array{name: string|null, included: list<string>} */
     private function dosyaYedegiYaz(string $damga): array
     {
         $adaylar = [];

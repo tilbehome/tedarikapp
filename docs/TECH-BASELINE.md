@@ -8,7 +8,7 @@
 
 | Bileşen | Taban | Not |
 |---|---|---|
-| PHP | **8.1 – 8.4** (K45) | `composer.json` `"php": "^8.1"`. Canlı sunucu MultiPHP'ye göre 8.1'e düşebiliyor; çalışma-zamanı kodu 8.1 uyumlu tutulur (tipli sabit YOK), CI `php81-uyum` job'ı bekçidir. **`platform-check: false`** — gerekçe: bazı prod paketler (twofactorauth v3, bacon-qr v3) `php>=8.2` BEYAN eder ama kod tabanları gerçek PHP 8.1 lint'inde 0 hata verdi; beyan yüzünden açılışta 500 atmak canlıda kurulumları blokluyordu. RİSK NOTU: bu paketlerin GELECEK sürümleri 8.2+ sözdizimi kullanabilir — composer güncellemelerinde `php81-uyum` job'ı kırmızıya döner ve fark PR'da yakalanır; paket güncellemesi bilinçli karar ister |
+| PHP | **8.2 – 8.4** (K84) | `composer.json` `"php": "^8.2"`. İE#22 C1'de taban 8.1'den 8.2'ye çıkarıldı: çalışma zamanı için `php>=8.2` isteyen paketler (twofactorauth v3, bacon-qr v3, zipstream-php) artık BEYANLARIYLA tutarlı çalışıyor ve **`platform-check: true`** geri açıldı — uyumsuz sürümde uygulama sessizce çalışmak yerine açılışta AÇIKÇA durur. CI bekçisi `php-taban-uyum` işidir ve **8.2 + 8.3 matrisi** koşar; 8.1 işi düştü. SUNUCU NOTU: canlı barındırma MultiPHP'de 8.1.34 sürüyordu (K84-EK) — 8.3'e geçiş KULLANICI İŞİDİR ve deploy'dan ÖNCE yapılmalıdır; sıra ters çevrilirse `platform-check` ilk istekte 500 verir |
 | Web çatısı | **Slim 4** | slim/slim ^4.14 + slim/psr7 |
 | Veritabanı | **MariaDB 11.4 (canlı) / MySQL 8.4 (CI)** | PDO + prepared statements; utf8mb4 zorunlu; canlıda MariaDB 11.4.12 doğrulandı (diagnostics), CI entegrasyon job'ı MySQL 8.4 container'ı kullanır — şema her ikisiyle uyumlu tutulur |
 | Sunucu | cPanel paylaşımlı hosting, Apache DSO | dış istek yalnız cURL; yazma yalnız `storage/` + `public/media/` (docs/04 §7) |

@@ -174,6 +174,53 @@ final class SetupTeshisTest extends TestCase
         self::assertContains('temiz_kurulum', $kodlar);
     }
 
+    /**
+     * İE#22 E1 (Blok H · seçenek B) — DAMGA GERİDEYSE KOŞULLU EYLEM ÇIKAR.
+     *
+     * Yukarıdaki senaryoda kurulu sürüm "9.9.9", dosya sürümü ise gerçek
+     * `AppVersion::VALUE` — yani FARKLI. Sihirbaz bunu görmezden geliyordu:
+     * "SAĞLIKLI" der, tek sürüm basar ve kullanıcı damganın geride kaldığını
+     * hiçbir yerde göremezdi. D2-REV sözleşmesi bozulmaz: yeni DURUM yok,
+     * yalnız fark varken görünen bir EYLEM ve iki değerli açıklama var.
+     */
+    public function testDAMGAGERIDEYSEESITLEMEEYLEMICIKAR(): void
+    {
+        $this->lock()->write(new DateTimeImmutable('2026-08-23 10:00:00'));
+        $this->sqliteKurulumuYaz();
+
+        $motor = $this->motorIle(function (PDO $db): void {
+            $db->exec('CREATE TABLE migrations (id INTEGER PRIMARY KEY, name TEXT, checksum TEXT, '
+                . 'execution_ms INTEGER, applied_at TEXT)');
+            $db->exec('CREATE TABLE settings (`key` TEXT PRIMARY KEY, value TEXT)');
+            $db->exec("INSERT INTO settings (`key`, value) VALUES ('"
+                . SetupSituation::SETTING_VERSION . "', '9.9.9')");
+        });
+
+        self::assertSame(SetupSituation::SAGLIKLI, $motor['durum'], 'Durum sözleşmesi DEĞİŞMEZ.');
+        self::assertContains('damgayi_esitle', array_column($motor['secenekler'], 'kod'));
+        // Açıklama İKİ DEĞERİ birden basmalı: kullanıcı farkı okuyabilmeli.
+        self::assertStringContainsString('9.9.9', $motor['aciklama']);
+        self::assertStringContainsString(\App\Core\AppVersion::VALUE, $motor['aciklama']);
+    }
+
+    public function testDAMGAAYNIYSAESITLEMEEYLEMIYOK(): void
+    {
+        $this->lock()->write(new DateTimeImmutable('2026-08-23 10:00:00'));
+        $this->sqliteKurulumuYaz();
+
+        $motor = $this->motorIle(function (PDO $db): void {
+            $db->exec('CREATE TABLE migrations (id INTEGER PRIMARY KEY, name TEXT, checksum TEXT, '
+                . 'execution_ms INTEGER, applied_at TEXT)');
+            $db->exec('CREATE TABLE settings (`key` TEXT PRIMARY KEY, value TEXT)');
+            $db->exec("INSERT INTO settings (`key`, value) VALUES ('"
+                . SetupSituation::SETTING_VERSION . "', '" . \App\Core\AppVersion::VALUE . "')");
+        });
+
+        // Fark yokken eylem GÖRÜNMEZ: gereksiz düğme, kullanıcıya "bir şey
+        // yapmam mı lazım?" dedirtir.
+        self::assertNotContains('damgayi_esitle', array_column($motor['secenekler'], 'kod'));
+    }
+
     // ─────────────────────── 3) KURULUM YARIM ───────────────────────
 
     public function testDurum3KurulumYarim(): void

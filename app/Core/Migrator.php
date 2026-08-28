@@ -87,6 +87,18 @@ final class Migrator
         '0032_urun_kaynak_dili' => [
             ['column' => ['products', 'source_lang']],
         ],
+        // İE#22 A1: kur snapshot omurgası. DDL ve göç AYRI dosyadır (K23);
+        // ikisi de haritada olmalı — 0032 dersi: haritada olmayan migration
+        // K49 baseline akışında SESSİZCE atlanır.
+        '0033_kur_snapshotlari' => [
+            ['table' => 'rate_snapshots'],
+        ],
+        // Göç dosyasının "nesnesi" tablonun kendisidir: veri taşır, şema
+        // değiştirmez. Baseline'da tablo varsa göç de uygulanmış sayılır —
+        // dosya zaten idempotenttir, ikinci koşum satır çoğaltmaz.
+        '0034_kur_snapshot_gocu' => [
+            ['table' => 'rate_snapshots'],
+        ],
         // İE#21 B1: Keşif havuzu — küme anahtarı ve normalize arama alanı.
         '0030_kesif_havuzu' => [
             ['column' => ['listings', 'kume_anahtari']],
