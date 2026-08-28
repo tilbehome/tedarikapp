@@ -27,7 +27,25 @@ final class ExtensionController extends ApiController
         private readonly Clock $clock,
         private readonly string $basePath,
         private readonly ?CaptureApplier $applier = null,
+        // D12 madde 4: yakalama yanıtı gittikten sonra fırsatçı kuyruk turu.
+        private readonly ?\App\Services\Kuyruk\KuyrukTetikleyici $tetikleyici = null,
     ) {
+    }
+
+    /**
+     * FIRSATÇI TETİK (D12 madde 4) — yakalama biter bitmez kuyruk denenir.
+     *
+     * Yeni yakalanan ürünün çevirisi ve galerisi kuyruğa yazılır; kullanıcı
+     * ürünü panelde saniyeler içinde Türkçe görsün diye tur HEMEN denenir.
+     * Yanıt önce gider (kapanış kancası), eklenti beklemez.
+     *
+     * GÜVENİLMEZ OLMASI KABULDÜR: bağlantı kapatılamayan bir sunucuda tur çok
+     * kısa bütçeyle koşar ve belki hiçbir işi bitiremez. Emniyet madde 3'tür —
+     * kullanıcı panele girdiğinde tur yeniden denenir.
+     */
+    private function firsatciTetik(): void
+    {
+        $this->tetikleyici?->yanittanSonraDene();
     }
 
     /**
@@ -103,6 +121,9 @@ final class ExtensionController extends ApiController
                 return Response::error($response, 'VALIDATION', $e->getMessage(), 422);
             }
 
+            // D12 madde 4: ürün listeye düştü — çevirisi de hemen denensin.
+            $this->firsatciTetik();
+
             return Response::success($response, [
                 'inbox_id' => $sonuc['inbox_id'],
                 'status' => $sonuc['status'],
@@ -114,6 +135,8 @@ final class ExtensionController extends ApiController
 
         // rc8-03 (F-07): VARSAYILAN GELEN KUTUSU YOLU DA ATOMİK.
         $rezervasyon = $this->inbox->rezerveEtVeyaBul($this->capture->inboxFields($payload), $now);
+
+        $this->firsatciTetik();
 
         return Response::success($response, [
             'inbox_id' => $rezervasyon['id'],

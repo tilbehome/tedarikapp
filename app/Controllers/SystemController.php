@@ -409,9 +409,20 @@ final class SystemController
         if ((int) $saglik['olu'] > 0) {
             return $saglik['olu'] . ' iş kalıcı olarak başarısız oldu (ölü raf). Hatalarını inceleyip yeniden deneyin.';
         }
-        if ((int) ($saglik['en_eski_bekleyen_dakika'] ?? 0) > 60) {
-            return 'En eski bekleyen iş ' . $saglik['en_eski_bekleyen_dakika']
-                . ' dakikadır sırada. Kuyruk cron görevi (bin/kuyruk.php) koşmuyor olabilir.';
+        // D12 — "CRON KOŞMUYOR OLABİLİR" UYARISI KALKTI.
+        //
+        // Cron artık ZORUNLU DEĞİL: panel ziyareti ve yakalama da tur açıyor
+        // (KuyrukTetikleyici). Kullanıcıya kurmadığı bir cron'u hatırlatmak,
+        // olmayan bir arızayı bildirmekti — üstelik kuyruk/cron kavramının
+        // kullanıcıya görünmemesi Ürün Sahibi kararıdır.
+        //
+        // YERİNE TEK BİR GERÇEK ARIZA UYARISI: birikme VAR ve hiçbir tetikleyici
+        // işleyemiyor. İkisi birlikte doğruysa sistem gerçekten tıkanmıştır.
+        $bekleyen = (int) ($saglik['alinabilir'] ?? 0);
+        $yas = (int) ($saglik['en_eski_bekleyen_dakika'] ?? 0);
+        if ($bekleyen > 0 && $yas > 60 && !$this->tetikleyiciCalistiMi()) {
+            return $bekleyen . ' iş ' . $yas . ' dakikadır bekliyor ve hiçbir tetikleyici onları işleyemiyor. '
+                . 'Panel isteklerinin arkasında çalışan tur başarısız oluyor olabilir — sunucu günlüğüne bakın.';
         }
         // B11: ölü iş yokken de sağlıksız olabilir — sürekli yeniden denenen bir
         // sağlayıcı, üçüncü denemede tuttuğu için "ölü" sayısına hiç yansımaz.
@@ -421,6 +432,30 @@ final class SystemController
         }
 
         return null;
+    }
+
+    /**
+     * Son bir saat içinde herhangi bir tetikleyici tur AÇABİLDİ Mİ? (D12)
+     *
+     * Tetikleyici her turda ayarlara bir zaman damgası yazar. Damga tazeyse
+     * sistem çalışıyordur ve bekleyen iş yalnız sıradadır; damga yoksa ya da
+     * eskiyse turlar gerçekten koşmuyordur — uyarı ancak o zaman anlamlıdır.
+     */
+    private function tetikleyiciCalistiMi(): bool
+    {
+        $son = (new \App\Models\SettingsRepository($this->connection))
+            ->get(\App\Services\Kuyruk\KuyrukTetikleyici::KEY_SON_TUR);
+        if (!is_string($son) || $son === '') {
+            return false;
+        }
+
+        try {
+            $sonZaman = new \DateTimeImmutable($son);
+        } catch (Throwable) {
+            return false;
+        }
+
+        return ($this->clock->now()->getTimestamp() - $sonZaman->getTimestamp()) <= 3600;
     }
 
     /**

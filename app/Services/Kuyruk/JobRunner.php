@@ -150,8 +150,13 @@ final class JobRunner
      *
      * @return array{islenen: int, basarili: int, basarisiz: int, sure: float, durma_nedeni: string}
      */
-    public function kos(DateTimeImmutable $now, ?string $isleyiciKimligi = null): array
+    public function kos(DateTimeImmutable $now, ?string $isleyiciKimligi = null, ?int $sureSiniri = null): array
     {
+        // D12: SÜRE BÜTÇESİ ÇAĞRIYA GÖRE DEĞİŞİR. Cron turu cömerttir (50 sn);
+        // panel ziyaretinde tetiklenen tur, bağlantı kapatılamıyorsa kullanıcıyı
+        // bekletmemek için saniyelerle sınırlıdır. İş sınırı ve kira mekanizması
+        // AYNEN korunur — değişen yalnız turun ne kadar süreceğidir.
+        $sure = $sureSiniri !== null ? max(1, $sureSiniri) : $this->sureSiniri;
         $kimlik = $isleyiciKimligi ?? self::surecKimligi();
         $baslangic = microtime(true);
         $islenen = 0;
@@ -165,8 +170,8 @@ final class JobRunner
 
                 break;
             }
-            if ((microtime(true) - $baslangic) >= $this->sureSiniri) {
-                $durmaNedeni = 'süre sınırı (' . $this->sureSiniri . ' sn)';
+            if ((microtime(true) - $baslangic) >= $sure) {
+                $durmaNedeni = 'süre sınırı (' . $sure . ' sn)';
 
                 break;
             }

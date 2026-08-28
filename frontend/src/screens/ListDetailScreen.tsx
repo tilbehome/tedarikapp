@@ -444,6 +444,9 @@ export default function ListDetailScreen() {
       {cekmeceId !== null ? (
         <UrunCekmecesi
           urunId={cekmeceId}
+          // D12: çeviri biter bitmez tablo da tazelenir — çekmece güncel,
+          // arkadaki liste eski kalmaz (D11 tek kaynak).
+          onTazele={refresh}
           onKapat={() => {
             setCekmeceId(null);
             // Çekmecede yapılan bir değişiklik (düzenleme ekranına gidip dönüş)

@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { urunAdi } from '../../lib/urunAdi';
 import { Link } from 'react-router-dom';
-import { ExternalLink, Pencil, X } from 'lucide-react';
-import { products as productsApi } from '../../api/endpoints';
+import { ExternalLink, Languages, Loader2, Pencil, X } from 'lucide-react';
+import { ceviri as urunCevirApi, products as productsApi } from '../../api/endpoints';
 import type { FiyatKademesi, IlanGorunumu, Product, UrunCekmecesiVerisi } from '../../api/types';
-import { useAsync } from '../../lib/useAsync';
+import { messageOf, useAsync } from '../../lib/useAsync';
+import { useToast } from '../../components/Toast';
 import { count, money } from '../../lib/format';
 import { productStatusLabels } from '../../locales/tr';
 import { ErrorNote, Skeleton } from '../../components/ui';
@@ -29,10 +30,48 @@ import { eksikEtiketleri } from '../../lib/eksikler';
 interface Props {
   urunId: number;
   onKapat: () => void;
+  /** D12: çeviri bitince liste de aynı taze veriyi göstersin (D11 tek kaynak). */
+  onTazele?: () => void;
 }
 
-export default function UrunCekmecesi({ urunId, onKapat }: Props) {
+export default function UrunCekmecesi({ urunId, onKapat, onTazele }: Props) {
   const durum = useAsync((signal) => productsApi.cekmece(urunId, signal), [urunId]);
+
+  /**
+   * D12 — "ÇEVİR" DÜĞMESİ: BU ÜRÜN, ŞİMDİ.
+   *
+   * Ürünün TÜM alanları (ad, özellik değerleri, varyant/renk adları, marka,
+   * not) eksik dillere çevrilir. İstek SENKRONDUR: yanıt döndüğünde iş bitmiştir.
+   * Bitince hem çekmece hem liste tazelenir — ikisi aynı kaynaktan okur, birinde
+   * güncel diğerinde eski veri kalmaz (D11).
+   *
+   * K54: kullanıcının onayladığı elle düzeltmeler EZİLMEZ; sunucu yalnız eksik
+   * dilleri ister.
+   */
+  const [ceviriyor, setCeviriyor] = useState(false);
+  const push = useToast((state) => state.push);
+
+  const cevir = async (): Promise<void> => {
+    setCeviriyor(true);
+    try {
+      const sonuc = await urunCevirApi.urunuCevir(urunId);
+      durum.reload();
+      onTazele?.();
+      // ÜÇ DURUM AYRI SÖYLENİR (saha kanıtı 28 Ağu): çeviri üretilemediğinde
+      // "zaten tamamdı" demek, kullanıcıya işin bittiğini sandırıyordu.
+      if (sonuc.eksikti.length === 0) {
+        push('Bu ürünün üç dili zaten tamamdı.');
+      } else if (sonuc.cevrilen.length > 0) {
+        push(`Çevrildi: ${sonuc.cevrilen.map((dil) => dil.toUpperCase()).join(' + ')}`);
+      } else {
+        push(sonuc.engel ?? 'Çeviri üretilemedi.', 'error');
+      }
+    } catch (hata) {
+      push(messageOf(hata), 'error');
+    } finally {
+      setCeviriyor(false);
+    }
+  };
 
   // Esc kapatır: çekmece odağı yakalar ve klavyeyle çıkış her zaman mümkündür.
   useEffect(() => {
@@ -61,6 +100,22 @@ export default function UrunCekmecesi({ urunId, onKapat }: Props) {
             {durum.data?.urun === undefined ? 'Ürün' : urunAdi(durum.data.urun)}
           </h2>
           <div className="flex items-center gap-1">
+            {durum.data ? (
+              <button
+                type="button"
+                className="btn-ghost !min-h-9 !px-2 !text-xs"
+                onClick={() => void cevir()}
+                disabled={ceviriyor}
+                data-testid="cekmece-cevir"
+              >
+                {ceviriyor ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+                ) : (
+                  <Languages className="h-3.5 w-3.5" aria-hidden />
+                )}
+                {ceviriyor ? 'Çevriliyor…' : 'Çevir'}
+              </button>
+            ) : null}
             {durum.data ? (
               <Link
                 to={`/listeler/${durum.data.urun.list_id}/urun/${durum.data.urun.id}`}

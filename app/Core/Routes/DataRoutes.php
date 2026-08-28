@@ -16,6 +16,7 @@ use App\Controllers\TrashController;
 use App\Core\Connection;
 use App\Middleware\Auth;
 use App\Middleware\Csrf;
+use App\Middleware\KuyrukSupurme;
 use App\Middleware\MigrationGuard;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Slim\App;
@@ -52,6 +53,8 @@ final class DataRoutes
         ResponseFactoryInterface $responseFactory,
         Connection $connection,
         string $migrationsDir,
+        // D12: panel ziyaretinde kuyruk turu tetikler (cron'suz çalışma emniyeti).
+        \App\Services\Kuyruk\KuyrukTetikleyici $kuyrukTetikleyici,
     ): void {
         // İE#19 G7 — AKTİVİTE DEFTERİ BİLEREK KAPI DIŞINDA.
         //
@@ -177,6 +180,10 @@ final class DataRoutes
             $group->post('/panel/translate-product', [$translationController, 'translateProduct']);
             // İE#20 C4: "çevrilmemiş N ürünü çevir" — kuyruğa alır, beklemez.
             $group->post('/panel/translate-backfill', [$translationController, 'translateBackfill']);
+            // D12: toplu çevirinin ilerleme sorgusu (panel "N/M" göstergesi).
+            $group->get('/panel/translate-progress', [$translationController, 'translateProgress']);
+            // D12: ürün kartındaki "Çevir" düğmesi — SENKRON, kuyruğa yazmaz.
+            $group->post('/products/{id}/translate', [$translationController, 'translateProductNow']);
 
             $group->get('/trash', [$trashController, 'index']);
             $group->post('/trash/{type}/{id}/restore', [$trashController, 'restore']);
@@ -184,6 +191,10 @@ final class DataRoutes
         })
             ->add(new Csrf($services->session, $responseFactory))
             ->add(new Auth($services, $responseFactory))
+            // D12 madde 3: panel ziyareti kuyruk turu tetikler. Ara katman
+            // Auth'un DIŞINDA değil İÇİNDE durur — yalnız oturumlu istekler
+            // tur açar, dışarıdan gelen bir GET sunucuda iş koşturamaz.
+            ->add(new KuyrukSupurme($kuyrukTetikleyici))
             // İE#10.5 Blok 2: bekleyen migration varken veri uçları 503 MIGRATION_PENDING
             // döner (canlı ders: 0018 bekleyenken panel çöküyordu).
             ->add(new MigrationGuard($connection, $migrationsDir, $responseFactory));

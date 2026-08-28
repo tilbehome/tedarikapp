@@ -1,6 +1,7 @@
-# İŞ EMRİ #21 — KAPANIŞ RAPORU (TASLAK · kabul sonucu bekliyor)
+# İŞ EMRİ #21 — KAPANIŞ RAPORU (**KAPANDI** · 28 Ağustos 2026)
 
-> Bu rapor **kabul turu sonucu eklenince** tamamlanır. Şu an tamamlanmış olan:
+> Bu rapor 28 Ağustos 2026'da KAPANMIŞTIR (§6). Aşağıdaki bölümler emrin
+> teslimini, sayıları ve kapsam dışı bırakılanları kayda geçirir:
 > teslim edilen iş, kanıtlar ve sayılar. Eksik olan: KT-001..045 + KT-EK-1..4
 > sonucu ve Ürün Sahibi kararı (§6).
 >
@@ -87,6 +88,19 @@ gönderilebilir hâlde üretildi.
 | Sürüm adı | `1.0.0` (tek kaynak `App\Core\AppVersion`) |
 | Eklenti | `2.0.2` |
 | Kalan bulgular | İE#22 defterine devredildi (aşağıda) |
+
+### RAPOR KAPANIŞI (28 Ağustos 2026)
+
+Bu rapor KAPANMIŞTIR. Dayanakları:
+
+| Dayanak | Kanıt |
+|---|---|
+| v1.0.0 yayınlandı | GitHub Release `v1.0.0` · etiket `c3d82c4` · sunucu zip sha256 `26d91ab8…4baf2c` · eklenti 2.0.2 sha256 `cea03ccb…83547` |
+| Saha kurulumu yapıldı | Canlıda v1.0.0 + eklenti 2.0.2 (27 Ağu) |
+| Kalan saha bulguları kapatıldı | D12 (v1.0.1 + eklenti 2.0.3): çeviri cron istemez (K86), kanonik üç dil (K87), eklenti görünüm-TR (K90) — kanıtlar D12 çıktı raporunda |
+| Faz 1 özeti yazıldı | `docs/v3/faz1-kapanis.md` |
+
+Faz 1 kapanmıştır; sonraki iş V3-B kapsamındadır.
 
 ### 27 Ağustos saha turu — kapanan bulgular
 

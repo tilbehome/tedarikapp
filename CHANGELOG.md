@@ -5,6 +5,42 @@ Her release'te bu dosya güncellenir (docs/07 bölüm 4). Kategoriler: Eklendi /
 
 ## [Yayınlanmadı]
 
+## [1.0.1] — 28 Ağustos 2026
+
+**Çeviri artık kurulum istemez.** Bu sürümün tek konusu şu: "Çevir" dediğinizde
+çevrilir — sunucuya cron kurmanız, bir şey beklemeniz, bir düğmeye ikinci kez
+basmanız gerekmez.
+
+### Değişti
+
+- **Toplu çeviri gerçekten çevirir.** Ayarlar'daki "Çevrilmemiş ürünleri çevir"
+  düğmesi eskiden işi sıraya yazıp bırakıyordu; sırayı işleyen bir şey
+  kurulmadığı için hiçbir şey olmuyordu. Artık düğmeye bastığınızda ürünler
+  ekranın önünde çevrilir ve sayaç ilerler ("12/40 çevrildi…"). Uzun listelerde
+  iş parçalara bölünür; sekmeyi kapatsanız bile kalanlar panele bir dahaki
+  girişinizde kendiliğinden tamamlanır.
+- **Ürün kartına "Çevir" düğmesi.** Tek bir ürünü hemen çevirmek için ürün
+  çekmecesindeki düğme yeter: adı, özellikleri, varyant ve renk adları eksik
+  dillere anında çevrilir. Elle düzelttiğiniz metinler asla ezilmez.
+- **Üç dil kuralı: Türkçe, İngilizce, Çince.** Her ürün bu üç dilde tutulur.
+  Ürünün kendi dili neyse o "orijinal" sayılır ve çevrilmez; eksik iki dil
+  üretilir. Türkçe bir kaynaktan gelen ürünün Türkçesine dokunulmaz.
+- **Kaynak dili satırı.** Belgelerde ürün adının altındaki referans satırı artık
+  "Çince satır" değil, ürünün kendi kaynak dilindeki satırdır.
+
+### Eklenti 2.0.3
+
+- **Varyant adları Türkçe görünüyor.** "Seçilen varyant" bölümünde 粉红色 yerine
+  "Pembe", 美规 yerine "ABD fişi (110V)" yazar. Bu yalnız GÖRÜNÜMDÜR: panele
+  giden veri orijinal hâliyle gider, voltaj gibi ayırt edici bilgi korunur.
+  Tanınmayan bir terim olduğu gibi bırakılır.
+
+### Kaldırıldı
+
+- **"Kuyruk cron'u koşmuyor olabilir" uyarısı.** Cron artık zorunlu değil;
+  kurmadığınız bir şeyi hatırlatan uyarı kalktı. Yerine yalnız gerçekten
+  tıkanma varsa görünen tek bir uyarı kondu.
+
 ## [1.0.0] — 27 Ağustos 2026
 
 **tedarikapp'in ilk tam sürümü.** 1688 tedarik listelerini tarayıcıdan yakalayıp

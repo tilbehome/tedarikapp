@@ -145,12 +145,47 @@ export const ceviri = {
       ornek_yanit?: string;
     }>('/api/settings/translation/test'),
 
-  /** Çevrilmemiş ürünleri KUYRUĞA alır — ekran beklemez (C4). */
+  /**
+   * D12: toplu çeviriyi bir PARÇA işler ve kalanı söyler.
+   *
+   * Artık "kuyruğa alındı" demiyor: bu istek zaman bütçesi kadar gerçekten
+   * çevirir. Panel `devam_var` true olduğu sürece aynı ucu yeniden çağırır;
+   * sekme kapanırsa kalanlar kuyrukta durur ve bir sonraki tetikte sürer.
+   */
   topluCevir: (listId?: number) =>
-    api.post<{ kuyruga_alinan: number; mesaj: string }>(
-      '/api/panel/translate-backfill',
-      listId === undefined ? {} : { list_id: listId },
+    api.post<{
+      toplam: number;
+      cevrilen: number;
+      hatali: number;
+      kalan: number;
+      devam_var: boolean;
+      /** İlerleme yoksa SEBEBİ (ör. sağlayıcı yapılandırılmamış); yoksa null. */
+      engel: string | null;
+      mesaj: string;
+    }>('/api/panel/translate-backfill', listId === undefined ? {} : { list_id: listId }),
+
+  /** D12: kaç ürünün üç dili eksik? ("N/M çevrildi" göstergesi bunu okur.) */
+  ceviriIlerlemesi: (listId?: number) =>
+    api.get<{ kalan: number }>(
+      '/api/panel/translate-progress' + (listId === undefined ? '' : `?list_id=${listId}`),
     ),
+
+  /**
+   * D12: TEK ÜRÜNÜ ŞİMDİ çevirir (ürün kartındaki "Çevir" düğmesi).
+   * Senkrondur: yanıt döndüğünde eksik diller tamamlanmıştır.
+   */
+  urunuCevir: (urunId: number) =>
+    api.post<{
+      urun_id: number;
+      kaynak_dil: string | null;
+      /** İstek anında eksik olan diller. Boşsa ürün zaten tamamdı. */
+      eksikti: string[];
+      cevrilen: string[];
+      /** Hâlâ eksik kalanlar — boş değilse `engel` sebebi söyler. */
+      kalan: string[];
+      zaten_vardi: string[];
+      engel: string | null;
+    }>(`/api/products/${urunId}/translate`),
 };
 
 /** İE#20 C3 — kuyruk sağlığı. */
