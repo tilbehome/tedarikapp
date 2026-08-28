@@ -195,6 +195,22 @@ export default function CeviriAyarlari() {
             </Field>
           </div>
 
+          {!veri.anahtar_tanimli ? (
+            <p
+              className="flex items-start gap-2 rounded-lg border border-err/30 bg-err-soft p-2 text-xs text-err"
+              role="alert"
+              data-testid="llm-anahtar-uyarisi"
+            >
+              <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden />
+              <span>
+                <strong>LLM anahtarı tanımlı değil — üç dil garantisi yok.</strong> Sözlük ve
+                makine katmanı ne bulursa dolduruyor, ama bu çeviriler GEÇİCİDİR: ilgili satırlar
+                listelerde ve belgelerde “çeviri bekliyor” işaretli kalır. Kalıcı çeviri için
+                aşağıya bir sağlayıcı anahtarı girin.
+              </span>
+            </p>
+          ) : null}
+
           <Field
             label="API anahtarı"
             hint={

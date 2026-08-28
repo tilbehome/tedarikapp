@@ -169,6 +169,43 @@ final class CronsuzCeviriTest extends AuthTestCase
         self::assertGreaterThan(0, $urunId);
     }
 
+    // ── K91: anahtarsız kurulum "tamamlandı" demez ───────────────────────────
+
+    /**
+     * PM kararı (28 Ağu): kalıcı çeviri yalnız `llm:*` ve elle onaylıdır.
+     * Anahtarsız kurulumda toplu çeviri "tamamlandı" DEMEZ; kalanı söyler ve
+     * SEBEBİ bildirir. Sessiz "0 çevrildi" ya da yanıltıcı "tamam" yasaktır.
+     */
+    public function testANAHTARSIZKURULUMTAMAMLANDIDEMEZ(): void
+    {
+        $this->urunEkle('Bisiklet Yok', '无脚踏平衡车');
+
+        $veri = $this->json(
+            $this->call('POST', '/api/panel/translate-backfill', [], [Csrf::HEADER => $this->csrf]),
+        )['data'];
+
+        self::assertSame(1, $veri['kalan'], 'Anahtar yokken ürün tamamlanmış sayılamaz.');
+        self::assertSame(0, $veri['cevrilen']);
+        self::assertNotNull($veri['engel'], 'Sebep SÖYLENMELİ.');
+        self::assertStringContainsString('Ayarlar > Çeviri', (string) $veri['engel']);
+        self::assertStringNotContainsString('tamam', mb_strtolower((string) $veri['mesaj']));
+    }
+
+    /** Tek ürün ucunda da aynı dürüstlük: "zaten tamamdı" demez, sebebi söyler. */
+    public function testANAHTARSIZTEKURUNSEBEBISOYLER(): void
+    {
+        $urunId = $this->urunEkle('Bisiklet Yok', '无脚踏平衡车');
+
+        $veri = $this->json(
+            $this->call('POST', '/api/products/' . $urunId . '/translate', [], [Csrf::HEADER => $this->csrf]),
+        )['data'];
+
+        self::assertSame(['tr', 'en'], $veri['eksikti'], 'ZH kaynak: TR+EN eksikti.');
+        self::assertSame([], $veri['cevrilen']);
+        self::assertSame(['tr', 'en'], $veri['kalan']);
+        self::assertNotNull($veri['engel']);
+    }
+
     // ── Madde 3: panel ziyareti tur tetikler ─────────────────────────────────
 
     public function testPANELZIYARETITURTETIKLER(): void

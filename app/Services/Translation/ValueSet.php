@@ -215,8 +215,26 @@ final class ValueSet
         }
 
         $metin = $kayit['suggested_text'] ?? null;
+        if (!is_string($metin) || $metin === '') {
+            return null;
+        }
 
-        return is_string($metin) && $metin !== '' ? $metin : null;
+        // D12 (K91) — GEÇİCİ KATMAN GÖRÜNÜR KALIR.
+        //
+        // PM kararı (28 Ağu): kalıcılık tanımı değişmez — yalnız `llm:*` ve elle
+        // onaylı satırlar kalıcıdır; sözlük/makine GEÇİCİ DOLDURMADIR. Değer
+        // gösterilir (veri kaybı yok) ama satır "çeviri bekliyor" İŞARETLİ
+        // kalır. Aksi hâlde LLM anahtarı olmayan bir kurulumda ekran, yarısı
+        // makine çevirisi olan bir metni "tamam" gibi gösterirdi — sessiz melez
+        // görünüm yasaktır.
+        $saglayici = is_string($kayit['provider'] ?? null) ? (string) $kayit['provider'] : '';
+        $kalici = str_starts_with($saglayici, 'llm:')
+            || $saglayici === \App\Models\TranslationCacheRepository::ELLE_SAGLAYICI;
+        if (!$kalici) {
+            $this->bekleyenler[$ham] = true;
+        }
+
+        return $metin;
     }
 
     /**
