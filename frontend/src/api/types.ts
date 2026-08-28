@@ -209,7 +209,18 @@ export interface RateHistoryEntry {
   id: number;
   currency: string;
   rate: string;
+  /**
+   * ESKİ ALAN ADI KORUNUR (İE#22 A3): uç `rate_snapshots.effective_from`
+   * değerini bu adla döndürmeye devam ediyor. Yeniden adlandırmak, ekran
+   * sözleşmesini kırar ve hiçbir şey kazandırmazdı.
+   */
   set_at: string;
+  /** İE#22 A3: bu satır ŞU AN geçerli olan mı? */
+  aktif: boolean;
+  /** Değer nereden geldi: elle onay mı, TCMB önerisi mi (K4). */
+  kaynak: 'elle' | 'tcmb';
+  /** Ne zaman devre dışı kaldı; aktif satırda null. */
+  superseded_at: string | null;
 }
 
 export interface SystemStatus {

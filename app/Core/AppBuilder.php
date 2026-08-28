@@ -388,10 +388,11 @@ final class AppBuilder
             $services->activity,
             $services->clock,
             $ceviriAyarlari,
-            new \App\Services\Kuyruk\JobQueue($connection),
+            new \App\Services\Kuyruk\JobQueue($connection, $services->bildirim),
             $products,
             $ceviriYurutucu,
             $kuyrukTetikleyici,
+            $services->bildirim,
         );
 
         $app->group('', static function (\Slim\Routing\RouteCollectorProxy $group) use ($extensionController, $translationController): void {

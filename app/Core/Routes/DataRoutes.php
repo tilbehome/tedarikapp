@@ -104,6 +104,9 @@ final class DataRoutes
             $group->put('/settings/app-url', [$settingsController, 'updateAppUrl']);
             $group->get('/settings/glossary', [$translationController, 'glossaryIndex']);
             $group->put('/settings/glossary', [$translationController, 'glossarySave']);
+            // V3-B C3 (PNL-50/51): sözlük CSV dışa/içe aktarma.
+            $group->get('/settings/glossary/disa-aktar', [$translationController, 'glossaryDisaAktar']);
+            $group->post('/settings/glossary/ice-aktar', [$translationController, 'glossaryIceAktar']);
             // İE#20 C4: Ayarlar > Çeviri (sağlayıcı, anahtar, model, hedef diller).
             $group->get('/settings/translation', [$translationController, 'translationSettings']);
             $group->put('/settings/translation', [$translationController, 'translationSettingsSave']);

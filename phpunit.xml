@@ -74,6 +74,7 @@
             <file>tests/Http/PaylasimDiliTest.php</file>
             <file>tests/Http/SetupEndpointsTest.php</file>
             <file>tests/Http/ShareOnarimTest.php</file>
+            <file>tests/Http/SozlukCsvTest.php</file>
             <file>tests/Http/SharePageLinksTest.php</file>
             <file>tests/Http/TopluTasimaAtomikTest.php</file>
             <file>tests/Http/UrunCekmecesiTest.php</file>

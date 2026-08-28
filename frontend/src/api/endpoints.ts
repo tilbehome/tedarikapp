@@ -549,3 +549,19 @@ export const surumNotu = {
     api.get<{ surumler: { surum: string; maddeler: string[] }[] }>('/api/surum-notu/gecmis'),
   goruldu: () => api.post<{ surum: string }>('/api/surum-notu/goruldu'),
 };
+
+/**
+ * SÖZLÜK CSV (V3-B C3 · PNL-50/51).
+ *
+ * İçe aktarımda ÇAKIŞMADA KULLANICI TERİMİ KAZANIR: dosyadan gelen satır
+ * yalnız o terim sözlükte yoksa yazılır. Elle düzeltilmiş bir karşılığın
+ * dosyayla ezilmesi, kullanıcının emeğini sessizce silmek olurdu.
+ */
+export const sozluk = {
+  disaAktarUrl: (lang: string) => `/api/settings/glossary/disa-aktar?lang=${encodeURIComponent(lang)}`,
+  iceAktar: (lang: string, csv: string) =>
+    api.post<{ lang: string; eklenen: number; atlanan: number; bozuk: number; toplam: number }>(
+      '/api/settings/glossary/ice-aktar',
+      { lang, csv },
+    ),
+};

@@ -301,6 +301,29 @@ abstract class AuthTestCase extends TestCase
                 UNIQUE (currency, effective_from)
             )',
         );
+        // V3-B A1: bildirim merkezi. Şema `migrations/0035_bildirimler.php` ile
+        // AYNI olmalı — UNIQUE üçlüsü birleştirmenin motorudur ve testte
+        // eksik olursa "birleşme çalışıyor" yanılsaması doğar.
+        $this->pdo->exec(
+            'CREATE TABLE notifications (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                olay_kodu TEXT NOT NULL,
+                onem TEXT NOT NULL DEFAULT "bilgi",
+                grup TEXT NOT NULL,
+                baslik TEXT NOT NULL,
+                govde TEXT NOT NULL,
+                eylem_linki TEXT NULL,
+                kullanici_id INTEGER NULL,
+                grup_anahtari TEXT NOT NULL,
+                pencere_baslangic TEXT NOT NULL,
+                birlesen_sayi INTEGER NOT NULL DEFAULT 1,
+                audit_id INTEGER NULL,
+                okundu_at TEXT NULL,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                UNIQUE (olay_kodu, grup_anahtari, pencere_baslangic)
+            )',
+        );
         $this->pdo->exec(
             'CREATE TABLE categories (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
