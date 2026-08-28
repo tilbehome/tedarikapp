@@ -61,6 +61,8 @@ final class DataRoutes
         \App\Controllers\PanoramaController $panoramaController,
         // V3-B B4: "Yenilikler" balonu ve sürüm notları geçmişi.
         \App\Controllers\SurumNotuController $surumNotuController,
+        // V3-B F2: panel içi günlük görüntüleyici (Ayarlar > 16).
+        \App\Controllers\GunlukController $gunlukController,
     ): void {
         // İE#19 G7 — AKTİVİTE DEFTERİ BİLEREK KAPI DIŞINDA.
         //
@@ -70,7 +72,7 @@ final class DataRoutes
         // zaman?" sorusunun cevabı burada. Onu da 503'e kapatmak, kullanıcıyı
         // arızayı teşhis edecek tek ekrandan mahrum bırakırdı. Uç yalnız
         // `activity_log` tablosunu okur; şema kaymasından etkilenen kolonları yoktur.
-        $app->group('/api', static function (RouteCollectorProxy $group) use ($activityController, $bildirimController, $panoramaController, $surumNotuController): void {
+        $app->group('/api', static function (RouteCollectorProxy $group) use ($activityController, $bildirimController, $panoramaController, $surumNotuController, $gunlukController): void {
             $group->get('/activity', [$activityController, 'index']);
             // BİLDİRİMLER DE KAPI DIŞINDA (aynı gerekçe): sistem bozukken
             // kullanıcının "ne oldu?" sorusuna cevap veren yüzey odur. Uç yalnız
@@ -85,6 +87,9 @@ final class DataRoutes
             $group->get('/surum-notu', [$surumNotuController, 'guncel']);
             $group->get('/surum-notu/gecmis', [$surumNotuController, 'gecmis']);
             $group->post('/surum-notu/goruldu', [$surumNotuController, 'gorulduIsaretle']);
+            // Günlük de kapı dışında: tam olarak sistem BOZUKKEN gereklidir
+            // (aktivite defteriyle aynı gerekçe, İE#19 G7).
+            $group->get('/gunluk', [$gunlukController, 'index']);
         })
             ->add(new Csrf($services->session, $responseFactory))
             ->add(new Auth($services, $responseFactory));

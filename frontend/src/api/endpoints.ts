@@ -565,3 +565,33 @@ export const sozluk = {
       { lang, csv },
     ),
 };
+
+/**
+ * PANEL İÇİ GÜNLÜK (V3-B F2).
+ *
+ * `kaynak_var: false` — günlük veritabanına yazılmıyor demektir (geliştirme
+ * ortamı). Boş liste ile bu durumu ayırt etmek şart: "hiç hata yok" ile
+ * "hiç bakılmadı" aynı şey değildir.
+ */
+export const gunluk = {
+  read: (params: { seviye?: string; ara?: string; limit?: number } = {}) => {
+    const sorgu = new URLSearchParams();
+    if (params.seviye) sorgu.set('seviye', params.seviye);
+    if (params.ara) sorgu.set('ara', params.ara);
+    if (params.limit) sorgu.set('limit', String(params.limit));
+    const ek = sorgu.toString();
+
+    return api.get<{
+      kayitlar: {
+        id: number;
+        seviye: string;
+        mesaj: string;
+        baglam: string | null;
+        istek_id: string | null;
+        zaman: string;
+      }[];
+      kaynak_var: boolean;
+      not: string | null;
+    }>(`/api/gunluk${ek ? `?${ek}` : ''}`);
+  },
+};

@@ -6,6 +6,7 @@ import { ErrorNote, Skeleton } from '../../../components/ui';
 import IslemDurumu from '../../../components/IslemDurumu';
 import { useUzunIslem } from '../../../lib/useUzunIslem';
 import Satir from './Satir';
+import Gunluk from './Gunluk';
 
 /**
  * AYARLAR > 16 VERİ & BAKIM (V3-B C1).
@@ -29,6 +30,11 @@ export default function VeriBakim() {
       />
 
       <BackupCard />
+
+      {/* V3-B F2: sunucuya girmeden hata görme. */}
+      <div className="mb-4">
+        <Gunluk />
+      </div>
 
       <section className="card p-4">
         <h2 className="mb-3 text-sm font-semibold text-ink-2">Sistem durumu</h2>

@@ -468,6 +468,7 @@ final class AppBuilder
                 new \App\Services\Panorama\PanoramaServisi($connection, $services->clock, $basePath),
             ),
             new \App\Controllers\SurumNotuController($settingsRepository, $basePath),
+            new \App\Controllers\GunlukController($connection, $services->timezone),
         );
 
         // Panel (İE#8 §5): Vite çıktısı public/panel/ altındadır. Var olan dosyaları
