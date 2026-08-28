@@ -49,6 +49,9 @@ final class KuyrukTetikleyici
         private readonly SettingsRepository $ayarlar,
         private readonly Clock $saat,
         private readonly LoggerInterface $kayitci,
+        // V3-B A3: eşik türevli bildirimler (kuyruk durgunluğu, kur sapması)
+        // cron'a değil bu tura takılır — K86: kullanıcı cron kurmaz.
+        private readonly ?\App\Services\Bildirim\EsikSupurmesi $supurme = null,
     ) {
     }
 
@@ -105,6 +108,10 @@ final class KuyrukTetikleyici
                 'neden' => $ozet['durma_nedeni'],
                 'arkaplan' => $baglantiKapali,
             ], JSON_UNESCAPED_UNICODE) ?: '');
+
+            // Tur bitti; eşikleri de tara. Kendi aralığı vardır, her turda
+            // koşmaz — bu çağrı yalnız "fırsat" sağlar.
+            $this->supurme?->supur();
         } catch (Throwable $hata) {
             // Tetikleyici hatası KULLANICIYA YANSIMAZ: yanıt zaten gitti ve
             // madde 3 (panel ziyareti) bir sonraki turda yeniden dener.

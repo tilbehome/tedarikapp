@@ -49,8 +49,70 @@ final class JobQueue
      */
     public const KILIT_OMRU_SANIYE = 300;
 
-    public function __construct(private readonly Connection $connection)
+    /**
+     * @param \App\Services\Bildirim\BildirimYayinci|null $bildirim V3-B A3 —
+     *        kuyruk olayları (yeniden deneme, ölüm, toparlanma, diriltme) bildirim
+     *        doğurur. OPSİYONELDİR: kuyruk bir HTTP kavramı değildir ve bakım
+     *        betikleri onu yayıncısız kurar; null iken kuyruk aynen çalışır.
+     */
+    public function __construct(
+        private readonly Connection $connection,
+        private readonly ?\App\Services\Bildirim\BildirimYayinci $bildirim = null,
+    ) {
+    }
+
+    /**
+     * Kuyruk olayını yayımlar — iş türü ve hata sınıfı birleştirme anahtarıdır.
+     *
+     * Kuyruk olaylarının hiçbiri denetim izine yazılmaz (activity_log kullanıcı
+     * eylemlerinin izidir, arka plan işinin değil). Bu yüzden burada yayımlanan
+     * olayların TAMAMI katalogda `birlestirme.izinli=true` olmalıdır; audit
+     * bağlantısı isteyen bir olay buradan yayımlanırsa yayıncı PATLAR ve testte
+     * görülür — sessizce audit'siz satır yazılmaz.
+     *
+     * @param array<string, scalar|null> $baglam
+     */
+    private function duyur(string $olayKodu, array $baglam): void
     {
+        $this->bildirim?->yayimla($olayKodu, $baglam);
+    }
+
+    /**
+     * DENETİMLİ kuyruk olayı: önce `activity_log`a SİSTEM aktörüyle satır yazar,
+     * sonra bildirimi o satıra bağlar.
+     *
+     * Katalog, birleştirmesi kapalı olayların "değiştirilemez audit bağlantısı"
+     * ile gösterilmesini şart koşuyor. Ölen iş, diriltilen iş ve durmuş kuyruk
+     * tam olarak böyle olaylardır — ve bunlar bugüne kadar HİÇBİR denetim izi
+     * bırakmıyordu. "Çeviri neden gelmedi?" sorusunun cevabı yalnız `jobs.hata`
+     * kolonundaydı; iş temizlenince o da kayboluyordu. Artık kalıcı iz var.
+     *
+     * @param array<string, scalar|null> $baglam
+     */
+    private function duyurDenetimli(
+        string $olayKodu,
+        int $isId,
+        string $eylem,
+        string $ayrinti,
+        DateTimeImmutable $now,
+        array $baglam,
+    ): void {
+        if ($this->bildirim === null) {
+            return;
+        }
+
+        $auditId = (new \App\Services\ActivityLog($this->connection))->record(
+            'job',
+            $isId,
+            $eylem,
+            mb_substr($ayrinti, 0, 500),
+            null,
+            $now,
+            \App\Services\ActivityLog::ACTOR_SYSTEM,
+            null,
+        );
+
+        $this->bildirim->yayimla($olayKodu, $baglam, $auditId);
     }
 
     /**
@@ -408,7 +470,31 @@ final class JobQueue
         if ($token !== '') {
             $parametreler['token'] = $token;
         }
+        // Toparlanma bildirimi için deneme sayısı UPDATE'ten ÖNCE okunur:
+        // sonrasında iş "bitti" olur ama `deneme` kolonu korunur — yine de
+        // sıralamayı okumaya bırakmak, kolonun ileride sıfırlanması hâlinde
+        // sessizce yanlış davranırdı.
+        $onceki = $this->denemeSayisi($id);
         $statement->execute($parametreler);
+
+        // Yalnız DAHA ÖNCE BAŞARISIZ OLMUŞ iş "toparlandı" sayılır; ilk denemede
+        // biten her işi duyurmak bildirim merkezini gürültüye boğardı.
+        if ($onceki > 0) {
+            $this->duyur('NTF-JOB-RECOVERED', [
+                'is_turu' => $this->isTuru($id),
+                'is_id' => $id,
+                'deneme' => $onceki,
+            ]);
+        }
+    }
+
+    /** İşin o ana kadarki deneme sayısı. */
+    private function denemeSayisi(int $id): int
+    {
+        $statement = $this->connection->pdo()->prepare('SELECT deneme FROM jobs WHERE id = :id');
+        $statement->execute(['id' => $id]);
+
+        return (int) $statement->fetchColumn();
     }
 
     /**
@@ -472,6 +558,13 @@ final class JobQueue
             'simdi' => Dates::toStorage($now),
             'id' => $id,
         ]);
+
+        $this->duyur('NTF-JOB-RETRY-SCHEDULED', [
+            'is_turu' => $this->isTuru($id),
+            'hata_kodu' => $sinif,
+            'is_id' => $id,
+            'bekleme_saniye' => $bekleme,
+        ]);
     }
 
     /**
@@ -503,6 +596,22 @@ final class JobQueue
             'guncelleme_at' => $zaman,
             'id' => $id,
         ]);
+
+        $this->duyurDenetimli('NTF-JOB-DEAD', $id, 'job_dead', $hata, $now, [
+            'is_turu' => $this->isTuru($id),
+            'hata_kodu' => $sinif,
+            'is_id' => $id,
+        ]);
+    }
+
+    /** İşin türü — bildirim bağlamı için; iş silinmişse null. */
+    private function isTuru(int $id): ?string
+    {
+        $statement = $this->connection->pdo()->prepare('SELECT tur FROM jobs WHERE id = :id');
+        $statement->execute(['id' => $id]);
+        $deger = $statement->fetchColumn();
+
+        return is_string($deger) ? $deger : null;
     }
 
     /**
@@ -571,6 +680,11 @@ final class JobQueue
             'calisacak_at' => $zaman,
             'guncelleme_at' => $zaman,
             'id' => $id,
+        ]);
+
+        $this->duyurDenetimli('NTF-JOB-REPLAYED', $id, 'job_replayed', 'ölü iş yeniden çalıştırıldı', $now, [
+            'is_turu' => $this->isTuru($id),
+            'is_id' => $id,
         ]);
     }
 

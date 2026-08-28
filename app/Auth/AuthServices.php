@@ -10,6 +10,10 @@ use App\Core\Connection;
 use App\Core\Encrypter;
 use App\Core\RequestContext;
 use App\Services\ActivityLog;
+use App\Services\Bildirim\BildirimKatalogu;
+use App\Services\Bildirim\BildirimRepository;
+use App\Services\Bildirim\BildirimYayinci;
+use App\Services\Bildirim\GrupAnahtariCozucu;
 use DateTimeZone;
 use Psr\Log\LoggerInterface;
 
@@ -30,6 +34,13 @@ final class AuthServices
     public readonly RememberTokenService $rememberTokens;
     public readonly LoginThrottle $throttle;
     public readonly ActivityLog $activity;
+    /**
+     * BİLDİRİM YAYINCISI (V3-B A2) — servis kabında durur çünkü olaylar HER
+     * KATMANDA doğar: denetleyici, kuyruk işleyicisi, gece süpürmesi. Ayrı ayrı
+     * kurulsaydı katalog dosyası her seferinde yeniden okunur ve iki farklı
+     * çözücü örneği ortaya çıkardı.
+     */
+    public readonly BildirimYayinci $bildirim;
     public readonly DateTimeZone $timezone;
 
     public function __construct(
@@ -39,6 +50,7 @@ final class AuthServices
         public readonly Clock $clock,
         public readonly LoggerInterface $logger,
         ?RequestContext $requestContext = null,
+        ?string $basePath = null,
     ) {
         $this->timezone = new DateTimeZone($config->get('TZ', 'Europe/Istanbul'));
         $this->session = new AuthSession($session, $clock);
@@ -48,6 +60,13 @@ final class AuthServices
         $this->recoveryCodes = new RecoveryCodeService($connection, $this->passwords);
         $this->rememberTokens = new RememberTokenService($connection);
         $this->activity = new ActivityLog($connection, $requestContext);
+        $this->bildirim = new BildirimYayinci(
+            new BildirimRepository($connection),
+            new BildirimKatalogu($basePath ?? dirname(__DIR__, 2)),
+            new GrupAnahtariCozucu(),
+            $clock,
+            $logger,
+        );
         $this->throttle = new LoginThrottle(
             $connection,
             $this->timezone,

@@ -471,3 +471,38 @@ export const activity = {
     return api.get<ActivityEntry[]>(`/api/activity${suffix ? `?${suffix}` : ''}`);
   },
 };
+
+/**
+ * BİLDİRİM MERKEZİ (V3-B A4).
+ *
+ * `anlik` alanı SUNUCUDAN gelir: hangi bildirimin anlık kart olarak
+ * gösterileceğine panel karar VERMEZ. Aynı gerçeği iki yoldan okumak (biri
+ * sunucuda önem eşiği, biri panelde) bu projede tekrar eden hatadır.
+ */
+export interface Bildirim {
+  id: number;
+  olay_kodu: string;
+  onem: 'bilgi' | 'uyari' | 'kritik';
+  grup: 'kuyruk' | 'liste' | 'paylasim' | 'sistem' | 'ceviri';
+  baslik: string;
+  govde: string;
+  eylem_linki: string | null;
+  /** Birleştirilmiş olay sayısı; 1 ise rozet BASILMAZ. */
+  birlesen_sayi: number;
+  audit_id: number | null;
+  okundu: boolean;
+  okundu_at: string | null;
+  created_at: string;
+}
+
+export const bildirimler = {
+  read: (yalnizOkunmamis = false) =>
+    api.get<{ bildirimler: Bildirim[]; okunmamis: number; anlik: Bildirim | null }>(
+      `/api/bildirimler${yalnizOkunmamis ? '?yalniz_okunmamis=1' : ''}`,
+    ),
+  sayac: () => api.get<{ okunmamis: number }>('/api/bildirimler/sayac'),
+  okundu: (id: number) =>
+    api.post<{ degisti: boolean; okunmamis: number }>(`/api/bildirimler/${id}/okundu`),
+  hepsiOkundu: () =>
+    api.post<{ isaretlenen: number; okunmamis: number }>('/api/bildirimler/hepsi-okundu'),
+};

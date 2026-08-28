@@ -9,6 +9,8 @@ import { menuyuCevir } from '../../lib/kabukDurumu';
 import { useGelenKutusuSayisi } from '../../lib/useGelenKutusuSayisi';
 import YanMenu from './YanMenu';
 import UstCubuk from './UstCubuk';
+import AnlikKart from '../bildirim/AnlikKart';
+import { useBildirimSayisi } from '../../lib/useBildirimSayisi';
 import KomutPaleti from './KomutPaleti';
 
 /**
@@ -78,14 +80,23 @@ export default function Kabuk() {
 
   // Gelen kutusu rozeti (0 ise menüde basılmaz — kanon §3).
   const gelenKutusuSayisi = useGelenKutusuSayisi();
+  const bildirim = useBildirimSayisi();
 
   return (
     <div className="flex min-h-dvh bg-app" data-testid="kabuk">
+      {/* A5: kritik olayın anlık kartı — modal değil, köşe kartı. */}
+      <AnlikKart />
       <YanMenu gelenKutusuSayisi={gelenKutusuSayisi} onKomut={() => setPaletAcik(true)} onCikis={() => void cikis()} />
 
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="hidden md:block">
-          <UstCubuk bolum={bolum} ekran={ekran} onKomut={() => setPaletAcik(true)} />
+          <UstCubuk
+            bolum={bolum}
+            ekran={ekran}
+            onKomut={() => setPaletAcik(true)}
+            bildirimSayisi={bildirim.sayi}
+            onBildirimSayaci={bildirim.ayarla}
+          />
         </div>
 
         {/* ── Telefon üst başlığı: menü düğmesi + ekran adı + komut ── */}

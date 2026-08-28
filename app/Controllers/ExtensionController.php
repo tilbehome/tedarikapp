@@ -29,7 +29,37 @@ final class ExtensionController extends ApiController
         private readonly ?CaptureApplier $applier = null,
         // D12 madde 4: yakalama yanıtı gittikten sonra fırsatçı kuyruk turu.
         private readonly ?\App\Services\Kuyruk\KuyrukTetikleyici $tetikleyici = null,
+        // V3-B A3: yakalama olayları (kabul, mükerrer, toplu) bildirim doğurur.
+        private readonly ?\App\Services\Bildirim\BildirimYayinci $bildirim = null,
     ) {
+    }
+
+    /**
+     * Yakalama bildirimi — bağlamı YÜKTEN çıkarır.
+     *
+     * Platform ve cihaz kimliği eklentinin gönderdiği `source` bloğundadır;
+     * birleştirme anahtarı (`kullanici_id+platform`) bunlara dayanır. Eklenti
+     * isteğinde panel oturumu YOKTUR: `kullanici_id` null kalır ve anahtarda
+     * "-" olur — tek kullanıcılı sistemde bu doğru davranıştır, uydurma bir
+     * kullanıcı kimliği yazmak denetim izini kirletirdi.
+     *
+     * @param array<string, mixed>       $payload
+     * @param array<string, scalar|null> $ek
+     */
+    private function bildirimYaz(string $olayKodu, array $payload, array $ek = []): void
+    {
+        if ($this->bildirim === null) {
+            return;
+        }
+
+        /** @var array<string, mixed> $kaynak */
+        $kaynak = is_array($payload['source'] ?? null) ? $payload['source'] : [];
+
+        $this->bildirim->yayimla($olayKodu, $ek + [
+            'platform' => is_scalar($kaynak['platform'] ?? null) ? (string) $kaynak['platform'] : null,
+            'cihaz_id' => is_scalar($payload['capture_id'] ?? null) ? (string) $payload['capture_id'] : null,
+            'urun_adi' => is_scalar($payload['name'] ?? null) ? (string) $payload['name'] : null,
+        ]);
     }
 
     /**
@@ -62,6 +92,11 @@ final class ExtensionController extends ApiController
             $existing = $this->inbox->findByCaptureId($captureId);
             if ($existing !== null) {
                 // Tekrar deneme (eklenti kuyruğu): yeni kayıt AÇILMAZ.
+                $this->bildirimYaz('NTF-DUPLICATE-SUPPRESSED', $payload, [
+                    'kaynak' => 'eklenti',
+                    'is_turu' => 'capture',
+                ]);
+
                 return Response::success($response, [
                     'inbox_id' => (int) $existing['id'],
                     'status' => (string) $existing['status'],
@@ -123,6 +158,11 @@ final class ExtensionController extends ApiController
 
             // D12 madde 4: ürün listeye düştü — çevirisi de hemen denensin.
             $this->firsatciTetik();
+            $this->bildirimYaz(
+                $sonuc['idempotent_replay'] ? 'NTF-DUPLICATE-SUPPRESSED' : 'NTF-CAPTURE-ACCEPTED',
+                $payload,
+                ['urun_id' => $sonuc['product_id'], 'liste_id' => (int) $list['id'], 'kaynak' => 'eklenti', 'is_turu' => 'capture'],
+            );
 
             return Response::success($response, [
                 'inbox_id' => $sonuc['inbox_id'],
@@ -137,6 +177,11 @@ final class ExtensionController extends ApiController
         $rezervasyon = $this->inbox->rezerveEtVeyaBul($this->capture->inboxFields($payload), $now);
 
         $this->firsatciTetik();
+        $this->bildirimYaz(
+            $rezervasyon['yeni'] ? 'NTF-CAPTURE-ACCEPTED' : 'NTF-DUPLICATE-SUPPRESSED',
+            $payload,
+            ['kaynak' => 'eklenti', 'is_turu' => 'capture'],
+        );
 
         return Response::success($response, [
             'inbox_id' => $rezervasyon['id'],

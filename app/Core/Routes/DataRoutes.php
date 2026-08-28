@@ -55,6 +55,8 @@ final class DataRoutes
         string $migrationsDir,
         // D12: panel ziyaretinde kuyruk turu tetikler (cron'suz çalışma emniyeti).
         \App\Services\Kuyruk\KuyrukTetikleyici $kuyrukTetikleyici,
+        // V3-B A4: bildirim merkezi uçları.
+        \App\Controllers\BildirimController $bildirimController,
     ): void {
         // İE#19 G7 — AKTİVİTE DEFTERİ BİLEREK KAPI DIŞINDA.
         //
@@ -64,8 +66,15 @@ final class DataRoutes
         // zaman?" sorusunun cevabı burada. Onu da 503'e kapatmak, kullanıcıyı
         // arızayı teşhis edecek tek ekrandan mahrum bırakırdı. Uç yalnız
         // `activity_log` tablosunu okur; şema kaymasından etkilenen kolonları yoktur.
-        $app->group('/api', static function (RouteCollectorProxy $group) use ($activityController): void {
+        $app->group('/api', static function (RouteCollectorProxy $group) use ($activityController, $bildirimController): void {
             $group->get('/activity', [$activityController, 'index']);
+            // BİLDİRİMLER DE KAPI DIŞINDA (aynı gerekçe): sistem bozukken
+            // kullanıcının "ne oldu?" sorusuna cevap veren yüzey odur. Uç yalnız
+            // `notifications` tablosunu okur; şema kaymasından etkilenmez.
+            $group->get('/bildirimler', [$bildirimController, 'index']);
+            $group->get('/bildirimler/sayac', [$bildirimController, 'sayac']);
+            $group->post('/bildirimler/hepsi-okundu', [$bildirimController, 'hepsiOkundu']);
+            $group->post('/bildirimler/{id}/okundu', [$bildirimController, 'okundu']);
         })
             ->add(new Csrf($services->session, $responseFactory))
             ->add(new Auth($services, $responseFactory));

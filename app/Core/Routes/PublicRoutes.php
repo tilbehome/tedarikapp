@@ -129,6 +129,12 @@ final class PublicRoutes
             $row = $lists->findByShareHash(hash('sha256', $token));
             if ($row === null) {
                 $shareGate->recordInvalid($ip, $token, $now);
+                // IP HAM HALIYLE TASINMAZ: birlestirme anahtari `paylasim_id+ip_hash`
+                // ister; ozetlenmis deger K51 log disiplinidir.
+                $services->bildirim->yayimla('NTF-SHARE-INVALID-ACCESS', [
+                    'paylasim_id' => substr($token, 0, 8),
+                    'ip_hash' => substr(hash('sha256', $ip), 0, 16),
+                ]);
 
                 return $notFound();
             }
@@ -196,7 +202,7 @@ final class PublicRoutes
 
         // ── İE#18 G6-c: ANAHTAR DOĞRULAMA UCU ────────────────────────────────
         $settingsRepo = new \App\Models\SettingsRepository($connection);
-        $anahtarHandler = static function (ServerRequestInterface $request, ResponseInterface $response, array $args) use ($lists, $presenter, $shareGate, $services, $anahtar, $kilitSayfasi, $surum, $logger, $settingsRepo, $config): ResponseInterface {
+        $anahtarHandler = static function (ServerRequestInterface $request, ResponseInterface $response, array $args) use ($lists, $presenter, $shareGate, $services, $anahtar, $kilitSayfasi, $surum, $logger, $settingsRepo, $config, $connection): ResponseInterface {
             $now = $services->clock->now();
             $ip = ClientIp::from($request);
             $token = (string) ($args['token'] ?? '');
@@ -213,6 +219,12 @@ final class PublicRoutes
             $row = $lists->findByShareHash(hash('sha256', $token));
             if ($row === null) {
                 $shareGate->recordInvalid($ip, $token, $now);
+                // IP HAM HALIYLE TASINMAZ: birlestirme anahtari `paylasim_id+ip_hash`
+                // ister; ozetlenmis deger K51 log disiplinidir.
+                $services->bildirim->yayimla('NTF-SHARE-INVALID-ACCESS', [
+                    'paylasim_id' => substr($token, 0, 8),
+                    'ip_hash' => substr(hash('sha256', $ip), 0, 16),
+                ]);
 
                 return $notFound();
             }
@@ -228,6 +240,24 @@ final class PublicRoutes
                     'token_onek' => substr($token, 0, 8),
                     'ip' => \App\Services\Share\ShareDownload::kirpilmisIp($ip),
                 ]);
+
+                // Kritik olay: birlestirmesi KAPALI, bu yuzden kalici denetim izine
+                // baglanir (katalog sozlesmesi). Kaba kuvvet denemesinin izi,
+                // bildirim silinse bile activity_log'da kalir.
+                $auditId = (new \App\Services\ActivityLog($connection))->record(
+                    'list',
+                    (int) $row['id'],
+                    'share_key_rate_limited',
+                    'onek:' . substr($token, 0, 8),
+                    null,
+                    $now,
+                    \App\Services\ActivityLog::ACTOR_SYSTEM,
+                    null,
+                );
+                $services->bildirim->yayimla('NTF-SHARE-RATE-LIMITED', [
+                    'liste_id' => (int) $row['id'],
+                    'liste_adi' => (string) $row['name'],
+                ], $auditId);
 
                 return $notFound();
             }

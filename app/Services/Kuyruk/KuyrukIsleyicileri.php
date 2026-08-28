@@ -51,6 +51,8 @@ final class KuyrukIsleyicileri
         LoggerInterface $logger,
         string $basePath,
         ?Clock $clock = null,
+        // V3-B A3: çeviri işi bitince/patlayınca bildirim doğar.
+        ?\App\Services\Bildirim\BildirimYayinci $bildirim = null,
     ): void {
         $clock ??= SystemClock::fromConfig($config);
         $urunler = new ProductRepository($connection);
@@ -65,6 +67,7 @@ final class KuyrukIsleyicileri
             $clock,
             $urunler,
             $ayarlarDeposu,
+            $bildirim,
         ): void {
             $urunId = (int) ($yuk['urun_id'] ?? 0);
             if ($urunId <= 0) {
@@ -110,16 +113,40 @@ final class KuyrukIsleyicileri
             // hiç çevrilmiyordu. Sayfada ham Çince kalmasının kök nedeni buydu.
             $degerler = \App\Services\Translation\CevrilecekDegerler::topla($urun);
 
-            $cevirmen->translateProduct([
-                // D12: kuyruk yolu da ORİJİNAL metni çevirir. `name` alanı çoğu
-                // kayıtta makine çevirisi bir Türkçe addır ve kalıcılık ölçütü
-                // `name_original` üzerinden bakar; ekrandaki adı göndermek,
-                // üretilen satırın hiç aranmayan bir anahtara yazılması demekti.
-                // İki yol (senkron ve kuyruk) aynı metni çevirir — tek kaynak.
-                'name' => (string) ($urun['name_original'] ?? $urun['name']),
-                'category' => null,
-                'source_lang' => Glossary::detect((string) ($urun['name_original'] ?? $urun['name'])),
-                'attributes' => $degerler,
+            $kaynakDil = Glossary::detect((string) ($urun['name_original'] ?? $urun['name']));
+
+            try {
+                $cevirmen->translateProduct([
+                    // D12: kuyruk yolu da ORİJİNAL metni çevirir. `name` alanı çoğu
+                    // kayıtta makine çevirisi bir Türkçe addır ve kalıcılık ölçütü
+                    // `name_original` üzerinden bakar; ekrandaki adı göndermek,
+                    // üretilen satırın hiç aranmayan bir anahtara yazılması demekti.
+                    // İki yol (senkron ve kuyruk) aynı metni çevirir — tek kaynak.
+                    'name' => (string) ($urun['name_original'] ?? $urun['name']),
+                    'category' => null,
+                    'source_lang' => $kaynakDil,
+                    'attributes' => $degerler,
+                ]);
+            } catch (\Throwable $hata) {
+                // Bildirim önce yazılır, istisna SONRA yukarı verilir: kuyruk
+                // yeniden deneme/ölüm kararını kendi verir, biz yalnız haber
+                // veririz. Sırayı ters çevirmek, ölen işin hiç duyulmaması
+                // demekti — D12'nin "sessiz başarısızlık" dersi.
+                $bildirim?->yayimla('NTF-TRANSLATION-JOB-FAILED', [
+                    'dil' => $kaynakDil,
+                    'hata_kodu' => \App\Services\Kuyruk\HataSinifi::siniflandir($hata)['sinif'],
+                    'urun_id' => $urunId,
+                    'urun_adi' => (string) $urun['name'],
+                ]);
+
+                throw $hata;
+            }
+
+            $bildirim?->yayimla('NTF-TRANSLATION-BATCH-COMPLETE', [
+                'dil' => $kaynakDil,
+                'urun_id' => $urunId,
+                'urun_adi' => (string) $urun['name'],
+                'is_turu' => self::TUR_CEVIRI,
             ]);
         });
 
