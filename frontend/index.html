@@ -4,7 +4,6 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="color-scheme" content="light dark" />
-    <meta name="theme-color" content="#0F2557" />
     <!-- Panel oturum arkasındadır; arama motorlarına açılmaz. -->
     <meta name="robots" content="noindex, nofollow" />
 
@@ -30,8 +29,19 @@
     <link rel="icon" type="image/svg+xml" href="/panel/favicon.svg" />
     <link rel="apple-touch-icon" sizes="180x180" href="/panel/apple-touch-icon.png" />
     <link rel="manifest" href="/panel/site.webmanifest" />
-    <!-- Tema rengi LACİVERTTİR: marka amblemi turuncu ama arayüzün kimliği
-         lacivert kalır (B13 — hibrit entegrasyon). -->
+    <!-- TEMA RENGİ TEKTİR VE LACİVERTTİR (V3-B D3 kararı).
+         Marka amblemi turuncu ama arayüzün kimliği lacivert kalır (B13).
+
+         KOYU TEMA İÇİN İKİNCİ BİR RENK TANIMLANMADI ve bu bilinçli: tarayıcı
+         çubuğunun rengi `prefers-color-scheme` ile ikiye bölünebilirdi ama o
+         zaman marka rengi iki yerde tanımlı olurdu — biri burada, biri
+         `site.webmanifest`te — ve manifest yalnız TEK değer taşıyabildiği için
+         ikisi kaçınılmaz olarak ayrışırdı. Lacivert zaten koyu bir renktir ve
+         koyu temanın yüzey rengiyle (#0B1220) uyumludur; açık temada da marka
+         kimliğini taşır. Tek karar, tek yer.
+
+         `color-scheme: light dark` yukarıda bildirilmiştir: tarayıcı form
+         denetimlerini ve kaydırma çubuğunu doğru tonda çizer. -->
     <meta name="theme-color" content="#0F2557" />
 
     <!-- Sosyal önizleme (panel linki mesajla paylaşılırsa düzgün görünür; sayfa yine noindex). -->
