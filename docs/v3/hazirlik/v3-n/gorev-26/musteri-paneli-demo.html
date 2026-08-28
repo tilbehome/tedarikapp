@@ -1,0 +1,898 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="TedarikApp gelişmiş müşteri portalı kavram demosu" />
+  <title>TedarikApp — Müşteri Portalı V2 Demo</title>
+  <style>
+    :root {
+      --ink: #0c1a2b;
+      --navy: #10233e;
+      --navy-2: #193657;
+      --orange: #f2672a;
+      --orange-dark: #cf4d17;
+      --cream: #f5f3ed;
+      --paper: #ffffff;
+      --line: #dce1e6;
+      --line-dark: #cbd3dc;
+      --muted: #617083;
+      --soft: #edf1f4;
+      --green: #087a55;
+      --green-soft: #e6f4ee;
+      --amber: #a15c00;
+      --amber-soft: #fff1d7;
+      --red: #b42318;
+      --red-soft: #fce8e6;
+      --blue: #1559a2;
+      --blue-soft: #eaf2fb;
+      --shadow: 0 22px 60px rgba(12, 26, 43, .12);
+      --radius: 14px;
+      --max: 1240px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--cream);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+    button, input, select, textarea { font: inherit; }
+    button, a { -webkit-tap-highlight-color: transparent; }
+    button { cursor: pointer; }
+    a { color: inherit; }
+    :focus-visible { outline: 3px solid rgba(242, 103, 42, .35); outline-offset: 3px; }
+    [hidden] { display: none !important; }
+
+    .demo-bar {
+      position: sticky;
+      top: 0;
+      z-index: 80;
+      min-height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 8px 20px;
+      color: white;
+      background: #07121f;
+      border-bottom: 1px solid rgba(255,255,255,.12);
+    }
+    .demo-note { display: flex; align-items: center; gap: 10px; font-size: 12px; letter-spacing: .04em; }
+    .demo-note strong { text-transform: uppercase; letter-spacing: .12em; }
+    .live-dot { width: 8px; height: 8px; border-radius: 99px; background: #ff8a50; box-shadow: 0 0 0 4px rgba(255,138,80,.15); }
+    .demo-switch { display: flex; gap: 4px; padding: 3px; border: 1px solid rgba(255,255,255,.16); border-radius: 10px; background: rgba(255,255,255,.06); }
+    .demo-switch button { border: 0; border-radius: 7px; padding: 7px 12px; color: #c9d3df; background: transparent; font-size: 12px; font-weight: 700; }
+    .demo-switch button.active { color: var(--ink); background: white; }
+
+    .container { width: min(var(--max), calc(100% - 40px)); margin-inline: auto; }
+    .eyebrow { display: inline-flex; align-items: center; gap: 8px; margin: 0 0 18px; color: var(--orange-dark); font-size: 12px; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
+    .eyebrow::before { content: ""; width: 26px; height: 2px; background: var(--orange); }
+    .btn { display: inline-flex; min-height: 44px; align-items: center; justify-content: center; gap: 9px; padding: 0 17px; border: 1px solid transparent; border-radius: 10px; font-weight: 750; text-decoration: none; transition: transform .18s ease, background .18s ease, border-color .18s ease; }
+    .btn:hover { transform: translateY(-1px); }
+    .btn-primary { color: white; background: var(--orange); border-color: var(--orange); box-shadow: 0 8px 22px rgba(242,103,42,.22); }
+    .btn-primary:hover { background: var(--orange-dark); border-color: var(--orange-dark); }
+    .btn-dark { color: white; background: var(--navy); border-color: var(--navy); }
+    .btn-secondary { color: var(--navy); background: white; border-color: var(--line-dark); }
+    .btn-secondary:hover { background: #f8fafb; border-color: #aeb9c5; }
+    .btn-quiet { color: var(--navy); background: transparent; border-color: transparent; }
+    .btn-sm { min-height: 36px; padding: 0 12px; font-size: 13px; border-radius: 8px; }
+    .icon { width: 18px; height: 18px; flex: none; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .badge { display: inline-flex; align-items: center; gap: 6px; min-height: 26px; padding: 3px 9px; border-radius: 7px; font-size: 12px; font-weight: 750; white-space: nowrap; }
+    .badge-green { color: var(--green); background: var(--green-soft); }
+    .badge-amber { color: var(--amber); background: var(--amber-soft); }
+    .badge-blue { color: var(--blue); background: var(--blue-soft); }
+    .badge-neutral { color: #4d5b6b; background: var(--soft); }
+    .badge-red { color: var(--red); background: var(--red-soft); }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+
+    /* Public landing */
+    .landing { background: var(--cream); min-height: 100vh; }
+    .public-nav { height: 76px; display: flex; align-items: center; background: rgba(245,243,237,.96); border-bottom: 1px solid rgba(12,26,43,.09); }
+    .nav-inner { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+    .brand { display: inline-flex; align-items: center; gap: 11px; text-decoration: none; }
+    .brand-mark { position: relative; width: 35px; height: 35px; border-radius: 9px; background: var(--navy); }
+    .brand-mark::before { content: ""; position: absolute; left: 8px; right: 8px; top: 9px; height: 4px; background: white; box-shadow: 0 7px 0 var(--orange), 0 14px 0 white; }
+    .brand-name { display: grid; line-height: 1.05; }
+    .brand-name strong { font-size: 17px; letter-spacing: -.02em; }
+    .brand-name span { color: var(--muted); font-size: 10px; font-weight: 750; letter-spacing: .12em; text-transform: uppercase; }
+    .nav-links { display: flex; align-items: center; gap: 28px; }
+    .nav-links a { color: #34465a; font-size: 14px; font-weight: 650; text-decoration: none; }
+    .nav-actions { display: flex; align-items: center; gap: 8px; }
+    .mobile-menu { display: none; border: 0; color: var(--navy); background: transparent; }
+
+    .hero { position: relative; overflow: hidden; padding: 90px 0 72px; }
+    .hero::after { content: ""; position: absolute; width: 420px; height: 420px; right: -190px; top: -190px; border: 70px solid rgba(242,103,42,.08); border-radius: 50%; pointer-events: none; }
+    .hero-grid { display: grid; grid-template-columns: 1.05fr .95fr; align-items: center; gap: 78px; }
+    .hero h1 { max-width: 680px; margin: 0; font-size: clamp(48px, 5.3vw, 76px); line-height: .99; letter-spacing: -.055em; font-weight: 780; }
+    .hero h1 em { color: var(--orange-dark); font-style: normal; }
+    .hero-copy > p:not(.eyebrow) { max-width: 625px; margin: 26px 0 0; color: #4e5e70; font-size: 18px; line-height: 1.75; }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 34px; }
+    .hero-footnote { display: flex; align-items: center; gap: 9px; margin-top: 22px; color: var(--muted); font-size: 13px; }
+
+    .request-studio { position: relative; min-height: 516px; padding: 20px; color: white; background: var(--navy); border: 1px solid rgba(12,26,43,.08); border-radius: 18px; box-shadow: var(--shadow); }
+    .request-studio::before { content: ""; position: absolute; inset: 0; border-radius: inherit; background-image: linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px); background-size: 32px 32px; mask-image: linear-gradient(to bottom, black, transparent 76%); pointer-events: none; }
+    .studio-top { position: relative; display: flex; align-items: center; justify-content: space-between; padding: 2px 2px 18px; border-bottom: 1px solid rgba(255,255,255,.12); }
+    .studio-top strong { font-size: 13px; letter-spacing: .02em; }
+    .secure-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 8px; color: #dbe6f1; border: 1px solid rgba(255,255,255,.13); border-radius: 7px; font-size: 11px; }
+    .request-sheet { position: relative; margin-top: 22px; padding: 20px; color: var(--ink); background: white; border-radius: 12px; box-shadow: 0 16px 40px rgba(0,0,0,.2); }
+    .sheet-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding-bottom: 17px; border-bottom: 1px solid var(--line); }
+    .sheet-head small { display: block; margin-bottom: 4px; color: var(--muted); font-size: 11px; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; }
+    .sheet-head strong { font-size: 18px; letter-spacing: -.02em; }
+    .sheet-ref { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+    .product-lines { display: grid; gap: 0; }
+    .product-line { display: grid; grid-template-columns: 46px 1fr auto; align-items: center; gap: 12px; padding: 16px 0; border-bottom: 1px solid var(--line); }
+    .product-tile { width: 46px; height: 46px; display: grid; place-items: center; color: var(--navy); background: var(--soft); border-radius: 9px; font-size: 12px; font-weight: 850; letter-spacing: .06em; }
+    .product-line strong { display: block; font-size: 13px; }
+    .product-line span { color: var(--muted); font-size: 11px; }
+    .qty { min-width: 42px; text-align: right; color: var(--navy); font-size: 12px; font-weight: 800; }
+    .sheet-callout { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 18px; padding: 14px; background: #fff7f1; border-left: 3px solid var(--orange); border-radius: 0 8px 8px 0; }
+    .sheet-callout p { margin: 0; color: #4b5969; font-size: 12px; }
+    .sheet-callout strong { display: block; color: var(--ink); font-size: 12px; }
+    .studio-caption { position: relative; display: flex; align-items: center; justify-content: space-between; margin-top: 18px; color: #b8c6d5; font-size: 11px; }
+
+    .proof-strip { color: white; background: var(--navy); }
+    .proof-grid { min-height: 94px; display: grid; grid-template-columns: repeat(4, 1fr); align-items: stretch; }
+    .proof-item { display: flex; align-items: center; gap: 13px; padding: 20px 28px; border-right: 1px solid rgba(255,255,255,.12); }
+    .proof-item:first-child { padding-left: 0; }
+    .proof-item:last-child { border-right: 0; }
+    .proof-icon { width: 34px; height: 34px; display: grid; place-items: center; color: #ff9a68; border: 1px solid rgba(255,255,255,.18); border-radius: 9px; }
+    .proof-item strong { display: block; font-size: 13px; }
+    .proof-item span { color: #aebdcd; font-size: 11px; }
+
+    .section { padding: 104px 0; }
+    .section-white { background: white; }
+    .section-head { display: flex; align-items: end; justify-content: space-between; gap: 40px; margin-bottom: 46px; }
+    .section-head h2 { max-width: 720px; margin: 0; font-size: clamp(34px, 4vw, 52px); line-height: 1.06; letter-spacing: -.045em; }
+    .section-head p { max-width: 430px; margin: 0; color: var(--muted); line-height: 1.75; }
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--line-dark); }
+    .step { position: relative; padding: 32px 42px 12px 0; }
+    .step:not(:last-child) { border-right: 1px solid var(--line); }
+    .step:not(:first-child) { padding-left: 42px; }
+    .step-number { color: var(--orange); font-size: 13px; font-weight: 850; letter-spacing: .1em; }
+    .step h3 { margin: 38px 0 12px; font-size: 22px; letter-spacing: -.025em; }
+    .step p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.75; }
+
+    .access-panel { display: grid; grid-template-columns: .95fr 1.05fr; overflow: hidden; color: white; background: var(--navy); border-radius: 18px; box-shadow: var(--shadow); }
+    .access-copy { padding: 62px; }
+    .access-copy .eyebrow { color: #ff9a68; }
+    .access-copy h2 { margin: 0 0 20px; font-size: 42px; line-height: 1.08; letter-spacing: -.04em; }
+    .access-copy > p { margin: 0; color: #bdc9d6; line-height: 1.8; }
+    .access-list { display: grid; gap: 15px; margin: 30px 0 0; padding: 0; list-style: none; }
+    .access-list li { display: flex; align-items: flex-start; gap: 11px; color: #edf3f8; font-size: 14px; }
+    .check { width: 21px; height: 21px; flex: none; display: grid; place-items: center; color: var(--navy); background: #ff9a68; border-radius: 6px; font-size: 12px; font-weight: 900; }
+    .access-status { display: grid; place-items: center; padding: 50px; color: var(--ink); background: #e9e5dc; }
+    .status-window { width: 100%; max-width: 430px; background: white; border: 1px solid #d5d9dc; border-radius: 12px; box-shadow: 0 18px 42px rgba(12,26,43,.12); }
+    .window-top { display: flex; align-items: center; gap: 6px; padding: 13px 15px; border-bottom: 1px solid var(--line); }
+    .window-top i { width: 7px; height: 7px; border-radius: 50%; background: #c4cbd2; }
+    .window-body { padding: 26px; }
+    .window-body .badge { margin-bottom: 16px; }
+    .window-body h3 { margin: 0; font-size: 22px; letter-spacing: -.03em; }
+    .window-body > p { margin: 8px 0 24px; color: var(--muted); font-size: 13px; }
+    .timeline-mini { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
+    .timeline-mini span { height: 6px; background: var(--soft); border-radius: 3px; }
+    .timeline-mini span.done { background: var(--green); }
+    .timeline-mini span.current { background: var(--orange); }
+    .window-foot { display: flex; justify-content: space-between; margin-top: 18px; color: var(--muted); font-size: 11px; }
+
+    .faq-grid { display: grid; grid-template-columns: .75fr 1.25fr; gap: 80px; }
+    .faq-intro h2 { margin: 0 0 16px; font-size: 42px; letter-spacing: -.04em; }
+    .faq-intro p { color: var(--muted); line-height: 1.75; }
+    .faq-list { border-top: 1px solid var(--line-dark); }
+    details { border-bottom: 1px solid var(--line); }
+    summary { position: relative; padding: 22px 48px 22px 0; font-weight: 750; cursor: pointer; list-style: none; }
+    summary::-webkit-details-marker { display: none; }
+    summary::after { content: "+"; position: absolute; right: 6px; top: 18px; color: var(--orange); font-size: 24px; font-weight: 400; }
+    details[open] summary::after { content: "−"; }
+    details p { max-width: 680px; margin: -6px 0 22px; color: var(--muted); font-size: 14px; line-height: 1.75; }
+    .public-cta { padding: 74px 0; color: white; background: var(--orange); }
+    .cta-inner { display: flex; align-items: center; justify-content: space-between; gap: 40px; }
+    .cta-inner h2 { max-width: 720px; margin: 0; font-size: 40px; line-height: 1.1; letter-spacing: -.04em; }
+    .cta-inner .btn { color: var(--navy); background: white; border-color: white; }
+    .public-footer { padding: 30px 0; color: #b7c3d0; background: #07121f; }
+    .footer-inner { display: flex; align-items: center; justify-content: space-between; gap: 24px; font-size: 12px; }
+    .footer-links { display: flex; gap: 22px; }
+
+    /* Pending */
+    .account-shell { min-height: calc(100vh - 52px); background: #f1f3f5; }
+    .account-top { height: 72px; display: flex; align-items: center; background: white; border-bottom: 1px solid var(--line); }
+    .account-top .container { display: flex; align-items: center; justify-content: space-between; }
+    .account-user { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 13px; }
+    .avatar { width: 34px; height: 34px; display: grid; place-items: center; color: white; background: var(--navy); border-radius: 9px; font-size: 12px; font-weight: 800; }
+    .pending-main { width: min(920px, calc(100% - 40px)); margin: 0 auto; padding: 72px 0 110px; }
+    .pending-title { text-align: center; }
+    .pending-title .status-seal { width: 70px; height: 70px; display: grid; place-items: center; margin: 0 auto 24px; color: var(--amber); background: var(--amber-soft); border: 1px solid #efd39d; border-radius: 18px; }
+    .pending-title h1 { margin: 0; font-size: 38px; letter-spacing: -.04em; }
+    .pending-title p { max-width: 630px; margin: 13px auto 0; color: var(--muted); }
+    .application-card { margin-top: 38px; padding: 32px; background: white; border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 12px 36px rgba(12,26,43,.06); }
+    .app-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; padding-bottom: 26px; border-bottom: 1px solid var(--line); }
+    .app-card-head small { color: var(--muted); }
+    .app-ref { margin-top: 4px; font-size: 17px; font-weight: 850; font-variant-numeric: tabular-nums; }
+    .approval-steps { display: grid; grid-template-columns: repeat(3, 1fr); margin: 32px 0; }
+    .approval-step { position: relative; text-align: center; }
+    .approval-step::before { content: ""; position: absolute; left: calc(-50% + 20px); right: calc(50% + 20px); top: 18px; height: 2px; background: var(--line); }
+    .approval-step:first-child::before { display: none; }
+    .approval-step.done::before, .approval-step.current::before { background: var(--green); }
+    .approval-node { position: relative; z-index: 1; width: 36px; height: 36px; display: grid; place-items: center; margin: 0 auto 10px; color: var(--muted); background: white; border: 2px solid var(--line-dark); border-radius: 50%; font-size: 12px; font-weight: 850; }
+    .approval-step.done .approval-node { color: white; background: var(--green); border-color: var(--green); }
+    .approval-step.current .approval-node { color: var(--amber); background: var(--amber-soft); border-color: #dfad5b; }
+    .approval-step strong { display: block; font-size: 13px; }
+    .approval-step span { color: var(--muted); font-size: 11px; }
+    .pending-notice { display: flex; align-items: flex-start; gap: 13px; padding: 16px; color: #5a410c; background: var(--amber-soft); border: 1px solid #efd39d; border-radius: 10px; font-size: 13px; }
+    .pending-actions { display: flex; justify-content: space-between; gap: 12px; margin-top: 24px; }
+    .pending-help { margin-top: 20px; text-align: center; color: var(--muted); font-size: 12px; }
+
+    /* Portal */
+    .portal { min-height: calc(100vh - 52px); background: #edf0f3; }
+    .portal-layout { min-height: calc(100vh - 52px); display: grid; grid-template-columns: 248px 1fr; }
+    .sidebar { position: sticky; top: 52px; height: calc(100vh - 52px); display: flex; flex-direction: column; padding: 24px 18px; color: white; background: var(--navy); }
+    .sidebar .brand { padding: 0 8px 25px; border-bottom: 1px solid rgba(255,255,255,.11); }
+    .sidebar .brand-mark { background: white; }
+    .sidebar .brand-mark::before { background: var(--navy); box-shadow: 0 7px 0 var(--orange), 0 14px 0 var(--navy); }
+    .sidebar .brand-name strong { color: white; }
+    .sidebar .brand-name span { color: #9fb0c3; }
+    .sidebar-label { margin: 24px 10px 10px; color: #8095ab; font-size: 10px; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
+    .side-nav { display: grid; gap: 4px; }
+    .side-nav button { width: 100%; min-height: 42px; display: flex; align-items: center; gap: 11px; padding: 0 12px; color: #b9c7d5; background: transparent; border: 1px solid transparent; border-radius: 9px; font-size: 13px; font-weight: 650; text-align: left; }
+    .side-nav button:hover { color: white; background: rgba(255,255,255,.06); }
+    .side-nav button.active { color: white; background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.08); }
+    .side-nav button.active::before { content: ""; width: 3px; height: 18px; margin-left: -12px; background: var(--orange); border-radius: 0 2px 2px 0; }
+    .side-nav button.active .icon { margin-left: -2px; }
+    .side-spacer { flex: 1; }
+    .side-company { padding: 15px 12px; border: 1px solid rgba(255,255,255,.11); border-radius: 10px; }
+    .side-company small { color: #8fa2b6; font-size: 10px; text-transform: uppercase; letter-spacing: .08em; }
+    .side-company strong { display: block; margin-top: 4px; font-size: 12px; }
+    .portal-main { min-width: 0; }
+    .portal-topbar { height: 72px; display: flex; align-items: center; justify-content: space-between; padding: 0 34px; background: white; border-bottom: 1px solid var(--line); }
+    .topbar-left { display: flex; align-items: center; gap: 12px; }
+    .mobile-side-toggle { display: none; border: 0; background: transparent; }
+    .crumb { color: var(--muted); font-size: 12px; }
+    .topbar-right { display: flex; align-items: center; gap: 10px; }
+    .language { min-height: 36px; padding: 0 10px; color: var(--ink); background: white; border: 1px solid var(--line); border-radius: 8px; font-size: 12px; font-weight: 750; }
+    .user-chip { display: flex; align-items: center; gap: 10px; padding-left: 10px; border-left: 1px solid var(--line); }
+    .user-copy strong { display: block; font-size: 12px; }
+    .user-copy span { color: var(--muted); font-size: 10px; }
+    .portal-content { padding: 32px 34px 60px; }
+    .page-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; margin-bottom: 26px; }
+    .page-head h1 { margin: 0; font-size: 28px; letter-spacing: -.035em; }
+    .page-head p { margin: 7px 0 0; color: var(--muted); font-size: 13px; }
+    .page-actions { display: flex; gap: 8px; }
+    .task-banner { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 24px; padding: 24px; color: white; background: var(--navy); border-radius: 14px; box-shadow: 0 12px 32px rgba(16,35,62,.15); }
+    .task-banner .badge { margin-bottom: 12px; color: #ffd0ba; background: rgba(242,103,42,.16); }
+    .task-banner h2 { margin: 0; font-size: 21px; letter-spacing: -.025em; }
+    .task-banner p { margin: 6px 0 0; color: #b6c4d3; font-size: 13px; }
+    .task-banner .btn { min-width: 160px; }
+    .metric-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 16px; }
+    .metric-card { padding: 20px; background: white; border: 1px solid var(--line); border-radius: 12px; }
+    .metric-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .metric-icon { width: 36px; height: 36px; display: grid; place-items: center; color: var(--navy); background: var(--soft); border-radius: 9px; }
+    .metric-card small { color: var(--muted); font-size: 11px; }
+    .metric-card strong { display: block; margin-top: 14px; font-size: 24px; letter-spacing: -.03em; }
+    .metric-card p { margin: 4px 0 0; color: var(--muted); font-size: 11px; }
+    .dashboard-grid { display: grid; grid-template-columns: 1.15fr .85fr; gap: 16px; margin-top: 16px; }
+    .panel-card { background: white; border: 1px solid var(--line); border-radius: 12px; }
+    .panel-card-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 20px; border-bottom: 1px solid var(--line); }
+    .panel-card-head h2 { margin: 0; font-size: 15px; }
+    .text-link { color: var(--blue); background: none; border: 0; font-size: 12px; font-weight: 750; }
+    .activity-list { padding: 4px 20px; }
+    .activity { display: grid; grid-template-columns: 34px 1fr auto; align-items: center; gap: 12px; padding: 15px 0; border-bottom: 1px solid var(--line); }
+    .activity:last-child { border-bottom: 0; }
+    .activity-icon { width: 34px; height: 34px; display: grid; place-items: center; color: var(--navy); background: var(--soft); border-radius: 8px; }
+    .activity strong { display: block; font-size: 12px; }
+    .activity p { margin: 2px 0 0; color: var(--muted); font-size: 11px; }
+    .activity time { color: var(--muted); font-size: 10px; }
+    .work-list { padding: 5px 20px 15px; }
+    .work-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 15px 0; border-bottom: 1px solid var(--line); }
+    .work-item:last-child { border-bottom: 0; }
+    .work-item strong { display: block; font-size: 12px; }
+    .work-item span { color: var(--muted); font-size: 10px; }
+
+    .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 14px; }
+    .tabs { display: flex; gap: 4px; padding: 3px; background: #dfe4e9; border-radius: 9px; }
+    .tabs button { min-height: 33px; padding: 0 12px; color: var(--muted); background: transparent; border: 0; border-radius: 7px; font-size: 12px; font-weight: 750; }
+    .tabs button.active { color: var(--ink); background: white; box-shadow: 0 1px 3px rgba(12,26,43,.08); }
+    .search-box { min-width: 230px; min-height: 40px; padding: 0 12px; background: white; border: 1px solid var(--line-dark); border-radius: 9px; }
+    .list-card { overflow: hidden; background: white; border: 1px solid var(--line); border-radius: 12px; }
+    .list-row { display: grid; grid-template-columns: 1.55fr .7fr .72fr .7fr auto; align-items: center; gap: 14px; padding: 17px 20px; border-bottom: 1px solid var(--line); }
+    .list-row:last-child { border-bottom: 0; }
+    .list-row.header { min-height: 42px; padding-top: 10px; padding-bottom: 10px; color: var(--muted); background: #f8f9fa; font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+    .list-main strong { display: block; font-size: 13px; }
+    .list-main span { color: var(--muted); font-size: 11px; }
+    .list-cell { color: #394a5d; font-size: 12px; }
+    .offer-summary { display: grid; grid-template-columns: 1fr auto; gap: 20px; padding: 22px; background: white; border: 1px solid var(--line); border-radius: 12px; }
+    .offer-summary h2 { margin: 0; font-size: 20px; }
+    .offer-meta { display: flex; flex-wrap: wrap; gap: 14px 22px; margin-top: 12px; color: var(--muted); font-size: 11px; }
+    .offer-meta strong { color: var(--ink); }
+    .offer-summary-side { text-align: right; }
+    .offer-summary-side strong { display: block; margin-top: 8px; font-size: 18px; }
+    .intent-progress { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 14px 0; padding: 13px 16px; color: #5b420e; background: var(--amber-soft); border: 1px solid #eed39d; border-radius: 10px; font-size: 12px; }
+    .offer-products { display: grid; gap: 10px; }
+    .offer-product { display: grid; grid-template-columns: 58px minmax(190px, 1fr) 120px 1.45fr; align-items: center; gap: 16px; padding: 16px; background: white; border: 1px solid var(--line); border-radius: 12px; }
+    .offer-product .product-tile { width: 58px; height: 58px; }
+    .offer-product h3 { margin: 0; font-size: 13px; }
+    .offer-product p { margin: 3px 0 0; color: var(--muted); font-size: 11px; }
+    .price { font-size: 14px; font-weight: 850; text-align: right; }
+    .price span { display: block; color: var(--muted); font-size: 9px; font-weight: 600; }
+    .intent-group { display: flex; gap: 5px; justify-content: flex-end; }
+    .intent { min-height: 34px; padding: 0 9px; color: var(--muted); background: white; border: 1px solid var(--line-dark); border-radius: 7px; font-size: 10px; font-weight: 750; }
+    .intent[data-value="yes"].selected { color: var(--green); background: var(--green-soft); border-color: #93cdb7; }
+    .intent[data-value="maybe"].selected { color: var(--amber); background: var(--amber-soft); border-color: #e0bd79; }
+    .intent[data-value="no"].selected { color: var(--red); background: var(--red-soft); border-color: #e7aaa5; }
+    .intent-extra { display: flex; gap: 6px; margin-top: 7px; justify-content: flex-end; }
+    .intent-extra input { width: 68px; min-height: 31px; padding: 0 8px; border: 1px solid var(--line); border-radius: 7px; font-size: 10px; }
+    .intent-extra input:last-child { width: 120px; }
+    .declaration { display: grid; grid-template-columns: auto 1fr auto; align-items: flex-start; gap: 12px; margin-top: 14px; padding: 18px; background: white; border: 1px solid var(--line); border-radius: 12px; }
+    .declaration input { width: 18px; height: 18px; accent-color: var(--orange); }
+    .declaration p { margin: 0; color: #4d5d6e; font-size: 12px; line-height: 1.65; }
+    .declaration strong { color: var(--ink); }
+
+    .request-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .request-card { padding: 18px; background: white; border: 1px solid var(--line); border-radius: 12px; }
+    .request-card-top { display: flex; justify-content: space-between; gap: 10px; }
+    .request-card h3 { margin: 16px 0 6px; font-size: 14px; }
+    .request-card p { min-height: 42px; margin: 0; color: var(--muted); font-size: 11px; }
+    .request-card-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 18px; padding-top: 13px; border-top: 1px solid var(--line); color: var(--muted); font-size: 10px; }
+    .request-ref { font-variant-numeric: tabular-nums; }
+    .upload-card { padding: 28px; background: white; border: 1px solid var(--line); border-radius: 12px; }
+    .upload-zone { display: grid; place-items: center; min-height: 210px; padding: 24px; text-align: center; border: 1px dashed #aeb9c5; border-radius: 11px; background: #fafbfc; }
+    .upload-zone .metric-icon { margin-bottom: 12px; }
+    .upload-zone strong { display: block; font-size: 13px; }
+    .upload-zone p { margin: 5px 0 14px; color: var(--muted); font-size: 11px; }
+    .upload-zone input { display: none; }
+    .receipt-list { margin-top: 16px; }
+    .doc-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+    .doc-card { display: grid; grid-template-columns: 42px 1fr auto; align-items: center; gap: 13px; padding: 18px; background: white; border: 1px solid var(--line); border-radius: 11px; }
+    .doc-card h3 { margin: 0; font-size: 12px; }
+    .doc-card p { margin: 3px 0 0; color: var(--muted); font-size: 10px; }
+    .history-line { position: relative; display: grid; grid-template-columns: 100px 24px 1fr; gap: 12px; padding-bottom: 25px; }
+    .history-line::after { content: ""; position: absolute; left: 111px; top: 22px; bottom: 0; width: 1px; background: var(--line-dark); }
+    .history-line:last-child::after { display: none; }
+    .history-time { color: var(--muted); font-size: 10px; text-align: right; }
+    .history-node { position: relative; z-index: 1; width: 12px; height: 12px; margin-top: 3px; background: white; border: 3px solid var(--orange); border-radius: 50%; }
+    .history-copy { padding: 14px 16px; background: white; border: 1px solid var(--line); border-radius: 10px; }
+    .history-copy strong { display: block; font-size: 12px; }
+    .history-copy p { margin: 3px 0 0; color: var(--muted); font-size: 10px; }
+
+    /* Dialogs */
+    .dialog-wrap { position: fixed; inset: 0; z-index: 120; display: grid; place-items: center; padding: 24px; background: rgba(4,12,22,.62); backdrop-filter: blur(6px); }
+    .dialog { width: min(520px, 100%); max-height: calc(100vh - 48px); overflow: auto; background: white; border-radius: 16px; box-shadow: 0 30px 90px rgba(0,0,0,.26); }
+    .dialog-wide { width: min(760px, 100%); }
+    .dialog-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; padding: 24px 26px 18px; border-bottom: 1px solid var(--line); }
+    .dialog-head h2 { margin: 0; font-size: 22px; letter-spacing: -.03em; }
+    .dialog-head p { margin: 5px 0 0; color: var(--muted); font-size: 12px; }
+    .close { width: 36px; height: 36px; display: grid; place-items: center; color: var(--muted); background: white; border: 1px solid var(--line); border-radius: 9px; font-size: 20px; }
+    .dialog-body { padding: 24px 26px 26px; }
+    .field { display: grid; gap: 7px; margin-bottom: 15px; }
+    .field label { font-size: 12px; font-weight: 750; }
+    .field label span { color: var(--muted); font-weight: 500; }
+    .field input, .field select, .field textarea { width: 100%; min-height: 44px; padding: 10px 12px; color: var(--ink); background: white; border: 1px solid var(--line-dark); border-radius: 9px; }
+    .field textarea { min-height: 92px; resize: vertical; }
+    .field-help { margin: -3px 0 0; color: var(--muted); font-size: 10px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .password-wrap { position: relative; }
+    .password-wrap input { padding-right: 72px; }
+    .password-toggle { position: absolute; right: 7px; top: 6px; min-height: 32px; padding: 0 8px; color: var(--blue); background: transparent; border: 0; font-size: 11px; font-weight: 750; }
+    .form-meta { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin: 4px 0 20px; font-size: 11px; }
+    .checkbox { display: inline-flex; align-items: center; gap: 7px; color: var(--muted); }
+    .checkbox input { accent-color: var(--orange); }
+    .form-link { color: var(--blue); background: none; border: 0; padding: 0; font-size: 11px; font-weight: 750; }
+    .form-submit { width: 100%; }
+    .form-divider { display: flex; align-items: center; gap: 12px; margin: 20px 0; color: var(--muted); font-size: 10px; }
+    .form-divider::before, .form-divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+    .form-foot { text-align: center; color: var(--muted); font-size: 11px; }
+    .form-foot button { color: var(--blue); background: none; border: 0; padding: 0; font-weight: 750; }
+    .register-progress { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 16px 26px; background: #f8f9fa; border-bottom: 1px solid var(--line); }
+    .reg-step { height: 5px; background: var(--line); border-radius: 3px; }
+    .reg-step.active, .reg-step.done { background: var(--orange); }
+    .step-label { display: flex; justify-content: space-between; margin-bottom: 20px; }
+    .step-label span { color: var(--muted); font-size: 11px; }
+    .step-label strong { font-size: 12px; }
+    .form-actions { display: flex; justify-content: space-between; gap: 10px; margin-top: 22px; }
+    .notice { padding: 13px 14px; color: #445365; background: var(--soft); border-radius: 9px; font-size: 11px; line-height: 1.65; }
+    .notice a { color: var(--blue); font-weight: 700; }
+    .success-state { text-align: center; padding: 10px 0 4px; }
+    .success-state .status-seal { width: 62px; height: 62px; display: grid; place-items: center; margin: 0 auto 18px; color: var(--green); background: var(--green-soft); border-radius: 16px; }
+    .success-state h3 { margin: 0; font-size: 21px; }
+    .success-state p { margin: 8px auto 20px; color: var(--muted); font-size: 12px; line-height: 1.65; }
+    .toast { position: fixed; right: 24px; bottom: 24px; z-index: 150; display: flex; align-items: flex-start; gap: 11px; width: min(380px, calc(100% - 48px)); padding: 15px 16px; color: white; background: #102d24; border: 1px solid rgba(255,255,255,.16); border-radius: 11px; box-shadow: var(--shadow); transform: translateY(20px); opacity: 0; pointer-events: none; transition: .22s ease; }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast strong { display: block; font-size: 12px; }
+    .toast span { display: block; margin-top: 2px; color: #c7d8d1; font-size: 10px; }
+
+    @media (max-width: 1050px) {
+      .nav-links { display: none; }
+      .hero-grid { grid-template-columns: 1fr; gap: 52px; }
+      .request-studio { max-width: 720px; }
+      .proof-grid { grid-template-columns: repeat(2, 1fr); }
+      .proof-item:nth-child(2) { border-right: 0; }
+      .proof-item:first-child { padding-left: 28px; }
+      .access-panel { grid-template-columns: 1fr; }
+      .faq-grid { grid-template-columns: 1fr; gap: 42px; }
+      .portal-layout { grid-template-columns: 82px 1fr; }
+      .sidebar { padding-inline: 12px; }
+      .sidebar .brand-name, .sidebar-label, .side-nav button span, .side-company { display: none; }
+      .sidebar .brand { justify-content: center; padding-inline: 0; }
+      .side-nav button { justify-content: center; padding: 0; }
+      .side-nav button.active::before { position: absolute; left: 12px; margin: 0; }
+      .offer-product { grid-template-columns: 58px 1fr 100px; }
+      .intent-wrap { grid-column: 1 / -1; }
+      .intent-group, .intent-extra { justify-content: flex-start; }
+    }
+
+    @media (max-width: 760px) {
+      .demo-bar { align-items: flex-start; flex-direction: column; padding: 9px 12px; }
+      .demo-switch { width: 100%; overflow-x: auto; }
+      .demo-switch button { flex: 1; white-space: nowrap; }
+      .container { width: min(100% - 28px, var(--max)); }
+      .public-nav { height: 66px; }
+      .nav-actions .btn-quiet, .nav-actions .btn-primary { display: none; }
+      .mobile-menu { display: block; }
+      .hero { padding: 62px 0 50px; }
+      .hero h1 { font-size: 47px; }
+      .hero-copy > p:not(.eyebrow) { font-size: 16px; }
+      .request-studio { min-height: auto; padding: 14px; }
+      .request-sheet { padding: 15px; }
+      .proof-grid { grid-template-columns: 1fr; }
+      .proof-item, .proof-item:first-child { padding: 17px 14px; border-right: 0; border-bottom: 1px solid rgba(255,255,255,.1); }
+      .section { padding: 72px 0; }
+      .section-head { align-items: flex-start; flex-direction: column; gap: 16px; }
+      .steps { grid-template-columns: 1fr; }
+      .step, .step:not(:first-child) { padding: 28px 0; border-right: 0; border-bottom: 1px solid var(--line); }
+      .step h3 { margin-top: 18px; }
+      .access-copy, .access-status { padding: 34px 24px; }
+      .access-copy h2 { font-size: 34px; }
+      .faq-grid { gap: 30px; }
+      .cta-inner, .footer-inner { align-items: flex-start; flex-direction: column; }
+      .cta-inner h2 { font-size: 32px; }
+      .pending-main { padding-top: 50px; }
+      .application-card { padding: 22px 16px; }
+      .app-card-head, .pending-actions { align-items: flex-start; flex-direction: column; }
+      .approval-step span { display: none; }
+      .portal-layout { display: block; }
+      .sidebar { position: fixed; z-index: 90; left: 0; top: 0; width: 248px; height: 100vh; padding: 22px 18px; transform: translateX(-100%); transition: transform .2s ease; }
+      .sidebar.open { transform: translateX(0); }
+      .sidebar .brand-name, .sidebar-label, .side-nav button span, .side-company { display: initial; }
+      .sidebar .brand-name { display: grid; }
+      .side-nav button { justify-content: flex-start; padding: 0 12px; }
+      .side-nav button.active::before { position: static; margin-left: -12px; }
+      .mobile-side-toggle { display: grid; place-items: center; width: 36px; height: 36px; }
+      .portal-topbar { padding: 0 14px; }
+      .user-copy, .language { display: none; }
+      .portal-content { padding: 24px 14px 50px; }
+      .page-head { align-items: flex-start; flex-direction: column; }
+      .task-banner { grid-template-columns: 1fr; }
+      .metric-row, .dashboard-grid, .request-grid, .doc-grid { grid-template-columns: 1fr; }
+      .toolbar { align-items: stretch; flex-direction: column; }
+      .search-box { min-width: 0; width: 100%; }
+      .list-row { grid-template-columns: 1fr auto; }
+      .list-row.header, .list-cell.hide-mobile { display: none; }
+      .offer-summary { grid-template-columns: 1fr; }
+      .offer-summary-side { text-align: left; }
+      .offer-product { grid-template-columns: 50px 1fr; }
+      .offer-product .product-tile { width: 50px; height: 50px; }
+      .price { text-align: left; }
+      .intent-wrap { grid-column: 1 / -1; }
+      .declaration { grid-template-columns: auto 1fr; }
+      .declaration .btn { grid-column: 1 / -1; }
+      .history-line { grid-template-columns: 70px 20px 1fr; }
+      .history-line::after { left: 79px; }
+      .form-row { grid-template-columns: 1fr; gap: 0; }
+      .dialog-wrap { padding: 12px; }
+      .dialog { max-height: calc(100vh - 24px); }
+      .dialog-head, .dialog-body { padding-left: 18px; padding-right: 18px; }
+      .footer-links { flex-wrap: wrap; }
+    }
+  </style>
+</head>
+<body>
+  <svg width="0" height="0" aria-hidden="true" style="position:absolute">
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6zM14 3v5h5M9 13h6M9 17h4"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v6l4 2"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 4.5 6v5.5c0 4.6 3.2 7.8 7.5 9.5 4.3-1.7 7.5-4.9 7.5-9.5V6z"/><path d="m8.5 12 2.2 2.2 4.8-5"/></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="m3 11 9-8 9 8M5 10v11h14V10M9 21v-7h6v7"/></symbol>
+    <symbol id="i-box" viewBox="0 0 24 24"><path d="m4 7 8-4 8 4-8 4zM4 7v10l8 4 8-4V7M12 11v10"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M4 15v5h16v-5"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v12M7 11l5 5 5-5M4 20h16"/></symbol>
+    <symbol id="i-history" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.3-5.7L4 8.5M4 4v4.5h4.5M12 8v5l3 2"/></symbol>
+    <symbol id="i-receipt" viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6M9 16h4"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></symbol>
+  </svg>
+
+  <header class="demo-bar" aria-label="Demo görünüm seçicisi">
+    <div class="demo-note"><span class="live-dot"></span><strong>Kavram demosu</strong><span>Gerçek veri, üyelik veya ödeme işlemi yapmaz.</span></div>
+    <nav class="demo-switch" aria-label="Sahne seç">
+      <button class="active" data-scene="landing">Tanıtım</button>
+      <button data-scene="pending">Onay bekliyor</button>
+      <button data-scene="portal">Onaylı panel</button>
+    </nav>
+  </header>
+
+  <main id="landing" class="landing scene">
+    <nav class="public-nav" aria-label="Ana menü">
+      <div class="container nav-inner">
+        <a class="brand" href="#" aria-label="TedarikApp ana sayfa">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <span class="brand-name"><strong>TedarikApp</strong><span>Tilbe Home B2B</span></span>
+        </a>
+        <div class="nav-links">
+          <a href="#nasil">Nasıl çalışır</a>
+          <a href="#guven">Güvenli erişim</a>
+          <a href="#sss">Sık sorulanlar</a>
+        </div>
+        <div class="nav-actions">
+          <button class="btn btn-quiet btn-sm" data-open="loginDialog">Giriş yap</button>
+          <button class="btn btn-primary btn-sm" data-open="registerDialog">İşletme hesabı oluştur</button>
+          <button class="mobile-menu" aria-label="Menüyü aç" data-open="registerDialog"><svg class="icon"><use href="#i-menu"/></svg></button>
+        </div>
+      </div>
+    </nav>
+
+    <section class="hero">
+      <div class="container hero-grid">
+        <div class="hero-copy">
+          <p class="eyebrow">İşletmelere özel tedarik masası</p>
+          <h1>İstediğiniz ürünü Çin'den <em>sizin için</em> getirelim.</h1>
+          <p>Ürün linkini, fotoğrafını veya kısa tarifini paylaşın. Ekibimiz tedarik ve ithalat seçeneklerini çalışsın; size özel teklifinizi güvenli hesabınızdan inceleyin.</p>
+          <div class="hero-actions">
+            <button class="btn btn-primary" data-open="registerDialog">İşletme hesabı oluştur <svg class="icon"><use href="#i-arrow"/></svg></button>
+            <a class="btn btn-secondary" href="#nasil">Nasıl çalıştığını gör</a>
+          </div>
+          <div class="hero-footnote"><svg class="icon"><use href="#i-lock"/></svg> Fiyatlar ve teklifler yalnız onaylı işletme hesaplarına açılır.</div>
+        </div>
+
+        <div class="request-studio" aria-label="İstek listesi önizlemesi">
+          <div class="studio-top"><strong>Özel istek masası</strong><span class="secure-chip"><svg class="icon" style="width:14px"><use href="#i-shield"/></svg> İşletme erişimi</span></div>
+          <div class="request-sheet">
+            <div class="sheet-head">
+              <div><small>Taslak istek listesi</small><strong>Sonbahar ürün araştırması</strong></div>
+              <span class="sheet-ref">3 ürün</span>
+            </div>
+            <div class="product-lines">
+              <div class="product-line"><span class="product-tile">AYD</span><div><strong>Dekoratif masa lambası</strong><span>Fotoğraf ve ölçü eklendi</span></div><span class="qty">× 120</span></div>
+              <div class="product-line"><span class="product-tile">ORG</span><div><strong>Bambu çekmece düzenleyici</strong><span>Ürün linki eklendi</span></div><span class="qty">× 240</span></div>
+              <div class="product-line"><span class="product-tile">TXT</span><div><strong>Pamuklu mutfak tekstili</strong><span>Renk notu eklendi</span></div><span class="qty">× 400</span></div>
+            </div>
+            <div class="sheet-callout"><p><strong>Bir linkiniz olmak zorunda değil.</strong> Fotoğraf ve kısa açıklama da yeterli.</p><svg class="icon" style="color:var(--orange)"><use href="#i-arrow"/></svg></div>
+          </div>
+          <div class="studio-caption"><span>Kaynak site otomatik çekilmez</span><span>Teklif size özel hazırlanır</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="proof-strip" aria-label="Hizmet özellikleri">
+      <div class="container proof-grid">
+        <div class="proof-item"><span class="proof-icon"><svg class="icon"><use href="#i-shield"/></svg></span><div><strong>Onaylı işletme erişimi</strong><span>Ticari içerik halka açık değildir</span></div></div>
+        <div class="proof-item"><span class="proof-icon"><svg class="icon"><use href="#i-list"/></svg></span><div><strong>Size özel teklif</strong><span>İhtiyacınıza göre hazırlanır</span></div></div>
+        <div class="proof-item"><span class="proof-icon"><svg class="icon"><use href="#i-file"/></svg></span><div><strong>Belgeli süreç</strong><span>Teklif ve geçmiş tek yerde</span></div></div>
+        <div class="proof-item"><span class="proof-icon"><svg class="icon"><use href="#i-receipt"/></svg></span><div><strong>Ödeme alınmaz</strong><span>Yalnız dekont bildirimi yapılır</span></div></div>
+      </div>
+    </section>
+
+    <section id="nasil" class="section section-white">
+      <div class="container">
+        <div class="section-head"><div><p class="eyebrow">Üç adımda başlayın</p><h2>Aradığınız ürünü anlatın; tedarik sürecini birlikte netleştirelim.</h2></div><p>Klasik katalog ve sepet yerine, işletmenize özel çalışan kontrollü bir ön sipariş deneyimi.</p></div>
+        <div class="steps">
+          <article class="step"><span class="step-number">01 / BAŞVURU</span><h3>İşletmenizi tanıtın</h3><p>Kısa işletme hesabı başvurusunu tamamlayın. Ekibimiz hesabınızı inceledikten sonra ticari çalışma alanınız açılır.</p></article>
+          <article class="step"><span class="step-number">02 / İSTEK</span><h3>Listenizi bırakın</h3><p>Ürün linkini, fotoğrafını, miktarı ve beklentinizi paylaşın. Sunucu herhangi bir siteden otomatik veri çekmez.</p></article>
+          <article class="step"><span class="step-number">03 / TEKLİF</span><h3>Teklifinizi değerlendirin</h3><p>Size gönderilen listeyi inceleyin; ürün bazında ilginizi, miktarı ve notunuzu niyet beyanıyla bildirin.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section id="guven" class="section">
+      <div class="container access-panel">
+        <div class="access-copy">
+          <p class="eyebrow">Korunan ticari alan</p>
+          <h2>Herkes başvurabilir. Herkes fiyat göremez.</h2>
+          <p>Başvuru herkese açıktır; ürünler, fiyatlar, teklifler ve belgeler yalnız doğrulanmış ve onaylanmış işletme hesabına açılır.</p>
+          <ul class="access-list">
+            <li><span class="check">✓</span><span>Onay öncesinde örnek veya bulanık fiyat dahi gösterilmez.</span></li>
+            <li><span class="check">✓</span><span>Her şirket yalnız kendisine atanmış liste ve belgeleri görür.</span></li>
+            <li><span class="check">✓</span><span>Maliyet, kâr, kaynak link ve tedarikçi adı müşteri katmanına girmez.</span></li>
+          </ul>
+        </div>
+        <div class="access-status">
+          <div class="status-window">
+            <div class="window-top"><i></i><i></i><i></i></div>
+            <div class="window-body">
+              <span class="badge badge-amber"><span class="dot"></span> İşletme incelemesinde</span>
+              <h3>Başvurunuz güvende.</h3>
+              <p>Onaylanana kadar ticari içerik kapalı kalır. Durumu hesabınızdan takip edebilirsiniz.</p>
+              <div class="timeline-mini"><span class="done"></span><span class="current"></span><span></span></div>
+              <div class="window-foot"><span>E-posta doğrulandı</span><span>İnceleniyor</span><span>Sonuç</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="sss" class="section section-white">
+      <div class="container faq-grid">
+        <div class="faq-intro"><p class="eyebrow">Sık sorulanlar</p><h2>Başlamadan önce.</h2><p>Özel tedarik sürecinin sınırları ve hesap erişimi hakkında kısa yanıtlar.</p></div>
+        <div class="faq-list">
+          <details open><summary>Hesap açınca fiyatları hemen görebilir miyim?</summary><p>Hayır. E-posta doğrulamasından sonra işletme başvurunuz incelenir. Ürün, fiyat, teklif ve belgeler yalnız hesap onaylandığında açılır.</p></details>
+          <details><summary>Ürün linkim yoksa istek gönderebilir miyim?</summary><p>Evet. Fotoğraf ve açıklama ile istek oluşturabilirsiniz. Miktar, ölçü, renk veya kullanım alanı gibi notlar teklif çalışmasını kolaylaştırır.</p></details>
+          <details><summary>Panelden ödeme yapabilir miyim?</summary><p>Hayır. Panelde sanal POS veya tahsilat yoktur. Dışarıda yapılan kapora ödemesi için yalnız dekont bildirimi gönderilebilir.</p></details>
+          <details><summary>Teklif yanıtı kesin sipariş anlamına gelir mi?</summary><p>Hayır. Ürün yanıtları ön sipariş değerlendirmesi için ticari niyet beyanıdır. Kesin koşullar ayrıca teyit edilir.</p></details>
+        </div>
+      </div>
+    </section>
+
+    <section class="public-cta"><div class="container cta-inner"><h2>Bir sonraki ürün fikrinizi, tedarik edilebilir bir listeye dönüştürelim.</h2><button class="btn" data-open="registerDialog">İşletme hesabı oluştur <svg class="icon"><use href="#i-arrow"/></svg></button></div></section>
+    <footer class="public-footer"><div class="container footer-inner"><span>© 2026 TedarikApp · İşletmelere özel ön sipariş ve tedarik çalışma alanı</span><div class="footer-links"><a href="#">Aydınlatma metni</a><a href="#">Kullanım koşulları</a><a href="#">İletişim</a></div></div></footer>
+  </main>
+
+  <main id="pending" class="account-shell scene" hidden>
+    <header class="account-top"><div class="container"><a class="brand" href="#"><span class="brand-mark"></span><span class="brand-name"><strong>TedarikApp</strong><span>Müşteri portalı</span></span></a><div class="account-user"><span>ornek@atlasmagaza.com</span><span class="avatar">AD</span></div></div></header>
+    <section class="pending-main">
+      <div class="pending-title"><span class="status-seal"><svg class="icon" style="width:30px;height:30px"><use href="#i-clock"/></svg></span><span class="badge badge-amber"><span class="dot"></span> İnceleme sürüyor</span><h1>Başvurunuz alındı.</h1><p>Atlas Mağazacılık işletme hesabı ekibimiz tarafından inceleniyor. Sonuç hesabınızda gösterilecek ve işlemsel e-posta ile bildirilecek.</p></div>
+      <div class="application-card">
+        <div class="app-card-head"><div><small>Başvuru referansı</small><div class="app-ref">B2B-2608-1048</div></div><span class="badge badge-neutral">Gönderim: 28 Ağustos 2026</span></div>
+        <div class="approval-steps">
+          <div class="approval-step done"><span class="approval-node">✓</span><strong>E-posta</strong><span>Doğrulandı</span></div>
+          <div class="approval-step current"><span class="approval-node">2</span><strong>İşletme incelemesi</strong><span>Devam ediyor</span></div>
+          <div class="approval-step"><span class="approval-node">3</span><strong>Hesap erişimi</strong><span>Sonuç bekleniyor</span></div>
+        </div>
+        <div class="pending-notice"><svg class="icon"><use href="#i-lock"/></svg><div><strong>Ürün ve fiyatlar henüz kapalı.</strong><br>Hesabınız onaylanana kadar hiçbir teklif, ürün, fiyat veya belge gösterilmez.</div></div>
+        <div class="pending-actions"><button class="btn btn-secondary">Başvuru bilgilerini görüntüle</button><button class="btn btn-dark" data-scene-jump="portal">Onaylı paneli demoda gör</button></div>
+      </div>
+      <p class="pending-help">Başvurunuzla ilgili sorunuz mu var? Referans numaranızla <a href="#">destek ekibine ulaşın</a>.</p>
+    </section>
+  </main>
+
+  <main id="portal" class="portal scene" hidden>
+    <div class="portal-layout">
+      <aside class="sidebar" id="sidebar">
+        <a class="brand" href="#"><span class="brand-mark"></span><span class="brand-name"><strong>TedarikApp</strong><span>Müşteri portalı</span></span></a>
+        <div class="sidebar-label">Çalışma alanı</div>
+        <nav class="side-nav" aria-label="Müşteri paneli menüsü">
+          <button class="active" data-panel-target="dashboard"><svg class="icon"><use href="#i-home"/></svg><span>Genel Bakış</span></button>
+          <button data-panel-target="offers"><svg class="icon"><use href="#i-list"/></svg><span>Teklifler</span></button>
+          <button data-panel-target="requests"><svg class="icon"><use href="#i-box"/></svg><span>İstek Listelerim</span></button>
+          <button data-panel-target="receipts"><svg class="icon"><use href="#i-receipt"/></svg><span>Dekontlar</span></button>
+          <button data-panel-target="documents"><svg class="icon"><use href="#i-file"/></svg><span>Belgeler</span></button>
+          <button data-panel-target="history"><svg class="icon"><use href="#i-history"/></svg><span>Geçmiş</span></button>
+        </nav>
+        <div class="side-spacer"></div>
+        <div class="side-company"><small>Onaylı işletme</small><strong>Atlas Mağazacılık Ltd.</strong><span class="badge badge-green" style="margin-top:9px"><span class="dot"></span> Aktif</span></div>
+      </aside>
+
+      <section class="portal-main">
+        <header class="portal-topbar">
+          <div class="topbar-left"><button class="mobile-side-toggle" id="sideToggle" aria-label="Panel menüsünü aç"><svg class="icon"><use href="#i-menu"/></svg></button><span class="crumb" id="crumb">Genel Bakış</span></div>
+          <div class="topbar-right"><button class="language">TR · Türkçe</button><div class="user-chip"><span class="avatar">AD</span><span class="user-copy"><strong>Ayşe Demir</strong><span>Satın alma yetkilisi</span></span></div></div>
+        </header>
+
+        <div class="portal-content">
+          <section class="portal-panel" data-panel="dashboard">
+            <div class="page-head"><div><h1>Günaydın, Ayşe.</h1><p>Atlas Mağazacılık çalışma alanında bugün sizi bekleyenler.</p></div><button class="btn btn-primary btn-sm" data-open="requestDialog"><svg class="icon"><use href="#i-plus"/></svg> Yeni istek listesi</button></div>
+            <div class="task-banner"><div><span class="badge"><span class="dot"></span> Yanıt bekliyor</span><h2>2026 Sonbahar Koleksiyonu teklifini inceleyin</h2><p>8 üründen 3'ü için niyet seçimi bekliyor · Teklif 2 Eylül 2026 tarihine kadar geçerli</p></div><button class="btn btn-primary" data-panel-jump="offer-detail">Teklifi incele <svg class="icon"><use href="#i-arrow"/></svg></button></div>
+            <div class="metric-row">
+              <article class="metric-card"><div class="metric-top"><small>Aktif teklifler</small><span class="metric-icon"><svg class="icon"><use href="#i-list"/></svg></span></div><strong>2</strong><p>1 liste yanıtınızı bekliyor</p></article>
+              <article class="metric-card"><div class="metric-top"><small>İstek listeleri</small><span class="metric-icon"><svg class="icon"><use href="#i-box"/></svg></span></div><strong>3</strong><p>1 taslak, 2 değerlendirmede</p></article>
+              <article class="metric-card"><div class="metric-top"><small>Dekont durumu</small><span class="metric-icon"><svg class="icon"><use href="#i-receipt"/></svg></span></div><strong>1</strong><p>İnceleme tamamlandı</p></article>
+            </div>
+            <div class="dashboard-grid">
+              <article class="panel-card"><div class="panel-card-head"><h2>Son hareketler</h2><button class="text-link" data-panel-jump="history">Tüm geçmiş</button></div><div class="activity-list">
+                <div class="activity"><span class="activity-icon"><svg class="icon"><use href="#i-file"/></svg></span><div><strong>Yeni teklif paylaşıldı</strong><p>2026 Sonbahar Koleksiyonu · 8 ürün</p></div><time>Bugün, 09:42</time></div>
+                <div class="activity"><span class="activity-icon"><svg class="icon"><use href="#i-check"/></svg></span><div><strong>Dekont doğrulandı</strong><p>DKT-2608-0041 · 72.000,00 TL</p></div><time>Dün, 15:18</time></div>
+                <div class="activity"><span class="activity-icon"><svg class="icon"><use href="#i-box"/></svg></span><div><strong>İstek listeniz değerlendirmede</strong><p>Mutfak düzenleyicileri · 4 ürün</p></div><time>26 Ağu</time></div>
+              </div></article>
+              <article class="panel-card"><div class="panel-card-head"><h2>Devam eden işler</h2><button class="text-link" data-panel-jump="requests">Listelerim</button></div><div class="work-list">
+                <div class="work-item"><div><strong>Mutfak düzenleyicileri</strong><span>4 ürün · değerlendirmede</span></div><span class="badge badge-blue">İnceleniyor</span></div>
+                <div class="work-item"><div><strong>Yeni sezon aydınlatma</strong><span>2 ürün · taslak</span></div><span class="badge badge-neutral">Taslak</span></div>
+                <div class="work-item"><div><strong>Mağaza sarf ürünleri</strong><span>6 ürün · teklif hazır</span></div><span class="badge badge-green">Teklif hazır</span></div>
+              </div></article>
+            </div>
+          </section>
+
+          <section class="portal-panel" data-panel="offers" hidden>
+            <div class="page-head"><div><h1>Teklifler</h1><p>İşletmenize özel gönderilen ön sipariş listeleri.</p></div><div class="page-actions"><button class="btn btn-secondary btn-sm"><svg class="icon"><use href="#i-download"/></svg> Listeyi dışa aktar</button></div></div>
+            <div class="toolbar"><div class="tabs"><button class="active">Aktif · 2</button><button>Yanıtlandı · 4</button><button>Arşiv · 7</button></div><input class="search-box" type="search" placeholder="Teklif ara" aria-label="Teklif ara" /></div>
+            <div class="list-card">
+              <div class="list-row header"><span>Teklif</span><span>Fiyat yapısı</span><span>Geçerlilik</span><span>Durum</span><span></span></div>
+              <div class="list-row"><div class="list-main"><strong>2026 Sonbahar Koleksiyonu</strong><span>TKL-2026-0084 · 8 ürün</span></div><span class="list-cell hide-mobile">TL · KDV dahil</span><span class="list-cell hide-mobile">2 Eyl 2026</span><span class="badge badge-amber"><span class="dot"></span> Yanıt bekliyor</span><button class="btn btn-secondary btn-sm" data-panel-jump="offer-detail">İncele</button></div>
+              <div class="list-row"><div class="list-main"><strong>Mağaza sarf ürünleri</strong><span>TKL-2026-0079 · 6 ürün</span></div><span class="list-cell hide-mobile">USD · KDV hariç</span><span class="list-cell hide-mobile">6 Eyl 2026</span><span class="badge badge-blue"><span class="dot"></span> Yeni</span><button class="btn btn-secondary btn-sm" data-panel-jump="offer-detail">İncele</button></div>
+            </div>
+          </section>
+
+          <section class="portal-panel" data-panel="offer-detail" hidden>
+            <div class="page-head"><div><button class="text-link" data-panel-jump="offers" style="padding:0;margin-bottom:7px">← Tekliflere dön</button><h1>2026 Sonbahar Koleksiyonu</h1><p>Teklif satırları değiştirilemez; yanıtınız ayrı kayıt olarak saklanır.</p></div><button class="btn btn-secondary btn-sm"><svg class="icon"><use href="#i-download"/></svg> PDF indir</button></div>
+            <div class="offer-summary"><div><h2>TKL-2026-0084</h2><div class="offer-meta"><span><strong>8</strong> ürün</span><span><strong>TL</strong> para birimi</span><span><strong>KDV dahil</strong> fiyat</span><span><strong>2 Eylül 2026</strong> geçerlilik</span></div></div><div class="offer-summary-side"><span class="badge badge-amber"><span class="dot"></span> Yanıt bekliyor</span><strong>138.450,00 TL</strong></div></div>
+            <div class="intent-progress"><span><strong id="answeredCount">0 / 3</strong> ürün için niyet seçildi</span><span>Göndermeden önce tüm satırları yanıtlayın.</span></div>
+            <div class="offer-products">
+              <article class="offer-product" data-product><span class="product-tile">AYD</span><div><h3>Dekoratif masa lambası</h3><p>Mat siyah · 32 cm · 120 adet öneri</p></div><div class="price">42.300,00 TL<span>KDV DAHİL</span></div><div class="intent-wrap"><div class="intent-group"><button class="intent" data-value="yes">İlgileniyorum</button><button class="intent" data-value="maybe">Kararsızım</button><button class="intent" data-value="no">İstemiyorum</button></div><div class="intent-extra"><input type="number" min="0" placeholder="Miktar" aria-label="Masa lambası miktarı"><input type="text" placeholder="Kısa not" aria-label="Masa lambası notu"></div></div></article>
+              <article class="offer-product" data-product><span class="product-tile">ORG</span><div><h3>Bambu çekmece düzenleyici</h3><p>Ayarlanabilir · doğal bambu · 240 adet öneri</p></div><div class="price">51.840,00 TL<span>KDV DAHİL</span></div><div class="intent-wrap"><div class="intent-group"><button class="intent" data-value="yes">İlgileniyorum</button><button class="intent" data-value="maybe">Kararsızım</button><button class="intent" data-value="no">İstemiyorum</button></div><div class="intent-extra"><input type="number" min="0" placeholder="Miktar" aria-label="Düzenleyici miktarı"><input type="text" placeholder="Kısa not" aria-label="Düzenleyici notu"></div></div></article>
+              <article class="offer-product" data-product><span class="product-tile">TXT</span><div><h3>Pamuklu mutfak tekstili seti</h3><p>3 parçalı set · naturel tonlar · 400 adet öneri</p></div><div class="price">44.310,00 TL<span>KDV DAHİL</span></div><div class="intent-wrap"><div class="intent-group"><button class="intent" data-value="yes">İlgileniyorum</button><button class="intent" data-value="maybe">Kararsızım</button><button class="intent" data-value="no">İstemiyorum</button></div><div class="intent-extra"><input type="number" min="0" placeholder="Miktar" aria-label="Tekstil miktarı"><input type="text" placeholder="Kısa not" aria-label="Tekstil notu"></div></div></article>
+            </div>
+            <div class="declaration"><input id="intentDeclaration" type="checkbox"><p><label for="intentDeclaration"><strong>Ön sipariş niyet beyanını okudum.</strong> Bu yanıtlar satın alma veya kesin sipariş değildir; ön sipariş değerlendirmesi için ticari niyetimi ve talep miktarlarımı bildirir. Kesin koşullar ayrıca teyit edilir.</label></p><button class="btn btn-primary" id="submitIntent">Liste yanıtını gönder</button></div>
+          </section>
+
+          <section class="portal-panel" data-panel="requests" hidden>
+            <div class="page-head"><div><h1>İstek Listelerim</h1><p>Getirilmesini istediğiniz ürünleri link, fotoğraf veya açıklamayla iletin.</p></div><button class="btn btn-primary btn-sm" data-open="requestDialog"><svg class="icon"><use href="#i-plus"/></svg> Yeni liste</button></div>
+            <div class="request-grid">
+              <article class="request-card"><div class="request-card-top"><span class="product-tile">4</span><span class="badge badge-blue">İnceleniyor</span></div><h3>Mutfak düzenleyicileri</h3><p>Bambu ve metal malzeme seçenekleri; mağaza sergilemesine uygun paket.</p><div class="request-card-foot"><span class="request-ref">IST-2608-032</span><span>26 Ağustos 2026</span></div></article>
+              <article class="request-card"><div class="request-card-top"><span class="product-tile">2</span><span class="badge badge-neutral">Taslak</span></div><h3>Yeni sezon aydınlatma</h3><p>Masa lambası ve şarjlı dekoratif aydınlatma araştırması.</p><div class="request-card-foot"><span class="request-ref">Taslak</span><span>Bugün güncellendi</span></div></article>
+              <article class="request-card"><div class="request-card-top"><span class="product-tile">6</span><span class="badge badge-green">Teklif hazır</span></div><h3>Mağaza sarf ürünleri</h3><p>Etiket, askı aparatı ve paketleme yardımcı ürünleri.</p><div class="request-card-foot"><span class="request-ref">IST-2608-019</span><span>18 Ağustos 2026</span></div></article>
+            </div>
+          </section>
+
+          <section class="portal-panel" data-panel="receipts" hidden>
+            <div class="page-head"><div><h1>Dekontlar</h1><p>Panel ödeme almaz; dışarıda yaptığınız kapora ödemesini bildirirsiniz.</p></div></div>
+            <div class="upload-card">
+              <div class="upload-zone"><span class="metric-icon"><svg class="icon"><use href="#i-upload"/></svg></span><strong>Dekont dosyasını seçin</strong><p>PDF, JPG veya PNG · en fazla 10 MB. Yükleme otomatik ödeme onayı değildir.</p><label class="btn btn-secondary btn-sm" for="receiptFile">Dosya seç</label><input id="receiptFile" type="file" accept=".pdf,.jpg,.jpeg,.png"><span id="fileName" class="field-help" style="margin-top:10px"></span></div>
+              <div class="receipt-list list-card"><div class="list-row header"><span>Dekont</span><span>İlgili teklif</span><span>Tutar</span><span>Durum</span><span></span></div><div class="list-row"><div class="list-main"><strong>DKT-2608-0041</strong><span>27 Ağustos 2026</span></div><span class="list-cell hide-mobile">TKL-2026-0076</span><span class="list-cell hide-mobile">72.000,00 TL</span><span class="badge badge-green">Doğrulandı</span><button class="btn btn-secondary btn-sm">Görüntüle</button></div></div>
+            </div>
+          </section>
+
+          <section class="portal-panel" data-panel="documents" hidden>
+            <div class="page-head"><div><h1>Belgeler</h1><p>İşletmenize açılmış antetli teklif ve liste çıktıları.</p></div><button class="btn btn-secondary btn-sm"><svg class="icon"><use href="#i-download"/></svg> Tümünü indir</button></div>
+            <div class="doc-grid">
+              <article class="doc-card"><span class="metric-icon"><svg class="icon"><use href="#i-file"/></svg></span><div><h3>2026 Sonbahar Koleksiyonu — Teklif</h3><p>PDF · Türkçe · TKL-2026-0084 · 28 Ağu 2026</p></div><button class="btn btn-secondary btn-sm"><svg class="icon"><use href="#i-download"/></svg></button></article>
+              <article class="doc-card"><span class="metric-icon"><svg class="icon"><use href="#i-list"/></svg></span><div><h3>2026 Sonbahar Koleksiyonu — Liste</h3><p>Excel · Türkçe · TKL-2026-0084 · 28 Ağu 2026</p></div><button class="btn btn-secondary btn-sm"><svg class="icon"><use href="#i-download"/></svg></button></article>
+              <article class="doc-card"><span class="metric-icon"><svg class="icon"><use href="#i-file"/></svg></span><div><h3>Mağaza sarf ürünleri — Teklif</h3><p>PDF · Türkçe · TKL-2026-0079 · 25 Ağu 2026</p></div><button class="btn btn-secondary btn-sm"><svg class="icon"><use href="#i-download"/></svg></button></article>
+            </div>
+          </section>
+
+          <section class="portal-panel" data-panel="history" hidden>
+            <div class="page-head"><div><h1>Geçmiş</h1><p>Teklif, istek ve dekont hareketlerinin değişmez zaman çizgisi.</p></div><button class="btn btn-secondary btn-sm">Filtrele</button></div>
+            <div>
+              <div class="history-line"><time class="history-time">Bugün<br>09:42</time><span class="history-node"></span><div class="history-copy"><strong>Yeni teklif paylaşıldı</strong><p>2026 Sonbahar Koleksiyonu · TKL-2026-0084 · 8 ürün</p></div></div>
+              <div class="history-line"><time class="history-time">27 Ağu<br>15:18</time><span class="history-node"></span><div class="history-copy"><strong>Dekont doğrulandı</strong><p>DKT-2608-0041 numaralı bildirimin incelemesi tamamlandı.</p></div></div>
+              <div class="history-line"><time class="history-time">26 Ağu<br>11:06</time><span class="history-node"></span><div class="history-copy"><strong>İstek listesi gönderildi</strong><p>Mutfak düzenleyicileri · IST-2608-032 · 4 ürün</p></div></div>
+              <div class="history-line"><time class="history-time">18 Ağu<br>16:32</time><span class="history-node"></span><div class="history-copy"><strong>Teklif niyeti kaydedildi</strong><p>Mağaza sarf ürünleri listesinde 4 ilgili, 1 kararsız, 1 istemiyor yanıtı.</p></div></div>
+            </div>
+          </section>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <div class="dialog-wrap" id="loginDialog" role="dialog" aria-modal="true" aria-labelledby="loginTitle" hidden>
+    <div class="dialog"><div class="dialog-head"><div><h2 id="loginTitle">İşletme hesabına giriş</h2><p>Onaylı çalışma alanınıza güvenli biçimde erişin.</p></div><button class="close" data-close aria-label="Kapat">×</button></div><form class="dialog-body" onsubmit="return false">
+      <div class="field"><label for="loginEmail">E-posta</label><input id="loginEmail" type="email" value="ornek@atlasmagaza.com" autocomplete="email"></div>
+      <div class="field"><label for="loginPassword">Parola</label><div class="password-wrap"><input id="loginPassword" type="password" value="ornekparola123" autocomplete="current-password"><button class="password-toggle" type="button" data-toggle-password="loginPassword">Göster</button></div></div>
+      <div class="form-meta"><label class="checkbox"><input type="checkbox"> Bu cihazda beni hatırla</label><button class="form-link" type="button" data-open="forgotDialog">Şifremi unuttum</button></div>
+      <button class="btn btn-primary form-submit" type="button" id="demoLogin">Giriş yap</button>
+      <div class="form-divider">veya</div><p class="form-foot">İşletme hesabınız yok mu? <button type="button" data-open="registerDialog">Başvuru oluşturun</button></p>
+    </form></div>
+  </div>
+
+  <div class="dialog-wrap" id="forgotDialog" role="dialog" aria-modal="true" aria-labelledby="forgotTitle" hidden>
+    <div class="dialog"><div class="dialog-head"><div><h2 id="forgotTitle">Parolanızı sıfırlayın</h2><p>Hesabınız varsa güvenli bağlantıyı e-postanıza göndeririz.</p></div><button class="close" data-close aria-label="Kapat">×</button></div><div class="dialog-body" id="forgotForm">
+      <div class="field"><label for="forgotEmail">E-posta</label><input id="forgotEmail" type="email" placeholder="ornek@isletmeniz.com" autocomplete="email"></div><button class="btn btn-primary form-submit" id="sendReset">Sıfırlama bağlantısı iste</button><p class="form-foot" style="margin-top:16px">Hesabın varlığını korumak için her durumda aynı güvenli yanıt gösterilir.</p>
+    </div><div class="dialog-body" id="forgotSuccess" hidden><div class="success-state"><span class="status-seal"><svg class="icon" style="width:28px;height:28px"><use href="#i-check"/></svg></span><h3>İsteğinizi aldık.</h3><p>Bu e-posta için uygun bir hesap varsa sıfırlama bağlantısını gönderdik. Gelen kutunuzu ve gereksiz klasörünü kontrol edin.</p><button class="btn btn-secondary" data-close>Tamam</button></div></div></div>
+  </div>
+
+  <div class="dialog-wrap" id="registerDialog" role="dialog" aria-modal="true" aria-labelledby="registerTitle" hidden>
+    <div class="dialog dialog-wide"><div class="dialog-head"><div><h2 id="registerTitle">İşletme hesabı oluşturun</h2><p>Kayıt herkese açık; ürün ve fiyat erişimi işletme onayına bağlıdır.</p></div><button class="close" data-close aria-label="Kapat">×</button></div>
+      <div class="register-progress"><span class="reg-step active"></span><span class="reg-step"></span><span class="reg-step"></span></div>
+      <form class="dialog-body" id="registerForm" onsubmit="return false">
+        <section class="register-page" data-reg-page="0"><div class="step-label"><strong>Hesap bilgileri</strong><span>Adım 1 / 3</span></div><div class="field"><label for="regEmail">İş e-postası</label><input id="regEmail" type="email" placeholder="ad@isletmeniz.com" autocomplete="email"></div><div class="form-row"><div class="field"><label for="regPassword">Parola</label><div class="password-wrap"><input id="regPassword" type="password" placeholder="Uzun bir parola kullanın" autocomplete="new-password"><button class="password-toggle" type="button" data-toggle-password="regPassword">Göster</button></div><p class="field-help">Parola cümlesi ve parola yöneticisi kullanabilirsiniz.</p></div><div class="field"><label for="regPassword2">Parola tekrarı</label><input id="regPassword2" type="password" placeholder="Parolayı yeniden yazın" autocomplete="new-password"></div></div></section>
+        <section class="register-page" data-reg-page="1" hidden><div class="step-label"><strong>İşletme bilgileri</strong><span>Adım 2 / 3</span></div><div class="field"><label for="companyName">Ticari unvan</label><input id="companyName" type="text" value="Atlas Mağazacılık Ltd. Şti."></div><div class="form-row"><div class="field"><label for="taxNo">Vergi numarası</label><input id="taxNo" inputmode="numeric" type="text" value="1234567890"></div><div class="field"><label for="taxOffice">Vergi dairesi</label><input id="taxOffice" type="text" value="Kadıköy"></div></div><div class="form-row"><div class="field"><label for="city">Şehir</label><select id="city"><option>İstanbul</option><option>Ankara</option><option>İzmir</option></select></div><div class="field"><label for="phone">Telefon</label><input id="phone" type="tel" placeholder="+90 5__ ___ __ __" autocomplete="tel"></div></div><div class="field"><label for="website">Web sitesi veya işletme profili <span>Opsiyonel</span></label><input id="website" type="url" placeholder="https://"></div></section>
+        <section class="register-page" data-reg-page="2" hidden><div class="step-label"><strong>İhtiyaç ve beyan</strong><span>Adım 3 / 3</span></div><div class="field"><label for="sector">İş alanı</label><select id="sector"><option>Ev ve yaşam ürünleri</option><option>Perakende mağazacılık</option><option>Mobilya ve dekorasyon</option><option>Diğer</option></select></div><div class="field"><label for="need">Tedarik ihtiyacınızı kısaca anlatın</label><textarea id="need" placeholder="Hangi ürünleri, yaklaşık hangi miktarlarda aradığınızı yazın..."></textarea></div><label class="checkbox" style="align-items:flex-start;margin:4px 0 16px"><input type="checkbox" id="terms"><span><a href="#" style="color:var(--blue);font-weight:700">Kullanım Koşulları</a>'nı okudum ve kabul ediyorum.</span></label><div class="notice">Kişisel verilerinizin nasıl işlendiğini <a href="#">Aydınlatma Metni</a>'nden inceleyebilirsiniz. Başvuruyu göndermek pazarlama iletisi izni vermez.</div></section>
+        <section class="register-page" data-reg-page="3" hidden><div class="success-state"><span class="status-seal"><svg class="icon" style="width:28px;height:28px"><use href="#i-check"/></svg></span><h3>İlk adım tamamlandı.</h3><p>E-posta doğrulama bağlantısı gönderildi varsayılıyor. Doğrulama sonrası işletme başvurunuz incelemeye alınır; onaya kadar ticari içerik kapalı kalır.</p><button class="btn btn-dark" type="button" data-scene-jump="pending" data-close>Onay bekleme ekranını gör</button></div></section>
+        <div class="form-actions" id="regActions"><button class="btn btn-secondary" id="regBack" type="button" disabled>Geri</button><button class="btn btn-primary" id="regNext" type="button">Devam et <svg class="icon"><use href="#i-arrow"/></svg></button></div>
+      </form>
+    </div>
+  </div>
+
+  <div class="dialog-wrap" id="requestDialog" role="dialog" aria-modal="true" aria-labelledby="requestTitle" hidden>
+    <div class="dialog dialog-wide"><div class="dialog-head"><div><h2 id="requestTitle">Yeni istek listesi</h2><p>Bir ürün linki, fotoğraf veya açıklama ile başlayın.</p></div><button class="close" data-close aria-label="Kapat">×</button></div><form class="dialog-body" onsubmit="return false"><div class="field"><label for="requestName">Liste adı</label><input id="requestName" value="Yeni sezon ürün araştırması"></div><div class="form-row"><div class="field"><label for="productLink">Ürün bağlantısı <span>Opsiyonel</span></label><input id="productLink" type="url" placeholder="https://"></div><div class="field"><label for="productQty">Tahmini miktar</label><input id="productQty" type="number" value="100" min="1"></div></div><div class="field"><label for="productDesc">Ürün açıklaması</label><textarea id="productDesc" placeholder="Ürünü, ölçüyü, rengi, malzemeyi veya kullanım alanını anlatın..."></textarea></div><div class="notice">Linkteki site verisi otomatik çekilmez. Fotoğraf veya asgari alanları kendiniz eklersiniz.</div><div class="form-actions"><button class="btn btn-secondary" type="button" data-close>Vazgeç</button><button class="btn btn-primary" type="button" id="saveRequest">Taslak olarak kaydet</button></div></form></div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"><svg class="icon"><use href="#i-check"/></svg><div><strong id="toastTitle">Kaydedildi</strong><span id="toastText">İşleminiz demo içinde tamamlandı.</span></div></div>
+
+  <script>
+    (() => {
+      const $ = (s, r = document) => r.querySelector(s);
+      const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+      let lastFocus = null;
+      let regPage = 0;
+
+      function showScene(name) {
+        $$('.scene').forEach(el => el.hidden = el.id !== name);
+        $$('[data-scene]').forEach(btn => btn.classList.toggle('active', btn.dataset.scene === name));
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      function openDialog(id) {
+        $$('.dialog-wrap').forEach(d => d.hidden = true);
+        const dialog = document.getElementById(id);
+        if (!dialog) return;
+        lastFocus = document.activeElement;
+        dialog.hidden = false;
+        setTimeout(() => $('input, button, select, textarea', dialog)?.focus(), 20);
+      }
+
+      function closeDialog(dialog) {
+        const wrap = dialog?.classList?.contains('dialog-wrap') ? dialog : dialog?.closest?.('.dialog-wrap');
+        if (wrap) wrap.hidden = true;
+        lastFocus?.focus?.();
+      }
+
+      function showPanel(name) {
+        $$('.portal-panel').forEach(panel => panel.hidden = panel.dataset.panel !== name);
+        const menuName = name === 'offer-detail' ? 'offers' : name;
+        $$('[data-panel-target]').forEach(btn => btn.classList.toggle('active', btn.dataset.panelTarget === menuName));
+        const active = $(`[data-panel-target="${menuName}"] span`);
+        $('#crumb').textContent = name === 'offer-detail' ? 'Teklifler / TKL-2026-0084' : (active?.textContent || 'Müşteri Portalı');
+        $('#sidebar').classList.remove('open');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      function toast(title, text) {
+        $('#toastTitle').textContent = title;
+        $('#toastText').textContent = text;
+        $('#toast').classList.add('show');
+        clearTimeout(window.__toastTimer);
+        window.__toastTimer = setTimeout(() => $('#toast').classList.remove('show'), 3500);
+      }
+
+      function renderRegister() {
+        $$('[data-reg-page]').forEach((page, index) => page.hidden = Number(page.dataset.regPage) !== regPage);
+        $$('.reg-step').forEach((bar, index) => {
+          bar.classList.toggle('active', index === regPage);
+          bar.classList.toggle('done', index < regPage);
+        });
+        $('#regActions').hidden = regPage === 3;
+        $('#regBack').disabled = regPage === 0;
+        $('#regNext').innerHTML = regPage === 2 ? 'Başvuruyu gönder <svg class="icon"><use href="#i-arrow"/></svg>' : 'Devam et <svg class="icon"><use href="#i-arrow"/></svg>';
+      }
+
+      $$('[data-scene]').forEach(btn => btn.addEventListener('click', () => showScene(btn.dataset.scene)));
+      $$('[data-scene-jump]').forEach(btn => btn.addEventListener('click', () => { closeDialog(btn); showScene(btn.dataset.sceneJump); }));
+      $$('[data-open]').forEach(btn => btn.addEventListener('click', () => openDialog(btn.dataset.open)));
+      $$('[data-close]').forEach(btn => btn.addEventListener('click', () => closeDialog(btn)));
+      $$('.dialog-wrap').forEach(wrap => wrap.addEventListener('mousedown', e => { if (e.target === wrap) closeDialog(wrap); }));
+      document.addEventListener('keydown', e => { if (e.key === 'Escape') { const open = $$('.dialog-wrap').find(d => !d.hidden); if (open) closeDialog(open); } });
+
+      $$('[data-toggle-password]').forEach(btn => btn.addEventListener('click', () => {
+        const input = document.getElementById(btn.dataset.togglePassword);
+        input.type = input.type === 'password' ? 'text' : 'password';
+        btn.textContent = input.type === 'password' ? 'Göster' : 'Gizle';
+      }));
+
+      $('#sendReset').addEventListener('click', () => { $('#forgotForm').hidden = true; $('#forgotSuccess').hidden = false; });
+      $('#demoLogin').addEventListener('click', () => { closeDialog($('#loginDialog')); showScene('portal'); toast('Giriş başarılı — demo', 'Onaylı müşteri çalışma alanı açıldı.'); });
+
+      $('#regNext').addEventListener('click', () => { if (regPage < 3) regPage += 1; renderRegister(); });
+      $('#regBack').addEventListener('click', () => { if (regPage > 0) regPage -= 1; renderRegister(); });
+
+      $$('[data-panel-target], [data-panel-jump]').forEach(btn => btn.addEventListener('click', () => showPanel(btn.dataset.panelTarget || btn.dataset.panelJump)));
+      $('#sideToggle').addEventListener('click', () => $('#sidebar').classList.toggle('open'));
+
+      $$('.intent').forEach(btn => btn.addEventListener('click', () => {
+        const product = btn.closest('[data-product]');
+        $$('.intent', product).forEach(item => item.classList.remove('selected'));
+        btn.classList.add('selected');
+        product.dataset.answered = 'true';
+        const answered = $$('[data-product][data-answered="true"]').length;
+        $('#answeredCount').textContent = `${answered} / ${$$('[data-product]').length}`;
+      }));
+
+      $('#submitIntent').addEventListener('click', () => {
+        const total = $$('[data-product]').length;
+        const answered = $$('[data-product][data-answered="true"]').length;
+        if (answered < total) return toast('Eksik ürün yanıtı', 'Göndermeden önce her ürün için bir niyet seçin.');
+        if (!$('#intentDeclaration').checked) return toast('Niyet beyanı gerekli', 'Göndermeden önce ön sipariş niyet beyanını okuyup işaretleyin.');
+        toast('Liste yanıtınız kaydedildi', 'Teklif değişmedi; beyanınız ayrı bir yanıt kaydı olarak saklandı.');
+      });
+
+      $('#receiptFile').addEventListener('change', e => { $('#fileName').textContent = e.target.files?.[0] ? `Seçilen dosya: ${e.target.files[0].name}` : ''; });
+      $('#saveRequest').addEventListener('click', () => { closeDialog($('#requestDialog')); showScene('portal'); showPanel('requests'); toast('Taslak kaydedildi', 'Yeni istek listeniz taslak olarak oluşturuldu.'); });
+      renderRegister();
+    })();
+  </script>
+</body>
+</html>
