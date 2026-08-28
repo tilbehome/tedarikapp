@@ -336,9 +336,20 @@ final class SettingsController extends ApiController
             $now = $this->clock->now();
             // K37 §B5: ayar + rate_history + aktivite tek transaction — geçmişsiz kur kalmaz.
             $this->connection->transaction(function () use ($request, $changes, $now): void {
+                // İE#22 A2: KAYNAK BİLGİSİ TAŞINIR. Kullanıcı TCMB önerisini
+                // onayladıysa gövdede `kaynak=tcmb` gelir; K4 gereği otomatik
+                // yazma YOKTUR — yazan yine kullanıcının onayıdır, yalnız
+                // değerin nereden geldiği kayda geçer.
+                $kaynak = ($this->body($request)['kaynak'] ?? null) === \App\Models\RateSnapshotRepository::KAYNAK_TCMB
+                    ? \App\Models\RateSnapshotRepository::KAYNAK_TCMB
+                    : \App\Models\RateSnapshotRepository::KAYNAK_ELLE;
+                $kullaniciId = $this->user($request)->id;
+
                 foreach ($changes as $change) {
+                    // Ayar kopyası ve snapshot AYNI transaction'da yazılır —
+                    // çift kaynak riski ancak böyle kapanır (Nöbet Raporu 4 §2d).
                     $this->settings->set($change['key'], $change['value']);
-                    $this->recordRate($change['currency'], $change['value'], $now);
+                    $this->recordRate($change['currency'], $change['value'], $now, $kaynak, $kullaniciId);
                 }
 
                 // İE#21 B5: kilitlenmemiş listeler güncel kuru İZLER. Aynı transaction
@@ -413,41 +424,69 @@ final class SettingsController extends ApiController
     public function rateHistory(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
         $currency = strtoupper($this->query($request, 'currency'));
-
-        $sql = 'SELECT id, currency, rate, set_at FROM rate_history';
-        $params = [];
-        if ($currency !== '') {
-            if (!in_array($currency, ['CNY', 'USD'], true)) {
-                return Response::error($response, 'VALIDATION', 'Doğrulama hatası', 422, [
-                    'currency' => 'Para birimi CNY veya USD olmalı.',
-                ]);
-            }
-            $sql .= ' WHERE currency = :currency';
-            $params['currency'] = $currency;
+        if ($currency !== '' && !in_array($currency, \App\Models\RateSnapshotRepository::PARA_BIRIMLERI, true)) {
+            return Response::error($response, 'VALIDATION', 'Doğrulama hatası', 422, [
+                'currency' => 'Para birimi CNY veya USD olmalı.',
+            ]);
         }
-        $sql .= ' ORDER BY set_at DESC, id DESC';
 
-        $statement = $this->connection->pdo()->prepare($sql);
-        $statement->execute($params);
+        // İE#22 A3: kaynak `rate_history` DEĞİL `rate_snapshots`.
+        //
+        // Ekran artık üç şeyi birden söyler: hangi satır GEÇERLİ (aktif),
+        // değeri nereden geldi (elle/TCMB) ve ne zamandan beri geçerli.
+        // Eski tablo yerinde duruyor ama okuma buradan yapılır; iki kaynağı
+        // aynı ekranda tutmak, hangisinin doğru olduğunu belirsizleştirirdi.
+        $satirlar = (new \App\Models\RateSnapshotRepository($this->connection))
+            ->gecmis($currency === '' ? null : $currency, 100);
 
-        /** @var list<array<string, mixed>> $rows */
-        $rows = $statement->fetchAll();
-
-        $history = [];
-        foreach ($rows as $row) {
-            $history[] = [
-                'id' => (int) $row['id'],
-                'currency' => (string) $row['currency'],
-                'rate' => $this->money->formatRate((string) $row['rate']),
-                'set_at' => Dates::toIso((string) $row['set_at'], $this->timezone),
+        $gecmis = [];
+        foreach ($satirlar as $satir) {
+            $gecmis[] = [
+                'id' => $satir['id'],
+                'currency' => $satir['currency'],
+                'rate' => $this->money->formatRate($satir['rate']),
+                // Eski sözleşmedeki alan adı KORUNUR: panelin kur tarihçesi
+                // tablosu `set_at` okuyor ve bu emirde ekran sözleşmesini
+                // kırmak yok. Anlamı da aynı: kaydın geçerlilik başlangıcı.
+                'set_at' => Dates::toIso($satir['effective_from'], $this->timezone),
+                // İE#22 A3 — YENİ ALANLAR: hangi satır geçerli, değeri nereden
+                // geldi, ne zaman devre dışı kaldı.
+                'aktif' => $satir['aktif'],
+                'kaynak' => $satir['source'],
+                'superseded_at' => $satir['superseded_at'] === null
+                    ? null
+                    : Dates::toIso($satir['superseded_at'], $this->timezone),
             ];
         }
 
-        return Response::success($response, $history);
+        return Response::success($response, $gecmis);
+
     }
 
-    private function recordRate(string $currency, string $rate, \DateTimeImmutable $now): void
-    {
+    /**
+     * Kur değişikliğini KALICI hâle getirir (İE#22 A2).
+     *
+     * İki yere birden yazar ve bu bilinçlidir:
+     *   · `rate_snapshots` — YENİ GERÇEK. Öncekine bitiş damgası basılır,
+     *     yeni satır aktif olur. Kaynak (elle/TCMB) ve onaylayan kullanıcı
+     *     burada durur.
+     *   · `rate_history` — eski defter. Silinmedi: dışarıdan okuyan bir şey
+     *     kalmış olabilir ve göç dosyası (0034) onu kaynak alıyor. Yeni satır
+     *     yazmayı bırakırsak iki tablo ayrışır; K85 gereği ikisi de aynı
+     *     transaction'da güncellenir.
+     *
+     * Çağıran transaction AÇMIŞ olmalıdır (K37 §B5).
+     */
+    private function recordRate(
+        string $currency,
+        string $rate,
+        \DateTimeImmutable $now,
+        string $kaynak = \App\Models\RateSnapshotRepository::KAYNAK_ELLE,
+        ?int $kullaniciId = null,
+    ): void {
+        (new \App\Models\RateSnapshotRepository($this->connection))
+            ->yeniSurum($currency, $rate, $now, $kaynak, $kullaniciId);
+
         $statement = $this->connection->pdo()->prepare(
             'INSERT INTO rate_history (currency, rate, set_at) VALUES (:currency, :rate, :set_at)',
         );

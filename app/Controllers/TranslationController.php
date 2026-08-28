@@ -34,6 +34,17 @@ final class TranslationController extends ApiController
      */
     private const TOPLU_BUTCE_SANIYE = 12;
 
+    /**
+     * Tekil "Çevir" düğmesinin süre bütçesi (sn) — İE#22 B2.
+     *
+     * SAHA (28 Ağu): gerçek LLM'de üç dil 20-40 sn sürüyor; paylaşımlı hosting
+     * isteği kesiyor, arayüz SONSUZ SPINNER'da kalıyordu ("sonsuz spinner
+     * yasak" — D12 ilkesi). Uç artık bütçeye sığdırdığını bitirir, kalanı
+     * kuyruğa yazar ve DURUMU SÖYLER. Spinner en geç bütçe + ağ payı kadar
+     * sürer.
+     */
+    private const URUN_BUTCE_SANIYE = 12;
+
     public function __construct(
         private readonly TranslationService $translation,
         // İE#14 A2: sözlük yönetimi (Ayarlar > Terminoloji) ve ürün bazlı çeviri
@@ -77,9 +88,29 @@ final class TranslationController extends ApiController
             return Response::error($response, 'VALIDATION', 'Ürün kimliği geçersiz.', 422);
         }
 
-        $sonuc = $this->yurutucu->urunuTamamla($urunId);
+        $sonuc = $this->yurutucu->urunuTamamla($urunId, self::URUN_BUTCE_SANIYE);
         if ($sonuc['hata'] !== null) {
             return Response::error($response, 'SERVER_ERROR', $sonuc['hata'], 500);
+        }
+
+        // KALAN DİLLER KUYRUĞA YAZILIR ve kullanıcıya DURUM döner.
+        //
+        // Kuyruğa yazmak "unutuldu" demek değildir: panel ziyareti süpürmesi
+        // (D12 madde 3) turu açar ve kalanlar kendiliğinden tamamlanır. Arayüz
+        // bunu "çeviri sürüyor — kalan: EN, ZH" diye gösterir; spinner döndürüp
+        // beklemez.
+        $durum = 'tamamlandi';
+        if ($sonuc['kalan'] !== []) {
+            $durum = $sonuc['cevrilen'] === [] ? 'kuyruga_alindi' : 'kismen';
+            if ($this->kuyruk !== null && $this->clock !== null) {
+                $this->kuyruk->ekle(
+                    \App\Services\Kuyruk\KuyrukIsleyicileri::TUR_CEVIRI,
+                    'urun:' . $urunId,
+                    ['urun_id' => $urunId],
+                    $this->clock->now(),
+                );
+            }
+            $this->tetikleyici?->yanittanSonraDene(true);
         }
 
         // Çevrilemeyen dil kaldıysa SEBEBİ söylenir. En sık sebep sağlayıcının
@@ -98,7 +129,11 @@ final class TranslationController extends ApiController
             $sonuc['cevrilen'] === [] ? 'yok' : implode('+', $sonuc['cevrilen']),
         ));
 
-        return Response::success($response, $sonuc + ['engel' => $engel, 'is_suggestion' => true]);
+        return Response::success($response, $sonuc + [
+            'durum' => $durum,
+            'engel' => $engel,
+            'is_suggestion' => true,
+        ]);
     }
 
     /**

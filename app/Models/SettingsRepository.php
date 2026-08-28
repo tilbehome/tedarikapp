@@ -148,13 +148,35 @@ final class SettingsRepository
         return $overrides;
     }
 
+    /**
+     * GÜNCEL YUAN KURU — İE#22 A2: TEK OKUMA NOKTASI.
+     *
+     * Önce AKTİF SNAPSHOT (`rate_snapshots.superseded_at IS NULL`), yoksa
+     * ayardaki kopya. Sıra bilinçlidir: snapshot tablosu kurun sürümlü
+     * gerçeğidir; `settings.yuan_tl` artık ondan TÜRETİLMİŞ kopyadır ve
+     * yalnız iki durumda okunur — migration henüz koşmadıysa ya da tablo
+     * bir sebeple okunamıyorsa. Böylece yirmiden fazla çağrı yeri
+     * DEĞİŞMEDEN yeni omurgaya bağlanır.
+     */
     public function yuanRate(): string
     {
-        return $this->get(self::KEY_YUAN_RATE, self::DEFAULT_YUAN_RATE) ?? self::DEFAULT_YUAN_RATE;
+        return $this->snapshotDegeri('CNY')
+            ?? $this->get(self::KEY_YUAN_RATE, self::DEFAULT_YUAN_RATE)
+            ?? self::DEFAULT_YUAN_RATE;
     }
 
     public function usdRate(): string
     {
-        return $this->get(self::KEY_USD_RATE, self::DEFAULT_USD_RATE) ?? self::DEFAULT_USD_RATE;
+        return $this->snapshotDegeri('USD')
+            ?? $this->get(self::KEY_USD_RATE, self::DEFAULT_USD_RATE)
+            ?? self::DEFAULT_USD_RATE;
+    }
+
+    /** Aktif snapshot değeri; tablo yoksa/boşsa null (çağıran kopyaya düşer). */
+    private function snapshotDegeri(string $currency): ?string
+    {
+        $deger = (new RateSnapshotRepository($this->connection))->aktifDeger($currency);
+
+        return is_string($deger) && trim($deger) !== '' ? $deger : null;
     }
 }

@@ -5,9 +5,84 @@
          colors="true"
          failOnWarning="true"
          failOnDeprecation="true">
+    <!--
+        TEST SUITLERI (IE#22 Blok D - K19 onayli CI matrisi).
+
+        "tedarikapp" TAM SUITTIR ve yerelde varsayilan olarak o kosar. Yanindaki
+        "birim" ve "http-1..4" suitleri AYNI dosyalari boler; CI onlari paralel
+        job'larda kosturur (13 dk olculdu, hedef 8 dk alti).
+
+        BOLME DOSYA ADIYLADIR, sinif tasimakla degil: dosya kimlikleri ve git
+        tarihcesi korunur. Yeni bir tests/Http dosyasi eklenip buraya
+        yazilmazsa TestSuiteKapsamiTest KIRMIZI olur - dilim disi kalan test,
+        kosmayan testtir ve yesil CI yalan soyler.
+    -->
     <testsuites>
         <testsuite name="tedarikapp">
             <directory>tests</directory>
+        </testsuite>
+        <testsuite name="birim">
+            <directory>tests</directory>
+            <exclude>tests/Http</exclude>
+        </testsuite>
+        <testsuite name="http-1">
+            <file>tests/Http/DataLayerEndpointsTest.php</file>
+            <file>tests/Http/HealthEndpointTest.php</file>
+            <file>tests/Http/ListDuplicateNamingTest.php</file>
+            <file>tests/Http/LoginVitrinTest.php</file>
+            <file>tests/Http/MediaArchiveEndpointsTest.php</file>
+            <file>tests/Http/PanelSupportEndpointsTest.php</file>
+            <file>tests/Http/PaylasimFirmaGorunumuTest.php</file>
+            <file>tests/Http/SetupTeshisTest.php</file>
+            <file>tests/Http/SetupUnlockTest.php</file>
+            <file>tests/Http/ShareDownloadTest.php</file>
+            <file>tests/Http/SharePageV4Test.php</file>
+            <file>tests/Http/TopluCeviriKuyrugaTest.php</file>
+            <file>tests/Http/YenidenKurulumBiletiTest.php</file>
+        </testsuite>
+        <testsuite name="http-2">
+            <file>tests/Http/AuthEndpointsTest.php</file>
+            <file>tests/Http/DiagnosticsTest.php</file>
+            <file>tests/Http/ExportEndpointsTest.php</file>
+            <file>tests/Http/IlanYaziciTest.php</file>
+            <file>tests/Http/InboxEndpointsTest.php</file>
+            <file>tests/Http/JsonRequestTest.php</file>
+            <file>tests/Http/KesifHavuzuTest.php</file>
+            <file>tests/Http/MigrateBaselineEndpointTest.php</file>
+            <file>tests/Http/RevisionSequenceTest.php</file>
+            <file>tests/Http/ShareEndpointsTest.php</file>
+            <file>tests/Http/SistemListesiKorumasiTest.php</file>
+            <file>tests/Http/TransactionIntegrityTest.php</file>
+        </testsuite>
+        <testsuite name="http-3">
+            <file>tests/Http/CaptureEndpointsTest.php</file>
+            <file>tests/Http/DesteModuTest.php</file>
+            <file>tests/Http/ErisimAnahtariTest.php</file>
+            <file>tests/Http/GaleriGorselleriTest.php</file>
+            <file>tests/Http/KurGocuBelgeyiDegistirmezTest.php</file>
+            <file>tests/Http/KurOnerisiTest.php</file>
+            <file>tests/Http/MedyaKompozisyonTest.php</file>
+            <file>tests/Http/PaylasimDiliTest.php</file>
+            <file>tests/Http/SetupEndpointsTest.php</file>
+            <file>tests/Http/ShareOnarimTest.php</file>
+            <file>tests/Http/SharePageLinksTest.php</file>
+            <file>tests/Http/TopluTasimaAtomikTest.php</file>
+            <file>tests/Http/UrunCekmecesiTest.php</file>
+        </testsuite>
+        <testsuite name="http-4">
+            <file>tests/Http/CeviriTazelemeEkranaYansirTest.php</file>
+            <file>tests/Http/CronsuzCeviriTest.php</file>
+            <file>tests/Http/ExportOptionsTest.php</file>
+            <file>tests/Http/IdempotansYollariTest.php</file>
+            <file>tests/Http/IsEmri19SertlestirmeTest.php</file>
+            <file>tests/Http/KaliteKapisiUcTest.php</file>
+            <file>tests/Http/KilitEkraniTest.php</file>
+            <file>tests/Http/ListImmutabilityTest.php</file>
+            <file>tests/Http/MigrationGuardTest.php</file>
+            <file>tests/Http/SettingsEndpointsTest.php</file>
+            <file>tests/Http/SetupHardeningTest.php</file>
+            <file>tests/Http/SetupOnarimUclariTest.php</file>
+            <file>tests/Http/TranslateEndpointsTest.php</file>
         </testsuite>
     </testsuites>
     <source>

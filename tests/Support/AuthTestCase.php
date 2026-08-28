@@ -287,6 +287,20 @@ abstract class AuthTestCase extends TestCase
                 set_at TEXT NOT NULL
             )',
         );
+        // İE#22 A1: kur snapshot omurgası — aktif satır `superseded_at IS NULL`.
+        $this->pdo->exec(
+            'CREATE TABLE rate_snapshots (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                currency TEXT NOT NULL,
+                rate TEXT NOT NULL,
+                source TEXT NOT NULL DEFAULT "elle",
+                effective_from TEXT NOT NULL,
+                superseded_at TEXT NULL,
+                created_by INTEGER NULL,
+                created_at TEXT NOT NULL,
+                UNIQUE (currency, effective_from)
+            )',
+        );
         $this->pdo->exec(
             'CREATE TABLE categories (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,

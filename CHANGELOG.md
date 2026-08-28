@@ -5,6 +5,31 @@ Her release'te bu dosya güncellenir (docs/07 bölüm 4). Kategoriler: Eklendi /
 
 ## [Yayınlanmadı]
 
+## [1.1.0] — 28 Ağustos 2026
+
+**Altyapı sürümü.** Görünen yüzde iki değişiklik var; gerisi V3-B öncesi zemin
+hazırlığı.
+
+### Değişti
+
+- **"Çevir" düğmesi artık takılıp kalmıyor.** Gerçek çeviride üç dil yarım
+  dakikayı bulabiliyor; eskiden sayfa sonsuza kadar dönüyordu. Şimdi düğme
+  yetiştirebildiğini bitiriyor, kalanını arka plana devrediyor ve satırda
+  "çeviri sürüyor — kalan: EN, ZH" yazıyor. Panele girdikçe kalanlar
+  kendiliğinden tamamlanıyor.
+- **Kur geçmişi artık "hangisi geçerli" diyor.** Ayarlar'daki kur tarihçesi her
+  satırın ne zamandan beri geçerli olduğunu, kimin girdiğini ve değerin elle mi
+  yoksa TCMB önerisinden mi geldiğini gösteriyor; geçerli satır işaretli.
+  Kurları onaylama biçiminiz değişmedi — otomatik yazma yine yok.
+- **Gece yedeği görselleri de alıyor.** Ürün fotoğraflarının listesi (ad, boyut,
+  sha256) her gece yazılıyor; klasör 200 MB'ın altındaysa arşivi de alınıyor.
+  Sınır aşılırsa arşiv atlanır ve bu açıkça yazılır — sessizce eksik yedek yok.
+
+### Kaldırıldı
+
+- **PHP 8.1 desteği.** Taban 8.2'ye çıktı. Sunucunuz 8.1'de kalırsa uygulama
+  sessizce çalışmak yerine açılışta durur ve nedenini söyler.
+
 ## [1.0.1] — 28 Ağustos 2026
 
 **Çeviri artık kurulum istemez.** Bu sürümün tek konusu şu: "Çevir" dediğinizde

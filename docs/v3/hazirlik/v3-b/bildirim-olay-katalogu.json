@@ -389,36 +389,6 @@
       }
     },
     {
-      "olay_kodu": "NTF-SHARE-EXPIRY-NEAR",
-      "tetik": "Aktif paylaşımın geçerlilik bitişine ayarlı süre kaldı.",
-      "onem": "uyari",
-      "baslik_tr": "Paylaşım süresi yaklaşıyor",
-      "govde_tr": "{liste_adi} paylaşımı {gun} gün içinde sona erecek.",
-      "grup": "paylasim",
-      "eylem_linki": "/panel/listeler/{liste_id}?pencere=paylas",
-      "birlestirme": {
-        "izinli": false,
-        "pencere_dakika": 0,
-        "grup_anahtari": null,
-        "toplu_govde_tr": null
-      }
-    },
-    {
-      "olay_kodu": "NTF-SHARE-EXPIRED",
-      "tetik": "Paylaşım geçerlilik süresi doldu.",
-      "onem": "bilgi",
-      "baslik_tr": "Paylaşım sona erdi",
-      "govde_tr": "{liste_adi} paylaşımı artık erişime kapalı.",
-      "grup": "paylasim",
-      "eylem_linki": "/panel/listeler/{liste_id}?pencere=paylas",
-      "birlestirme": {
-        "izinli": false,
-        "pencere_dakika": 0,
-        "grup_anahtari": null,
-        "toplu_govde_tr": null
-      }
-    },
-    {
       "olay_kodu": "NTF-SHARE-REVOKED",
       "tetik": "Yetkili kullanıcı aktif paylaşımı süresi dolmadan iptal etti.",
       "onem": "uyari",
@@ -598,5 +568,6 @@
         "toplu_govde_tr": null
       }
     }
-  ]
+  ],
+  "k82_notu": "K82 (25 Ağu 2026): NTF-SHARE-EXPIRY-NEAR ve NTF-SHARE-EXPIRED katalogdan DÜŞÜRÜLDÜ. Erişim anahtarının ömrü yoktur (K62), dolayısıyla \"süresi doluyor/doldu\" diye bir olay üretilemez. Süre kavramı V3-C'de teklif geçerliliğine bağlanınca YENİ bir NTF kodu açılacaktır. Olay sayısı: 37."
 }

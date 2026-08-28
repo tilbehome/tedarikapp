@@ -142,6 +142,39 @@ final class CeviriYurutucuTest extends TestCase
         self::assertSame(['tr', 'en'], $sonuc['kalan']);
     }
 
+    /**
+     * İE#22 B2 — BÜTÇE DOLUNCA KALAN DİLLER RAPORLANIR.
+     *
+     * SAHA (28 Ağu): gerçek LLM'de üç dil 20-40 sn sürüyor, paylaşımlı hosting
+     * isteği kesiyor ve arayüz sonsuz spinner'da kalıyordu. Bütçeli çağrıda
+     * yürütücü dilleri TEK TEK ister; bütçe dolunca kalanları söyler ve çağıran
+     * onları kuyruğa yazar.
+     */
+    public function testBUTCEDOLUNCAKALANDILLERRAPORLANIR(): void
+    {
+        $this->urunEkle('Bisiklet Yok', '无脚踏平衡车', 'zh');
+        // Sıfır bütçe: ilk dil istenir (en az bir deneme garanti), sonrası kesilir.
+        $yavas = new YavasCevirmen($this->connection);
+
+        $sonuc = $this->yurutucu($yavas)->urunuTamamla(1, 0);
+
+        self::assertSame(['tr', 'en'], $sonuc['eksikti']);
+        self::assertSame(['tr'], $sonuc['cevrilen'], 'Bütçeye yalnız ilk dil sığdı.');
+        self::assertSame(['en'], $sonuc['kalan'], 'Kalan dil raporlanmalı — sessizce düşmemeli.');
+        self::assertNull($sonuc['hata'], 'Bütçe dolması HATA DEĞİLDİR.');
+    }
+
+    public function testBUTCESIZCAGRIDATEKISTEKTEHEPSIISTENIR(): void
+    {
+        // Kuyruk işçisinin yolu: bütçe yok, eski davranış sürer.
+        $this->urunEkle('Bisiklet Yok', '无脚踏平衡车', 'zh');
+        $casus = new CasusCevirmen();
+
+        $this->yurutucu($casus)->urunuTamamla(1);
+
+        self::assertSame(['tr', 'en'], $casus->sonYuk['target_langs'] ?? null);
+    }
+
     public function testURUNYOKSAACIKHATA(): void
     {
         $sonuc = $this->yurutucu(new CasusCevirmen())->urunuTamamla(404);
@@ -190,5 +223,48 @@ final class PatlayanCevirmen implements TranslatorInterface
     public function name(): string
     {
         return 'patlayan';
+    }
+}
+
+/**
+ * Yavaş sağlayıcı taklidi: istenen dili GERÇEKTEN önbelleğe yazar (kalıcı
+ * satır), böylece "hangi dil bitti" ölçülebilir.
+ */
+final class YavasCevirmen implements TranslatorInterface
+{
+    public function __construct(private readonly \App\Core\Connection $connection)
+    {
+    }
+
+    public function translateProduct(array $urun): array
+    {
+        $diller = is_array($urun['target_langs'] ?? null) ? $urun['target_langs'] : [];
+        $metin = (string) ($urun['name'] ?? '');
+        foreach ($diller as $dil) {
+            $this->connection->pdo()->prepare(
+                'INSERT INTO translation_cache (source_hash, source_text, suggested_text, provider, source_lang, target_lang, created_at)
+                 VALUES (:hash, :metin, :ceviri, :saglayici, :kaynak, :dil, :simdi)',
+            )->execute([
+                'hash' => hash('sha256', $dil . '|' . $metin),
+                'metin' => $metin,
+                'ceviri' => strtoupper((string) $dil) . ' çevirisi',
+                'saglayici' => 'llm:yavas',
+                'kaynak' => 'zh',
+                'dil' => (string) $dil,
+                'simdi' => '2026-08-28 10:00:00',
+            ]);
+        }
+
+        return [];
+    }
+
+    public function getGlossary(string $sourceLang = 'zh'): array
+    {
+        return [];
+    }
+
+    public function name(): string
+    {
+        return 'yavas';
     }
 }

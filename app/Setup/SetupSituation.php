@@ -90,7 +90,7 @@ final class SetupSituation
             'rozet' => self::ROZET[$durum],
             'baslik' => self::BASLIK[$durum],
             'aciklama' => $this->aciklama($durum, $veritabani, $sema, $surum),
-            'secenekler' => $this->secenekler($durum),
+            'secenekler' => $this->secenekler($durum, $surum),
             'dosyalar' => $dosyalar,
             'config' => $config,
             'veritabani' => $veritabani,
@@ -443,12 +443,24 @@ final class SetupSituation
             self::KURULUM_YOK => 'Ayar dosyası yok ve veritabanı bilgisi elimizde değil. '
                 . 'Kuruluma baştan başlanacak; veritabanı adımında mevcut bir kurulum görülürse '
                 . 'sihirbaz kendiliğinden "ayar dosyası kayıp" akışına geçer.',
-            self::SAGLIKLI => sprintf(
-                'Kurulum tamam: %d tablo, %d migration uygulanmış, bekleyen yok. Sürüm %s.',
-                (int) ($sema['tablo_sayisi'] ?? 0),
-                (int) ($sema['uygulanan_sayisi'] ?? 0),
-                (string) ($surum['kurulu'] ?? $surum['dosya']),
-            ),
+            // İE#22 E1: fark VARSA İKİ DEĞER BİRDEN basılır. Tek sürüm
+            // yazmak, "dosya X ama kurulu Y" durumunu görünmez kılıyordu —
+            // kullanıcı damganın geride kaldığını hiçbir yerde göremiyordu.
+            self::SAGLIKLI => ($surum['ayni'] ?? true)
+                ? sprintf(
+                    'Kurulum tamam: %d tablo, %d migration uygulanmış, bekleyen yok. Sürüm %s.',
+                    (int) ($sema['tablo_sayisi'] ?? 0),
+                    (int) ($sema['uygulanan_sayisi'] ?? 0),
+                    (string) ($surum['kurulu'] ?? $surum['dosya']),
+                )
+                : sprintf(
+                    'Kurulum tamam: %d tablo, %d migration uygulanmış, bekleyen yok. '
+                    . 'Dosya sürümü %s · kurulu sürüm %s — şema güncel, yalnız damga geride.',
+                    (int) ($sema['tablo_sayisi'] ?? 0),
+                    (int) ($sema['uygulanan_sayisi'] ?? 0),
+                    (string) $surum['dosya'],
+                    (string) ($surum['kurulu'] ?? 'kayıtsız'),
+                ),
             self::YARIM => sprintf(
                 'Ayar dosyası yazılmış ama kurulum tamamlanmamış (kurulum kilidi yok). '
                 . 'Veritabanında %d tablo var, %d migration bekliyor.',
@@ -482,7 +494,12 @@ final class SetupSituation
      *
      * @return list<array{kod: string, etiket: string, yikici: bool, aciklama: string}>
      */
-    private function secenekler(string $durum): array
+    /**
+     * @param array{kurulu: string|null, dosya: string, ayni: bool}|null $surum
+     *
+     * @return list<array{kod: string, etiket: string, yikici: bool, aciklama: string}>
+     */
+    private function secenekler(string $durum, ?array $surum = null): array
     {
         $temizKurulum = [
             'kod' => 'temiz_kurulum',
@@ -499,15 +516,32 @@ final class SetupSituation
                 'yikici' => false,
                 'aciklama' => 'Yedi adımlık normal kurulum akışı.',
             ]],
-            self::SAGLIKLI => [
+            self::SAGLIKLI => array_values(array_filter([
                 [
                     'kod' => 'panele_git',
                     'etiket' => 'Panele git',
                     'yikici' => false,
                     'aciklama' => 'Sisteme dokunulmaz.',
                 ],
+                // İE#22 E1 (Blok H · PM onaylı seçenek B): SAĞLIKLI durumda
+                // "dosya sürümü ≠ DB damgası" farkı görmezden geliniyordu.
+                // Sekiz durumlu teşhis sözleşmesi (D2-REV) BOZULMAZ: yeni bir
+                // DURUM eklenmez, yalnız fark VARKEN görünen bir EYLEM eklenir.
+                // Uç zaten mevcut (`POST /api/setup/update` → `surumKaydet()`).
+                $surum !== null && $surum['ayni'] === false ? [
+                    'kod' => 'damgayi_esitle',
+                    'etiket' => 'Sürüm damgasını eşitle',
+                    'yikici' => false,
+                    'aciklama' => sprintf(
+                        'Dosya sürümü %s, veritabanında kayıtlı sürüm %s. Şema güncel; '
+                        . 'yalnız kurulu sürüm kaydı geride kalmış. Bu işlem tabloya dokunmaz, '
+                        . 'yalnız damgayı günceller.',
+                        $surum['dosya'],
+                        $surum['kurulu'] ?? 'kayıtsız',
+                    ),
+                ] : null,
                 $temizKurulum,
-            ],
+            ])),
             self::YARIM => [
                 [
                     'kod' => 'devam_et',
