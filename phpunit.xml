@@ -41,6 +41,7 @@
             <file>tests/Http/PanelSupportEndpointsTest.php</file>
             <file>tests/Http/PaylasimFirmaGorunumuTest.php</file>
             <file>tests/Http/SetupTeshisTest.php</file>
+            <file>tests/Http/SurumNotuTest.php</file>
             <file>tests/Http/SetupUnlockTest.php</file>
             <file>tests/Http/ShareDownloadTest.php</file>
             <file>tests/Http/SharePageV4Test.php</file>
@@ -56,6 +57,7 @@
             <file>tests/Http/JsonRequestTest.php</file>
             <file>tests/Http/KesifHavuzuTest.php</file>
             <file>tests/Http/MigrateBaselineEndpointTest.php</file>
+            <file>tests/Http/PanoramaTest.php</file>
             <file>tests/Http/RevisionSequenceTest.php</file>
             <file>tests/Http/ShareEndpointsTest.php</file>
             <file>tests/Http/SistemListesiKorumasiTest.php</file>

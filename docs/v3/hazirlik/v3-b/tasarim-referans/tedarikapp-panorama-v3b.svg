@@ -1,0 +1,255 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" role="img" aria-labelledby="title desc">
+  <title id="title">TedarikApp V3-B Panorama arayüz tasarımı</title>
+  <desc id="desc">Lacivert ve altın tasarım sisteminde, bekleyen taraf sütunu, aksiyon KPI'ları, kritik engeller ve önemli kararları gösteren tek kullanıcılı Panorama ekranı.</desc>
+  <defs>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="4" stdDeviation="10" flood-color="#0F2557" flood-opacity="0.07"/>
+    </filter>
+    <style>
+      .t { font-family: Inter, "Segoe UI", Arial, sans-serif; fill: #17233B; }
+      .nav { font-family: Inter, "Segoe UI", Arial, sans-serif; fill: #DCE4F3; font-size: 15px; font-weight: 500; }
+      .nav-section { font-family: Inter, "Segoe UI", Arial, sans-serif; fill: #8292B3; font-size: 10px; font-weight: 600; letter-spacing: 1.5px; }
+      .h1 { font-size: 31px; font-weight: 650; letter-spacing: -0.7px; }
+      .sub { font-size: 13px; fill: #68758B; }
+      .panel-title { font-size: 16px; font-weight: 650; }
+      .th { font-size: 10px; font-weight: 650; fill: #65728A; letter-spacing: 0.3px; }
+      .cell { font-size: 12px; fill: #26344D; }
+      .small { font-size: 10px; fill: #78849A; }
+      .count { font-size: 25px; font-weight: 650; fill: #0F2557; }
+      .label { font-size: 11px; fill: #59677F; }
+      .gold { fill: #C49A45; }
+      .gold-text { fill: #9A6C10; }
+      .on-dark { fill: #FFFFFF; }
+      .divider { stroke: #E2E7EF; stroke-width: 1; }
+      .vdivider { stroke: #E7EBF2; stroke-width: 1; }
+      .outline-icon { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+      .tabular { font-variant-numeric: tabular-nums; }
+    </style>
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></symbol>
+    <symbol id="i-inbox" viewBox="0 0 24 24"><path d="M4 5h16v14H4zM4 14h4l2 3h4l2-3h4"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10" cy="10" r="6"/><path d="m15 15 5 5"/></symbol>
+    <symbol id="i-box" viewBox="0 0 24 24"><path d="m4 7 8-4 8 4-8 4zM4 7v10l8 4 8-4V7M12 11v10"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 19c0-3 2.5-5 6-5s6 2 6 5M16 5a3 3 0 0 1 0 6M17 14c2.5.4 4 2.2 4 5"/></symbol>
+    <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></symbol>
+    <symbol id="i-factory" viewBox="0 0 24 24"><path d="M4 21V9l6 3V8l6 3V4h4v17zM8 17h1M13 17h1M18 17h1"/></symbol>
+    <symbol id="i-clipboard" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 5V3h6v2M9 11h6M9 15h6"/></symbol>
+    <symbol id="i-truck" viewBox="0 0 24 24"><path d="M3 6h11v11H3zM14 10h4l3 4v3h-7z"/><circle cx="7" cy="19" r="2"/><circle cx="18" cy="19" r="2"/></symbol>
+    <symbol id="i-coins" viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v5c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 11v5c0 1.7 3.1 3 7 3s7-1.3 7-3v-5"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20V7"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4"/></symbol>
+  </defs>
+
+  <rect width="1920" height="1080" fill="#F4F6FA"/>
+  <rect x="0" y="0" width="264" height="1080" fill="#0F2557"/>
+  <rect x="0" y="0" width="264" height="6" fill="#C49A45"/>
+
+  <!-- Marka -->
+  <g transform="translate(24 28)">
+    <path d="M17 0 34 9.5V29L17 38 0 29V9.5Z" fill="none" stroke="#C49A45" stroke-width="3"/>
+    <path d="m8 12 9 5 9-5M17 17v11" fill="none" stroke="#C49A45" stroke-width="2.2" stroke-linecap="round"/>
+    <text x="48" y="25" class="t on-dark" style="fill:#FFFFFF" font-size="23" font-weight="650">Tedarik<tspan style="fill:#C49A45">App</tspan></text>
+  </g>
+
+  <!-- Sol menü -->
+  <text x="24" y="92" class="nav-section">ÇALIŞMA</text>
+  <rect x="10" y="105" width="244" height="46" rx="7" fill="#1A376E"/>
+  <rect x="0" y="105" width="4" height="46" rx="2" fill="#C49A45"/>
+  <g color="#D4B46E"><use href="#i-grid" x="24" y="118" width="20" height="20" class="outline-icon"/></g>
+  <text x="58" y="135" class="nav" fill="#FFFFFF">Panorama</text>
+  <g color="#AAB8D2"><use href="#i-inbox" x="24" y="164" width="20" height="20" class="outline-icon"/></g>
+  <text x="58" y="181" class="nav">Gelen Kutusu</text>
+  <text x="24" y="225" class="nav-section">ÜRÜN</text>
+  <g color="#AAB8D2"><use href="#i-search" x="24" y="240" width="20" height="20" class="outline-icon"/></g>
+  <text x="58" y="257" class="nav">Keşif Havuzu</text>
+  <g color="#AAB8D2"><use href="#i-box" x="24" y="282" width="20" height="20" class="outline-icon"/></g>
+  <text x="58" y="299" class="nav">Ürünler</text>
+  <g color="#AAB8D2"><use href="#i-list" x="24" y="324" width="20" height="20" class="outline-icon"/></g>
+  <text x="58" y="341" class="nav">Listeler</text>
+  <text x="24" y="385" class="nav-section">İLİŞKİLER</text>
+  <g color="#AAB8D2"><use href="#i-users" x="24" y="400" width="20" height="20" class="outline-icon"/></g>
+  <text x="58" y="417" class="nav">Müşteriler</text>
+  <g color="#AAB8D2"><use href="#i-globe" x="24" y="442" width="20" height="20" class="outline-icon"/></g>
+  <text x="58" y="459" class="nav">İthalatçılar</text>
+  <g color="#AAB8D2"><use href="#i-factory" x="24" y="484" width="20" height="20" class="outline-icon"/></g>
+  <text x="58" y="501" class="nav">Üreticiler</text>
+  <text x="24" y="545" class="nav-section">OPERASYON</text>
+  <g color="#AAB8D2"><use href="#i-clipboard" x="24" y="560" width="20" height="20" class="outline-icon"/></g>
+  <text x="58" y="577" class="nav">Teklifler / Turlar</text>
+  <g color="#AAB8D2"><use href="#i-box" x="24" y="602" width="20" height="20" class="outline-icon"/></g>
+  <text x="58" y="619" class="nav">Siparişler</text>
+  <g color="#AAB8D2"><use href="#i-truck" x="24" y="644" width="20" height="20" class="outline-icon"/></g>
+  <text x="58" y="661" class="nav">Lojistik &amp; CBM</text>
+  <text x="24" y="705" class="nav-section">FİNANS</text>
+  <g color="#AAB8D2"><use href="#i-coins" x="24" y="720" width="20" height="20" class="outline-icon"/></g>
+  <text x="58" y="737" class="nav">Maliyet &amp; Kârlılık</text>
+  <g color="#AAB8D2"><use href="#i-chart" x="24" y="762" width="20" height="20" class="outline-icon"/></g>
+  <text x="58" y="779" class="nav">Raporlar</text>
+  <line x1="20" y1="946" x2="244" y2="946" stroke="#2A4375"/>
+  <g color="#AAB8D2"><use href="#i-settings" x="24" y="970" width="20" height="20" class="outline-icon"/></g>
+  <text x="58" y="987" class="nav">Ayarlar</text>
+  <rect x="22" y="1012" width="220" height="48" rx="7" fill="#163064"/>
+  <circle cx="47" cy="1036" r="15" fill="#C49A45"/>
+  <text x="47" y="1040" class="t" text-anchor="middle" font-size="10" font-weight="700" fill="#0F2557">ÜS</text>
+  <text x="72" y="1032" class="nav" font-size="12" fill="#FFFFFF">Ürün Sahibi</text>
+  <text x="72" y="1048" class="nav" font-size="9" fill="#93A3C2">Tek kullanıcı çalışma alanı</text>
+
+  <!-- Üst başlık -->
+  <rect x="264" y="0" width="1656" height="84" fill="#FFFFFF"/>
+  <line x1="264" y1="84" x2="1920" y2="84" class="divider"/>
+  <text x="292" y="42" class="t h1">Panorama</text>
+  <text x="292" y="65" class="t sub">Bugün ne var? Müdahale gereken işler, bekleyen taraflar ve kritik engeller</text>
+  <rect x="1642" y="23" width="178" height="40" rx="7" fill="#0F2557"/>
+  <text x="1731" y="48" class="t on-dark" style="fill:#FFFFFF" text-anchor="middle" font-size="12" font-weight="650">+ Yeni ürün ekle</text>
+  <circle cx="1858" cy="43" r="18" fill="#F0E6CF"/>
+  <path d="M1858 32v22M1847 43h22" stroke="#9A6C10" stroke-width="1.8" stroke-linecap="round"/>
+
+  <!-- KPI şeridi -->
+  <g filter="url(#shadow)">
+    <rect x="290" y="104" width="1048" height="82" rx="8" fill="#FFFFFF"/>
+  </g>
+  <line x1="552" y1="118" x2="552" y2="172" class="vdivider"/>
+  <line x1="814" y1="118" x2="814" y2="172" class="vdivider"/>
+  <line x1="1076" y1="118" x2="1076" y2="172" class="vdivider"/>
+  <circle cx="326" cy="145" r="21" fill="#F4EBD8"/>
+  <path d="M326 132v14l8 5" fill="none" stroke="#9A6C10" stroke-width="2" stroke-linecap="round"/>
+  <text x="359" y="134" class="t label">Bugün müdahale</text><text x="359" y="163" class="t count tabular">12</text>
+  <circle cx="588" cy="145" r="21" fill="#FBE7E5"/>
+  <circle cx="588" cy="145" r="10" fill="none" stroke="#B42318" stroke-width="2"/><path d="M588 139v7l5 3" fill="none" stroke="#B42318" stroke-width="2"/>
+  <text x="621" y="134" class="t label">Geciken</text><text x="621" y="163" class="t count tabular">5</text>
+  <circle cx="850" cy="145" r="21" fill="#FFF3DE"/>
+  <rect x="842" y="142" width="16" height="13" rx="2" fill="none" stroke="#B36B00" stroke-width="2"/><path d="M845 142v-4a5 5 0 0 1 10 0v4" fill="none" stroke="#B36B00" stroke-width="2"/>
+  <text x="883" y="134" class="t label">Blokeli</text><text x="883" y="163" class="t count tabular">3</text>
+  <circle cx="1112" cy="145" r="21" fill="#E9EEF8"/>
+  <path d="M1102 138h20v13h-11l-6 5v-5h-3z" fill="none" stroke="#0F2557" stroke-width="2" stroke-linejoin="round"/>
+  <text x="1145" y="134" class="t label">Yanıt bekleyen</text><text x="1145" y="163" class="t count tabular">18</text>
+
+  <!-- Öncelikli iş kuyruğu -->
+  <g filter="url(#shadow)"><rect x="290" y="204" width="1048" height="414" rx="8" fill="#FFFFFF"/></g>
+  <text x="310" y="237" class="t panel-title">Öncelikli iş kuyruğu</text>
+  <text x="1315" y="237" class="t" text-anchor="end" font-size="10" fill="#9A6C10">Tüm kuyruğu aç →</text>
+  <line x1="290" y1="252" x2="1338" y2="252" class="divider"/>
+  <rect x="290" y="252" width="1048" height="38" fill="#F8F9FC"/>
+  <text x="309" y="276" class="t th">ÖNCELİK</text>
+  <text x="393" y="276" class="t th">KAYIT</text>
+  <text x="562" y="276" class="t th">AŞAMA</text>
+  <text x="662" y="276" class="t th">BEKLEYEN TARAF</text>
+  <text x="833" y="276" class="t th">SORUN / NEDEN</text>
+  <text x="1030" y="276" class="t th">SON HAREKET</text>
+  <text x="1163" y="276" class="t th">SIRADAKİ İŞLEM</text>
+  <line x1="376" y1="252" x2="376" y2="618" class="vdivider"/><line x1="542" y1="252" x2="542" y2="618" class="vdivider"/><line x1="642" y1="252" x2="642" y2="618" class="vdivider"/><line x1="812" y1="252" x2="812" y2="618" class="vdivider"/><line x1="1010" y1="252" x2="1010" y2="618" class="vdivider"/><line x1="1142" y1="252" x2="1142" y2="618" class="vdivider"/>
+
+  <!-- satır 1 -->
+  <line x1="290" y1="372" x2="1338" y2="372" class="divider"/>
+  <rect x="308" y="316" width="48" height="22" rx="4" fill="#FBE7E5"/><text x="332" y="331" class="t" text-anchor="middle" font-size="9" font-weight="650" fill="#B42318">YÜKSEK</text>
+  <text x="393" y="318" class="t cell" font-weight="650">Bluetooth Kulaklık</text><text x="393" y="337" class="t small">LST-2026-0458</text>
+  <rect x="562" y="311" width="65" height="25" rx="5" fill="#F4EBD8"/><text x="594" y="328" class="t" text-anchor="middle" font-size="9" font-weight="650" fill="#9A6C10">Teklif turu</text>
+  <text x="662" y="318" class="t cell" font-weight="650">Üretici</text><text x="662" y="337" class="t small">Shenzhen Audio</text>
+  <text x="833" y="319" class="t cell">FOB fiyatı bekleniyor</text><text x="833" y="338" class="t small">Tur 2 · 1 ürün eksik</text>
+  <text x="1030" y="319" class="t cell">2 saat önce</text><text x="1030" y="338" class="t small">Teklif gönderildi</text>
+  <rect x="1164" y="307" width="122" height="31" rx="5" fill="#0F2557"/><text x="1225" y="327" class="t on-dark" style="fill:#FFFFFF" text-anchor="middle" font-size="10" font-weight="650">Yanıt iste</text>
+
+  <!-- satır 2 -->
+  <line x1="290" y1="454" x2="1338" y2="454" class="divider"/>
+  <rect x="308" y="398" width="43" height="22" rx="4" fill="#FFF3DE"/><text x="329" y="413" class="t" text-anchor="middle" font-size="9" font-weight="650" fill="#A15E00">ORTA</text>
+  <text x="393" y="400" class="t cell" font-weight="650">Çelik Termos</text><text x="393" y="419" class="t small">LST-2026-0312</text>
+  <rect x="562" y="393" width="46" height="25" rx="5" fill="#E8F3ED"/><text x="585" y="410" class="t" text-anchor="middle" font-size="9" font-weight="650" fill="#167553">DDP</text>
+  <text x="662" y="400" class="t cell" font-weight="650">İthalatçı</text><text x="662" y="419" class="t small">Euroline GmbH</text>
+  <text x="833" y="401" class="t cell">DDP fiyatı eksik</text><text x="833" y="420" class="t small">2 ürün yanıtlanmadı</text>
+  <text x="1030" y="401" class="t cell">5 saat önce</text><text x="1030" y="420" class="t small">Revizyon açıldı</text>
+  <rect x="1164" y="389" width="122" height="31" rx="5" fill="#FFFFFF" stroke="#C49A45"/><text x="1225" y="409" class="t gold-text" text-anchor="middle" font-size="10" font-weight="650">Turu aç</text>
+
+  <!-- satır 3 -->
+  <line x1="290" y1="536" x2="1338" y2="536" class="divider"/>
+  <rect x="308" y="480" width="43" height="22" rx="4" fill="#FFF3DE"/><text x="329" y="495" class="t" text-anchor="middle" font-size="9" font-weight="650" fill="#A15E00">ORTA</text>
+  <text x="393" y="482" class="t cell" font-weight="650">ABS Valiz Seti</text><text x="393" y="501" class="t small">MUS-2026-0187</text>
+  <rect x="562" y="475" width="58" height="25" rx="5" fill="#EEF1F6"/><text x="591" y="492" class="t" text-anchor="middle" font-size="9" font-weight="650" fill="#0F2557">Müşteri</text>
+  <text x="662" y="482" class="t cell" font-weight="650">Müşteri</text><text x="662" y="501" class="t small">ModaHome A.Ş.</text>
+  <text x="833" y="483" class="t cell">Liste yanıtı eksik</text><text x="833" y="502" class="t small">3 ürün niyetsiz</text>
+  <text x="1030" y="483" class="t cell">1 gün önce</text><text x="1030" y="502" class="t small">Liste görüntülendi</text>
+  <rect x="1164" y="471" width="122" height="31" rx="5" fill="#FFFFFF" stroke="#C49A45"/><text x="1225" y="491" class="t gold-text" text-anchor="middle" font-size="10" font-weight="650">Müşteriyi aç</text>
+
+  <!-- satır 4 -->
+  <rect x="308" y="562" width="43" height="22" rx="4" fill="#E8F3ED"/><text x="329" y="577" class="t" text-anchor="middle" font-size="9" font-weight="650" fill="#167553">DÜŞÜK</text>
+  <text x="393" y="564" class="t cell" font-weight="650">LED Şerit 5 m</text><text x="393" y="583" class="t small">MAL-2026-0099</text>
+  <rect x="562" y="557" width="52" height="25" rx="5" fill="#F4EBD8"/><text x="588" y="574" class="t" text-anchor="middle" font-size="9" font-weight="650" fill="#9A6C10">Maliyet</text>
+  <text x="662" y="564" class="t cell" font-weight="650">İç işlem</text><text x="662" y="583" class="t small">Ürün Sahibi</text>
+  <text x="833" y="565" class="t cell">Kur değişimi marjı etkiledi</text><text x="833" y="584" class="t small">Karar kartı güncel değil</text>
+  <text x="1030" y="565" class="t cell">2 gün önce</text><text x="1030" y="584" class="t small">Kur eşitlendi</text>
+  <rect x="1164" y="553" width="122" height="31" rx="5" fill="#FFFFFF" stroke="#C49A45"/><text x="1225" y="573" class="t gold-text" text-anchor="middle" font-size="10" font-weight="650">Yeniden hesapla</text>
+
+  <!-- Bekleyen dış yanıtlar -->
+  <g filter="url(#shadow)"><rect x="1360" y="104" width="532" height="250" rx="8" fill="#FFFFFF"/></g>
+  <text x="1380" y="137" class="t panel-title">Bekleyen dış yanıtlar</text>
+  <text x="1872" y="137" class="t" text-anchor="end" font-size="9" fill="#78849A">En eski açık kayıt</text>
+  <line x1="1360" y1="152" x2="1892" y2="152" class="divider"/>
+  <circle cx="1394" cy="186" r="18" fill="#E9EEF8"/><g color="#0F2557"><use href="#i-users" x="1384" y="176" width="20" height="20" class="outline-icon"/></g>
+  <text x="1423" y="182" class="t cell" font-weight="650">Müşteriler</text><text x="1423" y="203" class="t count" font-size="20">6</text>
+  <text x="1516" y="181" class="t cell">ModaHome A.Ş.</text><text x="1516" y="201" class="t small">Liste yanıtı eksik · 1 gün</text>
+  <rect x="1829" y="170" width="42" height="29" rx="5" fill="#FFFFFF" stroke="#C49A45"/><text x="1850" y="189" class="t gold-text" text-anchor="middle" font-size="9" font-weight="650">Aç</text>
+  <line x1="1378" y1="220" x2="1874" y2="220" class="divider"/>
+  <circle cx="1394" cy="253" r="18" fill="#E8F3ED"/><g color="#167553"><use href="#i-globe" x="1384" y="243" width="20" height="20" class="outline-icon"/></g>
+  <text x="1423" y="249" class="t cell" font-weight="650">İthalatçılar</text><text x="1423" y="270" class="t count" font-size="20">4</text>
+  <text x="1516" y="248" class="t cell">Euroline GmbH</text><text x="1516" y="268" class="t small">DDP fiyatı eksik · 5 saat</text>
+  <rect x="1829" y="237" width="42" height="29" rx="5" fill="#FFFFFF" stroke="#C49A45"/><text x="1850" y="256" class="t gold-text" text-anchor="middle" font-size="9" font-weight="650">Aç</text>
+  <line x1="1378" y1="286" x2="1874" y2="286" class="divider"/>
+  <circle cx="1394" cy="319" r="18" fill="#F4EBD8"/><g color="#9A6C10"><use href="#i-factory" x="1384" y="309" width="20" height="20" class="outline-icon"/></g>
+  <text x="1423" y="315" class="t cell" font-weight="650">Üreticiler</text><text x="1423" y="336" class="t count" font-size="20">8</text>
+  <text x="1516" y="314" class="t cell">Shenzhen Audio</text><text x="1516" y="334" class="t small">FOB fiyatı eksik · 2 saat</text>
+  <rect x="1829" y="303" width="42" height="29" rx="5" fill="#FFFFFF" stroke="#C49A45"/><text x="1850" y="322" class="t gold-text" text-anchor="middle" font-size="9" font-weight="650">Aç</text>
+
+  <!-- Kritik engeller -->
+  <g filter="url(#shadow)"><rect x="1360" y="370" width="532" height="226" rx="8" fill="#FFFFFF"/></g>
+  <text x="1380" y="403" class="t panel-title">Kritik engeller</text>
+  <text x="1872" y="403" class="t" text-anchor="end" font-size="9" fill="#78849A">Anomali kataloğu</text>
+  <line x1="1360" y1="418" x2="1892" y2="418" class="divider"/>
+  <circle cx="1394" cy="452" r="16" fill="#FFF3DE"/><path d="m1387 458 7-13 7 13z" fill="none" stroke="#B36B00" stroke-width="1.8"/><text x="1394" y="456" class="t" text-anchor="middle" font-size="9" font-weight="700" fill="#B36B00">!</text>
+  <text x="1423" y="450" class="t cell" font-weight="650">Talep miktarı MOQ altında</text><text x="1423" y="469" class="t small">3 ürün · üretici teklifleri</text><circle cx="1854" cy="452" r="16" fill="#FFF3DE"/><text x="1854" y="457" class="t" text-anchor="middle" font-size="10" font-weight="650" fill="#A15E00">3</text>
+  <line x1="1378" y1="486" x2="1874" y2="486" class="divider"/>
+  <circle cx="1394" cy="520" r="16" fill="#FBE7E5"/><circle cx="1394" cy="520" r="7" fill="none" stroke="#B42318" stroke-width="1.8"/><path d="M1394 516v5l4 2" fill="none" stroke="#B42318" stroke-width="1.8"/>
+  <text x="1423" y="518" class="t cell" font-weight="650">Teklif geçerliliği doluyor</text><text x="1423" y="537" class="t small">5 liste · yeniden karar gerekiyor</text><circle cx="1854" cy="520" r="16" fill="#FBE7E5"/><text x="1854" y="525" class="t" text-anchor="middle" font-size="10" font-weight="650" fill="#B42318">5</text>
+  <line x1="1378" y1="554" x2="1874" y2="554" class="divider"/>
+  <circle cx="1394" cy="574" r="16" fill="#E9EEF8"/><g color="#0F2557"><use href="#i-truck" x="1385" y="565" width="18" height="18" class="outline-icon"/></g>
+  <text x="1423" y="572" class="t cell" font-weight="650">Konteyner kapasitesi sınırda</text><text x="1423" y="589" class="t small">2 plan · V3-D CBM kontrolü</text><circle cx="1854" cy="574" r="16" fill="#E9EEF8"/><text x="1854" y="579" class="t" text-anchor="middle" font-size="10" font-weight="650" fill="#0F2557">2</text>
+
+  <!-- Aşamalara göre işler -->
+  <g filter="url(#shadow)"><rect x="290" y="638" width="1048" height="402" rx="8" fill="#FFFFFF"/></g>
+  <text x="310" y="671" class="t panel-title">Aşamalara göre açık işler</text>
+  <text x="1315" y="671" class="t" text-anchor="end" font-size="10" fill="#9A6C10">Tüm aşamaları aç →</text>
+  <line x1="290" y1="686" x2="1338" y2="686" class="divider"/>
+  <rect x="290" y="686" width="1048" height="36" fill="#F8F9FC"/>
+  <text x="310" y="709" class="t th">AŞAMA</text><text x="560" y="709" class="t th">BEKLEYEN</text><text x="660" y="709" class="t th">BLOKELİ</text><text x="760" y="709" class="t th">EN ESKİ AÇIK</text><text x="1035" y="709" class="t th">SON HAREKET</text><text x="1210" y="709" class="t th">İŞLEM</text>
+  <line x1="540" y1="686" x2="540" y2="1040" class="vdivider"/><line x1="640" y1="686" x2="640" y2="1040" class="vdivider"/><line x1="740" y1="686" x2="740" y2="1040" class="vdivider"/><line x1="1015" y1="686" x2="1015" y2="1040" class="vdivider"/><line x1="1188" y1="686" x2="1188" y2="1040" class="vdivider"/>
+  <g class="t cell">
+    <text x="310" y="754" font-weight="650">Keşif</text><text x="578" y="754" text-anchor="middle" class="tabular">21</text><text x="678" y="754" text-anchor="middle" fill="#B42318" font-weight="650">6</text><text x="760" y="747" font-weight="650">Kamp Sandalyesi</text><text x="760" y="764" class="small">OutdoorLife</text><text x="1035" y="754">1 gün önce</text><text x="1210" y="754" fill="#9A6C10" font-weight="650">İşleri gör →</text>
+    <line x1="290" y1="779" x2="1338" y2="779" class="divider"/>
+    <text x="310" y="811" font-weight="650">Karar</text><text x="578" y="811" text-anchor="middle" class="tabular">14</text><text x="678" y="811" text-anchor="middle" fill="#B36B00" font-weight="650">4</text><text x="760" y="804" font-weight="650">Paslanmaz Mutfak Evyesi</text><text x="760" y="821" class="small">BuildPro Ltd.</text><text x="1035" y="811">2 gün önce</text><text x="1210" y="811" fill="#9A6C10" font-weight="650">İşleri gör →</text>
+    <line x1="290" y1="836" x2="1338" y2="836" class="divider"/>
+    <text x="310" y="868" font-weight="650">Teklif turu</text><text x="578" y="868" text-anchor="middle" class="tabular">18</text><text x="678" y="868" text-anchor="middle" fill="#B42318" font-weight="650">7</text><text x="760" y="861" font-weight="650">Bluetooth Kulaklık</text><text x="760" y="878" class="small">Shenzhen Audio</text><text x="1035" y="868">2 saat önce</text><text x="1210" y="868" fill="#9A6C10" font-weight="650">İşleri gör →</text>
+    <line x1="290" y1="893" x2="1338" y2="893" class="divider"/>
+    <text x="310" y="925" font-weight="650">DDP</text><text x="578" y="925" text-anchor="middle" class="tabular">9</text><text x="678" y="925" text-anchor="middle" fill="#B36B00" font-weight="650">2</text><text x="760" y="918" font-weight="650">Çelik Termos</text><text x="760" y="935" class="small">Euroline GmbH</text><text x="1035" y="925">5 saat önce</text><text x="1210" y="925" fill="#9A6C10" font-weight="650">İşleri gör →</text>
+    <line x1="290" y1="950" x2="1338" y2="950" class="divider"/>
+    <text x="310" y="982" font-weight="650">Müşteri</text><text x="578" y="982" text-anchor="middle" class="tabular">7</text><text x="678" y="982" text-anchor="middle" fill="#B36B00" font-weight="650">1</text><text x="760" y="975" font-weight="650">ABS Valiz Seti</text><text x="760" y="992" class="small">ModaHome A.Ş.</text><text x="1035" y="982">1 gün önce</text><text x="1210" y="982" fill="#9A6C10" font-weight="650">İşleri gör →</text>
+    <line x1="290" y1="1007" x2="1338" y2="1007" class="divider"/>
+    <text x="310" y="1028" font-weight="650">Lojistik</text><text x="578" y="1028" text-anchor="middle" class="tabular">6</text><text x="678" y="1028" text-anchor="middle" fill="#B36B00" font-weight="650">2</text><text x="760" y="1021" font-weight="650">LED Şerit 5 m</text><text x="760" y="1038" class="small">Konteyner planı</text><text x="1035" y="1028">2 gün önce</text><text x="1210" y="1028" fill="#9A6C10" font-weight="650">İşleri gör →</text>
+  </g>
+
+  <!-- Son önemli kararlar -->
+  <g filter="url(#shadow)"><rect x="1360" y="616" width="532" height="424" rx="8" fill="#FFFFFF"/></g>
+  <text x="1380" y="649" class="t panel-title">Son önemli kararlar</text>
+  <text x="1872" y="649" class="t" text-anchor="end" font-size="9" fill="#78849A">K13 karar süzgeci</text>
+  <line x1="1360" y1="664" x2="1892" y2="664" class="divider"/>
+  <circle cx="1394" cy="705" r="15" fill="#E8F3ED"/><path d="m1387 705 5 5 9-11" fill="none" stroke="#167553" stroke-width="2" stroke-linecap="round"/>
+  <text x="1422" y="698" class="t cell" font-weight="650">İthalat kararı onaylandı</text><text x="1422" y="717" class="t small">Çelik Termos · KAR-2026-024</text><text x="1868" y="707" class="t small" text-anchor="end">2 saat önce</text>
+  <line x1="1378" y1="745" x2="1874" y2="745" class="divider"/>
+  <circle cx="1394" cy="786" r="15" fill="#F4EBD8"/><path d="M1387 786h14M1394 779v14" stroke="#9A6C10" stroke-width="1.8" stroke-linecap="round"/>
+  <text x="1422" y="779" class="t cell" font-weight="650">Müşteri listesi gönderildi</text><text x="1422" y="798" class="t small">ABS Valiz Seti · MUS-2026-187</text><text x="1868" y="788" class="t small" text-anchor="end">4 saat önce</text>
+  <line x1="1378" y1="826" x2="1874" y2="826" class="divider"/>
+  <circle cx="1394" cy="867" r="15" fill="#E9EEF8"/><path d="M1387 867h14M1397 863l4 4-4 4" fill="none" stroke="#0F2557" stroke-width="1.8" stroke-linecap="round"/>
+  <text x="1422" y="860" class="t cell" font-weight="650">Teklif turu kapatıldı</text><text x="1422" y="879" class="t small">Bluetooth Kulaklık · Tur 1</text><text x="1868" y="869" class="t small" text-anchor="end">1 gün önce</text>
+  <line x1="1378" y1="907" x2="1874" y2="907" class="divider"/>
+  <circle cx="1394" cy="948" r="15" fill="#E8F3ED"/><path d="m1387 948 5 5 9-11" fill="none" stroke="#167553" stroke-width="2" stroke-linecap="round"/>
+  <text x="1422" y="941" class="t cell" font-weight="650">Siparişe dönüştürüldü</text><text x="1422" y="960" class="t small">Mutfak Düzenleyici · SIP-2026-044</text><text x="1868" y="950" class="t small" text-anchor="end">1 gün önce</text>
+  <line x1="1378" y1="988" x2="1874" y2="988" class="divider"/>
+  <text x="1626" y="1018" class="t gold-text" text-anchor="middle" font-size="10" font-weight="650">Tüm kararları aç →</text>
+</svg>

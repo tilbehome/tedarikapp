@@ -10,6 +10,7 @@ import { useGelenKutusuSayisi } from '../../lib/useGelenKutusuSayisi';
 import YanMenu from './YanMenu';
 import UstCubuk from './UstCubuk';
 import AnlikKart from '../bildirim/AnlikKart';
+import SurumBalonu from '../SurumBalonu';
 import { useBildirimSayisi } from '../../lib/useBildirimSayisi';
 import KomutPaleti from './KomutPaleti';
 
@@ -86,6 +87,8 @@ export default function Kabuk() {
     <div className="flex min-h-dvh bg-app" data-testid="kabuk">
       {/* A5: kritik olayın anlık kartı — modal değil, köşe kartı. */}
       <AnlikKart />
+      {/* B4: yeni sürümün "Yenilikler" balonu — sürüm başına bir kez. */}
+      <SurumBalonu />
       <YanMenu gelenKutusuSayisi={gelenKutusuSayisi} onKomut={() => setPaletAcik(true)} onCikis={() => void cikis()} />
 
       <div className="flex min-w-0 flex-1 flex-col">

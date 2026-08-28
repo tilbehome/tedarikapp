@@ -57,6 +57,10 @@ final class DataRoutes
         \App\Services\Kuyruk\KuyrukTetikleyici $kuyrukTetikleyici,
         // V3-B A4: bildirim merkezi uçları.
         \App\Controllers\BildirimController $bildirimController,
+        // V3-B B1: panorama TEK uç.
+        \App\Controllers\PanoramaController $panoramaController,
+        // V3-B B4: "Yenilikler" balonu ve sürüm notları geçmişi.
+        \App\Controllers\SurumNotuController $surumNotuController,
     ): void {
         // İE#19 G7 — AKTİVİTE DEFTERİ BİLEREK KAPI DIŞINDA.
         //
@@ -66,7 +70,7 @@ final class DataRoutes
         // zaman?" sorusunun cevabı burada. Onu da 503'e kapatmak, kullanıcıyı
         // arızayı teşhis edecek tek ekrandan mahrum bırakırdı. Uç yalnız
         // `activity_log` tablosunu okur; şema kaymasından etkilenen kolonları yoktur.
-        $app->group('/api', static function (RouteCollectorProxy $group) use ($activityController, $bildirimController): void {
+        $app->group('/api', static function (RouteCollectorProxy $group) use ($activityController, $bildirimController, $panoramaController, $surumNotuController): void {
             $group->get('/activity', [$activityController, 'index']);
             // BİLDİRİMLER DE KAPI DIŞINDA (aynı gerekçe): sistem bozukken
             // kullanıcının "ne oldu?" sorusuna cevap veren yüzey odur. Uç yalnız
@@ -75,6 +79,12 @@ final class DataRoutes
             $group->get('/bildirimler/sayac', [$bildirimController, 'sayac']);
             $group->post('/bildirimler/hepsi-okundu', [$bildirimController, 'hepsiOkundu']);
             $group->post('/bildirimler/{id}/okundu', [$bildirimController, 'okundu']);
+            // Panorama da kapı dışında: "bugün ne var?" sorusu sistem yarım
+            // kurulmuşken de sorulabilmeli; uç yalnız sayar, şema yazmaz.
+            $group->get('/panorama', [$panoramaController, 'index']);
+            $group->get('/surum-notu', [$surumNotuController, 'guncel']);
+            $group->get('/surum-notu/gecmis', [$surumNotuController, 'gecmis']);
+            $group->post('/surum-notu/goruldu', [$surumNotuController, 'gorulduIsaretle']);
         })
             ->add(new Csrf($services->session, $responseFactory))
             ->add(new Auth($services, $responseFactory));

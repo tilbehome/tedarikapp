@@ -506,3 +506,46 @@ export const bildirimler = {
   hepsiOkundu: () =>
     api.post<{ isaretlenen: number; okunmamis: number }>('/api/bildirimler/hepsi-okundu'),
 };
+
+/**
+ * PANORAMA (V3-B B1) — "Bugün ne var?".
+ *
+ * Yanıt HAZIR CÜMLE taşır. Ham metrik ve koşul ifadesi GELMEZ: koşulları
+ * sunucu değerlendirir, panel yalnız gösterir. İki taraf da yorum yaparsa
+ * aynı gerçeğin iki yolu doğar — bu projenin tekrar eden hatası.
+ */
+export interface PanoramaBrifing {
+  id: string;
+  /** 1 en acil. */
+  oncelik: number;
+  cumle: string;
+  eylem: string;
+  eylem_linki: string | null;
+}
+
+export interface PanoramaYaniti {
+  brifingler: PanoramaBrifing[];
+  /** Bugün ÖLÇÜLEMEYEN brifingler — "koşul sağlanmadı" DEĞİL. */
+  olculmeyen: { id: string; sebep: string }[];
+  /** Hiç brifing yoksa gösterilecek cümle; varsa null. */
+  bos_gun: string | null;
+  olcum_zamani: string;
+}
+
+export const panorama = {
+  read: () => api.get<PanoramaYaniti>('/api/panorama'),
+};
+
+/**
+ * SÜRÜM NOTLARI — "Yenilikler" balonu (V3-B B4).
+ *
+ * Okundu işareti SUNUCUDA tutulur: kullanıcı paneli başka bir cihazdan
+ * açtığında aynı balonu yeniden görmemeli.
+ */
+export const surumNotu = {
+  guncel: () =>
+    api.get<{ surum: string; maddeler: string[]; gorulmedi: boolean }>('/api/surum-notu'),
+  gecmis: () =>
+    api.get<{ surumler: { surum: string; maddeler: string[] }[] }>('/api/surum-notu/gecmis'),
+  goruldu: () => api.post<{ surum: string }>('/api/surum-notu/goruldu'),
+};

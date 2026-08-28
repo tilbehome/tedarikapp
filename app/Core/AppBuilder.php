@@ -463,6 +463,10 @@ final class AppBuilder
                 new \App\Services\Bildirim\BildirimRepository($connection),
                 $services->clock,
             ),
+            new \App\Controllers\PanoramaController(
+                new \App\Services\Panorama\PanoramaServisi($connection, $services->clock, $basePath),
+            ),
+            new \App\Controllers\SurumNotuController($settingsRepository, $basePath),
         );
 
         // Panel (İE#8 §5): Vite çıktısı public/panel/ altındadır. Var olan dosyaları

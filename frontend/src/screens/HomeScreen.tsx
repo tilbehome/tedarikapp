@@ -6,6 +6,7 @@ import { useAsync } from '../lib/useAsync';
 import { count, dateTime } from '../lib/format';
 import { EmptyState, ErrorNote, PageHeader, Skeleton } from '../components/ui';
 import { actionLabel } from '../lib/activityLabels';
+import PanoramaBolumu from './panorama/PanoramaBolumu';
 
 /**
  * E2 — Ana Ekran: özet kartları, son aktiviteler, hızlı erişim.
@@ -28,8 +29,8 @@ export default function HomeScreen() {
   return (
     <>
       <PageHeader
-        title="Ana Ekran"
-        subtitle="Aktif işlerin özeti"
+        title="Panorama"
+        subtitle="Bugün ne var? Müdahale gereken işler ve aktif işlerin özeti"
         actions={
           <Link to="/listeler" className="btn-primary">
             <Plus className="h-4 w-4" aria-hidden />
@@ -37,6 +38,11 @@ export default function HomeScreen() {
           </Link>
         }
       />
+
+      {/* V3-B B3: brifingler EN ÜSTTE — kullanıcı önce neye bakacağını görür,
+          sonra özet sayıları. Sıra ters olsaydı "12 aktif liste" bilgisi,
+          "1 iş kalıcı olarak durdu" uyarısının önüne geçerdi. */}
+      <PanoramaBolumu />
 
       {listsState.loading ? (
         <Skeleton rows={2} />
