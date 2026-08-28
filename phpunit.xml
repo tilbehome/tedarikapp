@@ -4,11 +4,18 @@
          bootstrap="vendor/autoload.php"
          colors="true"
          failOnWarning="true"
+         defaultTestSuite="tedarikapp"
          failOnDeprecation="true">
     <!--
         TEST SUITLERI (IE#22 Blok D - K19 onayli CI matrisi).
 
-        "tedarikapp" TAM SUITTIR ve yerelde varsayilan olarak o kosar. Yanindaki
+        "tedarikapp" TAM SUITTIR ve `defaultTestSuite` ile VARSAYILANDIR:
+        suit secmeden kosan her komut (yerel `composer test`, CI'daki
+        grup bazli MySQL isleri, uretim profili) YALNIZ onu yukler. Bu oznitelik
+        SART: ayni dosya hem tam suitte hem dilimde bulundugu icin, tum suitleri
+        birden yukleyen bir kosum "Cannot add file ... already added" uyarilari
+        uretir ve `failOnWarning` yuzunden is KIRMIZI olur (olculdu: 126 uyari).
+        Yanindaki
         "birim" ve "http-1..4" suitleri AYNI dosyalari boler; CI onlari paralel
         job'larda kosturur (13 dk olculdu, hedef 8 dk alti).
 
