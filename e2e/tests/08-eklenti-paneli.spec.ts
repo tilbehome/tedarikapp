@@ -610,3 +610,44 @@ test.describe('E2E-EKL-34 — inline düğme SATIN ALMA BLOĞUNUN ÜSTÜNDE (v1.
     }
   });
 });
+
+test.describe('E2E-EKL-35 — varyant çipleri SALT GÖRÜNÜM Türkçe (v1.0.1 A9)', () => {
+  test('renk ve bölge adları TR görünür, sunucuya giden değer ORİJİNAL kalır', async ({ page }) => {
+    await page.setContent('<!doctype html><html><body></body></html>');
+    await page.addScriptTag({ path: KOPRU_YOLU });
+
+    const sonuc = await page.evaluate((gorunumJson) => {
+      const api = (window as unknown as { TDK: Record<string, unknown> }).TDK;
+      const secilenler: string[] = [];
+      const cekmece = (
+        api.cekmeceKur as (s: unknown) => { ac(): void; ciz(g: unknown): void; kok(): ShadowRoot }
+      )({
+        eylemler: new Proxy(
+          { onVaryant: (varyant: string) => secilenler.push(varyant) },
+          { get: (hedef, ad) => (hedef as Record<string, unknown>)[ad as string] ?? (() => {}) },
+        ),
+      });
+      cekmece.ciz(JSON.parse(gorunumJson));
+      cekmece.ac();
+
+      const kok = cekmece.kok();
+      const cipler = Array.from(kok.querySelectorAll('.tdk-varyant .cip')) as HTMLElement[];
+      // İlk çipe tıkla: geri çağrıya ORİJİNAL değer gitmeli.
+      cipler[0]?.click();
+
+      return {
+        metinler: cipler.map((cip) => cip.textContent ?? ''),
+        orijinaller: cipler.map((cip) => cip.getAttribute('data-orijinal') ?? ''),
+        secilenler,
+      };
+    }, JSON.stringify(gorunum({ varyantlar: ['粉红色', '美规', '洞洞鞋专用鞋扣'], seciliVaryant: '粉红色' })));
+
+    expect(sonuc.metinler[0], 'renk TR görünür').toBe('Pembe');
+    expect(sonuc.metinler[1], 'voltaj bilgisi KORUNUR').toBe('ABD fişi (110V)');
+    expect(sonuc.metinler[2], 'bilinmeyen terim AYNEN kalır').toBe('洞洞鞋专用鞋扣');
+
+    // ASIL SÖZLEŞME: görünüm Türkçeleşse de veri orijinaldir (K90).
+    expect(sonuc.orijinaller[0]).toBe('粉红色');
+    expect(sonuc.secilenler[0], 'seçim geri çağrısı ORİJİNAL değeri taşır').toBe('粉红色');
+  });
+});

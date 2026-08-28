@@ -331,6 +331,7 @@ abstract class AuthTestCase extends TestCase
                 name TEXT NOT NULL,
                 name_original TEXT NULL,
                 name_elle INTEGER NOT NULL DEFAULT 0,
+                source_lang TEXT NULL,
                 detail TEXT NULL,
                 url TEXT NULL,
                 vendor_name TEXT NULL,

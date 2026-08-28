@@ -124,7 +124,20 @@ final class LlmTranslator implements TranslatorInterface
             return $this->yedek->translateProduct($urun);
         }
 
-        $diller = $this->ayarlar->hedefDiller();
+        // D12 — HEDEF DİLLER ÜRÜNDEN GELEBİLİR.
+        //
+        // Kanonik üçlüde hedef, ürünün KAYNAK DİLİNE göre değişir (zh kaynakta
+        // tr+en, tr kaynakta en+zh). Ayarlardaki liste tüm kurulum için tek bir
+        // cevap verir ve bu soruyu yanıtlayamaz. Çağıran açıkça söylerse o
+        // geçerlidir; söylemezse eski davranış (ayarlar) korunur.
+        /** @var list<string> $istenen */
+        $istenen = is_array($urun['target_langs'] ?? null)
+            ? array_values(array_filter(
+                array_map(static fn (mixed $d): string => is_string($d) ? trim($d) : '', $urun['target_langs']),
+                static fn (string $d): bool => $d !== '',
+            ))
+            : [];
+        $diller = $istenen !== [] ? $istenen : $this->ayarlar->hedefDiller();
         $kaynakDil = is_string($urun['source_lang'] ?? null) && $urun['source_lang'] !== ''
             ? (string) $urun['source_lang']
             : Glossary::detect((string) ($urun['name'] ?? ''));

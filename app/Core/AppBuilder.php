@@ -137,6 +137,32 @@ final class AppBuilder
         $products = new ProductRepository($connection);
         $money = new MoneyService();
         $settingsRepository = new SettingsRepository($connection);
+
+        // ── D12: CRON'SUZ ÇEVİRİ ALTYAPISI ───────────────────────────────────
+        //
+        // Kuyruk işçisi artık YALNIZ cron'dan doğmuyor: panel ziyareti ve
+        // yakalama da tur açıyor. İşleyiciler bu yüzden HTTP kompozisyonunda da
+        // kayıtlı olmalı — kayıtlı olmasa tur "tanınmayan iş türü" der ve işleri
+        // ölü rafına atardı.
+        $kuyrukKosucusu = new \App\Services\Kuyruk\JobRunner(
+            new \App\Services\Kuyruk\JobQueue($connection),
+            $logger,
+        );
+        \App\Services\Kuyruk\KuyrukIsleyicileri::kaydet(
+            $kuyrukKosucusu,
+            $config,
+            $connection,
+            $logger,
+            $basePath,
+            $services->clock,
+        );
+        $kuyrukTetikleyici = new \App\Services\Kuyruk\KuyrukTetikleyici(
+            $kuyrukKosucusu,
+            $settingsRepository,
+            $services->clock,
+            $logger,
+        );
+
         // K4 düzeltmesi: taslak listeler GÜNCEL ayar kurunu gösterir — presenter ayarları bilir.
         // D11b: panel, paylaşım sayfası ve belge AYNI ad çözümünü kullanır.
         $adCozumleyici = new \App\Services\Translation\AdCozumleyici(
@@ -283,7 +309,7 @@ final class AppBuilder
             // D11a: galeri görselleri arka planda indirilsin (yakalama beklemez).
             kuyruk: new \App\Services\Kuyruk\JobQueue($connection),
         );
-        $extensionController = new \App\Controllers\ExtensionController($captureService, $inboxRepository, $lists, $services->clock, $basePath, $captureApplier);
+        $extensionController = new \App\Controllers\ExtensionController($captureService, $inboxRepository, $lists, $services->clock, $basePath, $captureApplier, $kuyrukTetikleyici);
         $extensionAuth = new \App\Middleware\ExtensionAuth(
             $connection,
             $responseFactory,
@@ -332,6 +358,15 @@ final class AppBuilder
             $translator,
         );
 
+        // Senkron çeviri: "çevir" dendiğinde kuyruğa yazıp umut etmek yerine
+        // isteğin içinde çevirir (D12 madde 1-2).
+        $ceviriYurutucu = new \App\Services\Translation\CeviriYurutucu(
+            $products,
+            new \App\Models\TranslationCacheRepository($connection),
+            $translator,
+            $logger,
+        );
+
         $translationController = new \App\Controllers\TranslationController(
             $translationService,
             $glossary,
@@ -341,6 +376,8 @@ final class AppBuilder
             $ceviriAyarlari,
             new \App\Services\Kuyruk\JobQueue($connection),
             $products,
+            $ceviriYurutucu,
+            $kuyrukTetikleyici,
         );
 
         $app->group('', static function (\Slim\Routing\RouteCollectorProxy $group) use ($extensionController, $translationController): void {
@@ -407,6 +444,7 @@ final class AppBuilder
             $responseFactory,
             $connection,
             $basePath . '/migrations',
+            $kuyrukTetikleyici,
         );
 
         // Panel (İE#8 §5): Vite çıktısı public/panel/ altındadır. Var olan dosyaları

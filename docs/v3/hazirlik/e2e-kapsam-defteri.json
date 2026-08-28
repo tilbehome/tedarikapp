@@ -525,6 +525,13 @@
       "dosya": "e2e/tests/08-eklenti-paneli.spec.ts",
       "test": "E2E-EKL-34 — inline düğme SATIN ALMA BLOĞUNUN ÜSTÜNDE (v1.0 A5/A8)",
       "not": "Ürün Sahibi'nin GERÇEK sayfa dökümleri (e2e/fixtures/1688, 27 Ağu 2026, oturumsuz). Dış CSS/JS yok, ağ route.abort() ile kapalı: ağaç gerçek, düzen gerçek sayfanın pikseli değil."
+    },
+    "E2E-EKL-35": {
+      "baslik": "Varyant çipleri salt görünüm Türkçe; veri orijinal kalır",
+      "durum": "kapsandi",
+      "dosya": "e2e/tests/08-eklenti-paneli.spec.ts",
+      "test": "E2E-EKL-35 — varyant çipleri SALT GÖRÜNÜM Türkçe (v1.0.1 A9)",
+      "not": "K90: eklentide LLM yok, gömülü kapalı sözlük. Seçim geri çağrısının ORİJİNAL değeri taşıdığı da sınanır."
     }
   }
 }
