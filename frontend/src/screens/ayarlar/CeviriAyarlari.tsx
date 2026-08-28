@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { AlertTriangle, CheckCircle2, KeyRound, Languages, PlugZap, Sparkles } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, KeyRound, Languages, Loader2, PlugZap, Sparkles } from 'lucide-react';
 import { ceviri as ceviriApi } from '../../api/endpoints';
 import { useAsync, messageOf } from '../../lib/useAsync';
 import { ErrorNote, Field, Skeleton } from '../../components/ui';
@@ -22,6 +22,47 @@ import { epostaGibiMi, otomatikDoldurmaKapali, useAutofillKalkani } from '../../
 export default function CeviriAyarlari() {
   const push = useToast((state) => state.push);
   const durum = useAsync((signal) => ceviriApi.ayarlar(signal), []);
+
+  /**
+   * D12 — TOPLU ÇEVİRİ ARTIK EKRANDA İLERLER.
+   *
+   * Eski hâl tek istekte "kuyruğa alındı" deyip susuyordu; kuyruğu işleyen
+   * olmadığı için hiçbir şey olmuyordu (saha: 1432 dk bekleyen işler). Şimdi
+   * sunucu her istekte bir zaman bütçesi kadar çeviriyor ve kalanı söylüyor;
+   * panel `devam_var` olduğu sürece bir sonraki isteği atıyor. Sayaç kullanıcıya
+   * işin GERÇEKTEN yürüdüğünü gösterir.
+   */
+  const [ilerleme, setIlerleme] = useState<{ toplam: number; cevrilen: number; bitti: boolean } | null>(null);
+
+  const topluCeviriyiSurdur = async (): Promise<void> => {
+    let toplam = 0;
+    let cevrilen = 0;
+
+    // Üst sınır bir güvenlik ağıdır: sunucu her turda ilerlemiyorsa sonsuz
+    // döngüye girmeyiz. Normalde tur sayısı liste boyutuyla orantılıdır.
+    for (let tur = 0; tur < 200; tur++) {
+      const sonuc = await ceviriApi.topluCevir();
+      if (tur === 0) toplam = sonuc.toplam;
+      cevrilen += sonuc.cevrilen;
+      setIlerleme({ toplam: Math.max(toplam, cevrilen), cevrilen, bitti: !sonuc.devam_var });
+
+      if (!sonuc.devam_var) {
+        // Sunucu bir ENGEL bildirdiyse onu göster: "0 çevrildi" deyip susmak,
+        // kullanıcıya düğmenin bozuk olduğunu düşündürür.
+        push(
+          sonuc.engel ??
+            (sonuc.kalan === 0
+              ? `Tamamlandı — ${cevrilen} ürün çevrildi.`
+              : `${cevrilen} ürün çevrildi; ${sonuc.kalan} ürün arka planda tamamlanacak.`),
+          sonuc.engel !== null ? 'error' : 'success',
+        );
+
+        return;
+      }
+    }
+
+    push('Çeviri sürüyor; kalanlar arka planda tamamlanacak.', 'success');
+  };
   const [anahtar, setAnahtar] = useState('');
   const [kaydediliyor, setKaydediliyor] = useState(false);
   /**
@@ -154,6 +195,22 @@ export default function CeviriAyarlari() {
             </Field>
           </div>
 
+          {!veri.anahtar_tanimli ? (
+            <p
+              className="flex items-start gap-2 rounded-lg border border-err/30 bg-err-soft p-2 text-xs text-err"
+              role="alert"
+              data-testid="llm-anahtar-uyarisi"
+            >
+              <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden />
+              <span>
+                <strong>LLM anahtarı tanımlı değil — üç dil garantisi yok.</strong> Sözlük ve
+                makine katmanı ne bulursa dolduruyor, ama bu çeviriler GEÇİCİDİR: ilgili satırlar
+                listelerde ve belgelerde “çeviri bekliyor” işaretli kalır. Kalıcı çeviri için
+                aşağıya bir sağlayıcı anahtarı girin.
+              </span>
+            </p>
+          ) : null}
+
           <Field
             label="API anahtarı"
             hint={
@@ -225,11 +282,8 @@ export default function CeviriAyarlari() {
 
             <EylemDugmesi
               className="btn-ghost"
-              mesgulEtiketi="Kuyruğa alınıyor"
-              onEylem={async () => {
-                const sonuc = await ceviriApi.topluCevir();
-                push(sonuc.mesaj, sonuc.kuyruga_alinan > 0 ? 'success' : 'error');
-              }}
+              mesgulEtiketi="Çevriliyor"
+              onEylem={topluCeviriyiSurdur}
               onHata={(hata) => push(messageOf(hata), 'error')}
             >
               <span className="inline-flex items-center gap-2">
@@ -257,10 +311,21 @@ export default function CeviriAyarlari() {
             </p>
           ) : null}
 
+          {ilerleme !== null ? (
+            <p className="flex items-center gap-2 text-xs text-ink-2" role="status" data-testid="ceviri-ilerleme">
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+              {ilerleme.bitti
+                ? `${ilerleme.cevrilen}/${ilerleme.toplam} çevrildi — tamamlandı.`
+                : `${ilerleme.cevrilen}/${ilerleme.toplam} çevrildi…`}
+            </p>
+          ) : null}
+
           <p className="text-xs text-ink-3">
-            Toplu çeviri kuyruğa alınır ve arka planda koşar; ilerlemeyi aşağıdaki
-            <strong> Kuyruk durumu</strong> bölümünden izleyebilirsiniz. Belge üretimi
-            çeviri beklemez — belgeler yalnız hazır (önbellekteki) metni kullanır.
+            Çeviri kurulum İSTEMEZ: düğmeye bastığınızda ürünler burada, bu ekranda
+            çevrilir. Uzun listelerde iş parçalara bölünür ve yukarıdaki sayaç ilerler;
+            sekmeyi kapatırsanız kalanlar kaybolmaz, panele bir dahaki girişinizde
+            kendiliğinden tamamlanır. Belge üretimi çeviri beklemez — belgeler yalnız
+            hazır (önbellekteki) metni kullanır.
           </p>
         </form>
       ) : null}

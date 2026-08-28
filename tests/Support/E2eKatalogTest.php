@@ -9,7 +9,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * E2E KAPSAM DEFTERİ (İE#21 A7 · B15).
  *
- * İki katalog bağlayıcı test kitabıdır: eklenti 34, panel 52 senaryo. Bu dosya
+ * İki katalog bağlayıcı test kitabıdır: eklenti 35, panel 52 senaryo. Bu dosya
  * onları KODA ÇEVİRMEZ — çevrilip çevrilmediğini ÖLÇER.
  *
  * NEDEN BÖYLE BİR ŞEY GEREKLİ: 81 senaryoluk bir kitabın hangi maddesinin
@@ -65,7 +65,7 @@ final class E2eKatalogTest extends TestCase
         return $senaryolar;
     }
 
-    public function testEKLENTIKATALOGU34SENARYO(): void
+    public function testEKLENTIKATALOGU35SENARYO(): void
     {
         // 29 → 31 (rc7, 26 Ağu 2026): saha bulgularından iki senaryo doğdu —
         // EKL-30 (panel yatay taşmaz) ve EKL-31 (panel varsayılan kapalı).
@@ -73,7 +73,9 @@ final class E2eKatalogTest extends TestCase
         // doğurdu — EKL-32 (çekmece dikey kaydırma), EKL-33 (metin disiplini:
         // rozet/entity/ipucu), EKL-34 (montaj konumu ve dil geçişi).
         // Hepsi GERÇEK TARAYICI ister; jsdom yerleşim hesaplamaz.
-        self::assertCount(34, $this->katalogKimlikleri(self::EKLENTI_KATALOG));
+        // 34 → 35 (v1.0.1, 28 Ağu 2026): EKL-35 — varyant çiplerinin salt
+        // görünüm Türkçeleşmesi ve verinin orijinal kalması (K90).
+        self::assertCount(35, $this->katalogKimlikleri(self::EKLENTI_KATALOG));
     }
 
     public function testPANELKATALOGU52SENARYO(): void

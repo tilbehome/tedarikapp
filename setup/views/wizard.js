@@ -98,6 +98,8 @@
     // rc8/K4 (F-08): paylaşım bağlantısının/QR'ın tabanı. BİLGİ SATIRIDIR,
     // kurulumu durdurmaz — ama eksikse burada görünür.
     lines.push('Uygulama adresi: ' + (env.app_url || '(yok)') + ' — kanonik ' + (env.app_url_kanonik ? '✓' : '⚠'));
+    // D12 (K91): anahtar yoksa çeviriler geçici katmanda kalır. BİLGİ satırıdır.
+    lines.push('LLM çeviri anahtarı: ' + (env.llm_anahtari ? 'tanımlı ✓' : 'YOK ⚠ (çeviriler geçici katmanda, üç dil garantisi yok)'));
     var extensions = env.extensions || {};
     lines.push('Eklentiler: ' + Object.keys(extensions).map(function (name) {
       return name + '=' + extensions[name];

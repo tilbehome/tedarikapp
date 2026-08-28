@@ -21,6 +21,7 @@ import {
   type MakineDurumu,
   type MukerrerSecenegi,
 } from '../../core/durumMakinesi';
+import { gorunumIcinTurkce } from '../../core/gorunumSozlugu';
 import { metinNormalize } from '../../core/metin';
 import { DISCLOSURE_METNI } from '../../core/disclosure';
 import { ALAN_ADLARI, dolulukYuzdesi, type AlanRaporu } from '../../core/alanRaporu';
@@ -374,11 +375,18 @@ export function varyantBolumu(
   const sarmal = el('div', 'tdk-varyant');
   for (const varyant of varyantlar.slice(0, 12)) {
     // A3: entity'li varyant adı ("英文版&gt;1") çipte harfiyen görünüyordu.
-    const cip = el('button', 'cip', metinNormalize(varyant));
+    // A9 (v1.0.1): renk/beden/bölge terimleri SALT GÖRÜNÜM için Türkçeleşir —
+    // gömülü kapalı küme, ağ yok, LLM yok. Sunucuya giden değer ORİJİNALDİR:
+    // tıklama geri çağrısı `varyant` değişkenini ham hâliyle taşır.
+    const gosterilecek = gorunumIcinTurkce(metinNormalize(varyant));
+    const cip = el('button', 'cip', gosterilecek);
     cip.type = 'button';
     // Uzun ad çipte kırpılır; tam adı erişilebilirlik katmanı taşır. `title`
     // KULLANILMAZ (A4): balon panel dışına taşıyor.
-    cip.setAttribute('aria-label', metinNormalize(varyant));
+    cip.setAttribute('aria-label', gosterilecek);
+    // Orijinal değer DOM'da durur: hata ayıklarken ve testte "sunucuya ne
+    // gidiyor" sorusu kaynağa bakmadan yanıtlanabilsin.
+    cip.setAttribute('data-orijinal', varyant);
     cip.setAttribute('aria-pressed', String(varyant === secili));
     cip.addEventListener('click', () => onSec(varyant));
     sarmal.append(cip);

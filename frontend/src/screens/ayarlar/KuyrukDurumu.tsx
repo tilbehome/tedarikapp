@@ -14,8 +14,14 @@ import EylemDugmesi from '../../components/EylemDugmesi';
  *  • **Ölü iş** — bir şey KALICI olarak başarısız oldu (yanlış API anahtarı,
  *    silinmiş ürün). Sessiz kalırsa kullanıcı "çeviri neden gelmedi?" diye sorar
  *    ve cevabı hiçbir yerde bulamaz.
- *  • **En eski bekleyen işin yaşı** — büyüyorsa cron koşmuyordur. Bekleyen sayısı
+ *  • **En eski bekleyen işin yaşı** — büyüyorsa işler akmıyordur. Bekleyen sayısı
  *    tek başına bunu göstermez (az iş de olsa saatlerdir bekliyor olabilir).
+ *
+ * D12 — CRON ARTIK ZORUNLU DEĞİL. İşler panel ziyaretinde, yakalamadan sonra ve
+ * "Çevir" düğmelerinde de akar; cron varsa yalnız fazlalıktır. Bu yüzden kart
+ * "cron koşmuyor olabilir" DEMEZ: kullanıcının kurmadığı bir şeyi hatırlatmak,
+ * olmayan bir arızayı bildirmekti. Uyarı yalnız GERÇEK tıkanmada görünür —
+ * birikme var VE hiçbir tetikleyici tur açamıyor.
  */
 export default function KuyrukDurumu() {
   const push = useToast((state) => state.push);
@@ -26,8 +32,14 @@ export default function KuyrukDurumu() {
     <section className="card mb-4 p-4">
       <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-ink-2">
         <ListChecks className="h-4 w-4" aria-hidden />
-        Kuyruk durumu
+        Arka plan işleri
       </h2>
+      <p className="mb-3 text-xs text-ink-3" data-testid="kuyruk-aciklama">
+        Çeviri ve görsel indirme gibi işler burada görünür. <strong>Hiçbir kurulum
+        gerekmez:</strong> paneli kullandıkça işler kendiliğinden akar. Buradaki
+        sayılar bir arıza olup olmadığını görebilmeniz içindir — sessiz çalışan
+        hiçbir eylem yoktur.
+      </p>
 
       {durum.loading ? (
         <Skeleton rows={1} />

@@ -43,16 +43,18 @@ final class CeviriLlmTazelemeTest extends AuthTestCase
         return $hash;
     }
 
-    private function urunEkle(string $ad, string $orijinal, int $listeId = 1): int
+    private function urunEkle(string $ad, string $orijinal, int $listeId = 1, string $kaynakDil = 'zh'): int
     {
+        // D12: kaynak dili artık kayıtta durur — adaylık ölçütü ona göredir.
         $statement = $this->pdo->prepare(
-            'INSERT INTO products (list_id, name, name_original, created_at, updated_at)
-             VALUES (:liste, :ad, :orijinal, :simdi, :simdi)',
+            'INSERT INTO products (list_id, name, name_original, source_lang, created_at, updated_at)
+             VALUES (:liste, :ad, :orijinal, :kaynak, :simdi, :simdi)',
         );
         $statement->execute([
             'liste' => $listeId,
             'ad' => $ad,
             'orijinal' => $orijinal,
+            'kaynak' => $kaynakDil,
             'simdi' => $this->clock->now()->format('Y-m-d H:i:s'),
         ]);
 
@@ -184,7 +186,7 @@ final class CeviriLlmTazelemeTest extends AuthTestCase
         $urunId = $this->urunEkle('Bisiklet Yok', '无脚踏');
         $this->satirYaz('无脚踏', 'tr', 'Bisiklet Yok', 'mymemory');
 
-        $adaylar = (new ProductRepository($this->connection))->cevrilmemisler(null, 500, ['tr', 'en']);
+        $adaylar = (new ProductRepository($this->connection))->cevrilmemisler(null, 500);
 
         // Saha vakası tam olarak buydu: TR "dolu" diye ürün atlanıyordu.
         self::assertContains($urunId, $adaylar);
@@ -196,7 +198,7 @@ final class CeviriLlmTazelemeTest extends AuthTestCase
         $this->satirYaz('无脚踏', 'tr', 'pedalsız', 'llm:deepseek');
         $this->satirYaz('无脚踏', 'en', 'no pedals', 'llm:deepseek');
 
-        $adaylar = (new ProductRepository($this->connection))->cevrilmemisler(null, 500, ['tr', 'en']);
+        $adaylar = (new ProductRepository($this->connection))->cevrilmemisler(null, 500);
 
         self::assertNotContains($urunId, $adaylar);
     }
@@ -207,7 +209,7 @@ final class CeviriLlmTazelemeTest extends AuthTestCase
         $this->satirYaz('无脚踏', 'tr', 'pedalsız', 'llm:deepseek');
         // EN yok: K56 gereği iki dil TEK istekte üretilir, eksik dil turu tetikler.
 
-        $adaylar = (new ProductRepository($this->connection))->cevrilmemisler(null, 500, ['tr', 'en']);
+        $adaylar = (new ProductRepository($this->connection))->cevrilmemisler(null, 500);
 
         self::assertContains($urunId, $adaylar);
     }
@@ -218,7 +220,7 @@ final class CeviriLlmTazelemeTest extends AuthTestCase
         $this->satirYaz('乐扣杯', 'tr', 'Lock&Lock termos', TranslationCacheRepository::ELLE_SAGLAYICI);
         $this->satirYaz('乐扣杯', 'en', 'Lock&Lock flask', 'llm:deepseek');
 
-        $adaylar = (new ProductRepository($this->connection))->cevrilmemisler(null, 500, ['tr', 'en']);
+        $adaylar = (new ProductRepository($this->connection))->cevrilmemisler(null, 500);
 
         // Onaylı çeviri zaten kalıcıdır; onu yeniden üretmek kota harcamaktır.
         self::assertNotContains($urunId, $adaylar);
@@ -233,16 +235,39 @@ final class CeviriLlmTazelemeTest extends AuthTestCase
         $statement->execute(['ad' => 'Elle girilen ürün', 'simdi' => $this->clock->now()->format('Y-m-d H:i:s')]);
         $urunId = (int) $this->pdo->lastInsertId();
 
-        $adaylar = (new ProductRepository($this->connection))->cevrilmemisler(null, 500, ['tr', 'en']);
+        $adaylar = (new ProductRepository($this->connection))->cevrilmemisler(null, 500);
 
         self::assertNotContains($urunId, $adaylar);
     }
 
-    public function testHEDEFDILLISTESIBOSSATRVARSAYILIR(): void
+    /**
+     * D12 — ÖLÇÜT ARTIK AYARLARDAKİ LİSTE DEĞİL, ÜRÜNÜN KAYNAK DİLİ.
+     *
+     * Çince kaynaklı ürün için TR ve EN gerekir; ZH zaten orijinaldir ve
+     * üretilmez. Eski ölçüt (ayarlardaki hedef dil listesi) ürüne bakmıyordu.
+     */
+    public function testCINCEKAYNAKTATRVEENGEREKIR(): void
     {
         $urunId = $this->urunEkle('pedalsız', '无脚踏');
         $this->satirYaz('无脚踏', 'tr', 'pedalsız', 'llm:deepseek');
 
-        self::assertNotContains($urunId, (new ProductRepository($this->connection))->cevrilmemisler(null, 500, []));
+        $depo = new ProductRepository($this->connection);
+        // EN eksik: aday.
+        self::assertContains($urunId, $depo->cevrilmemisler(null, 500));
+
+        $this->satirYaz('无脚踏', 'en', 'no pedals', 'llm:deepseek');
+        // TR+EN tamam, ZH orijinal → aday DEĞİL. ZH satırı hiç aranmaz.
+        self::assertNotContains($urunId, $depo->cevrilmemisler(null, 500));
+    }
+
+    /** TÜRKÇE kaynakta motor TR'ye DOKUNMAZ; EN ve ZH üretilir. */
+    public function testTURKCEKAYNAKTATRISTENMEZ(): void
+    {
+        $urunId = $this->urunEkle('Kalın Tabanlı Terlik', 'Kalın Tabanlı Terlik', 1, 'tr');
+        $this->satirYaz('Kalın Tabanlı Terlik', 'en', 'Thick Sole Slipper', 'llm:deepseek');
+        $this->satirYaz('Kalın Tabanlı Terlik', 'zh', '厚底拖鞋', 'llm:deepseek');
+
+        // TR çevirisi YOK ama gerek de yok: kaynak dil TR, orijinal odur.
+        self::assertNotContains($urunId, (new ProductRepository($this->connection))->cevrilmemisler(null, 500));
     }
 }

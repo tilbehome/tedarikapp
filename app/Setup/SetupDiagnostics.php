@@ -60,8 +60,28 @@ final class SetupDiagnostics
             // cevaplayabilsin.
             'app_url' => $appUrl,
             'app_url_kanonik' => AppUrl::kanonik($appUrl) !== null,
+            // D12 (K91): LLM anahtarı yoksa çeviriler GEÇİCİ katmanda kalır ve
+            // üç dil garantisi yoktur. Kurulumu DURDURMAZ — ama destek, "çeviri
+            // neden yarım" sorusunu bu satıra bakarak yanıtlayabilmeli.
+            'llm_anahtari' => $this->llmAnahtariVarMi($connection),
             'timestamp' => date(DATE_ATOM),
         ];
+    }
+
+    /** Çeviri sağlayıcı anahtarı tanımlı mı? (değeri OKUNMAZ, yalnız varlığı) */
+    private function llmAnahtariVarMi(?Connection $connection): bool
+    {
+        if ($connection === null) {
+            return false;
+        }
+
+        try {
+            $deger = (new SettingsRepository($connection))->get('ceviri_api_anahtari');
+
+            return is_string($deger) && $deger !== '';
+        } catch (Throwable) {
+            return false;
+        }
     }
 
     /** `settings.APP_URL` — tablo/bağlantı yoksa null (teşhis üretimi hata üretemez). */

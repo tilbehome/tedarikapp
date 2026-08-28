@@ -24,6 +24,16 @@ use Throwable;
  */
 final class TranslationController extends ApiController
 {
+    /**
+     * Toplu çevirinin TEK İSTEKTEKİ süre bütçesi (sn).
+     *
+     * `set_time_limit`e YASLANILMAZ (PM koşulu): paylaşımlı hostingde bu çağrı
+     * çoğu zaman devre dışıdır ve olsa bile web sunucusunun kendi zaman aşımını
+     * uzatmaz. Bunun yerine iş PARÇALANIR: her istek bütçesi kadar çalışır,
+     * kalanı söyler, panel bir sonraki isteği atar.
+     */
+    private const TOPLU_BUTCE_SANIYE = 12;
+
     public function __construct(
         private readonly TranslationService $translation,
         // İE#14 A2: sözlük yönetimi (Ayarlar > Terminoloji) ve ürün bazlı çeviri
@@ -37,7 +47,58 @@ final class TranslationController extends ApiController
         private readonly ?\App\Services\Translation\CeviriAyarlari $ceviriAyarlari = null,
         private readonly ?\App\Services\Kuyruk\JobQueue $kuyruk = null,
         private readonly ?\App\Models\ProductRepository $urunler = null,
+        // D12: "çevir" dendiğinde İSTEĞİN İÇİNDE çeviren yürütücü.
+        private readonly ?\App\Services\Translation\CeviriYurutucu $yurutucu = null,
+        // D12: yanıt gönderildikten sonra kuyruk turu tetikleyen yardımcı.
+        private readonly ?\App\Services\Kuyruk\KuyrukTetikleyici $tetikleyici = null,
     ) {
+    }
+
+    /**
+     * POST /api/products/{id}/translate — TEK ÜRÜNÜ ŞİMDİ ÇEVİRİR (D12 madde 1).
+     *
+     * Ürün kartındaki "Çevir" düğmesinin ucu. Kuyruğa yazıp "sırada" demez:
+     * eksik dilleri bu isteğin içinde tamamlar ve sonucu döndürür. Kullanıcı
+     * düğmeye bastığında olan bitenin tamamını görür — sahada en çok şikâyet
+     * edilen şey, bastığı düğmenin görünürde hiçbir şey yapmamasıydı.
+     *
+     * K54: onaylı elle düzeltme EZİLMEZ — yürütücü yalnız EKSİK dilleri ister,
+     * `elle` sağlayıcılı satır zaten "kalıcı" sayılır ve dokunulmaz.
+     */
+    /** @param array<string, string> $args */
+    public function translateProductNow(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    {
+        if ($this->yurutucu === null) {
+            return Response::error($response, 'SERVER_ERROR', 'Çeviri yürütücüsü yapılandırılmamış.', 500);
+        }
+
+        $urunId = (int) ($args['id'] ?? 0);
+        if ($urunId <= 0) {
+            return Response::error($response, 'VALIDATION', 'Ürün kimliği geçersiz.', 422);
+        }
+
+        $sonuc = $this->yurutucu->urunuTamamla($urunId);
+        if ($sonuc['hata'] !== null) {
+            return Response::error($response, 'SERVER_ERROR', $sonuc['hata'], 500);
+        }
+
+        // Çevrilemeyen dil kaldıysa SEBEBİ söylenir. En sık sebep sağlayıcının
+        // yapılandırılmamış olmasıdır; sessiz kalmak "zaten tamamdı" izlenimi
+        // verir ve kullanıcı çevirinin neden gelmediğini hiçbir yerde bulamaz.
+        $saglayiciHazir = $this->ceviriAyarlari === null
+            || ($this->ceviriAyarlari->acikMi() && $this->ceviriAyarlari->anahtarVarMi());
+        $engel = ($sonuc['kalan'] !== [] && !$saglayiciHazir)
+            ? 'Çeviri sağlayıcısı yapılandırılmamış: Ayarlar > Çeviri bölümünden sağlayıcı ve API anahtarı girin.'
+            : ($sonuc['kalan'] !== [] ? 'Çeviri üretilemedi; sağlayıcı yanıt vermemiş olabilir.' : null);
+
+        $this->izBirak($request, 'ceviri_urun', sprintf(
+            '#%d — eksik: %s · çevrilen: %s',
+            $urunId,
+            $sonuc['eksikti'] === [] ? 'yok' : implode('+', $sonuc['eksikti']),
+            $sonuc['cevrilen'] === [] ? 'yok' : implode('+', $sonuc['cevrilen']),
+        ));
+
+        return Response::success($response, $sonuc + ['engel' => $engel, 'is_suggestion' => true]);
     }
 
     /**
@@ -200,35 +261,100 @@ final class TranslationController extends ApiController
      */
     public function translateBackfill(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
-        if ($this->kuyruk === null || $this->urunler === null) {
-            return Response::error($response, 'SERVER_ERROR', 'Kuyruk yapılandırılmamış.', 500);
+        if ($this->urunler === null || $this->yurutucu === null) {
+            return Response::error($response, 'SERVER_ERROR', 'Çeviri yürütücüsü yapılandırılmamış.', 500);
         }
 
-        $now = $this->clock?->now() ?? new \DateTimeImmutable();
         $listeId = isset($this->body($request)['list_id']) ? (int) $this->body($request)['list_id'] : null;
 
-        // D6: adaylık ölçütü HEDEF DİLLERE göredir — TR makine çevirisiyle dolu
-        // diye ürünü atlamak, LLM turunun ona hiç uğramaması demekti.
-        $hedefDiller = $this->ceviriAyarlari?->hedefDiller() ?? ['tr'];
-        $adaylar = $this->urunler->cevrilmemisler($listeId, 500, $hedefDiller);
-        $kuyruga = 0;
+        // D12 — DÜĞME ARTIK FİİLEN ÇEVİRİR.
+        //
+        // Eski hâl yalnız kuyruğa yazıyordu ve kuyruğu işleyen yoktu: kullanıcı
+        // "142 ürün kuyruğa alındı" yazısını okuyup bekliyor, işler 1432 dakika
+        // duruyordu. Artık bu istek ZAMAN BÜTÇELİ bir parça işler ve KALANI
+        // söyler; panel bitene dek ardışık istek atar. Sekme kapanırsa kalanlar
+        // kaybolmaz — bir sonraki tetikte (panel ziyareti, yakalama, cron)
+        // kaldığı yerden sürer, çünkü ölçüt kuyruk değil VERİNİN KENDİSİDİR.
+        $baslangic = microtime(true);
+        $butce = self::TOPLU_BUTCE_SANIYE;
+        $cevrilen = 0;
+        $hatali = 0;
+        $adaylar = $this->urunler->cevrilmemisler($listeId, 2000);
+        $toplam = count($adaylar);
+
         foreach ($adaylar as $urunId) {
-            $this->kuyruk->ekle(
-                \App\Services\Kuyruk\KuyrukIsleyicileri::TUR_CEVIRI,
-                'urun:' . $urunId,
-                ['urun_id' => $urunId],
-                $now,
-            );
-            $kuyruga++;
+            if ((microtime(true) - $baslangic) >= $butce) {
+                break;
+            }
+
+            $sonuc = $this->yurutucu->urunuTamamla($urunId);
+            if ($sonuc['hata'] !== null) {
+                $hatali++;
+
+                continue;
+            }
+            if ($sonuc['cevrilen'] !== []) {
+                $cevrilen++;
+            }
         }
 
-        $this->izBirak($request, 'ceviri_toplu', $kuyruga . ' ürün çeviri kuyruğuna alındı');
+        $kalanlar = $this->urunler->cevrilmemisler($listeId, 2000);
+        $kalan = count($kalanlar);
+
+        // SEKME KAPANIRSA İŞ KAYBOLMAZ: kalanlar kuyruğa da yazılır. Kuyruk
+        // artık tek yol değil ama EMNİYET: panel kapansa bile bir sonraki
+        // tetikleyici (panel ziyareti, yakalama, varsa cron) kaldığı yerden
+        // sürdürür. Anahtar ürün kimliğidir; aynı ürün iki kez sıraya girmez.
+        if ($this->kuyruk !== null && $this->clock !== null) {
+            $simdi = $this->clock->now();
+            foreach ($kalanlar as $bekleyenId) {
+                $this->kuyruk->ekle(
+                    \App\Services\Kuyruk\KuyrukIsleyicileri::TUR_CEVIRI,
+                    'urun:' . $bekleyenId,
+                    ['urun_id' => $bekleyenId],
+                    $simdi,
+                );
+            }
+        }
+        // Yanıt gider gitmez arkada bir tur daha denenir; kullanıcı beklemez.
+        $this->tetikleyici?->yanittanSonraDene(true);
+
+        $this->izBirak($request, 'ceviri_toplu', sprintf('%d ürün çevrildi, %d kaldı', $cevrilen, $kalan));
+
+        // SEBEBİ SÖYLE: hiç ilerleme olmadıysa kullanıcı NEDEN olmadığını
+        // bilmeli. En sık sebep sağlayıcının yapılandırılmamış olmasıdır;
+        // "0 çevrildi" deyip susmak, düğmenin bozuk olduğunu düşündürür.
+        $saglayiciHazir = $this->ceviriAyarlari === null
+            || ($this->ceviriAyarlari->acikMi() && $this->ceviriAyarlari->anahtarVarMi());
+        $engel = (!$saglayiciHazir && $cevrilen === 0 && $toplam > 0)
+            ? 'Çeviri sağlayıcısı yapılandırılmamış: Ayarlar > Çeviri bölümünden sağlayıcı ve API anahtarı girin.'
+            : null;
 
         return Response::success($response, [
-            'kuyruga_alinan' => $kuyruga,
-            'mesaj' => $kuyruga === 0
-                ? 'Çevrilmemiş ürün bulunamadı.'
-                : $kuyruga . ' ürün çeviri kuyruğuna alındı. İlerlemeyi Sistem durumundan izleyebilirsiniz.',
+            'toplam' => $toplam,
+            'cevrilen' => $cevrilen,
+            'engel' => $engel,
+            'hatali' => $hatali,
+            'kalan' => $kalan,
+            // Panel bu bayrağa bakar: true ise aynı ucu tekrar çağırır.
+            'devam_var' => $kalan > 0 && $cevrilen > 0,
+            'mesaj' => $engel ?? ($toplam === 0
+                ? 'Tüm ürünler üç dilde tamam.'
+                : sprintf('%d ürün çevrildi, %d ürün kaldı.', $cevrilen, $kalan)),
+        ]);
+    }
+
+    /** İlerleme sorgusu: panel "N/M" göstergesini bununla tazeler. */
+    public function translateProgress(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        if ($this->urunler === null) {
+            return Response::error($response, 'SERVER_ERROR', 'Ürün deposu yapılandırılmamış.', 500);
+        }
+
+        $listeId = $this->query($request, 'list_id') !== '' ? (int) $this->query($request, 'list_id') : null;
+
+        return Response::success($response, [
+            'kalan' => count($this->urunler->cevrilmemisler($listeId, 2000)),
         ]);
     }
 

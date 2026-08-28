@@ -280,6 +280,14 @@ final class CaptureService
             'name_original' => isset($payload['raw']['title']) && is_string($payload['raw']['title'])
                 ? mb_substr($payload['raw']['title'], 0, 500)
                 : null,
+            // D12: KAYNAK DİLİ YAKALAMA ANINDA İŞLENİR. Sonradan tahmin etmek,
+            // her turda yeniden tahmin etmek demektir; kaynak dili bilinmeyen
+            // ürün kendi diline "çevrilmeye" kalkışılabilir (TR kaynakta felaket).
+            'source_lang' => \App\Services\Translation\DilSaptayici::sapta(
+                isset($payload['raw']['title']) && is_string($payload['raw']['title'])
+                    ? (string) $payload['raw']['title']
+                    : (string) $normalized['name'],
+            ),
             'url' => (string) $source['url'],
             'vendor_name' => isset($source['seller_name']) ? mb_substr((string) $source['seller_name'], 0, 200) : null,
             'vendor_url' => isset($source['seller_url']) && is_string($source['seller_url']) ? mb_substr($source['seller_url'], 0, 1000) : null,

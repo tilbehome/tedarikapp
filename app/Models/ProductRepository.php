@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Core\Connection;
 use App\Core\Dates;
+use App\Services\Translation\KanonikDiller;
 use DateTimeImmutable;
 
 /**
@@ -17,7 +18,7 @@ use DateTimeImmutable;
 final class ProductRepository
 {
     private const COLUMNS = 'id, list_id, sort_no, category_id, platform, external_id,
-        name, name_original, name_elle, detail, url, vendor_name, vendor_url, sku_selection, sku_matrix,
+        name, name_original, name_elle, source_lang, detail, url, vendor_name, vendor_url, sku_selection, sku_matrix,
         main_image, main_image_source, video_url, qty, price_yuan, price_ddp_usd, price_target_try,
         units_per_carton, tracking_no,
         raw_attributes, country_of_origin, country_of_dispatch,
@@ -32,6 +33,8 @@ final class ProductRepository
         'price_target_try',
         // İE#11 EK-3 (2): yakalamanın RAW bloğu + menşe (capture ile dolar; panelden de düzenlenebilir).
         'raw_attributes', 'country_of_origin', 'country_of_dispatch',
+        // D12: kaynak dili — yakalama saptar, kullanıcı gerekirse düzeltir.
+        'source_lang',
     ];
 
     /**
@@ -201,14 +204,14 @@ final class ProductRepository
         $pdo = $this->connection->pdo();
         $statement = $pdo->prepare(
             'INSERT INTO products (list_id, sort_no, category_id, platform, external_id, name,
-                name_original, detail, url, vendor_name, vendor_url, sku_selection, sku_matrix,
+                name_original, source_lang, detail, url, vendor_name, vendor_url, sku_selection, sku_matrix,
                 main_image, main_image_source, video_url, qty, price_yuan, price_ddp_usd, price_target_try,
                 units_per_carton, raw_attributes, country_of_origin, country_of_dispatch,
                 tracking_no, status, note, created_at, updated_at)
              VALUES (:list_id,
                 COALESCE(:sort_no, (SELECT sonraki FROM (SELECT COALESCE(MAX(sort_no), 0) + 1 AS sonraki
                     FROM products WHERE list_id = :list_id_sira) AS s)), :category_id, :platform, :external_id, :name,
-                :name_original, :detail, :url, :vendor_name, :vendor_url, :sku_selection, :sku_matrix,
+                :name_original, :source_lang, :detail, :url, :vendor_name, :vendor_url, :sku_selection, :sku_matrix,
                 :main_image, :main_image_source, :video_url, :qty, :price_yuan, :price_ddp_usd, :price_target_try,
                 :units_per_carton, :raw_attributes, :country_of_origin, :country_of_dispatch,
                 :tracking_no, :status, :note, :created_at, :updated_at)',
@@ -228,6 +231,9 @@ final class ProductRepository
             'external_id' => $data['external_id'] ?? null,
             'name' => $data['name'],
             'name_original' => $data['name_original'] ?? null,
+            // D12: kaynak dili yakalamada saptanır; verilmezse NULL kalır ve
+            // çeviri turu üç dili birden ister (bilmediğimizi uydurmayız).
+            'source_lang' => $data['source_lang'] ?? null,
             'detail' => $data['detail'] ?? null,
             'url' => $data['url'] ?? null,
             'vendor_name' => $data['vendor_name'] ?? null,
@@ -429,29 +435,35 @@ final class ProductRepository
      * düzeltmeden) gelmiş satır YOKSA ürün LLM turuna girer. Makine çevirisi
      * artık ne olduğu şeydir: LLM gelene kadarki GEÇİCİ DOLDURMA.
      *
-     * @param list<string> $hedefDiller boşsa birincil dil (tr) varsayılır
-     *
      * @return list<int> ürün kimlikleri
      */
-    public function cevrilmemisler(?int $listeId = null, int $limit = 500, array $hedefDiller = ['tr']): array
+    public function cevrilmemisler(?int $listeId = null, int $limit = 500): array
     {
-        $diller = array_values(array_filter(array_map('trim', $hedefDiller), static fn (string $d): bool => $d !== ''));
-        if ($diller === []) {
-            $diller = ['tr'];
-        }
-
+        // D12 — ADAYLIK ÖLÇÜTÜ ÜRÜNÜN KENDİ KAYNAK DİLİNE GÖREDİR.
+        //
+        // Eski ölçüt ayarlardaki hedef dil listesine bakıyordu ve kaynak dili
+        // hesaba katmıyordu: Türkçe kaynaklı bir ürün "TR çevirisi yok" diye
+        // sonsuza dek aday kalır, motor da kendi diline çeviri üretmeye
+        // çalışırdı. Artık her ürün için ÜRETİLECEK diller kanonik üçlüden
+        // kendi kaynak dili düşülerek bulunur; kaynak dil NULL ise (eski kayıt,
+        // saptanamamış) üçü de istenir.
+        //
+        // "Kalıcı çeviri" = llm:* üretimi ya da `elle` onayı (K54). Makine
+        // çevirisi geçici doldurmadır ve ürünü adaylıktan ÇIKARMAZ.
         $params = [];
         $dilKosullari = [];
-        foreach ($diller as $sira => $dil) {
+        foreach (KanonikDiller::HEPSI as $sira => $dil) {
             $ad = 'dil' . $sira;
             $params[$ad] = $dil;
-            // "Bu dil için KALICI bir çeviri var mı?" — llm:* üretilmiş, `elle`
-            // ise kullanıcı onaylamıştır (K54). İkisi de yoksa tur gerekir.
-            $dilKosullari[] = "NOT EXISTS (
+            $params[$ad . '_kaynak'] = $dil;
+            $dilKosullari[] = "(
+                    (p.source_lang IS NULL OR p.source_lang <> :{$ad}_kaynak)
+                    AND NOT EXISTS (
                       SELECT 1 FROM translation_cache c
                       WHERE c.source_text = p.name_original
                         AND c.target_lang = :{$ad}
                         AND (c.provider LIKE 'llm:%' OR c.provider = '" . TranslationCacheRepository::ELLE_SAGLAYICI . "')
+                    )
                   )";
         }
 
@@ -470,6 +482,12 @@ final class ProductRepository
 
         /** @var list<int> */
         return array_map(static fn (mixed $v): int => (int) $v, $statement->fetchAll(\PDO::FETCH_COLUMN) ?: []);
+    }
+
+    /** Kanonik üç dilin tamamlanmadığı ürün sayısı — toplu çeviri ilerlemesi bunu okur. */
+    public function eksikDilliSayisi(?int $listeId = null): int
+    {
+        return count($this->cevrilmemisler($listeId, 2000));
     }
 
     /**

@@ -709,6 +709,25 @@ geçişinde düğme geri gelir; hedefsizde 5/5 görünür pill.
 **Otomasyon notu:** `e2e/tests/08-eklenti-paneli.spec.ts`. A8'in kökü iki
 parçalıydı: tek seferlik montaj + adres değişmeden yapılan yeniden çizim.
 
+### E2E-EKL-35 — Varyant çipleri salt görünüm Türkçe (v1.0.1 A9)
+
+**Amaç:** "Seçilen varyant" bölümündeki renk/beden/bölge adları kullanıcıya
+Türkçe görünsün; sunucuya giden veri ORİJİNAL kalsın (K90).
+
+**Ön koşul / hazırlık:** Üç varyant — bilinen renk (`粉红色`), bilinen bölge
+(`美规`), sözlükte olmayan bir terim (`洞洞鞋专用鞋扣`).
+
+**Adımlar:** Panel çizilir → çip metinleri okunur → ilk çipe tıklanır ve seçim
+geri çağrısına düşen değer yakalanır → `data-orijinal` niteliği okunur.
+
+**Beklenen:** `粉红色` → "Pembe"; `美规` → "ABD fişi (110V)" (voltaj KORUNUR);
+bilinmeyen terim AYNEN. Tıklamada geri çağrıya giden değer `粉红色` — yani
+orijinal. Eklentide LLM ya da ağ isteği YOKTUR.
+
+**Otomasyon notu:** `e2e/tests/08-eklenti-paneli.spec.ts` + birim
+`extension/tests/gorunumSozlugu.test.ts`. Yarım çeviri yasaktır: "美规"yi
+sadece "ABD" diye çevirmek voltaj bilgisini düşürür ve yanlış ürün getirir.
+
 ## 8. Claude Code için uygulama notları
 
 1. Yeni senaryolar mevcut `e2e/` süitinin tek worker ve Chromium düzenine uymalıdır.

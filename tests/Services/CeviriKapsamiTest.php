@@ -54,13 +54,19 @@ final class CeviriKapsamiTest extends TestCase
         return new TranslationCacheRepository($this->connection);
     }
 
-    private function onbellegeYaz(string $ham, string $ceviri, string $dil, string $surum): void
+    /**
+     * @param string $saglayici D12: üretimdeki biçim `llm:<model>`dir. Fikstür
+     *                          eskiden düz `deepseek` yazıyordu; bu, kalıcılık
+     *                          ölçütünün (llm:* / elle) dışında kalır ve testi
+     *                          üretimde olmayan bir duruma göre yeşil tutardı.
+     */
+    private function onbellegeYaz(string $ham, string $ceviri, string $dil, string $surum, string $saglayici = 'llm:deepseek'): void
     {
         $this->cache()->store(
             TranslationCacheRepository::hash($ham, 'zh', $dil, $surum),
             $ham,
             $ceviri,
-            'deepseek',
+            $saglayici,
             'zh',
             $dil,
             new DateTimeImmutable('2026-08-23 10:00:00'),
@@ -157,6 +163,38 @@ final class CeviriKapsamiTest extends TestCase
 
         unlink($sozlukDizini . '/sozluk-zh-tr.php');
         rmdir($sozlukDizini);
+    }
+
+    /**
+     * D12 (K91) — GEÇİCİ KATMAN "TAMAM" SAYILMAZ.
+     *
+     * PM kararı (28 Ağu): kalıcı çeviri yalnız `llm:*` ve elle onaylı satırdır.
+     * Makine çevirisi (mymemory) değeri DOLDURUR ama satır "çeviri bekliyor"
+     * işaretli KALIR. Aksi hâlde LLM anahtarı olmayan bir kurulumda ekran,
+     * yarısı makine çevirisi bir metni tamammış gibi gösterirdi — sessiz melez
+     * görünüm yasaktır.
+     */
+    public function testMAKINECEVIRISIBEKLIYORISARETINIKALDIRMAZ(): void
+    {
+        $this->onbellegeYaz('灰色', 'Gri', 'tr', 'v1', 'mymemory');
+
+        $degerler = $this->degerler('tr');
+
+        // Değer GÖSTERİLİR: veri kaybı yok.
+        self::assertSame('Gri', $degerler->value('灰色'));
+        // Ama satır beklemede sayılır: kullanıcı bunun geçici olduğunu bilmeli.
+        self::assertTrue($degerler->bekleyenVar(), 'Makine çevirisi geçici doldurmadır.');
+    }
+
+    public function testELLEONAYLIVELLMSATIRIBEKLIYORSAYILMAZ(): void
+    {
+        $this->onbellegeYaz('灰色', 'Gri', 'tr', 'v1', 'llm:deepseek');
+        self::assertFalse($this->degerler('tr')->bekleyenVar(), 'llm:* kalıcıdır.');
+
+        $this->onbellegeYaz('蓝色', 'Mavi', 'tr', 'v1', TranslationCacheRepository::ELLE_SAGLAYICI);
+        $ikinci = $this->degerler('tr');
+        $ikinci->value('蓝色');
+        self::assertFalse($ikinci->bekleyenVar(), 'Elle onaylı satır kalıcıdır (K54).');
     }
 
     public function testDILEGORESAYACAYRIDIR(): void

@@ -61,3 +61,9 @@ e2e/dist/
 e2e/test-results/
 e2e/playwright-report/
 frontend/test-results/
+
+# D12: Ürün Sahibi'nin ham sayfa dökümleri docs/ altına düşerse repoya GİRMEZ.
+# Fikstür olarak kullanılan sürümleri e2e/fixtures/1688/ altındadır; "Web Sayfası,
+# Tamamı" kaydının `_files` klasörleri megabaytlarca üçüncü parti varlık taşır.
+/docs/1688-*.html
+/docs/1688-*_files/

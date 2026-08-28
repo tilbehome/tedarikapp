@@ -77,6 +77,30 @@ final class TranslationCacheRepository
     }
 
     /**
+     * Bu metin, bu dil için KALICI olarak çevrilmiş mi? (D12)
+     *
+     * Kalıcı = `llm:*` üretimi ya da `elle` onayı (K54). Makine çevirisi
+     * (`mymemory` vb.) GEÇİCİ DOLDURMADIR ve bir dili tamamlanmış saymaz;
+     * aksi hâlde yıllarca "TR dolu" görünüp aslında bozuk kalan satırlar
+     * kimsenin dikkatini çekmez (D6 saha bulgusu).
+     */
+    public function kaliciVarMi(string $sourceText, string $targetLang): bool
+    {
+        $statement = $this->connection->pdo()->prepare(
+            "SELECT COUNT(*) FROM translation_cache
+             WHERE source_text = :metin AND target_lang = :dil
+               AND (provider LIKE 'llm:%' OR provider = :elle)",
+        );
+        $statement->execute([
+            'metin' => $sourceText,
+            'dil' => $targetLang,
+            'elle' => self::ELLE_SAGLAYICI,
+        ]);
+
+        return (int) $statement->fetchColumn() > 0;
+    }
+
+    /**
      * Kaydı yazar; yarış durumunda (aynı metin iki istekte birden) UNIQUE ihlali
      * hata değildir — mevcut kayıt zaten aynı işi görür, sessizce yutulur.
      * Taşınabilir SQL: MySQL'e özgü "ON DUPLICATE KEY" kullanılmaz.
