@@ -20,6 +20,12 @@ use Tests\Support\AuthTestCase;
  * diye bakıyor, kuyruk testi işleri KENDİ yazıyordu. Aradaki boşluk tam da
  * sahada kırılan yerdi.
  *
+ * D12 GÜNCELLEMESİ (28 Ağu 2026): düğme artık YALNIZ kuyruğa yazmıyor, işi
+ * isteğin içinde de yapıyor (K86). Kuyruk ORTADAN KALKMADI: sekme kapanırsa
+ * kalanların kaybolmaması için hâlâ yazılıyor ve arka plan tetikleyicileri onu
+ * işliyor. Bu süitin sınadığı köprü — "ucun yazdığı işi İŞÇİ görebiliyor mu?" —
+ * bu yüzden hâlâ geçerlidir; değişen tek şey yanıtın alanlarıdır.
+ *
  * Bu test o boşluğu kapatır: iş HTTP ucundan yazılır, sonra GERÇEK `JobRunner`
  * ile alınır. Ağa çıkılmaz — çeviri işleyicisi testte yerine konur; sınanan
  * şey çevirinin kalitesi değil, işin İŞÇİYE ULAŞMASIDIR.
@@ -75,7 +81,12 @@ final class TopluCeviriKuyrugaTest extends AuthTestCase
         self::assertSame(200, $yanit->getStatusCode());
 
         $govde = json_decode((string) $yanit->getBody(), true);
-        self::assertSame(5, $govde['data']['kuyruga_alinan'] ?? null);
+        // D12: yanıt artık "kuyruğa alındı" değil İŞ SONUCU taşır. Sağlayıcı
+        // yapılandırılmadığı için hiçbiri çevrilemez; beşi de kalan sayılır ve
+        // kuyruğa yazılır — bu süitin köprüsü tam olarak orayı sınar.
+        self::assertSame(5, $govde['data']['toplam'] ?? null);
+        self::assertSame(5, $govde['data']['kalan'] ?? null);
+        self::assertArrayNotHasKey('kuyruga_alinan', $govde['data']);
 
         // 1) Panelin gördüğü: beş bekleyen iş.
         $bekleyen = $this->bekleyenIsler();
