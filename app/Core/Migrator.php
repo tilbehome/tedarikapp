@@ -82,6 +82,11 @@ final class Migrator
         '0031_urun_adi_elle' => [
             ['column' => ['products', 'name_elle']],
         ],
+        // D12 (K87): ürünün KAYNAK DİLİ — kanonik üçlüde hangi dilin orijinal
+        // olduğunu bu alan söyler; olmadan kaynak dile çeviri üretilebilir.
+        '0032_urun_kaynak_dili' => [
+            ['column' => ['products', 'source_lang']],
+        ],
         // İE#21 B1: Keşif havuzu — küme anahtarı ve normalize arama alanı.
         '0030_kesif_havuzu' => [
             ['column' => ['listings', 'kume_anahtari']],
