@@ -1,0 +1,15 @@
+{
+  "page": { "background": "#FFFDF8", "marginMm": 14 },
+  "header": { "heightMm": 28, "accent": "#FF6B00", "text": "#1F2530" },
+  "footer": { "heightMm": 12, "border": "#FF6B00", "text": "#6B7280" },
+  "table": {
+    "headerBackground": "#1F2530",
+    "headerText": "#FFFFFF",
+    "rowBackground": "#FFFDF8",
+    "alternateRowBackground": "#FFF8F1",
+    "border": "#E7D9CA",
+    "selected": "#FFE4CF"
+  },
+  "numberFormat": { "currency": "#,##0.00", "quantity": "#,##0", "percent": "0.0%" },
+  "fonts": { "ui": "Inter", "cjk": "Noto Sans SC", "mono": "JetBrains Mono" }
+}

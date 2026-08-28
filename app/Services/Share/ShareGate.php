@@ -32,7 +32,8 @@ final class ShareGate
     private const MAX_LINK_PER_MINUTE = 12;
     /** İE#18 G6: erişim anahtarı denemesi — token+IP başına DAKİKADA en çok. */
     public const ACTION_ANAHTAR = 'share_key_try';
-    private const MAX_ANAHTAR_PER_MINUTE = 5;
+    /** İE#21 B7: kilit ekranı bu sayıyı kullanıcıya yazar — tek kaynak burası. */
+    public const MAX_ANAHTAR_PER_MINUTE = 5;
 
     public function __construct(private readonly Connection $connection)
     {
@@ -152,6 +153,28 @@ final class ShareGate
         ]);
 
         return (int) $statement->fetchColumn() >= self::MAX_ANAHTAR_PER_MINUTE;
+    }
+
+    /**
+     * Son bir dakikadaki anahtar denemesi sayısı (İE#21 EK-4 madde 4).
+     *
+     * Kilit ekranı bu sayıyı "art arda hatalı deneme var" uyarısını GÖSTERİP
+     * göstermemek için kullanır; sayının kendisi kullanıcıya YAZILMAZ (K51).
+     */
+    public function anahtarDenemeSayisi(string $tokenPrefix, string $ip, DateTimeImmutable $now): int
+    {
+        $statement = $this->connection->pdo()->prepare(
+            'SELECT COUNT(*) FROM activity_log
+             WHERE action = :action AND ip = :ip AND detail LIKE :prefix AND created_at >= :window_start',
+        );
+        $statement->execute([
+            'action' => self::ACTION_ANAHTAR,
+            'ip' => $ip,
+            'prefix' => 'önek:' . substr($tokenPrefix, 0, 8) . '%',
+            'window_start' => Dates::toStorage($now->modify('-1 minute')),
+        ]);
+
+        return (int) $statement->fetchColumn();
     }
 
     /** Anahtar denemesini sayaca işler (doğru da olsa yanlış da — sayaç deneme sayar). */

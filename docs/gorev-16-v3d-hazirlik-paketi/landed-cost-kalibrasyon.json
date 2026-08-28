@@ -1,0 +1,1366 @@
+{
+  "dosya_ozeti_5_satir": [
+    "Ne işe yarar: Gerçekleşen ürün maliyetine masrafların değer, ağırlık veya CBM ile dağıtımını kalibre eder.",
+    "Hangi fazda: V3-D landed-cost motoru ve İE#24 kabul kapısında kullanılır.",
+    "Temel ilke: Kaynak, teklif DDP ve gerçekleşen görünüm birbirine yazılmaz; sistem içi tutarlar nettir.",
+    "Çıktı: Masraf kataloğu, kuruş kapatan dağıtım kuralları ve LC-001..LC-016 altın vakalarıdır.",
+    "Kapsam dışı: GTİP, mevzuat, gümrük vergisi ve herhangi bir vergi oranının hukuki tespitidir."
+  ],
+  "schema_version": "1.0",
+  "kabul_kapisi": "Uygulama LC-001..LC-016 setinin %100'ünü kuruş farksız geçmeli; beklenen REJECTED vakayı hesaplamaya zorlamamalıdır.",
+  "net_kurali": {
+    "system_basis": "NET",
+    "ddp_default_vat_rate_pct": "20",
+    "formula": "net = ddp_gross / (1 + vat_rate/100); vat = ddp_gross - net",
+    "warning": "%20 yalnız bu kalibrasyon setinin varsayılanıdır; mevzuat/vergi tespiti değildir. Ürün bazında açık oran varsa o kullanılır."
+  },
+  "masraf_katalogu": [
+    {
+      "type": "FREIGHT",
+      "tr": "Navlun"
+    },
+    {
+      "type": "CUSTOMS_SERVICE",
+      "tr": "Gümrük hizmet bedeli",
+      "note": "Vergi/oran hesabı içermez."
+    },
+    {
+      "type": "INLAND_TRANSPORT",
+      "tr": "İç nakliye"
+    },
+    {
+      "type": "BANK",
+      "tr": "Banka masrafı"
+    },
+    {
+      "type": "INSURANCE",
+      "tr": "Sigorta"
+    },
+    {
+      "type": "OTHER",
+      "tr": "Diğer",
+      "requires": "free_label"
+    }
+  ],
+  "dagitim_anahtarlari": [
+    {
+      "key": "VALUE",
+      "formula": "masraf * ürün_net_değeri / toplam_net_değer"
+    },
+    {
+      "key": "WEIGHT",
+      "formula": "masraf * ürün_toplam_brüt_ağırlığı / toplam_brüt_ağırlık"
+    },
+    {
+      "key": "CBM",
+      "formula": "masraf * ürün_toplam_cbm / toplam_cbm"
+    }
+  ],
+  "yuvarlama": {
+    "expense_conversion": "Her masraf kendi kilitli kuruyla hesap para birimine çevrilir ve HALF_UP ile 0.01'e yuvarlanır.",
+    "allocation": "Ham paylar yüksek hassasiyetle hesaplanır; önce 0.01'e aşağı kesilir, kalan kuruş en büyük ondalık kalandan başlayarak dağıtılır.",
+    "tie_break": "Ondalık kalan eşitse product_id artan sıra.",
+    "control": "Her masrafta dağıtılan satırların toplamı çevrilmiş masrafla birebir eşit olmalıdır.",
+    "unit_cost": "Gerçek birim maliyet HALF_UP ile 0.01'e yuvarlanır."
+  },
+  "gorunumler": {
+    "SOURCE_SHOWCASE": {
+      "fields": [
+        "source_currency",
+        "source_unit_price",
+        "source_price_observed_at"
+      ],
+      "rule": "İlandan gelir; teklif veya gerçekleşen alanın üzerine yazmaz."
+    },
+    "OFFER_DDP": {
+      "fields": [
+        "supplier_round_id",
+        "ddp_gross_unit_price",
+        "vat_rate",
+        "offer_currency",
+        "valid_until"
+      ],
+      "rule": "Firma teklif snapshot'ından gelir; net ayrıştırma oranıyla birlikte sürümlenir."
+    },
+    "ACTUAL": {
+      "fields": [
+        "accepted_quantity",
+        "actual_product_net_total",
+        "actual_expenses",
+        "actual_landed_total",
+        "actual_unit_cost"
+      ],
+      "rule": "Kanıtlı gerçek ödeme/masraf ve mal kabulden gelir; eksik teslimde kabul adedi birim maliyet paydasıdır."
+    }
+  },
+  "kalibrasyon_vakalari": [
+    {
+      "id": "LC-001",
+      "ad": "Değere göre eşit dağıtım",
+      "tuzakli": false,
+      "girdiler": {
+        "hesap_para_birimi": "TRY",
+        "urunler": [
+          {
+            "product_id": "A",
+            "accepted_qty": "10",
+            "product_net_total": "1000",
+            "weight_total_kg": "10",
+            "cbm_total": "1"
+          },
+          {
+            "product_id": "B",
+            "accepted_qty": "20",
+            "product_net_total": "1000",
+            "weight_total_kg": "20",
+            "cbm_total": "2"
+          }
+        ],
+        "masraflar": [
+          {
+            "expense_id": "E1",
+            "type": "FREIGHT",
+            "amount": "200",
+            "currency": "TRY",
+            "rate": "1",
+            "allocation_key": "VALUE"
+          }
+        ]
+      },
+      "beklenen": {
+        "status": "CALCULATED",
+        "products": [
+          {
+            "product_id": "A",
+            "net_product_total": "1000.00",
+            "allocated_expenses": [
+              {
+                "expense_id": "E1",
+                "amount": "100.00",
+                "currency": "TRY"
+              }
+            ],
+            "allocated_expense_total": "100.00",
+            "actual_landed_total": "1100.00",
+            "actual_unit_cost": "110.00",
+            "currency": "TRY"
+          },
+          {
+            "product_id": "B",
+            "net_product_total": "1000.00",
+            "allocated_expenses": [
+              {
+                "expense_id": "E1",
+                "amount": "100.00",
+                "currency": "TRY"
+              }
+            ],
+            "allocated_expense_total": "100.00",
+            "actual_landed_total": "1100.00",
+            "actual_unit_cost": "55.00",
+            "currency": "TRY"
+          }
+        ],
+        "expense_control": {
+          "converted_expense_total": "200.00",
+          "allocated_total": "200.00"
+        }
+      }
+    },
+    {
+      "id": "LC-002",
+      "ad": "Değer oranı 1:2",
+      "tuzakli": false,
+      "girdiler": {
+        "hesap_para_birimi": "TRY",
+        "urunler": [
+          {
+            "product_id": "A",
+            "accepted_qty": "6",
+            "product_net_total": "600",
+            "weight_total_kg": "10",
+            "cbm_total": "1"
+          },
+          {
+            "product_id": "B",
+            "accepted_qty": "12",
+            "product_net_total": "1200",
+            "weight_total_kg": "10",
+            "cbm_total": "1"
+          }
+        ],
+        "masraflar": [
+          {
+            "expense_id": "E1",
+            "type": "BANK",
+            "amount": "99",
+            "currency": "TRY",
+            "rate": "1",
+            "allocation_key": "VALUE"
+          }
+        ]
+      },
+      "beklenen": {
+        "status": "CALCULATED",
+        "products": [
+          {
+            "product_id": "A",
+            "net_product_total": "600.00",
+            "allocated_expenses": [
+              {
+                "expense_id": "E1",
+                "amount": "33.00",
+                "currency": "TRY"
+              }
+            ],
+            "allocated_expense_total": "33.00",
+            "actual_landed_total": "633.00",
+            "actual_unit_cost": "105.50",
+            "currency": "TRY"
+          },
+          {
+            "product_id": "B",
+            "net_product_total": "1200.00",
+            "allocated_expenses": [
+              {
+                "expense_id": "E1",
+                "amount": "66.00",
+                "currency": "TRY"
+              }
+            ],
+            "allocated_expense_total": "66.00",
+            "actual_landed_total": "1266.00",
+            "actual_unit_cost": "105.50",
+            "currency": "TRY"
+          }
+        ],
+        "expense_control": {
+          "converted_expense_total": "99.00",
+          "allocated_total": "99.00"
+        }
+      }
+    },
+    {
+      "id": "LC-003",
+      "ad": "Ağırlığa göre dağıtım",
+      "tuzakli": false,
+      "girdiler": {
+        "hesap_para_birimi": "TRY",
+        "urunler": [
+          {
+            "product_id": "A",
+            "accepted_qty": "10",
+            "product_net_total": "500",
+            "weight_total_kg": "100",
+            "cbm_total": "1"
+          },
+          {
+            "product_id": "B",
+            "accepted_qty": "10",
+            "product_net_total": "500",
+            "weight_total_kg": "300",
+            "cbm_total": "1"
+          }
+        ],
+        "masraflar": [
+          {
+            "expense_id": "E1",
+            "type": "INLAND_TRANSPORT",
+            "amount": "200",
+            "currency": "TRY",
+            "rate": "1",
+            "allocation_key": "WEIGHT"
+          }
+        ]
+      },
+      "beklenen": {
+        "status": "CALCULATED",
+        "products": [
+          {
+            "product_id": "A",
+            "net_product_total": "500.00",
+            "allocated_expenses": [
+              {
+                "expense_id": "E1",
+                "amount": "50.00",
+                "currency": "TRY"
+              }
+            ],
+            "allocated_expense_total": "50.00",
+            "actual_landed_total": "550.00",
+            "actual_unit_cost": "55.00",
+            "currency": "TRY"
+          },
+          {
+            "product_id": "B",
+            "net_product_total": "500.00",
+            "allocated_expenses": [
+              {
+                "expense_id": "E1",
+                "amount": "150.00",
+                "currency": "TRY"
+              }
+            ],
+            "allocated_expense_total": "150.00",
+            "actual_landed_total": "650.00",
+            "actual_unit_cost": "65.00",
+            "currency": "TRY"
+          }
+        ],
+        "expense_control": {
+          "converted_expense_total": "200.00",
+          "allocated_total": "200.00"
+        }
+      }
+    },
+    {
+      "id": "LC-004",
+      "ad": "CBM'ye göre dağıtım",
+      "tuzakli": false,
+      "girdiler": {
+        "hesap_para_birimi": "TRY",
+        "urunler": [
+          {
+            "product_id": "A",
+            "accepted_qty": "8",
+            "product_net_total": "800",
+            "weight_total_kg": "100",
+            "cbm_total": "1"
+          },
+          {
+            "product_id": "B",
+            "accepted_qty": "12",
+            "product_net_total": "1200",
+            "weight_total_kg": "100",
+            "cbm_total": "3"
+          }
+        ],
+        "masraflar": [
+          {
+            "expense_id": "E1",
+            "type": "FREIGHT",
+            "amount": "400",
+            "currency": "TRY",
+            "rate": "1",
+            "allocation_key": "CBM"
+          }
+        ]
+      },
+      "beklenen": {
+        "status": "CALCULATED",
+        "products": [
+          {
+            "product_id": "A",
+            "net_product_total": "800.00",
+            "allocated_expenses": [
+              {
+                "expense_id": "E1",
+                "amount": "100.00",
+                "currency": "TRY"
+              }
+            ],
+            "allocated_expense_total": "100.00",
+            "actual_landed_total": "900.00",
+            "actual_unit_cost": "112.50",
+            "currency": "TRY"
+          },
+          {
+            "product_id": "B",
+            "net_product_total": "1200.00",
+            "allocated_expenses": [
+              {
+                "expense_id": "E1",
+                "amount": "300.00",
+                "currency": "TRY"
+              }
+            ],
+            "allocated_expense_total": "300.00",
+            "actual_landed_total": "1500.00",
+            "actual_unit_cost": "125.00",
+            "currency": "TRY"
+          }
+        ],
+        "expense_control": {
+          "converted_expense_total": "400.00",
+          "allocated_total": "400.00"
+        }
+      }
+    },
+    {
+      "id": "LC-005",
+      "ad": "Artık kuruş ve eşitlik",
+      "tuzakli": false,
+      "girdiler": {
+        "hesap_para_birimi": "TRY",
+        "urunler": [
+          {
+            "product_id": "A",
+            "accepted_qty": "1",
+            "product_net_total": "100",
+            "weight_total_kg": "1",
+            "cbm_total": "1"
+          },
+          {
+            "product_id": "B",
+            "accepted_qty": "1",
+            "product_net_total": "100",
+            "weight_total_kg": "1",
+            "cbm_total": "1"
+          },
+          {
+            "product_id": "C",
+            "accepted_qty": "1",
+            "product_net_total": "100",
+            "weight_total_kg": "1",
+            "cbm_total": "1"
+          }
+        ],
+        "masraflar": [
+          {
+            "expense_id": "E1",
+            "type": "OTHER",
+            "amount": "0.05",
+            "currency": "TRY",
+            "rate": "1",
+            "allocation_key": "VALUE"
+          }
+        ]
+      },
+      "beklenen": {
+        "status": "CALCULATED",
+        "products": [
+          {
+            "product_id": "A",
+            "net_product_total": "100.00",
+            "allocated_expenses": [
+              {
+                "expense_id": "E1",
+                "amount": "0.02",
+                "currency": "TRY"
+              }
+            ],
+            "allocated_expense_total": "0.02",
+            "actual_landed_total": "100.02",
+            "actual_unit_cost": "100.02",
+            "currency": "TRY"
+          },
+          {
+            "product_id": "B",
+            "net_product_total": "100.00",
+            "allocated_expenses": [
+              {
+                "expense_id": "E1",
+                "amount": "0.02",
+                "currency": "TRY"
+              }
+            ],
+            "allocated_expense_total": "0.02",
+            "actual_landed_total": "100.02",
+            "actual_unit_cost": "100.02",
+            "currency": "TRY"
+          },
+          {
+            "product_id": "C",
+            "net_product_total": "100.00",
+            "allocated_expenses": [
+              {
+                "expense_id": "E1",
+                "amount": "0.01",
+                "currency": "TRY"
+              }
+            ],
+            "allocated_expense_total": "0.01",
+            "actual_landed_total": "100.01",
+            "actual_unit_cost": "100.01",
+            "currency": "TRY"
+          }
+        ],
+        "expense_control": {
+          "converted_expense_total": "0.05",
+          "allocated_total": "0.05"
+        }
+      }
+    },
+    {
+      "id": "LC-006",
+      "ad": "Tuzak: sıfır ağırlıklı ürün",
+      "tuzakli": true,
+      "girdiler": {
+        "hesap_para_birimi": "TRY",
+        "urunler": [
+          {
+            "product_id": "A",
+            "accepted_qty": "10",
+            "product_net_total": "100",
+            "weight_total_kg": "0",
+            "cbm_total": "1"
+          },
+          {
+            "product_id": "B",
+            "accepted_qty": "10",
+            "product_net_total": "300",
+            "weight_total_kg": "10",
+            "cbm_total": "1"
+          }
+        ],
+        "masraflar": [
+          {
+            "expense_id": "E1",
+            "type": "FREIGHT",
+            "amount": "100",
+            "currency": "TRY",
+            "rate": "1",
+            "allocation_key": "WEIGHT"
+          }
+        ]
+      },
+      "beklenen": {
+        "status": "CALCULATED",
+        "products": [
+          {
+            "product_id": "A",
+            "net_product_total": "100.00",
+            "allocated_expenses": [
+              {
+                "expense_id": "E1",
+                "amount": "0.00",
+                "currency": "TRY"
+              }
+            ],
+            "allocated_expense_total": "0.00",
+            "actual_landed_total": "100.00",
+            "actual_unit_cost": "10.00",
+            "currency": "TRY"
+          },
+          {
+            "product_id": "B",
+            "net_product_total": "300.00",
+            "allocated_expenses": [
+              {
+                "expense_id": "E1",
+                "amount": "100.00",
+                "currency": "TRY"
+              }
+            ],
+            "allocated_expense_total": "100.00",
+            "actual_landed_total": "400.00",
+            "actual_unit_cost": "40.00",
+            "currency": "TRY"
+          }
+        ],
+        "expense_control": {
+          "converted_expense_total": "100.00",
+          "allocated_total": "100.00"
+        }
+      }
+    },
+    {
+      "id": "LC-007",
+      "ad": "Tuzak: toplam ağırlık sıfır",
+      "tuzakli": true,
+      "girdiler": {
+        "hesap_para_birimi": "TRY",
+        "urunler": [
+          {
+            "product_id": "A",
+            "accepted_qty": "10",
+            "product_net_total": "100",
+            "weight_total_kg": "0",
+            "cbm_total": "1"
+          },
+          {
+            "product_id": "B",
+            "accepted_qty": "10",
+            "product_net_total": "300",
+            "weight_total_kg": "0",
+            "cbm_total": "1"
+          }
+        ],
+        "masraflar": [
+          {
+            "expense_id": "E1",
+            "type": "FREIGHT",
+            "amount": "50",
+            "currency": "TRY",
+            "rate": "1",
+            "allocation_key": "WEIGHT"
+          }
+        ]
+      },
+      "beklenen": {
+        "status": "REJECTED",
+        "error_code": "ALLOCATION_BASIS_ZERO",
+        "detail": "WEIGHT_TOTAL_ZERO"
+      }
+    },
+    {
+      "id": "LC-008",
+      "ad": "Tuzak: tek üründe tüm masraflar",
+      "tuzakli": true,
+      "girdiler": {
+        "hesap_para_birimi": "TRY",
+        "urunler": [
+          {
+            "product_id": "A",
+            "accepted_qty": "100",
+            "product_net_total": "1000",
+            "weight_total_kg": "100",
+            "cbm_total": "2"
+          }
+        ],
+        "masraflar": [
+          {
+            "expense_id": "E1",
+            "type": "FREIGHT",
+            "amount": "200",
+            "currency": "TRY",
+            "rate": "1",
+            "allocation_key": "CBM"
+          },
+          {
+            "expense_id": "E2",
+            "type": "BANK",
+            "amount": "10",
+            "currency": "TRY",
+            "rate": "1",
+            "allocation_key": "VALUE"
+          },
+          {
+            "expense_id": "E3",
+            "type": "INSURANCE",
+            "amount": "20",
+            "currency": "TRY",
+            "rate": "1",
+            "allocation_key": "VALUE"
+          }
+        ]
+      },
+      "beklenen": {
+        "status": "CALCULATED",
+        "products": [
+          {
+            "product_id": "A",
+            "net_product_total": "1000.00",
+            "allocated_expenses": [
+              {
+                "expense_id": "E1",
+                "amount": "200.00",
+                "currency": "TRY"
+              },
+              {
+                "expense_id": "E2",
+                "amount": "10.00",
+                "currency": "TRY"
+              },
+              {
+                "expense_id": "E3",
+                "amount": "20.00",
+                "currency": "TRY"
+              }
+            ],
+            "allocated_expense_total": "230.00",
+            "actual_landed_total": "1230.00",
+            "actual_unit_cost": "12.30",
+            "currency": "TRY"
+          }
+        ],
+        "expense_control": {
+          "converted_expense_total": "230.00",
+          "allocated_total": "230.00"
+        }
+      }
+    },
+    {
+      "id": "LC-009",
+      "ad": "Tuzak: karışık para birimi",
+      "tuzakli": true,
+      "girdiler": {
+        "hesap_para_birimi": "TRY",
+        "urunler": [
+          {
+            "product_id": "A",
+            "accepted_qty": "100",
+            "product_net_total": "20000",
+            "weight_total_kg": "100",
+            "cbm_total": "2"
+          },
+          {
+            "product_id": "B",
+            "accepted_qty": "100",
+            "product_net_total": "30000",
+            "weight_total_kg": "100",
+            "cbm_total": "3"
+          }
+        ],
+        "masraflar": [
+          {
+            "expense_id": "E1",
+            "type": "FREIGHT",
+            "amount": "1000",
+            "currency": "USD",
+            "rate": "35",
+            "allocation_key": "VALUE"
+          },
+          {
+            "expense_id": "E2",
+            "type": "BANK",
+            "amount": "500",
+            "currency": "CNY",
+            "rate": "5",
+            "allocation_key": "VALUE"
+          }
+        ]
+      },
+      "beklenen": {
+        "status": "CALCULATED",
+        "products": [
+          {
+            "product_id": "A",
+            "net_product_total": "20000.00",
+            "allocated_expenses": [
+              {
+                "expense_id": "E1",
+                "amount": "14000.00",
+                "currency": "TRY"
+              },
+              {
+                "expense_id": "E2",
+                "amount": "1000.00",
+                "currency": "TRY"
+              }
+            ],
+            "allocated_expense_total": "15000.00",
+            "actual_landed_total": "35000.00",
+            "actual_unit_cost": "350.00",
+            "currency": "TRY"
+          },
+          {
+            "product_id": "B",
+            "net_product_total": "30000.00",
+            "allocated_expenses": [
+              {
+                "expense_id": "E1",
+                "amount": "21000.00",
+                "currency": "TRY"
+              },
+              {
+                "expense_id": "E2",
+                "amount": "1500.00",
+                "currency": "TRY"
+              }
+            ],
+            "allocated_expense_total": "22500.00",
+            "actual_landed_total": "52500.00",
+            "actual_unit_cost": "525.00",
+            "currency": "TRY"
+          }
+        ],
+        "expense_control": {
+          "converted_expense_total": "37500.00",
+          "allocated_total": "37500.00"
+        }
+      }
+    },
+    {
+      "id": "LC-010",
+      "ad": "DDP brütten varsayılan %20 ayrıştırma",
+      "tuzakli": false,
+      "girdiler": {
+        "hesap_para_birimi": "TRY",
+        "urunler": [
+          {
+            "product_id": "A",
+            "accepted_qty": "10",
+            "value_basis": "DDP_GROSS",
+            "ddp_gross_total": "1200",
+            "vat_rate": "20",
+            "weight_total_kg": "10",
+            "cbm_total": "1"
+          }
+        ],
+        "masraflar": [
+          {
+            "expense_id": "E1",
+            "type": "OTHER",
+            "amount": "200",
+            "currency": "TRY",
+            "rate": "1",
+            "allocation_key": "VALUE"
+          }
+        ]
+      },
+      "beklenen": {
+        "status": "CALCULATED",
+        "products": [
+          {
+            "product_id": "A",
+            "net_product_total": "1000.00",
+            "allocated_expenses": [
+              {
+                "expense_id": "E1",
+                "amount": "200.00",
+                "currency": "TRY"
+              }
+            ],
+            "allocated_expense_total": "200.00",
+            "actual_landed_total": "1200.00",
+            "actual_unit_cost": "120.00",
+            "currency": "TRY",
+            "ddp_vat_separation": {
+              "gross": "1200.00",
+              "vat_rate_pct": "20",
+              "net": "1000.00",
+              "vat_amount": "200.00"
+            }
+          }
+        ],
+        "expense_control": {
+          "converted_expense_total": "200.00",
+          "allocated_total": "200.00"
+        }
+      }
+    },
+    {
+      "id": "LC-011",
+      "ad": "Ürün bazında farklı KDV kalibrasyonu",
+      "tuzakli": false,
+      "girdiler": {
+        "hesap_para_birimi": "TRY",
+        "urunler": [
+          {
+            "product_id": "A",
+            "accepted_qty": "10",
+            "value_basis": "DDP_GROSS",
+            "ddp_gross_total": "1100",
+            "vat_rate": "10",
+            "weight_total_kg": "10",
+            "cbm_total": "1"
+          },
+          {
+            "product_id": "B",
+            "accepted_qty": "10",
+            "value_basis": "DDP_GROSS",
+            "ddp_gross_total": "1200",
+            "vat_rate": "20",
+            "weight_total_kg": "10",
+            "cbm_total": "1"
+          }
+        ],
+        "masraflar": [
+          {
+            "expense_id": "E1",
+            "type": "CUSTOMS_SERVICE",
+            "amount": "200",
+            "currency": "TRY",
+            "rate": "1",
+            "allocation_key": "VALUE"
+          }
+        ]
+      },
+      "beklenen": {
+        "status": "CALCULATED",
+        "products": [
+          {
+            "product_id": "A",
+            "net_product_total": "1000.00",
+            "allocated_expenses": [
+              {
+                "expense_id": "E1",
+                "amount": "100.00",
+                "currency": "TRY"
+              }
+            ],
+            "allocated_expense_total": "100.00",
+            "actual_landed_total": "1100.00",
+            "actual_unit_cost": "110.00",
+            "currency": "TRY",
+            "ddp_vat_separation": {
+              "gross": "1100.00",
+              "vat_rate_pct": "10",
+              "net": "1000.00",
+              "vat_amount": "100.00"
+            }
+          },
+          {
+            "product_id": "B",
+            "net_product_total": "1000.00",
+            "allocated_expenses": [
+              {
+                "expense_id": "E1",
+                "amount": "100.00",
+                "currency": "TRY"
+              }
+            ],
+            "allocated_expense_total": "100.00",
+            "actual_landed_total": "1100.00",
+            "actual_unit_cost": "110.00",
+            "currency": "TRY",
+            "ddp_vat_separation": {
+              "gross": "1200.00",
+              "vat_rate_pct": "20",
+              "net": "1000.00",
+              "vat_amount": "200.00"
+            }
+          }
+        ],
+        "expense_control": {
+          "converted_expense_total": "200.00",
+          "allocated_total": "200.00"
+        }
+      }
+    },
+    {
+      "id": "LC-012",
+      "ad": "Masraf bazında karışık dağıtım anahtarı",
+      "tuzakli": false,
+      "girdiler": {
+        "hesap_para_birimi": "TRY",
+        "urunler": [
+          {
+            "product_id": "A",
+            "accepted_qty": "10",
+            "product_net_total": "1000",
+            "weight_total_kg": "100",
+            "cbm_total": "1"
+          },
+          {
+            "product_id": "B",
+            "accepted_qty": "20",
+            "product_net_total": "2000",
+            "weight_total_kg": "300",
+            "cbm_total": "3"
+          }
+        ],
+        "masraflar": [
+          {
+            "expense_id": "E1",
+            "type": "FREIGHT",
+            "amount": "400",
+            "currency": "TRY",
+            "rate": "1",
+            "allocation_key": "CBM"
+          },
+          {
+            "expense_id": "E2",
+            "type": "BANK",
+            "amount": "90",
+            "currency": "TRY",
+            "rate": "1",
+            "allocation_key": "VALUE"
+          },
+          {
+            "expense_id": "E3",
+            "type": "INSURANCE",
+            "amount": "80",
+            "currency": "TRY",
+            "rate": "1",
+            "allocation_key": "WEIGHT"
+          },
+          {
+            "expense_id": "E4",
+            "type": "CUSTOMS_SERVICE",
+            "amount": "60",
+            "currency": "TRY",
+            "rate": "1",
+            "allocation_key": "VALUE"
+          },
+          {
+            "expense_id": "E5",
+            "type": "INLAND_TRANSPORT",
+            "amount": "100",
+            "currency": "TRY",
+            "rate": "1",
+            "allocation_key": "WEIGHT"
+          }
+        ]
+      },
+      "beklenen": {
+        "status": "CALCULATED",
+        "products": [
+          {
+            "product_id": "A",
+            "net_product_total": "1000.00",
+            "allocated_expenses": [
+              {
+                "expense_id": "E1",
+                "amount": "100.00",
+                "currency": "TRY"
+              },
+              {
+                "expense_id": "E2",
+                "amount": "30.00",
+                "currency": "TRY"
+              },
+              {
+                "expense_id": "E3",
+                "amount": "20.00",
+                "currency": "TRY"
+              },
+              {
+                "expense_id": "E4",
+                "amount": "20.00",
+                "currency": "TRY"
+              },
+              {
+                "expense_id": "E5",
+                "amount": "25.00",
+                "currency": "TRY"
+              }
+            ],
+            "allocated_expense_total": "195.00",
+            "actual_landed_total": "1195.00",
+            "actual_unit_cost": "119.50",
+            "currency": "TRY"
+          },
+          {
+            "product_id": "B",
+            "net_product_total": "2000.00",
+            "allocated_expenses": [
+              {
+                "expense_id": "E1",
+                "amount": "300.00",
+                "currency": "TRY"
+              },
+              {
+                "expense_id": "E2",
+                "amount": "60.00",
+                "currency": "TRY"
+              },
+              {
+                "expense_id": "E3",
+                "amount": "60.00",
+                "currency": "TRY"
+              },
+              {
+                "expense_id": "E4",
+                "amount": "40.00",
+                "currency": "TRY"
+              },
+              {
+                "expense_id": "E5",
+                "amount": "75.00",
+                "currency": "TRY"
+              }
+            ],
+            "allocated_expense_total": "535.00",
+            "actual_landed_total": "2535.00",
+            "actual_unit_cost": "126.75",
+            "currency": "TRY"
+          }
+        ],
+        "expense_control": {
+          "converted_expense_total": "730.00",
+          "allocated_total": "730.00"
+        }
+      }
+    },
+    {
+      "id": "LC-013",
+      "ad": "Sıfır CBM'li ürün ve pozitif toplam",
+      "tuzakli": false,
+      "girdiler": {
+        "hesap_para_birimi": "TRY",
+        "urunler": [
+          {
+            "product_id": "A",
+            "accepted_qty": "10",
+            "product_net_total": "100",
+            "weight_total_kg": "10",
+            "cbm_total": "0"
+          },
+          {
+            "product_id": "B",
+            "accepted_qty": "10",
+            "product_net_total": "300",
+            "weight_total_kg": "10",
+            "cbm_total": "2"
+          }
+        ],
+        "masraflar": [
+          {
+            "expense_id": "E1",
+            "type": "FREIGHT",
+            "amount": "200",
+            "currency": "TRY",
+            "rate": "1",
+            "allocation_key": "CBM"
+          }
+        ]
+      },
+      "beklenen": {
+        "status": "CALCULATED",
+        "products": [
+          {
+            "product_id": "A",
+            "net_product_total": "100.00",
+            "allocated_expenses": [
+              {
+                "expense_id": "E1",
+                "amount": "0.00",
+                "currency": "TRY"
+              }
+            ],
+            "allocated_expense_total": "0.00",
+            "actual_landed_total": "100.00",
+            "actual_unit_cost": "10.00",
+            "currency": "TRY"
+          },
+          {
+            "product_id": "B",
+            "net_product_total": "300.00",
+            "allocated_expenses": [
+              {
+                "expense_id": "E1",
+                "amount": "200.00",
+                "currency": "TRY"
+              }
+            ],
+            "allocated_expense_total": "200.00",
+            "actual_landed_total": "500.00",
+            "actual_unit_cost": "50.00",
+            "currency": "TRY"
+          }
+        ],
+        "expense_control": {
+          "converted_expense_total": "200.00",
+          "allocated_total": "200.00"
+        }
+      }
+    },
+    {
+      "id": "LC-014",
+      "ad": "Eksik teslimde kabul adedi paydası",
+      "tuzakli": false,
+      "girdiler": {
+        "hesap_para_birimi": "TRY",
+        "urunler": [
+          {
+            "product_id": "A",
+            "accepted_qty": "8",
+            "product_net_total": "1000",
+            "weight_total_kg": "10",
+            "cbm_total": "1",
+            "note": "10 adet bedeli ödenmiş, 8 adet kabul edilmiştir"
+          }
+        ],
+        "masraflar": [
+          {
+            "expense_id": "E1",
+            "type": "OTHER",
+            "amount": "200",
+            "currency": "TRY",
+            "rate": "1",
+            "allocation_key": "VALUE"
+          }
+        ]
+      },
+      "beklenen": {
+        "status": "CALCULATED",
+        "products": [
+          {
+            "product_id": "A",
+            "net_product_total": "1000.00",
+            "allocated_expenses": [
+              {
+                "expense_id": "E1",
+                "amount": "200.00",
+                "currency": "TRY"
+              }
+            ],
+            "allocated_expense_total": "200.00",
+            "actual_landed_total": "1200.00",
+            "actual_unit_cost": "150.00",
+            "currency": "TRY"
+          }
+        ],
+        "expense_control": {
+          "converted_expense_total": "200.00",
+          "allocated_total": "200.00"
+        }
+      }
+    },
+    {
+      "id": "LC-015",
+      "ad": "Artık kuruş bağlayıcı eşitlik sırası",
+      "tuzakli": false,
+      "girdiler": {
+        "hesap_para_birimi": "TRY",
+        "urunler": [
+          {
+            "product_id": "P03",
+            "accepted_qty": "1",
+            "product_net_total": "100",
+            "weight_total_kg": "1",
+            "cbm_total": "1"
+          },
+          {
+            "product_id": "P01",
+            "accepted_qty": "1",
+            "product_net_total": "100",
+            "weight_total_kg": "1",
+            "cbm_total": "1"
+          },
+          {
+            "product_id": "P02",
+            "accepted_qty": "1",
+            "product_net_total": "100",
+            "weight_total_kg": "1",
+            "cbm_total": "1"
+          }
+        ],
+        "masraflar": [
+          {
+            "expense_id": "E1",
+            "type": "OTHER",
+            "amount": "0.02",
+            "currency": "TRY",
+            "rate": "1",
+            "allocation_key": "VALUE"
+          }
+        ]
+      },
+      "beklenen": {
+        "status": "CALCULATED",
+        "products": [
+          {
+            "product_id": "P03",
+            "net_product_total": "100.00",
+            "allocated_expenses": [
+              {
+                "expense_id": "E1",
+                "amount": "0.00",
+                "currency": "TRY"
+              }
+            ],
+            "allocated_expense_total": "0.00",
+            "actual_landed_total": "100.00",
+            "actual_unit_cost": "100.00",
+            "currency": "TRY"
+          },
+          {
+            "product_id": "P01",
+            "net_product_total": "100.00",
+            "allocated_expenses": [
+              {
+                "expense_id": "E1",
+                "amount": "0.01",
+                "currency": "TRY"
+              }
+            ],
+            "allocated_expense_total": "0.01",
+            "actual_landed_total": "100.01",
+            "actual_unit_cost": "100.01",
+            "currency": "TRY"
+          },
+          {
+            "product_id": "P02",
+            "net_product_total": "100.00",
+            "allocated_expenses": [
+              {
+                "expense_id": "E1",
+                "amount": "0.01",
+                "currency": "TRY"
+              }
+            ],
+            "allocated_expense_total": "0.01",
+            "actual_landed_total": "100.01",
+            "actual_unit_cost": "100.01",
+            "currency": "TRY"
+          }
+        ],
+        "expense_control": {
+          "converted_expense_total": "0.02",
+          "allocated_total": "0.02"
+        }
+      }
+    },
+    {
+      "id": "LC-016",
+      "ad": "Serbest diğer masraf",
+      "tuzakli": false,
+      "girdiler": {
+        "hesap_para_birimi": "TRY",
+        "urunler": [
+          {
+            "product_id": "A",
+            "accepted_qty": "5",
+            "product_net_total": "250",
+            "weight_total_kg": "5",
+            "cbm_total": "1"
+          },
+          {
+            "product_id": "B",
+            "accepted_qty": "15",
+            "product_net_total": "750",
+            "weight_total_kg": "15",
+            "cbm_total": "3"
+          }
+        ],
+        "masraflar": [
+          {
+            "expense_id": "E1",
+            "type": "OTHER",
+            "free_label": "Kalite kontrol hizmeti",
+            "amount": "123.45",
+            "currency": "TRY",
+            "rate": "1",
+            "allocation_key": "VALUE"
+          }
+        ]
+      },
+      "beklenen": {
+        "status": "CALCULATED",
+        "products": [
+          {
+            "product_id": "A",
+            "net_product_total": "250.00",
+            "allocated_expenses": [
+              {
+                "expense_id": "E1",
+                "amount": "30.86",
+                "currency": "TRY"
+              }
+            ],
+            "allocated_expense_total": "30.86",
+            "actual_landed_total": "280.86",
+            "actual_unit_cost": "56.17",
+            "currency": "TRY"
+          },
+          {
+            "product_id": "B",
+            "net_product_total": "750.00",
+            "allocated_expenses": [
+              {
+                "expense_id": "E1",
+                "amount": "92.59",
+                "currency": "TRY"
+              }
+            ],
+            "allocated_expense_total": "92.59",
+            "actual_landed_total": "842.59",
+            "actual_unit_cost": "56.17",
+            "currency": "TRY"
+          }
+        ],
+        "expense_control": {
+          "converted_expense_total": "123.45",
+          "allocated_total": "123.45"
+        }
+      }
+    }
+  ],
+  "kaynaklar": [
+    {
+      "kaynak": "Bu görev metni",
+      "kullanim": "masraf türleri, dağıtım anahtarları, NET/DDP ve kabul kapısı"
+    },
+    {
+      "kaynak": "cikti-terimleri.json",
+      "kullanim": "mevcut çıktı terimleri; yeni durum/terim anahtarı eklenmedi"
+    },
+    {
+      "kaynak": "odeme-senaryolari.json",
+      "kullanim": "kilitli kur snapshot ve kur farkını ana tutardan ayırma ilkesi"
+    }
+  ]
+}

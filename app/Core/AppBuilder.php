@@ -79,6 +79,11 @@ final class AppBuilder
         ?string $basePath = null,
         ?\App\Services\MediaFetcher $mediaFetcher = null,
         ?\App\Services\Translation\TranslationClient $translationClient = null,
+        // rc8/E1 TEST DİKİŞİ: `commit()` başarısızlığı gerçek dosya sisteminde
+        // taşınabilir biçimde tetiklenemiyor (hedef adı rastgele; Windows'ta
+        // salt-okunur dizin rename'i engellemiyor). Süit bu parametreyle
+        // sözleşmeyi taklit eden bir MediaService verir; üretimde daima null.
+        ?MediaService $mediaService = null,
     ): App {
         $requestContext ??= new RequestContext();
         $basePath ??= dirname(__DIR__, 2);
@@ -132,15 +137,52 @@ final class AppBuilder
         $products = new ProductRepository($connection);
         $money = new MoneyService();
         $settingsRepository = new SettingsRepository($connection);
+
+        // ── D12: CRON'SUZ ÇEVİRİ ALTYAPISI ───────────────────────────────────
+        //
+        // Kuyruk işçisi artık YALNIZ cron'dan doğmuyor: panel ziyareti ve
+        // yakalama da tur açıyor. İşleyiciler bu yüzden HTTP kompozisyonunda da
+        // kayıtlı olmalı — kayıtlı olmasa tur "tanınmayan iş türü" der ve işleri
+        // ölü rafına atardı.
+        $kuyrukKosucusu = new \App\Services\Kuyruk\JobRunner(
+            new \App\Services\Kuyruk\JobQueue($connection),
+            $logger,
+        );
+        \App\Services\Kuyruk\KuyrukIsleyicileri::kaydet(
+            $kuyrukKosucusu,
+            $config,
+            $connection,
+            $logger,
+            $basePath,
+            $services->clock,
+        );
+        $kuyrukTetikleyici = new \App\Services\Kuyruk\KuyrukTetikleyici(
+            $kuyrukKosucusu,
+            $settingsRepository,
+            $services->clock,
+            $logger,
+        );
+
         // K4 düzeltmesi: taslak listeler GÜNCEL ayar kurunu gösterir — presenter ayarları bilir.
-        $presenter = new ListPresenter($lists, $products, $money, $services->timezone, $settingsRepository);
+        // D11b: panel, paylaşım sayfası ve belge AYNI ad çözümünü kullanır.
+        $adCozumleyici = new \App\Services\Translation\AdCozumleyici(
+            new \App\Models\TranslationCacheRepository($connection),
+        );
+        $presenter = new ListPresenter(
+            $lists,
+            $products,
+            $money,
+            $services->timezone,
+            $settingsRepository,
+            $adCozumleyici,
+        );
         $validator = new InputValidator($money);
         $stateMachine = new StateMachine();
         $mutationPolicy = new ListMutationPolicy();
 
         $allowedHosts = array_map('trim', explode(',', $config->get('MEDIA_ALLOWED_HOSTS', 'alicdn.com,1688.com')));
         $urlGuard = new UrlGuard($allowedHosts);
-        $mediaService = new MediaService(
+        $mediaService ??= new MediaService(
             $basePath,
             $urlGuard,
             $mediaFetcher ?? new CurlMediaFetcher($urlGuard, $config->getPositiveInt('MEDIA_DOWNLOAD_TIMEOUT', 25)),
@@ -199,6 +241,7 @@ final class AppBuilder
             $services->activity,
             $services->clock,
             $services->timezone,
+            $services->passwords,
         );
         $categoryController = new CategoryController(
             new CategoryRepository($connection),
@@ -211,8 +254,12 @@ final class AppBuilder
         // İE#10 Blok 1-3: export motoru — dosya diske YAZILMAZ, snapshot'tan akıtılır (K25/K33/K44).
         // İE#14 A2/A3: sözlük (K56 Katman 1) export ve paylaşım hattında da kullanılır —
         // varyasyon/öznitelik DEĞERLERİ belirlenimci biçimde Türkçeleşir (ağa çıkmadan).
+        // İE#21 B13: durum etiketleri TEK KAYNAKTAN (config/durumlar.json).
+        \App\Services\Export\TemplateV2::sozlukBagla($basePath);
         $glossary = new \App\Services\Translation\Glossary($basePath . '/config', $basePath . '/storage');
-        $valueSet = new \App\Services\Translation\ValueSet($glossary);
+        // İE#21 B9/B12: değerler artık ÖNBELLEKTEN de okunur (kuyruğun ürettiği
+        // LLM çevirisi) ve anahtar SÜRÜMLÜDÜR. Kurulum tek yerde (fabrika).
+        $valueSet = \App\Services\Translation\ValueSetFabrikasi::kur($connection, $config, $basePath);
 
         $exportRenderers = [
             'csv' => new \App\Services\Export\CsvRenderer(),
@@ -224,7 +271,7 @@ final class AppBuilder
             $products,
             new CategoryRepository($connection),
             new \App\Models\ExportRepository($connection),
-            new \App\Services\Export\ExportSnapshot($presenter, $valueSet),
+            new \App\Services\Export\ExportSnapshot($presenter, $valueSet, $adCozumleyici),
             $exportRenderers,
             $services->activity,
             $services->clock,
@@ -237,6 +284,7 @@ final class AppBuilder
             $services->clock,
             new \App\Services\Share\ShareKeyService($lists, (string) $config->get('APP_KEY', '')),
             $config,
+            new \App\Services\Inbox\SistemListesi($settingsRepository),
         );
 
         // İE#11 Faz 3: eklenti uçları — Bearer + CORS allowlist + hız sınırı (ExtensionAuth).
@@ -251,8 +299,17 @@ final class AppBuilder
             $products,
             new \App\Services\ListMutationPolicy(),
             $services->activity,
+            // rc8-01 (F-01): MEDYA SERVİSİ ZORUNLUDUR. Eskiden buraya hiçbir şey
+            // geçilmiyor ve yorum bunu "bilinçli" diye açıklıyordu; sonuç, arşiv
+            // modunda her yakalamanın diske `.tmp` bırakması ve veritabanına
+            // çözülemeyen bir `/media/...` adresi yazmasıydı.
+            $mediaService,
+            $logger,
+            ilanlar: new \App\Services\Ilan\IlanYazici($connection),
+            // D11a: galeri görselleri arka planda indirilsin (yakalama beklemez).
+            kuyruk: new \App\Services\Kuyruk\JobQueue($connection),
         );
-        $extensionController = new \App\Controllers\ExtensionController($captureService, $inboxRepository, $lists, $services->clock, $basePath, $captureApplier);
+        $extensionController = new \App\Controllers\ExtensionController($captureService, $inboxRepository, $lists, $services->clock, $basePath, $captureApplier, $kuyrukTetikleyici);
         $extensionAuth = new \App\Middleware\ExtensionAuth(
             $connection,
             $responseFactory,
@@ -284,12 +341,43 @@ final class AppBuilder
             $glossary,
             $translationService,
         );
+        // İE#20 C4: Katman 2 (LLM) artık GERÇEK. Sağlayıcı/anahtar/model ayarlardan
+        // gelir; anahtar yoksa LlmTranslator sessizce katmanlı yedeğe düşer, yani
+        // yapılandırılmamış sistemde davranış BUGÜNKÜYLE AYNI kalır.
+        $ceviriAyarlari = new \App\Services\Translation\CeviriAyarlari(
+            $settingsRepository,
+            new \App\Core\Encrypter($config),
+        );
+        $translator = new \App\Services\Translation\LlmTranslator(
+            $glossary,
+            $ceviriAyarlari,
+            new \App\Services\Translation\LlmIstemci($config->getPositiveInt('TRANSLATE_LLM_TIMEOUT', 45)),
+            new \App\Models\TranslationCacheRepository($connection),
+            $services->clock,
+            $logger,
+            $translator,
+        );
+
+        // Senkron çeviri: "çevir" dendiğinde kuyruğa yazıp umut etmek yerine
+        // isteğin içinde çevirir (D12 madde 1-2).
+        $ceviriYurutucu = new \App\Services\Translation\CeviriYurutucu(
+            $products,
+            new \App\Models\TranslationCacheRepository($connection),
+            $translator,
+            $logger,
+        );
+
         $translationController = new \App\Controllers\TranslationController(
             $translationService,
             $glossary,
             $translator,
             $services->activity,
             $services->clock,
+            $ceviriAyarlari,
+            new \App\Services\Kuyruk\JobQueue($connection),
+            $products,
+            $ceviriYurutucu,
+            $kuyrukTetikleyici,
         );
 
         $app->group('', static function (\Slim\Routing\RouteCollectorProxy $group) use ($extensionController, $translationController): void {
@@ -312,6 +400,10 @@ final class AppBuilder
             $services->clock,
             $services->timezone,
             $captureApplier,
+            // İE#21 B4: deste modu (havuz listesi + geri alma).
+            $connection,
+            $products,
+            new SettingsRepository($connection),
         );
 
         // İE#10.5 Blok 6: rota kayıtları modül dosyalarında — AppBuilder yalnız kompozisyon kökü.
@@ -324,7 +416,7 @@ final class AppBuilder
             $connection,
             $services,
             $config,
-            new \App\Services\Export\ExportSnapshot($presenter, $valueSet),
+            new \App\Services\Export\ExportSnapshot($presenter, $valueSet, $adCozumleyici),
             $exportRenderers,
             $basePath,
             $logger,
@@ -334,6 +426,13 @@ final class AppBuilder
             $settingsController,
             $inboxController,
             $categoryController,
+            // İE#21 B1: Keşif havuzu uçları.
+            new \App\Controllers\KesifController(
+                $connection,
+                new SettingsRepository($connection),
+                $services->activity,
+                $services->clock,
+            ),
             $activityController,
             $listController,
             $productController,
@@ -345,6 +444,7 @@ final class AppBuilder
             $responseFactory,
             $connection,
             $basePath . '/migrations',
+            $kuyrukTetikleyici,
         );
 
         // Panel (İE#8 §5): Vite çıktısı public/panel/ altındadır. Var olan dosyaları

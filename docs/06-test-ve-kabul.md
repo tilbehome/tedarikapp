@@ -86,3 +86,16 @@ iptal sonrası sabit 404, Gelen Kutusu'na sahte yakalama → listeye taşıma.
 kırılgandır ve testin kendisi hata kaynağına dönüşür. Eklenti tarafı parser fixture
 testleriyle (`extension/tests`) ve eklentinin kullandığı uçların E2E'de sürülmesiyle
 kapsanır; arayüz kabulü manuel listeyle yapılır (K35). Ayrıntı: `e2e/README.md`.
+
+## Dil kontrolü — K81 istisnası (24 Ağu 2026)
+
+Kabul turunda "sıfır karışık dil" ölçütü uygulanır: seçilen dilde arayüz metinleri, durum
+adları, alan değerleri, şartlar ve dipnotlar TEK DİLDİR. İki şey karışık dil SAYILMAZ ve
+kusur olarak yazılmaz:
+
+1. **K55** — ürün adının altındaki orijinal Çince referans satırı (her dilde korunur).
+2. **K81** — üç dilli kademeli tablo sütun başlığı bloğu (MİKTAR / 数量 / QUANTITY);
+   paylaşım sayfası ekranında ve Excel'de her dil seçiminde aynen üç dilli kalır.
+   PDF'te pdf-rev4 geçerlidir: başlık tek satır.
+
+Kanıt: `tests/Http/PaylasimDiliTest.php`.

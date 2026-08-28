@@ -91,6 +91,9 @@
 | `PATCH /api/products/{id}` | Kısmi güncelleme (alan kuralları docs/04 §2d) |
 | `PATCH /api/products/{id}/status` | `{status}` — durum makinesine aykırıysa 422 `STATE_TRANSITION` + izinli geçişler `meta.allowed` içinde |
 | `DELETE /api/products/{id}` | Çöp kutusuna → 204 |
+| `GET /api/products/{id}/cekmece` | İE#21 B3 — ürün çekmecesi TEK istekte: `{urun, ilan, kademeler, yorum_ozeti, yurtici_kiyas}`. `ilan` elle eklenen üründe `null`; sinyali olmayan alan `null` (K67 — sıfır yazılmaz). `yurtici_kiyas` bugün DAİMA `null`: veri kaynağı yok (V3-C) |
+| `GET /api/lists/{id}/hazirlik` | İE#20 C8 — liste hazırlık özeti: `{urun, hazir_olmayan, tamamlanabilir, neden, eksik_dokumu}` |
+| `PATCH /api/products/{id}/hazir` | İE#20 C8 — HAZIR kapısı: eksik alan varsa 422 (gerekçe `fields.hazir`) |
 | `PATCH /api/products/bulk` | `{ids: [...], action: "status"\|"move"\|"delete", status?, target_list_id?}` → 200 `{updated, failed: [{id, error}]}` — kısmi başarı desteklenir; tüm işlem TEK transaction'dır (K37 §B5). Terminal listedeki ürün `failed`'a düşer; terminal HEDEFE taşıma → 422 `LIST_IMMUTABLE` |
 | `PATCH /api/lists/{id}/products/reorder` | `{ordered_ids: [...]}` → sıra numaraları yeniden yazılır. Dizi, listedeki ürünlerin **TAM permütasyonu** olmalı: eksik/fazla/yinelenen kimlik → 422 (K37 §B6) |
 
@@ -159,6 +162,8 @@ modelinin yerine geçmez, üstüne eklenir.
 | Uç | Açıklama |
 |---|---|
 | `POST /liste/{token}/anahtar` (ve `/p/` alias) | **İE#18 G6 (K62)** — erişim anahtarı doğrulama. Gövde `{anahtar}` (6 hane, büyük/küçük duyarsız). Doğru → `303` + HttpOnly/SameSite=Lax **imzalı çerez** (kapsam o token, ömür 12 saat) + kanonik adrese dönüş. Yanlış → `401` + kilit ekranı ("Anahtar hatalı"; kaç deneme kaldığı SÖYLENMEZ). Token+IP başına **dakikada 5** deneme; aşımda **sabit 404** (K51) + app_logs kaydı |
+| `PUT /api/settings/share-contact` | İE#21 EK-4 — kilit ekranındaki "Yeni anahtar iste" köprüsünün WhatsApp numarası: `{share_contact_phone}`. Boş değer düğmeyi kapatır; 8 haneden kısa numara 422 (ülke kodu şart). Numara ayar tablosunda yaşar (K44) |
+| `GET /api/lists/{id}/share-text?lang=tr\|en\|zh` | İE#21 B6 — kanal metni: `{dil, dil_adi, mesaj, konu}`. `mesaj` içinde `{link}` yer tutucusu OLDUĞU GİBİ döner; tam adresi panel doldurur (token istek satırına düşmez — K51). Geçersiz dil `tr`ye düşer |
 | `GET /api/lists/{id}/share-key` | Panel (oturumlu): `{key, enabled}` — anahtarı gösterir |
 | `POST /api/lists/{id}/share-key` | Anahtarı YENİLER; eski anahtar ve onunla alınmış çerezler ANINDA geçersizleşir |
 | `PATCH /api/lists/{id}/share-key` | `{enabled: bool}` — kapıyı aç/kapat. KAPALI listede davranış eskisi gibidir (token yeter) |
@@ -203,6 +208,11 @@ modelinin yerine geçmez, üstüne eklenir.
 | `POST /api/setup/admin` | `{email, password}` → `{otpauth_uri, qr_svg, manual_key}`. Kullanıcı HENÜZ oluşturulmaz |
 | `POST /api/setup/admin/verify` | `{code}` → kullanıcı oluşur; `{user, recovery_codes[]}` — **kodlar yalnızca bu yanıtta bir kez** |
 | `POST /api/setup/finish` | `{codes_saved: true}` zorunlu → kilidi yazar, özet döner |
+| `GET /api/setup/situation` | **D2-REV — TAM TEŞHİS.** SALT OKUNUR; kilitliyken ve veritabanı düşmüşken de 200 döner (SetupGuard'ın dar teşhis penceresi). `{durum, rozet, baslik, aciklama, secenekler[{kod, etiket, yikici, aciklama}], dosyalar{manifest_var, tamam, toplam, eksik[], eksik_sayisi, bozuk[], bozuk_sayisi}, config{var, saglam, eksik_alanlar[], app_key_var}, veritabani{denendi, erisim, hata_kodu, hata, odak_alan, surum}, sema{okundu, tablo_sayisi, uygulanan[], bekleyen[], …}, kilit, surum{dosya, kurulu, ayni}, bilet_var, csrf_token, oturum_adimi}`. `durum` sekiz değerden biridir: `KURULUM_YOK` · `SAGLIKLI` · `YARIM` · `CONFIG_KAYIP` · `DOSYA_EKSIK` · `MIGRATION_YARIM` · `SURUM_UYUSMAZLIGI` · `DB_ERISILEMIYOR`. **SIR İÇERMEZ** (APP_KEY, DB şifresi, token yok) |
+| `POST /api/setup/verify-owner` | **Sahiplik kanıtı → 15 dakikalık yeniden kurulum bileti.** `{yontem: "admin"\|"app_key", email?, sifre?, app_key?}`. Birincil yol yönetici e-postası + şifresidir (2FA sorulmaz — oturum açma değil, sahiplik kanıtı). Doğru → 200 `{dogrulandi, yontem, expires_in_seconds}` + HttpOnly bilet çerezi; yanlış → 403 **SABİT mesaj** (K51: hesap varlığı sızmaz); 3 hatadan sonra 429 + `meta.retry_after_seconds`. **Kurulum kilidi SİLİNMEZ** (G2). Kilitliyken erişilebilir |
+| `POST /api/setup/config-repair` | **Ayar dosyası onarımı** (durum `CONFIG_KAYIP` ve `DB_ERISILEMIYOR`). `{host, port?, name, user, pass, app_key?, email?, sifre?}` → bağlantı test edilir, `config.php` içeriği üretilir. **APP_KEY diskte duruyorsa KORUNUR** (şifreli veriler açılmaya devam eder) ve kanıt olarak APP_KEY istenir; dosyada anahtar kalmadıysa yeni üretilir ve hedef veritabanında kullanıcı VARSA kanıt yönetici şifresidir. Yanıt: `{manual, content?, instructions?, yeni_app_key, uyari}`. Kilitliyken ve DB düşmüşken erişilebilir — kanıt her hâlde aranır |
+| `POST /api/setup/config-repair/verify` | Elle kaydedilen `config.php` APP_KEY eşleşmesiyle doğrulanır VE gerçekten bağlanılabildiği sınanır → `{dogrulandi}`; aksi 422 |
+| `POST /api/setup/update` | **Sürüm güncellemesi** (durum `SURUM_UYUSMAZLIGI` / `MIGRATION_YARIM`) — bekleyen migration'lar koşar, `settings.system.app_version` tazelenir. `{onceki_surum, yeni_surum, bekleyen_sayisi, uygulanan[], kalan[]}`. Veriye dokunulmaz; yıkıcı değildir ama kilitli sistemde bilet ister. **Bundan sonra her sürüm güncellemesinin resmî yolu budur** |
 
 Adım sırası zorlanır: sırası gelmemiş uç `422 STATE_TRANSITION` + `meta.current_step` döner.
 

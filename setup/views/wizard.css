@@ -167,3 +167,30 @@ button.ghost { background: transparent; color: var(--brand); border: 1px solid v
 .card.log li { padding: .15rem 0; font-variant-numeric: tabular-nums; }
 .card.log li.pass { color: #1a7f37; }
 .card.log li.fail { color: #b42318; font-weight: 600; }
+
+/* ── D2-REV: teşhis ekranı ───────────────────────────────────────────────
+   Rozet, "ne bulundu" bilgisini başlıktan ÖNCE verir: kullanıcı metni
+   okumadan önce durumun iyi mi kötü mü olduğunu görmelidir. */
+.rozet-satiri { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.rozet-satiri h2 { margin: 0; }
+.rozet {
+  flex: none;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: var(--line);
+  color: var(--muted);
+}
+.rozet.iyi { background: var(--okbg); color: var(--ok); }
+.rozet.uyari { background: var(--warnbg); color: var(--warn); }
+.rozet.kotu { background: var(--badbg); color: var(--bad); }
+
+.secenek-aciklama { display: block; font-size: 13px; color: var(--muted); margin-top: 4px; }
+.dosya-liste { max-height: 220px; overflow: auto; font-family: ui-monospace, monospace; font-size: 13px; }
+.migration-satir { display: flex; gap: 8px; }
+.migration-satir .durum { flex: none; width: 5.5em; font-weight: 600; }
+.migration-satir.uygulandi .durum { color: var(--ok); }
+.migration-satir.bekliyor .durum { color: var(--warn); }

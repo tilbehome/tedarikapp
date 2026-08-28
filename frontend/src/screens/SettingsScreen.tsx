@@ -1,21 +1,26 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronRight, ShieldCheck } from 'lucide-react';
+import { ChevronRight, Download, ShieldCheck } from 'lucide-react';
 import { settings as settingsApi, system as systemApi } from '../api/endpoints';
 import { useAsync, messageOf } from '../lib/useAsync';
 import { count, dateTime, rate } from '../lib/format';
 import { mediaModeLabels } from '../locales/tr';
 import { ErrorNote, Field, PageHeader, Skeleton } from '../components/ui';
 import { useToast } from '../components/Toast';
+import EylemDugmesi from '../components/EylemDugmesi';
 import IslemDurumu from '../components/IslemDurumu';
 import { useUzunIslem } from '../lib/useUzunIslem';
 import BelgeAntedi from './ayarlar/BelgeAntedi';
+import PaylasimIletisimi from './ayarlar/PaylasimIletisimi';
+import UygulamaAdresi from './ayarlar/UygulamaAdresi';
+import CeviriAyarlari from './ayarlar/CeviriAyarlari';
+import KuyrukDurumu from './ayarlar/KuyrukDurumu';
 
 /**
  * E8 — Ayarlar: kurlar (tarihçeli), kategoriler, güvenlik, sistem durumu.
  *
  * Kur METİN olarak gönderilir ve METİN olarak gösterilir; panel dönüştürme yapmaz.
- * Kur değişimi yalnızca `draft` listelerin görünen TL'sini etkiler — kilitli
+ * Kur değişimi kilitlenmemiş listelerin KOLONUNU tazeler (İE#21 B5) — kilitli
  * listeler etkilenmez (K4); bu kural ekranda da yazılıdır.
  */
 export default function SettingsScreen() {
@@ -28,6 +33,9 @@ export default function SettingsScreen() {
   const [usd, setUsd] = useState('');
   const [fields, setFields] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
+  // B5: getirilen öneri KAYDEDİLMEZ, forma yazılır ve burada rozetlenir —
+  // kullanıcı neyin nereden geldiğini görmeden "Kaydet" dememeli.
+  const [oneri, setOneri] = useState<{ kaynak: string; tarih: string | null } | null>(null);
 
   useEffect(() => {
     const data = settingsState.data;
@@ -38,6 +46,23 @@ export default function SettingsScreen() {
     setYuan(data.yuan_tl);
     setUsd(data.usd_tl);
   }, [settingsState.data]);
+
+  /** TCMB'den güncel kuru FORMA doldurur. Kaydetme kullanıcının işidir. */
+  const kuruGetir = async () => {
+    setFields({});
+    try {
+      const sonuc = await settingsApi.suggestRates();
+      setYuan(sonuc.yuan_tl);
+      setUsd(sonuc.usd_tl);
+      setOneri({ kaynak: sonuc.kaynak, tarih: sonuc.tarih });
+      push(`${sonuc.kaynak} kuru forma dolduruldu. Kaydetmek için "Kurları güncelle" deyin.`);
+    } catch (caught) {
+      // Görünür hata (emir §B5): sessizce eski değerle devam edilmez.
+      setOneri(null);
+      push(messageOf(caught), 'error');
+      throw caught;
+    }
+  };
 
   const save = async (event: FormEvent) => {
     event.preventDefault();
@@ -50,6 +75,7 @@ export default function SettingsScreen() {
       });
       settingsState.reload();
       historyState.reload();
+      setOneri(null);
       // 3b (K48 ek): aynı değerle basmak tarihçeye yazmaz — bildirim de bunu söyler.
       if (result.changes.length === 0) {
         push(`Kurlar zaten güncel (${rate(result.yuan_tl)} / ${rate(result.usd_tl)}).`);
@@ -57,7 +83,10 @@ export default function SettingsScreen() {
         const parts = result.changes.map(
           (change) => `${change.currency === 'CNY' ? 'Yuan' : 'Dolar'} ${rate(change.from)} → ${rate(change.to)}`,
         );
-        push(`${parts.join(', ')} güncellendi. Kilitli listeler etkilenmedi.`);
+        push(
+          `${parts.join(', ')} güncellendi. Kilitlenmemiş listeler yeni kuru izler; ` +
+            'kilitli listeler etkilenmedi.',
+        );
       }
     } catch (caught) {
       push(messageOf(caught), 'error');
@@ -70,10 +99,10 @@ export default function SettingsScreen() {
 
   return (
     <>
-      <PageHeader title="Ayarlar" subtitle="Kurlar, kategoriler, güvenlik ve sistem" />
+      <PageHeader title="Ayarlar" subtitle="Kurlar, kategoriler, çeviri, güvenlik ve sistem" />
 
       <section className="card mb-4 p-4">
-        <h2 className="mb-3 text-sm font-semibold text-slate-700">Kurlar</h2>
+        <h2 className="mb-3 text-sm font-semibold text-ink-2">Kurlar</h2>
         {settingsState.loading ? (
           <Skeleton rows={1} />
         ) : settingsState.error ? (
@@ -88,46 +117,75 @@ export default function SettingsScreen() {
                 <input className="field-input" inputMode="decimal" value={usd} onChange={(event) => setUsd(event.target.value)} />
               </Field>
             </div>
-            <p className="text-xs text-slate-500">
-              Yeni kur yalnızca <strong>Taslak</strong> listelere işler. "İletildi" durumuna geçmiş listelerin kuru kilitlidir ve
-              değişmez.
+            {oneri ? (
+              <p className="flex items-start gap-1.5 rounded-lg bg-info-soft p-2 text-xs text-info">
+                <Download className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
+                {oneri.kaynak} kuru forma dolduruldu{oneri.tarih ? ` (${oneri.tarih} bülteni)` : ''}. Henüz
+                KAYDEDİLMEDİ — kontrol edip "Kurları güncelle" deyin.
+              </p>
+            ) : null}
+            <p className="text-xs text-ink-3">
+              Yeni kur <strong>kilitlenmemiş</strong> listelere işler ve onların ₺ karşılıkları anında güncellenir.
+              "İletildi" durumuna geçmiş listelerin kuru kilitlidir ve değişmez.
             </p>
-            <button type="submit" className="btn-primary" disabled={busy}>
-              {busy ? 'Kaydediliyor…' : 'Kurları güncelle'}
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <button type="submit" className="btn-primary" disabled={busy}>
+                {busy ? 'Kaydediliyor…' : 'Kurları güncelle'}
+              </button>
+              <EylemDugmesi className="btn-ghost" mesgulEtiketi="Getiriliyor" onEylem={kuruGetir}>
+                <span className="inline-flex items-center gap-2">
+                  <Download className="h-4 w-4" aria-hidden />
+                  Güncel kuru getir
+                </span>
+              </EylemDugmesi>
+            </div>
           </form>
         )}
       </section>
 
       {settingsState.data ? (
-        <BelgeAntedi mevcut={settingsState.data.document_header} onSaved={settingsState.reload} />
+        <>
+          <BelgeAntedi mevcut={settingsState.data.document_header} onSaved={settingsState.reload} />
+          <PaylasimIletisimi mevcut={settingsState.data.share_contact_phone} onSaved={settingsState.reload} />
+          {/* rc8/K4 (F-08): paylaşım/QR tabanı — eksikse kırmızı şerit basar. */}
+          <UygulamaAdresi
+            mevcut={settingsState.data.app_url}
+            kanonik={settingsState.data.app_url_kanonik}
+            onSaved={settingsState.reload}
+          />
+        </>
       ) : null}
 
+      {/* İE#20 C4/C3: çeviri sağlayıcı ayarları ve kuyruk sağlığı. */}
+      <CeviriAyarlari />
+
+      <KuyrukDurumu />
+
       <section className="card mb-4 p-4">
-        <h2 className="mb-3 text-sm font-semibold text-slate-700">Kur tarihçesi</h2>
+        <h2 className="mb-3 text-sm font-semibold text-ink-2">Kur tarihçesi</h2>
         {historyState.loading ? (
           <Skeleton rows={2} />
         ) : historyState.error ? (
           <ErrorNote message={historyState.error} onRetry={historyState.reload} />
         ) : (historyState.data ?? []).length === 0 ? (
-          <p className="text-sm text-slate-500">Henüz kur değişikliği kaydedilmedi.</p>
+          <p className="text-sm text-ink-3">Henüz kur değişikliği kaydedilmedi.</p>
         ) : (
           <div className="table-scroll">
             <table className="w-full text-sm">
-              <thead className="text-left text-xs uppercase tracking-wide text-slate-500">
+              <thead className="text-left text-xs uppercase tracking-wide text-ink-3">
                 <tr>
                   <th className="py-2">Para birimi</th>
                   <th className="py-2 text-right">Kur</th>
                   <th className="py-2 text-right">Tarih</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-line-soft">
                 {(historyState.data ?? []).map((entry) => (
                   <tr key={entry.id}>
                     {/* Uç para birimini ISO koduyla verir (CNY/USD) — ekranda Türkçe karşılığı gösterilir. */}
                     <td className="py-2">{entry.currency === 'CNY' ? 'Yuan → TL' : 'Dolar → TL'}</td>
                     <td className="py-2 text-right font-medium">{rate(entry.rate)}</td>
-                    <td className="py-2 text-right text-slate-500">{dateTime(entry.set_at)}</td>
+                    <td className="py-2 text-right text-ink-3">{dateTime(entry.set_at)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -136,17 +194,17 @@ export default function SettingsScreen() {
         )}
       </section>
 
-      <Link to="/ayarlar/kategoriler" className="card mb-4 flex items-center justify-between p-4 hover:bg-slate-50">
+      <Link to="/ayarlar/kategoriler" className="card mb-4 flex items-center justify-between p-4 hover:bg-g50">
         <span>
           <span className="block font-semibold">Kategoriler</span>
-          <span className="block text-xs text-slate-500">Ürün kategorilerini düzenle</span>
+          <span className="block text-xs text-ink-3">Ürün kategorilerini düzenle</span>
         </span>
-        <ChevronRight className="h-5 w-5 text-slate-400" aria-hidden />
+        <ChevronRight className="h-5 w-5 text-ink-3" aria-hidden />
       </Link>
 
       <section className="card mb-4 p-4">
-        <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-700">
-          <ShieldCheck className="h-4 w-4 text-brand-600" aria-hidden />
+        <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-ink-2">
+          <ShieldCheck className="h-4 w-4 text-navy" aria-hidden />
           Güvenlik
         </h2>
         {/* İE#14 C3: veri OKUNURKEN "—" gösterilmez — "—" yalnız gerçekten boş
@@ -195,7 +253,7 @@ export default function SettingsScreen() {
       <BackupCard />
 
       <section className="card p-4">
-        <h2 className="mb-3 text-sm font-semibold text-slate-700">Sistem durumu</h2>
+        <h2 className="mb-3 text-sm font-semibold text-ink-2">Sistem durumu</h2>
         {statusState.loading ? (
           <Skeleton rows={2} />
         ) : statusState.error ? (
@@ -301,7 +359,7 @@ function MediaArchiveCard({
 
   return (
     <section className="card mb-4 p-4">
-      <h2 className="mb-3 text-sm font-semibold text-slate-700">Görsel arşivi</h2>
+      <h2 className="mb-3 text-sm font-semibold text-ink-2">Görsel arşivi</h2>
       {/* İE#14 C3: okunurken "okunuyor…", hata varsa bu kartın kendi tekrar denemesi. */}
       {error ? (
         <ErrorNote message={error} onRetry={onRetry} />
@@ -327,7 +385,7 @@ function MediaArchiveCard({
           />
         </dl>
       )}
-      <p className="mt-3 text-xs text-slate-500">
+      <p className="mt-3 text-xs text-ink-3">
         1688 görselleri orijinal adresinden gösterilemiyor (CDN Referer koruması). Bu düğme hotlink döneminden kalan
         uzak görselleri sunucu arşivine indirir; başarısız olanlar bozulmaz ve tekrar denenebilir.
       </p>
@@ -382,8 +440,8 @@ function MigrationActions({ onDone }: { onDone: () => void }) {
   const busy = guncelleme.calisiyor || defter.calisiyor;
 
   return (
-    <div className="mt-3 border-t border-slate-100 pt-3">
-      <p className="text-xs text-slate-500">
+    <div className="mt-3 border-t border-line-soft pt-3">
+      <p className="text-xs text-ink-3">
         Yeni sürüm veritabanı güncellemesi bekliyor. "Güncellemeyi çalıştır" bekleyen migration'ları uygular.
         Tablolar zaten varsa (defter geride kalmışsa) "Defteri eşitle" kullanılır — o işlem tablo oluşturmaz.
       </p>
@@ -441,32 +499,32 @@ function BackupCard() {
 
   return (
     <section className="card mb-4 p-4">
-      <h2 className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700">
+      <h2 className="mb-2 flex items-center gap-2 text-sm font-semibold text-ink-2">
         Yedekler
         {/* İE#14 D1: "yedek var mı" değil "NE ZAMAN alındı" sorusu yanıtlanır. */}
         {state.data?.gecikti ? (
-          <span className="badge bg-amber-50 text-amber-800 ring-amber-200">
+          <span className="badge bg-warn-soft text-warn ring-warn/20">
             Gecelik yedek gecikti — cron çalışmıyor olabilir
           </span>
         ) : state.data?.stale ? (
-          <span className="badge bg-amber-50 text-amber-800 ring-amber-200">Son yedek 24 saatten eski</span>
+          <span className="badge bg-warn-soft text-warn ring-warn/20">Son yedek 24 saatten eski</span>
         ) : null}
       </h2>
       {state.data ? (
-        <p className={`mb-2 text-sm ${state.data.gecikti ? 'font-medium text-amber-700' : 'text-slate-600'}`}>
+        <p className={`mb-2 text-sm ${state.data.gecikti ? 'font-medium text-warn' : 'text-ink-2'}`}>
           Son yedek: {yedekYasi(state.data.last_age_seconds)}
           {state.data.cron ? (
-            <span className="ml-2 text-xs text-slate-500">
+            <span className="ml-2 text-xs text-ink-3">
               · son cron koşusu {yedekYasi(state.data.cron.age_seconds)}
               {state.data.cron.ok ? '' : ' (HATA ile bitti)'}
             </span>
           ) : (
-            <span className="ml-2 text-xs text-slate-500">· cron kaydı yok (storage/logs/cron.log boş)</span>
+            <span className="ml-2 text-xs text-ink-3">· cron kaydı yok (storage/logs/cron.log boş)</span>
           )}
         </p>
       ) : null}
       {state.data && !state.data.writable ? (
-        <p className="text-sm text-red-600">
+        <p className="text-sm text-err">
           Yedek klasörü yazılamıyor (storage/backups) — cPanel'den storage klasörüne yazma izni (775) verin.
         </p>
       ) : null}
@@ -475,20 +533,20 @@ function BackupCard() {
       ) : state.error ? (
         <ErrorNote message={state.error} onRetry={state.reload} />
       ) : state.data && state.data.backups.length > 0 ? (
-        <ul className="divide-y divide-slate-100 text-sm">
+        <ul className="divide-y divide-line-soft text-sm">
           {state.data.backups.map((entry) => (
             <li key={entry.name} className="flex items-center justify-between gap-3 py-2">
               <span className="min-w-0 flex-1 truncate font-mono text-xs">{entry.name}</span>
-              <span className="text-slate-500">{sizeOf(entry.size)}</span>
-              <span className="text-slate-500">{dateTime(entry.created_at)}</span>
+              <span className="text-ink-3">{sizeOf(entry.size)}</span>
+              <span className="text-ink-3">{dateTime(entry.created_at)}</span>
               <a className="btn-ghost" href={systemApi.backupFileUrl(entry.name)}>İndir</a>
             </li>
           ))}
         </ul>
       ) : (
-        <p className="text-sm text-slate-500">Henüz yedek alınmadı.</p>
+        <p className="text-sm text-ink-3">Henüz yedek alınmadı.</p>
       )}
-      <p className="mt-2 text-xs text-slate-500">
+      <p className="mt-2 text-xs text-ink-3">
         Yedek, veritabanının şifreli dökümüdür (çözme APP_KEY ister). Saklama: eski yedekler
         otomatik silinir, en yeni 5 her koşulda korunur.{' '}
         {state.data?.offsite_configured
@@ -550,8 +608,8 @@ function ExtensionTokenActions({ preview, onChanged }: { preview: string | null;
     <div className="mt-3">
       {token ? (
         <>
-          <p className="break-all rounded-lg bg-slate-50 p-2 font-mono text-xs">{token}</p>
-          <p className="mt-1 text-xs text-amber-700">
+          <p className="break-all rounded-lg bg-g50 p-2 font-mono text-xs">{token}</p>
+          <p className="mt-1 text-xs text-warn">
             Bu token yalnız şimdi görünür (güvenlik gereği kaydedilmez) — eklentinin ayar ekranına yapıştırın.
           </p>
           <button type="button" className="btn-primary mt-2" onClick={() => void navigator.clipboard.writeText(token).then(() => push('Token kopyalandı.'))}>
@@ -570,7 +628,7 @@ function ExtensionTokenActions({ preview, onChanged }: { preview: string | null;
           ) : null}
         </div>
       )}
-      <p className="mt-2 text-xs text-slate-500">
+      <p className="mt-2 text-xs text-ink-3">
         Chrome eklentisi bu token ile panele bağlanır. Yenileme/iptal, token'ı kullanan TÜM cihazları düşürür.
       </p>
     </div>
@@ -580,7 +638,7 @@ function ExtensionTokenActions({ preview, onChanged }: { preview: string | null;
 function Line({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-start justify-between gap-4">
-      <dt className="text-slate-500">{label}</dt>
+      <dt className="text-ink-3">{label}</dt>
       <dd className="text-right font-medium">{value}</dd>
     </div>
   );

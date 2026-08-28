@@ -147,7 +147,10 @@ final class XlsxRenderer implements ExportRenderer
 
         $sheet->getStyle('B2:' . $sonSutun . '3')->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
 
-        $logo = $this->basePath . '/public/panel/apple-touch-icon.png';
+        // İE#21 B13: marka amblemi (marka kitinden) — yoksa panel simgesine düşer.
+        // Belge bir görselin varlığına bağlanmaz; ikisi de yoksa bant yazıyla durur.
+        $marka = new BelgeMarkasi($this->basePath);
+        $logo = $marka->amblem() ?? $this->basePath . '/public/panel/apple-touch-icon.png';
         if (is_file($logo)) {
             $drawing = new Drawing();
             $drawing->setPath($logo);
@@ -451,7 +454,7 @@ final class XlsxRenderer implements ExportRenderer
         $sheet->mergeCells('B' . $altRow . ':' . $sonSutun . $altRow);
         $sheet->setCellValueExplicit(
             'B' . $altRow,
-            'Tedarikapp — Ürün Tedarik Asistanı · Ürün adı ve görsel, kaynak platformdaki ilana köprülüdür '
+            'TedarikApp — Ürün Tedarik Asistanı · Ürün adı ve görsel, kaynak platformdaki ilana köprülüdür '
             . '(tüm platformlar) · ▶ rozetli görsel = ürün videosu (dijital kopyada)'
             . ($icKopya ? ' · İÇ KOPYA — firmaya gönderilmez' : ''),
             DataType::TYPE_STRING,

@@ -69,18 +69,18 @@ export default function LoginScreen() {
   const epostaGecerli = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 
   return (
-    <div className="flex min-h-dvh items-center justify-center bg-slate-100 px-4 py-6 sm:py-10">
-      <div className="grid w-full max-w-4xl overflow-hidden rounded-3xl bg-white shadow-2xl shadow-slate-900/10 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
+    <div className="flex min-h-dvh items-center justify-center bg-g100 px-4 py-6 sm:py-10">
+      <div className="grid w-full max-w-4xl overflow-hidden rounded-3xl bg-surface shadow-2xl shadow-slate-900/10 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
         <MarkaPaneli vitrin={vitrin} />
 
         <section className="px-6 py-8 sm:px-10 sm:py-10">
           {stage === 'awaiting-totp' ? (
             <form onSubmit={onSecondFactor} className="space-y-5">
               <header>
-                <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+                <h1 className="text-2xl font-bold tracking-tight text-ink">
                   {useRecovery ? 'Kurtarma kodu' : 'İki adımlı doğrulama'}
                 </h1>
-                <p className="mt-1 text-sm text-slate-500">
+                <p className="mt-1 text-sm text-ink-3">
                   {useRecovery
                     ? 'Kaydettiğiniz kodlardan birini girin.'
                     : 'Doğrulama uygulamanızdaki 6 haneli kodu girin.'}
@@ -103,13 +103,13 @@ export default function LoginScreen() {
                 />
               </Field>
 
-              {error && !fields['code'] && <p className="text-sm font-medium text-rose-700">{error}</p>}
+              {error && !fields['code'] && <p className="text-sm font-medium text-err">{error}</p>}
 
               <PaneleGirDugmesi busy={busy} label={busy ? 'Doğrulanıyor…' : 'Doğrula'} />
 
               <button
                 type="button"
-                className="w-full text-sm font-medium text-brand-700 underline-offset-2 hover:underline"
+                className="w-full text-sm font-medium text-navy underline-offset-2 hover:underline"
                 onClick={() => {
                   setUseRecovery((value) => !value);
                   setCode('');
@@ -123,8 +123,8 @@ export default function LoginScreen() {
           ) : (
             <form onSubmit={onPassword} className="space-y-5">
               <header>
-                <h1 className="text-2xl font-bold tracking-tight text-slate-900">Giriş yap</h1>
-                <p className="mt-1 text-sm text-slate-500">Yönetim paneline devam et.</p>
+                <h1 className="text-2xl font-bold tracking-tight text-ink">Giriş yap</h1>
+                <p className="mt-1 text-sm text-ink-3">Yönetim paneline devam et.</p>
               </header>
 
               <GirisAlani
@@ -144,28 +144,28 @@ export default function LoginScreen() {
                 Bu cihazda beni hatırla
               </AnahtarDugmesi>
 
-              {error && <p className="text-sm font-medium text-rose-700">{error}</p>}
+              {error && <p className="text-sm font-medium text-err">{error}</p>}
 
               <PaneleGirDugmesi busy={busy} label={busy ? 'Kontrol ediliyor…' : 'Panele gir'} />
 
               {vitrin.twoFactor ? (
                 <>
-                  <p className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-300">
-                    <span className="h-px flex-1 bg-slate-200" aria-hidden />
+                  <p className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-[0.18em] text-g300">
+                    <span className="h-px flex-1 bg-g200" aria-hidden />
                     Güvenlik
-                    <span className="h-px flex-1 bg-slate-200" aria-hidden />
+                    <span className="h-px flex-1 bg-g200" aria-hidden />
                   </p>
-                  <div className="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3">
-                    <Smartphone className="mt-0.5 h-4 w-4 shrink-0 text-lacivert-900" aria-hidden />
-                    <p className="flex-1 text-xs leading-relaxed text-slate-600">
+                  <div className="flex items-start gap-3 rounded-xl border border-line bg-g50 px-3.5 py-3">
+                    <Smartphone className="mt-0.5 h-4 w-4 shrink-0 text-navy" aria-hidden />
+                    <p className="flex-1 text-xs leading-relaxed text-ink-2">
                       İki adımlı doğrulama açık — girişten sonra kod sorulacak.
                     </p>
-                    <span className="badge bg-emerald-50 text-emerald-700 ring-emerald-200">Aktif</span>
+                    <span className="badge bg-ok-soft text-ok ring-ok/20">Aktif</span>
                   </div>
                 </>
               ) : null}
 
-              <p className="flex items-center justify-center gap-1.5 pt-1 text-[11px] text-slate-400 lg:hidden">
+              <p className="flex items-center justify-center gap-1.5 pt-1 text-[11px] text-ink-3 lg:hidden">
                 <ShieldCheck className="h-3.5 w-3.5" aria-hidden />
                 Uçtan uca şifreli{vitrin.version ? ` · v${vitrin.version}` : ''}
               </p>

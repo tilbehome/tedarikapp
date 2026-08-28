@@ -9,6 +9,7 @@ use App\Models\InboxRepository;
 use App\Models\ProductRepository;
 use DateTimeImmutable;
 use PDOException;
+use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
@@ -49,7 +50,28 @@ final class CaptureApplier
         private readonly ProductRepository $products,
         private readonly ListMutationPolicy $policy,
         private readonly ActivityLog $activity,
-        private readonly ?MediaService $media = null,
+        /**
+         * MEDYA SERVİSİ ZORUNLUDUR (rc8-01 / dış denetim F-01, 26 Ağu 2026).
+         *
+         * SAHA KANITI: bu parametre `?MediaService = null` idi ve `AppBuilder`
+         * onu HİÇ geçmiyordu ("bilinçli boş bırakılır" yorumuyla). Sonuç: arşiv
+         * modunda her yakalama diske `<ad>.jpg.tmp` bırakıyor, veritabanına ise
+         * çözülemeyen `/media/<ad>.jpg` yazıyordu. Gerçek `AppBuilder` ile
+         * koşulan kanıt: DB `/media/0404….jpg`, diskte `0404….jpg.tmp`, dosya YOK.
+         *
+         * Opsiyonel bırakmak, yanlış kompozisyonu SESSİZ bir çalışma zamanı
+         * kusuruna çeviriyordu. Artık zorunlu: eksik wiring test zamanında patlar.
+         */
+        private readonly MediaService $media,
+        private readonly LoggerInterface $logger,
+        // İE#21 B3 (saha bulgusu): ürün≠ilan ayrımı veri akışında da yaşasın —
+        // her yakalama ürünün yanında İLAN kaydını da açar.
+        private readonly ?\App\Services\Ilan\IlanYazici $ilanlar = null,
+        /**
+         * D11a: galeri görselleri yakalamada indirilmez (ağ, yakalamayı
+         * bekletirdi) — bir MEDYA İŞİ yazılır, kuyruk arka planda indirir.
+         */
+        private readonly ?\App\Services\Kuyruk\JobQueue $kuyruk = null,
     ) {
     }
 
@@ -58,21 +80,57 @@ final class CaptureApplier
      *
      * @param array<string, mixed> $media
      */
-    private function medyayiSonlandir(array $media, bool $basarili): void
-    {
-        if ($this->media === null) {
-            return;
-        }
-
+    private function medyayiSonlandir(
+        array $media,
+        bool $basarili,
+        DateTimeImmutable $now,
+        ?int $urunId = null,
+    ): void {
         /** @var array{mode: string, path: string|null, url: string, temp: string|null} $tutamak */
         $tutamak = $this->capture->mediaHandle($media);
-        if ($basarili) {
-            $this->media->commit($tutamak);
+
+        if (!$basarili) {
+            $this->media->discard($tutamak);
 
             return;
         }
 
+        // rc8-01 (F-13): `commit()` DÖNÜŞÜ DENETLENİR.
+        //
+        // `rename()` başarısız olabilir (izin kaybı, disk dolu, aynı anda silinen
+        // dosya). Eskiden dönüş yutuluyordu; ürün kaydı diskte olmayan bir
+        // `/media/...` adresine işaret etmeye devam ediyor ve kimse fark
+        // etmiyordu. Kırık bir görsel, olmayan bir görselden daha kötüdür:
+        // kullanıcı boş kareye bakar ve nedenini bilmez.
+        if ($this->media->commit($tutamak)) {
+            return;
+        }
+
+        $this->logger->error('Medya kalıcı ada taşınamadı; kayıt kaynak adrese düşürüldü', [
+            'urun_id' => $urunId,
+            'gecici' => $tutamak['temp'],
+            'hedef' => $tutamak['path'],
+        ]);
+
+        // rc8/E1: BAŞARISIZ TAŞIMANIN `.tmp`Sİ DİSKTE BIRAKILMAZ.
+        //
+        // `commit()` false döndüğünde geçici dosya hâlâ yerinde duruyordu.
+        // Kayıt kaynak adrese düştüğü için o dosyaya bir daha kimse
+        // bakmayacak; F-14 envanteri ise her başarısız taşımada yeni bir
+        // kalıntı sayar. Yetim dosyayı üreten yol temizler.
         $this->media->discard($tutamak);
+
+        // ÜRÜN KAYDI `.tmp`YE İŞARET ETMEZ: kaynak adres (hotlink) yazılır.
+        // Görsel uzak sunucudan gelir; D11a'nın medya işi bir sonraki turda
+        // yeniden indirmeyi dener ve arayüz bu satırı "uzak" diye işaretler.
+        $kaynak = is_string($media['main_source'] ?? null) ? (string) $media['main_source'] : null;
+        if ($urunId !== null && $kaynak !== null && $kaynak !== '') {
+            $this->products->update(
+                $urunId,
+                ['main_image' => $kaynak, 'main_image_source' => $kaynak],
+                $now,
+            );
+        }
     }
 
     /**
@@ -112,6 +170,10 @@ final class CaptureApplier
                 // (3) kuyruk satırı ürüne bağlanır
                 $this->inbox->markAssigned($inboxId, $productId, $now);
 
+                // (3b) İLAN kaydı — aynı transaction içinde: ilansız ürün, Keşif'te
+                // skorsuz ve kaynaksız görünür (İE#21 B3 bulgusu).
+                $this->ilaniAc($productId, $payload, $now);
+
                 // (4) İLK DURUM VE AKTİVİTE İZİ (G6): eklentiden gelen ürünler
                 // tarihçesiz doğuyordu — panelde "bu ürün nereden geldi?" sorusunun
                 // cevabı yoktu ve durum grafiği ilk adımı hiç görmüyordu.
@@ -143,22 +205,52 @@ final class CaptureApplier
                 ];
             });
 
-            $this->medyayiSonlandir($media, true);
+            $this->medyayiSonlandir($media, true, $now, $sonuc['product_id']);
+            $this->medyaIsiYaz($sonuc['product_id'], $now);
 
             return $sonuc;
         } catch (PDOException $exception) {
             $ilk = $this->kisitIhlaliyseIlkSonuc($exception, $payload);
             // Yarışı kaybettiysek de dosya yetim kalmaz: ürün yazılmadı, görsel silinir.
-            $this->medyayiSonlandir($media, false);
+            $this->medyayiSonlandir($media, false, $now);
             if ($ilk === null) {
                 throw $exception;
             }
 
             return $ilk;
         } catch (Throwable $exception) {
-            $this->medyayiSonlandir($media, false);
+            $this->medyayiSonlandir($media, false, $now);
 
             throw $exception;
+        }
+    }
+
+    /**
+     * GALERİ İNDİRME İŞİ (D11a saha bulgusu, 25 Ağu 2026).
+     *
+     * Yakalamada yalnız ana görsel indiriliyordu; galeri satırları alicdn
+     * adresiyle `remote` kalıyor ve tarayıcı onları çizemiyordu (alicdn Referer
+     * ACL) — çekmecede "5 görsel" yazarken dördü boş kare görünüyordu.
+     *
+     * İş kuyruğa yazılır, yakalama BEKLEMEZ. Kuyruk yoksa (eski kurulum, test)
+     * sessizce atlanır: yakalama medya yüzünden başarısız olmamalıdır.
+     */
+    private function medyaIsiYaz(?int $urunId, DateTimeImmutable $now): void
+    {
+        if ($this->kuyruk === null || $urunId === null || $urunId <= 0) {
+            return;
+        }
+
+        try {
+            $this->kuyruk->ekle(
+                \App\Services\Kuyruk\KuyrukIsleyicileri::TUR_MEDYA,
+                'urun:' . $urunId,
+                ['urun_id' => $urunId],
+                $now,
+            );
+        } catch (Throwable) {
+            // Kuyruk yazılamadıysa görseller uzak kalır ve arayüz bunu işaretler;
+            // yakalamayı geri almak orantısız olurdu.
         }
     }
 
@@ -210,6 +302,7 @@ final class CaptureApplier
 
                 $productId = $this->capture->insertProduct($payload, $listId, $media, $now);
                 $this->inbox->markAssigned($inboxId, $productId, $now);
+                $this->ilaniAc($productId, $payload, $now);
                 $this->products->recordStatusChange(
                     $productId,
                     null,
@@ -238,12 +331,12 @@ final class CaptureApplier
                 ];
             });
         } catch (Throwable $exception) {
-            $this->medyayiSonlandir($media, false);
+            $this->medyayiSonlandir($media, false, $now);
 
             throw $exception;
         }
 
-        $this->medyayiSonlandir($media, !$sonuc['idempotent_replay']);
+        $this->medyayiSonlandir($media, !$sonuc['idempotent_replay'], $now, $sonuc['product_id']);
 
         return $sonuc;
     }
@@ -282,5 +375,25 @@ final class CaptureApplier
             'status' => (string) $ilk['status'],
             'idempotent_replay' => true,
         ];
+    }
+
+    /**
+     * İlan kaydını açar. Yazıcı bağlanmamışsa (eski testler, dar bağlam) sessizce
+     * atlanır — yakalamanın kendisi ilan kaydına BAĞIMLI DEĞİLDİR; ilan bir
+     * zenginleştirmedir ve onun eksikliği ürünün kaydını engellememelidir.
+     *
+     * @param array<string, mixed> $payload
+     */
+    private function ilaniAc(int $productId, array $payload, DateTimeImmutable $now): void
+    {
+        if ($this->ilanlar === null) {
+            return;
+        }
+
+        $kademeler = $payload['normalized']['price_tiers'] ?? null;
+        /** @var list<array<string, mixed>>|null $kademeler */
+        $kademeler = is_array($kademeler) ? array_values(array_filter($kademeler, 'is_array')) : null;
+
+        $this->ilanlar->yaz($productId, $now, $kademeler);
     }
 }

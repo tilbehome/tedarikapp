@@ -4,7 +4,288 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/) · Sürümleme: SemVe
 Her release'te bu dosya güncellenir (docs/07 bölüm 4). Kategoriler: Eklendi / Değişti / Düzeltildi / Kaldırıldı / Güvenlik.
 
 ## [Yayınlanmadı]
-### Eklendi (İE#11 · K53 — Faz 3: Chrome eklentisi + Gelen Kutusu)
+
+## [1.1.0] — 28 Ağustos 2026
+
+**Altyapı sürümü.** Görünen yüzde iki değişiklik var; gerisi V3-B öncesi zemin
+hazırlığı.
+
+### Değişti
+
+- **"Çevir" düğmesi artık takılıp kalmıyor.** Gerçek çeviride üç dil yarım
+  dakikayı bulabiliyor; eskiden sayfa sonsuza kadar dönüyordu. Şimdi düğme
+  yetiştirebildiğini bitiriyor, kalanını arka plana devrediyor ve satırda
+  "çeviri sürüyor — kalan: EN, ZH" yazıyor. Panele girdikçe kalanlar
+  kendiliğinden tamamlanıyor.
+- **Kur geçmişi artık "hangisi geçerli" diyor.** Ayarlar'daki kur tarihçesi her
+  satırın ne zamandan beri geçerli olduğunu, kimin girdiğini ve değerin elle mi
+  yoksa TCMB önerisinden mi geldiğini gösteriyor; geçerli satır işaretli.
+  Kurları onaylama biçiminiz değişmedi — otomatik yazma yine yok.
+- **Gece yedeği görselleri de alıyor.** Ürün fotoğraflarının listesi (ad, boyut,
+  sha256) her gece yazılıyor; klasör 200 MB'ın altındaysa arşivi de alınıyor.
+  Sınır aşılırsa arşiv atlanır ve bu açıkça yazılır — sessizce eksik yedek yok.
+
+### Kaldırıldı
+
+- **PHP 8.1 desteği.** Taban 8.2'ye çıktı. Sunucunuz 8.1'de kalırsa uygulama
+  sessizce çalışmak yerine açılışta durur ve nedenini söyler.
+
+## [1.0.1] — 28 Ağustos 2026
+
+**Çeviri artık kurulum istemez.** Bu sürümün tek konusu şu: "Çevir" dediğinizde
+çevrilir — sunucuya cron kurmanız, bir şey beklemeniz, bir düğmeye ikinci kez
+basmanız gerekmez.
+
+### Değişti
+
+- **Toplu çeviri gerçekten çevirir.** Ayarlar'daki "Çevrilmemiş ürünleri çevir"
+  düğmesi eskiden işi sıraya yazıp bırakıyordu; sırayı işleyen bir şey
+  kurulmadığı için hiçbir şey olmuyordu. Artık düğmeye bastığınızda ürünler
+  ekranın önünde çevrilir ve sayaç ilerler ("12/40 çevrildi…"). Uzun listelerde
+  iş parçalara bölünür; sekmeyi kapatsanız bile kalanlar panele bir dahaki
+  girişinizde kendiliğinden tamamlanır.
+- **Ürün kartına "Çevir" düğmesi.** Tek bir ürünü hemen çevirmek için ürün
+  çekmecesindeki düğme yeter: adı, özellikleri, varyant ve renk adları eksik
+  dillere anında çevrilir. Elle düzelttiğiniz metinler asla ezilmez.
+- **Üç dil kuralı: Türkçe, İngilizce, Çince.** Her ürün bu üç dilde tutulur.
+  Ürünün kendi dili neyse o "orijinal" sayılır ve çevrilmez; eksik iki dil
+  üretilir. Türkçe bir kaynaktan gelen ürünün Türkçesine dokunulmaz.
+- **Kaynak dili satırı.** Belgelerde ürün adının altındaki referans satırı artık
+  "Çince satır" değil, ürünün kendi kaynak dilindeki satırdır.
+
+### Eklenti 2.0.3
+
+- **Varyant adları Türkçe görünüyor.** "Seçilen varyant" bölümünde 粉红色 yerine
+  "Pembe", 美规 yerine "ABD fişi (110V)" yazar. Bu yalnız GÖRÜNÜMDÜR: panele
+  giden veri orijinal hâliyle gider, voltaj gibi ayırt edici bilgi korunur.
+  Tanınmayan bir terim olduğu gibi bırakılır.
+
+### Kaldırıldı
+
+- **"Kuyruk cron'u koşmuyor olabilir" uyarısı.** Cron artık zorunlu değil;
+  kurmadığınız bir şeyi hatırlatan uyarı kalktı. Yerine yalnız gerçekten
+  tıkanma varsa görünen tek bir uyarı kondu.
+
+## [1.0.0] — 27 Ağustos 2026
+
+**tedarikapp'in ilk tam sürümü.** 1688 tedarik listelerini tarayıcıdan yakalayıp
+panelde yönetmenin, fiyatı TL'ye çevirmenin ve firmaya paylaşılabilir bir sayfa
+göndermenin uçtan uca çalıştığı ilk sürümdür.
+
+> Aday paketler rc1'den rc8'e kadar sahada koşturuldu; her turda Ürün Sahibi'nin
+> bulduğu kusurlar aynı tura kapatıldı. v1.0.0, rc8'in üzerine 27 Ağustos saha
+> turunun eklenti düzeltmeleriyle birlikte ilan edilmiştir.
+
+### Bu sürümde ne var
+
+- **Ürünü tarayıcıdan yakala.** 1688 ürün sayfasında "TedarikApp'e Ekle"
+  düğmesi çıkar; tek tıkla ürünün adı, fiyatı, varyantları, görselleri ve
+  satıcı bilgisi panele düşer. Bağlantı yoksa yakalama cihazda bekler,
+  bağlanınca kendiliğinden gönderilir.
+- **Listeler ve durumlar.** Ürün `Verilecek → Verildi → Yolda → Geldi` yolunu
+  izler; liste `Taslak → İletildi → Sipariş Verildi → Tamamlandı`. Atlama yoktur;
+  yanlış tıklama tek adım geri alınabilir.
+- **Kur listeye kilitlenir.** Liste iletildiği anda o günün kuru listeye yazılır;
+  kur sonradan değişse bile o listenin TL tutarları oynamaz.
+- **Çıktılar.** Excel, PDF ve firmaya gönderilen paylaşım sayfası; hepsi aynı
+  veriden, aynı revizyon numarasıyla üretilir.
+- **Paylaşım sayfası.** Girişsiz açılır, süresizdir, iptal edildiği an ölür;
+  isteğe bağlı erişim anahtarıyla korunur.
+- **Türkçeleştirme.** Çince ürün adları ve özellik değerleri sözlük + çeviri
+  belleğiyle Türkçeleşir; orijinal satır her zaman korunur.
+- **Kurulum sihirbazı.** `/setup` sekiz arıza durumunu adıyla söyler ve
+  onarımını kendi içinde sunar.
+
+### Dış denetim düzeltmeleri (rc8)
+
+Bağımsız dış denetimin P0 bulguları kapatıldı: yakalanan görsel artık her
+durumda diske kalıcı yazılır ya da kaynağa düşer (yetim geçici dosya kalmaz),
+aynı yakalama iki kez gönderilse bile tek kayıt açar, kurulum uygulama adresi
+girilmeden tamamlanmaz ve bu adres Ayarlar'dan değiştirilebilir.
+
+### 27 Ağustos saha turu — eklenti 2.0.2
+
+| # | Bulgu | Düzeltme |
+|---|---|---|
+| A1 | Sayfa içi çekmece ekrana sığmıyor, "Yakala ve Gönder" düğmesine ulaşılamıyordu | çekmece ekran yüksekliğine sabitlendi; başlık ve alt düğme çubuğu sabit, orta bölüm kendi içinde kayıyor |
+| A2 | Türkçe karşılık bulunamadığında bile "TR önerisi" rozeti konuyordu | rozet yalnız gerçek öneri varsa; yoksa "Türkçe ad gönderim sonrası sunucuda üretilir" notu |
+| A3 | Varyant adlarında `&gt;` gibi işaretler harfiyen görünüyordu | metin sunuma girmeden bir kez çözülür (sunucudaki kuralın aynısı) |
+| A4 | Uzun adresin ipucu balonu ekran dışına taşıyordu | balon kaldırıldı; yerine "Kopyala" düğmesi |
+| A5 | "TedarikApp'e Ekle" mağaza adının üstüne biniyordu | düğme sağ sütunda, satın alma bloğunun hemen üstünde, tam genişlikte |
+| A7 | Yavaş gönderimde "TedarikApp yanıt vermiyor" deniyor, oysa ürün eklenmişti | gönderim 30 sn bekler; aşarsa aynı kimlikle kontrol edilir ve sonuç "listeye eklendi" gösterilir |
+| A8 | Çince görünümde ne düğme ne yedek düğme çıkıyordu | montaj nöbeti: düğme silinirse ya da sayfa geç çizilirse yeniden basılır |
+
+### Faz 1 neyi kapattı (dilim dilim)
+
+- **Dilim 1 — temel hat (İE#18/19):** panel iskeleti, liste/ürün durum makinesi
+  (docs/04 §5), para disiplini (bcmath · `DECIMAL(12,2)` · kur listeye kilitli),
+  Excel/PDF/paylaşım çıktıları, eklenti v1 (yakalama + Gelen Kutusu).
+- **Dilim 2 — temiz kurulum (İE#20 D2-REV):** `/setup` sihirbazı sekiz durumu
+  adıyla söyleyen teşhis motoruna dönüştü; her arızanın onarımı sihirbazın
+  içinde. Kuyruk sertleştirildi (kira token'ı, kalp atışı, ölü mektup eylemleri).
+- **Dilim 3 — panel v3 ekranları (İE#21 B1–B14):** Keşif havuzu (sistem listesi:
+  hiçbir seçicide görünmez, silinemez/paylaşılamaz), liste komuta merkezi (aşama
+  çubuğu · özet şeridi · uyarı çipleri · toplu eylemler), ürün çekmecesi, Gelen
+  Kutusu deste modu, Paylaş penceresi, kilit ekranı (tazeleme sayacı · WhatsApp
+  köprüsü · deneme hakkı yumuşatma), belge antet/filigran şablonları, skor v1
+  kalibrasyonu, kategori ağacı, sürümlü çeviri belleği, marka kiti.
+- **Dilim 4 — eklenti v2 (İE#21 A1–A8):** sayfa içi panel (kapalı shadow DOM,
+  onaylı mockup'ın birebir uyarlaması), on durumlu akış şeridi, 16+ alan
+  önizlemesi ve doluluk halkası, mükerrerde dört seçenek, kalıcı kuyruk +
+  ölü mektup rozeti, MV3 uyanışında sahipsiz kayıt toparlama, seçici sürümleme,
+  prominent disclosure ve Store beyanlarıyla kelime düzeyinde çapraz denetim.
+
+### Saha düzeltmeleri (D1–D7 — canlı kurulumda bulundu, aynı turda kapatıldı)
+
+| # | Bulgu | Düzeltme |
+|---|---|---|
+| D1 | Kurulum/çeviri hattı canlıda ilk kez koşturuldu | altın set sınavı `bin/ceviri-sinavi.php` (salt okunur ölçüm) |
+| D2 | Sihirbaz her arızayı kendi içinde çözmüyordu | teşhis + onarım merkezi (sekiz durum) |
+| D3 | Tarayıcı otomatik doldurma Ayarlar formlarını sabote ediyordu | alan bazlı autofill kapatma |
+| D4a | Hedef diller alanı yazarken normalize ediliyordu | normalize yalnız blur/kaydet anında |
+| D4b | `bin/release.php` tanımsız bayrağı sessizce yok sayıyordu (`--surum`) | bilinmeyen bayrak artık HATA + doğru bayrak ipucu |
+| D5 | Sayfa içi panel bağlantıyı görmüyordu (popup çalışırken) | `core/baglanti.ts` tek kaynak: `lastError` okunur, geçici hatada yeniden denenir, bağlanınca hedef listesi kendiliğinden dolar; SPA sayaç sızıntısı giderildi |
+| D6 | LLM turu makine çevirisinin üstüne yazmıyordu (TR `mymemory`de donuyordu) | dil-bazlı adaylık + `tazele()` (makine satırının üstüne yazar, `llm:*`/`elle` korunur — K54) + sürümlü ve sürümsüz anahtarın birlikte tazelenmesi |
+| D7 | Kuyruk cron'da hiç işlemiyordu: `getmypid` `disable_functions` ile kapalı | `JobRunner::surecKimligi()` süreç fonksiyonlarına güvenmez; yoksa `random_bytes` tabanlı benzersiz kira kimliği |
+
+### Sayılar
+
+| Ölçü | Değer |
+|---|---|
+| PHPUnit | **1073** test (Http 445 · Services 406 · Core+Setup+Auth+Models+Integration+Support+Production 222) |
+| Vitest — panel | 201 test (23 dosya) |
+| Vitest — eklenti | 122 test (11 dosya) |
+| E2E kapsam defteri | **74/81** kapsandı · 7 bekliyor (gerekçeleri aşağıda) |
+| Statik denetim | PHPStan seviye 6+ temiz · PHP-CS-Fixer 337/337 temiz · tsc + ESLint temiz |
+| Migration | 0001–0030 (ileri yönlü, `Migrator::BASELINE_OBJECTS`) |
+| Karar kaydı | K1–K81 |
+
+### Bilinen eksikler (v1.0 kapsamı DIŞI — devredildi)
+
+- `E2E-PNL-20` (kural rozeti + geri alma) ve `E2E-PNL-50/51` (sözlük CSV içe
+  aktarımı): **özellikleriyle birlikte V3-B'ye** devredildi. Test, özellik
+  yazılmadan kodlanamaz.
+- `E2E-PNL-11/12/14/45`: kabul turuna manuel madde olarak eklendi
+  (KT-EK-1..4). Playwright altyapısı İE#22 kapsamındadır.
+- Bu yedi senaryo defterde **bekliyor** kalır; otomatik kanıtı olmayan senaryo
+  yeşil sayılmaz.
+
+
+## [1.0.0-rc1] — 23 Ağustos 2026 (İE#21 · Faz 1 kapanış ADAYI)
+
+> **v1.0 HENÜZ İLAN EDİLMEDİ.** Bu bir ADAY sürümdür: Ürün Sahibi + PM kabul turu
+> (`docs/v3/hazirlik/kabul-turu-v1.md`, 85 dk) koşulmadan v1.0 adı kullanılmaz.
+> Kapsam durumu madde madde: `docs/is-emirleri/IE21-DURUM.md`.
+
+### Eklendi
+- **Skor v1 kalibre edildi (C3):** 38 insan kararına karşı sınav — bant isabeti
+  %82 (eşik %80), sıralama ihlali 0, "gizli" %100. Sınav dört model kusuru buldu
+  ve dördü de düzeltildi: ticari sinyali olmayan ürün artık skor ALMAZ · satış
+  memnuniyetle ölçeklenir (çok satıp beğenilmemek iade demektir) · satıcı karnesi
+  0–1 aralığına sıkıştı (16 yıllık satıcı 2 yıllığın 8 katı puan alamaz) ·
+  **ivme** bileşeni eklendi (30 günlük satış / toplam) · **kapsam kapağı**: iş
+  kapsamı dışındaki ürün metrikleri ne olursa olsun üst banda çıkamaz.
+- **Kur (B5):** "Güncel kuru getir" — TCMB bülteninden okur, forma yazar, KAYDETMEZ.
+- **Çeviri tam kapsam (B9):** değerler de çevrilir; çevrilemeyen "çeviri bekliyor"
+  rozeti alır, sessiz melez yasak.
+- **Sürümlü çeviri belleği (B12):** anahtar sağlayıcı/model/prompt/sözlük/
+  normalizasyon sürümünü taşır.
+- **Kuyruk sertleştirme (B11):** kira token'ı, kalp atışı, retry sınıfları,
+  ölü mektup eylemleri (yeniden dene · düzelt · vazgeç), metrikler.
+- **Kategori (B10):** idempotent içe aktarma ucu + 8B ağacı (64 kategori) +
+  `bin/kategori-yukle.php` + kırıntı/terim eşlemeli kategori tahmini.
+- **Marka (B13):** kit `docs/marka/`'da · favicon seti · panel amblemi turuncu
+  (tema lacivert) · durum etiketleri TEK KAYNAK (`config/durumlar.json`).
+- **Store paketi (A9):** `bin/store-paketi.php` — manifesti politika maddelerine
+  karşı denetler, eksikte paket ÜRETMEZ; görseller ve metinler tek klasörde.
+- **E2E kapsam defteri (A7/B15):** 81 senaryonun kodda karşılığı ölçülür ve
+  "kapsandı" denip yazılmamış senaryo kırmızı yanar.
+
+### Düzeltildi
+- **Kur taslak listelere işlemiyordu (B5):** `lists.yuan_rate` oluşturmada
+  kopyalanıp bir daha okunmuyordu; kilitlenmemiş listeler artık güncel kuru izler.
+- **Firma görünümünde "Paylaş" düğmesi (B8-4)** kaldırıldı.
+- **Belge ile panel farklı durum adları kullanıyordu (B8-2):** "Bekleme
+  Listesinde" → "Verilecek"; tek kaynak docs/04 §5B.
+- **Gelen Kutusu'nda HTML entity (B4):** "黑色&gt;12" artık çözülerek basılır.
+- **Sihirbaz sahiplik doğrulamasında 2FA (B14)** — hesapta etkinse kod istenir.
+
+### Bilinen eksikler (v1.0 ilanı öncesi kapatılacak)
+- Eklenti v2 sayfa içi arayüz (A1–A5, A8) · Keşif havuzu (B1) · liste detay
+  komuta merkezi (B2) · ürün çekmecesi (B3) · Gelen Kutusu deste modu (B4) ·
+  paylaş penceresi (B6) · kilit ekranı cilası (B7) · belge antet/filigran
+  şablonları (B13) · E2E senaryolarının 71'i.
+
+## [0.12.1-beta] — 23 Ağustos 2026 (kurulum teşhis + onarım merkezi)
+
+### Eklendi (İE#20 D2-REV — sihirbaz artık her arızayı kendi içinde çözer)
+- **Teşhis motoru:** `/setup` açılışta dosya bütünlüğü · `config.php` · veritabanı ·
+  tablolar · migration defteri · sürüm okur ve **sekiz durumdan** birini adıyla
+  söyler: kurulum yok · sağlıklı · yarım · ayar dosyası kayıp/bozuk · paket dosyası
+  eksik · migration yarım · sürüm uyuşmazlığı · veritabanına erişilemiyor. Üstte
+  durum rozeti, altında yalnız o duruma uyan seçenekler; her ekranda **"Teşhisi
+  yeniden çalıştır"**.
+- **Ayar dosyası onarımı:** `config.php` kaybolduğunda/bozulduğunda DB bilgileri
+  sihirbazdan yeniden alınır. Dosyada APP_KEY duruyorsa **KORUNUR** (şifreli veriler
+  açılmaya devam eder); kalmadıysa yeni anahtar üretilir ve kaybın ne demek olduğu
+  ekranda açıkça yazılır.
+- **Güncelleme akışı:** dosyalar yeni, şema eskiyse "Güncellemeyi çalıştır" —
+  bekleyen migration'lar koşar, sürüm kaydı (`system.app_version`) tazelenir.
+  Bundan sonra **her sürüm güncellemesinin resmî yolu budur**.
+- **Sahiplik doğrulama yönetici şifresiyle:** birincil yol artık e-posta + şifre;
+  APP_KEY yolu katlanır bölümde, dosyanın nereden açılacağı tarifiyle birlikte.
+  İkisi de aynı artan beklemeye tabidir ve sabit hata mesajı döner (K51).
+- **Dosya bütünlüğü ekranı:** eksik/bozuk dosyalar isim isim listelenir. Sihirbaz
+  dosya **indirmez** — paketi yükleyip "yeniden tara" denir.
+
+### Değişti
+- `SetupGuard` fail-closed davranışı korunuyor ama **teşhis penceresi** açıldı:
+  veritabanı okunamazken de sihirbaz sayfası, salt-okunur teşhis ucu ve kanıtlı
+  config onarımı çalışır; yazan/yıkan hiçbir uç geçmez.
+- Kurulum tamamlanınca kurulu sürüm `settings` tablosuna yazılır.
+
+### Düzeltildi (İE#20 D3 — saha vakası)
+- **Tarayıcı otomatik doldurma sabotajı:** Chrome, Ayarlar > Çeviri'deki "Model"
+  kutusuna kayıtlı e-postayı basıyordu (`model="…@gmail.com"` → sağlayıcı 400).
+  Serbest metin ayar alanları üç katmanla korundu (tanınmaz alan adı · standart
+  ipuçları · odaklanana kadar salt-okunur), e-posta alanlarına doğru
+  `autocomplete` türü verildi ve Model alanına kaydetmeden önce "@" akıl kontrolü
+  eklendi.
+
+## [0.12.0-beta] — 23 Ağustos 2026 (V3 Dilim 2 · TEMİZ KURULUM paketi)
+
+> Bu paket **temiz kuruluma** çıkar: canlıdaki v0.11.4 kurulumu ve TÜM verisi
+> silinip sistem sıfırdan kurulur (Ürün Sahibi kararı, 23 Ağu 2026 — canlıdaki
+> iş verisi test verisiydi). Bu yüzden **veri göçü yoktur**; migration'lar boş
+> veritabanına 0001'den sıra ile uygulanır. Sürüm adı bilinçli olarak
+> `-beta`dır: v1.0 adı İE#21 kapanışına saklıdır.
+
+### Eklendi (İE#20 Bölüm C — V3 Dilim 2)
+- **Ürün ≠ İlan ayrımı (K67):** `platforms`, `listings`, `listing_price_tiers`
+  tabloları (migration 0022–0023). Ürün bir iş kalemidir; ilan bir kaynaktır.
+- **İş kuyruğu (K69):** `jobs` tablosu + cron işleyicisi (0024) — çeviri gibi ağır
+  işler istek içinde koşmaz. Kuyruk sağlığı ekranı panelde.
+- **Çeviri katman 2 (K70):** LLM çevirisi; **TR ve EN aynı istekte** üretilir ve
+  ikisi birden önbelleğe yazılır. Hedef dil listesi ayardır, şema değil.
+- **Dil seçici:** ZH (orijinal) · TR · EN — üçü de her zaman görünür.
+- **İlan güven skoru (K68):** 0025.
+- **Çift dilli arama + sayfalama:** `products.arama_metni` + FULLTEXT (0026).
+- **HAZIR kalite kapısı (K72):** sunucuda zorlanır; eksik alanlı ürün hazır değildir.
+- **Dayanıklılık (K9/C9):** revizyon sözleşmesi, kopya bütünlüğü, `sort_no` yarış
+  koruması, `products.surum` ile kayıp yazma koruması.
+
+### Eklendi (İE#20 Bölüm A — İE#19 tamamı, v0.11.5 içeriği)
+- Kurulum sertleştirmesi (fail-closed kilit), yeniden kurulum bileti (K63),
+  yakalamanın tek atomik blokta uygulanması (K64), kanonik adresler + maliyet
+  etiketleme (K65), belgelenmiş migration değişiklik kapısı (K66).
+
+### Değişti
+- Varsayılan LLM sağlayıcı DeepSeek; varsayılan model adları güncellendi
+  (`deepseek-v4-flash` · `claude-sonnet-4-6` · `gpt-5.6-terra`). Ayarlar >
+  Çeviri'deki **Bağlantıyı test et**, sağlayıcının hatasını GÖRÜNÜR yazar ve
+  asla sessizce yedeğe düşmez.
+
+### Eklendi (İE#11 · K53 — Faz 3: Chrome eklentisi + Gelen Kutusu · bu paketle yayınlandı)
 - **Chrome eklentisi (WXT + TypeScript, MV3):** 1688 ürün sayfasında popup ile yakalama — önizleme (görsel, ad, fiyat kademeleri, varyasyon sayısı), hedef seçici (Gelen Kutusu varsayılan + listeler), adet/koli/not, K25 mükerrer uyarısı. Parser saf fonksiyon; **birincil kaynak `context.result.global.globalData.model`** (rapor §13), ikincil `detailModel`/`data.*` dalları; seçiciler backend'den gelen VERİDİR (K53). 11 fixture testi — canlı 1688 isteği yok.
 - **Capture sözleşmesi v2 (K32):** üç blok `source`/`raw`/`normalized`; `capture_id` idempotansı; doğrulanamayan gövde RAW olarak kuyruğa (`inbox_items`, migration 0019); RAW blok ürünün `raw_attributes`'ına, menşe özniteliği varsa `country_of_origin`'a yazılır.
 - **Gelen Kutusu:** kuyruk ekranı (çoklu seçim, listeye taşı, sil), Ana Ekran sayacı, menüdeki "Yakında" kalktı.

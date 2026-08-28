@@ -66,6 +66,62 @@ final class Migrator
             ['table' => 'translation_cache'],
             ['column' => ['products', 'price_target_try']],
         ],
+        // İE#20 C2: ürün ≠ ilan ayrımı (platform kaydı + ilan tabloları).
+        '0022_create_platforms' => [['table' => 'platforms']],
+        '0023_create_listings' => [
+            ['table' => 'listings'],
+            ['table' => 'listing_price_tiers'],
+        ],
+        // İE#20 C3/C6/C7/C8: kuyruk, skor, arama ve kalite kapısı.
+        '0024_create_jobs' => [['table' => 'jobs']],
+        '0025_add_listings_skor' => [
+            ['column' => ['listings', 'skor']],
+            ['column' => ['translation_cache', 'guven']],
+        ],
+        // D11b: ürün adını kullanıcı mı yazdı? (çeviri tazelemesi onaylı adı ezmesin)
+        '0031_urun_adi_elle' => [
+            ['column' => ['products', 'name_elle']],
+        ],
+        // D12 (K87): ürünün KAYNAK DİLİ — kanonik üçlüde hangi dilin orijinal
+        // olduğunu bu alan söyler; olmadan kaynak dile çeviri üretilebilir.
+        '0032_urun_kaynak_dili' => [
+            ['column' => ['products', 'source_lang']],
+        ],
+        // İE#22 A1: kur snapshot omurgası. DDL ve göç AYRI dosyadır (K23);
+        // ikisi de haritada olmalı — 0032 dersi: haritada olmayan migration
+        // K49 baseline akışında SESSİZCE atlanır.
+        '0033_kur_snapshotlari' => [
+            ['table' => 'rate_snapshots'],
+        ],
+        // Göç dosyasının "nesnesi" tablonun kendisidir: veri taşır, şema
+        // değiştirmez. Baseline'da tablo varsa göç de uygulanmış sayılır —
+        // dosya zaten idempotenttir, ikinci koşum satır çoğaltmaz.
+        '0034_kur_snapshot_gocu' => [
+            ['table' => 'rate_snapshots'],
+        ],
+        // İE#21 B1: Keşif havuzu — küme anahtarı ve normalize arama alanı.
+        '0030_kesif_havuzu' => [
+            ['column' => ['listings', 'kume_anahtari']],
+            ['column' => ['products', 'arama_normal']],
+        ],
+        // İE#21 C3: ivme bileşeni için toplam satış.
+        '0029_ilan_satis_toplam' => [
+            ['column' => ['listings', 'satis_toplam']],
+        ],
+        // İE#21 B11: kuyruk sertleştirme — kira token'ı, açık kira bitişi, hata sınıfı.
+        '0028_kuyruk_sertlestirme' => [
+            ['column' => ['jobs', 'kilit_token']],
+            ['column' => ['jobs', 'kilit_bitis']],
+        ],
+        // İE#21 B12: sürümlü çeviri belleği — satırın hangi koşullarda üretildiği.
+        '0027_ceviri_bellegi_surumu' => [
+            ['column' => ['translation_cache', 'surum']],
+        ],
+        '0026_arama_ve_kalite' => [
+            ['column' => ['products', 'arama_metni']],
+            ['column' => ['products', 'hazir']],
+            ['column' => ['products', 'surum']],
+        ],
         // İE#18 G6 (K62): erişim anahtarı kolonları.
         '0021_add_lists_share_key' => [
             ['column' => ['lists', 'share_key_hash']],

@@ -52,6 +52,25 @@ try {
         $satir = sprintf('%s (%.1f KB)', $backup['name'], $backup['size'] / 1024);
         printf("YEDEK ALINDI  %s sha256 %s...\n", $satir, substr($backup['sha256'], 0, 12));
 
+        // İE#22 E4 (F-03): medya yedeği AYRI satırda raporlanır. Sessiz kalmak,
+        // "yedek alındı" cümlesini yine eksik bırakırdı.
+        if ($backup['media_manifest'] !== null) {
+            printf(
+                "MEDYA         %d dosya · %.1f MB · manifest %s · arsiv %s" . PHP_EOL,
+                $backup['media_files'],
+                $backup['media_bytes'] / 1048576,
+                $backup['media_manifest'],
+                $backup['media_archive'] ?? 'ATLANDI (boyut siniri — BACKUP_MEDIA_MAX_MB)',
+            );
+            $satir .= sprintf(
+                ', medya %d dosya%s',
+                $backup['media_files'],
+                $backup['media_skipped'] ? ' (arsiv atlandi)' : '',
+            );
+        } else {
+            echo "MEDYA         yedeklenecek gorsel yok." . PHP_EOL;
+        }
+
         $offsite = (new BackupOffsite($config))->send((string) $service->pathFor($backup['name']), $backup['name']);
         if (!$offsite['attempted']) {
             echo "OFF-SITE: yapılandırılmadı (BACKUP_FTP_* veya BACKUP_SMTP_* girilirse otomatik gönderilir).\n";

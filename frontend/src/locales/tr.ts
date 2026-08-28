@@ -5,6 +5,16 @@
  * yaşar. Ekranlarda ham enum görünmesi hata sayılır (docs/09 §6 çeviri tablosu).
  */
 
+/**
+ * DURUM ETİKETLERİ — TEK KAYNAK `config/durumlar.json` (İE#21 B13).
+ *
+ * Buradaki değerler o dosyanın Türkçe sütununun AYNISIDIR. Kopya olması bilinçli
+ * bir ödünçtür: panel derlemesi repo kökündeki `config/` klasörüne erişemez
+ * (Vite kökü `frontend/`), JSON'u paketin içine kopyalamak da derleme adımını
+ * karmaşıklaştırırdı. Sapma riski TESTLE kapatılmıştır: `DurumSozluguTest`
+ * (PHP) bu dosyayı okuyup JSON ile karşılaştırır ve fark varsa KIRMIZI yanar.
+ * Yani iki liste var ama İKİSİNİN AYRI DÜŞMESİ mümkün değil.
+ */
 export const productStatusLabels = {
   to_order: 'Verilecek',
   ordered: 'Verildi',
@@ -35,19 +45,19 @@ export const inboxStatusLabels = {
 
 /** Durum rozetlerinin renk sınıfları — anlam renkle de taşınır (docs/09 erişilebilirlik). */
 export const productStatusTone: Record<keyof typeof productStatusLabels, string> = {
-  to_order: 'bg-slate-100 text-slate-700 ring-slate-200',
-  ordered: 'bg-amber-50 text-amber-800 ring-amber-200',
-  in_transit: 'bg-sky-50 text-sky-800 ring-sky-200',
-  received: 'bg-emerald-50 text-emerald-800 ring-emerald-200',
-  cancelled: 'bg-rose-50 text-rose-800 ring-rose-200',
+  to_order: 'bg-g100 text-ink-2 ring-line',
+  ordered: 'bg-warn-soft text-warn ring-warn/20',
+  in_transit: 'bg-info-soft text-info ring-info/20',
+  received: 'bg-ok-soft text-ok ring-ok/20',
+  cancelled: 'bg-err-soft text-err ring-err/20',
 };
 
 export const listStatusTone: Record<keyof typeof listStatusLabels, string> = {
-  draft: 'bg-slate-100 text-slate-700 ring-slate-200',
-  sent: 'bg-sky-50 text-sky-800 ring-sky-200',
-  ordered: 'bg-amber-50 text-amber-800 ring-amber-200',
-  completed: 'bg-emerald-50 text-emerald-800 ring-emerald-200',
-  cancelled: 'bg-rose-50 text-rose-800 ring-rose-200',
+  draft: 'bg-g100 text-ink-2 ring-line',
+  sent: 'bg-info-soft text-info ring-info/20',
+  ordered: 'bg-warn-soft text-warn ring-warn/20',
+  completed: 'bg-ok-soft text-ok ring-ok/20',
+  cancelled: 'bg-err-soft text-err ring-err/20',
 };
 
 /**
@@ -78,5 +88,5 @@ export const errorMessages: Record<string, string> = {
 
 export const mediaModeLabels = {
   download: 'Görseller sunucuda arşivleniyor',
-  hotlink: 'Arşivleme kapalı — görseller 1688 bağlantısından gösteriliyor',
+  hotlink: 'Arşivleme kapalı — görseller kaynak sitedeki bağlantıdan gösteriliyor',
 } as const;

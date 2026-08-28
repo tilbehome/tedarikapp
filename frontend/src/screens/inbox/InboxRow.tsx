@@ -1,9 +1,11 @@
+import EylemDugmesi from '../../components/EylemDugmesi';
 import { useState } from 'react';
-import { Languages, Trash2 } from 'lucide-react';
+import { Languages } from 'lucide-react';
 import { translate as translateApi, type InboxItem } from '../../api/endpoints';
 import { messageOf } from '../../lib/useAsync';
 import { dateTime } from '../../lib/format';
 import InboxThumb from './InboxThumb';
+import { metniNormalize } from '../../lib/metin';
 
 /** Çince/Japonca/Korece karakter var mı? Zaten Türkçe başlık için çeviri istenmez. */
 const cjk = /[㐀-䶿一-鿿豈-﫿぀-ヿ가-힯]/;
@@ -13,8 +15,8 @@ interface Props {
   secili: boolean;
   onSec: () => void;
   onAc: () => void;
-  onTasi: () => void;
-  onSil: () => void;
+  onTasi: () => Promise<unknown>;
+  onSil: () => Promise<unknown>;
   /** Kullanıcı çeviriyi kabul ettiyse taşımada kullanılacak ad (K54). */
   secilenAd: string | undefined;
   onAdSec: (ad: string) => void;
@@ -49,7 +51,8 @@ export default function InboxRow({ item, secili, onSec, onAc, onTasi, onSil, sec
     }
   };
 
-  const gosterilenAd = secilenAd ?? item.name ?? '(adsız yakalama)';
+  // B4: yakalanan ad da entity taşıyabilir — sunumda çözülür (bkz. lib/metin.ts).
+  const gosterilenAd = metniNormalize(secilenAd ?? item.name ?? '') || '(adsız yakalama)';
 
   return (
     <li className="card flex items-start gap-3 p-3">
@@ -61,15 +64,15 @@ export default function InboxRow({ item, secili, onSec, onAc, onTasi, onSil, sec
 
       <div className="min-w-0 flex-1">
         <button type="button" onClick={onAc} className="block w-full text-left">
-          <p className="truncate font-medium hover:text-brand-600">{gosterilenAd}</p>
+          <p className="truncate font-medium hover:text-navy">{gosterilenAd}</p>
         </button>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-ink-3">
           {item.platform}
           {item.price_yuan ? ` · ¥${item.price_yuan}` : ''} · {dateTime(item.created_at)}
           {item.url ? (
             <>
               {' · '}
-              <a className="text-brand-600" href={item.url} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>
+              <a className="text-navy" href={item.url} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>
                 kaynak
               </a>
             </>
@@ -77,23 +80,23 @@ export default function InboxRow({ item, secili, onSec, onAc, onTasi, onSil, sec
         </p>
 
         {secilenAd !== undefined ? (
-          <p className="mt-1 text-xs text-emerald-700">Türkçe ad kullanılacak — orijinal başlık korunur.</p>
+          <p className="mt-1 text-xs text-ok">Türkçe ad kullanılacak — orijinal başlık korunur.</p>
         ) : oneri !== null ? (
-          <p className="mt-1 flex flex-wrap items-center gap-2 rounded-lg bg-brand-50 px-2 py-1 text-xs">
-            <span className="font-semibold uppercase tracking-wide text-brand-700">Türkçe öneri</span>
-            <span className="min-w-0 flex-1 text-slate-700">{oneri}</span>
+          <p className="mt-1 flex flex-wrap items-center gap-2 rounded-lg bg-blue-soft px-2 py-1 text-xs">
+            <span className="font-semibold uppercase tracking-wide text-navy">Türkçe öneri</span>
+            <span className="min-w-0 flex-1 text-ink-2">{oneri}</span>
             <button type="button" className="btn-ghost px-2 py-0.5 text-xs" onClick={() => onAdSec(oneri)}>
               Kullan
             </button>
           </p>
         ) : ceviriDurumu === 'yok' ? (
-          <p className="mt-1 text-xs text-slate-400">Çeviri önerisi alınamadı.</p>
+          <p className="mt-1 text-xs text-ink-3">Çeviri önerisi alınamadı.</p>
         ) : ceviriDurumu === 'hata' ? (
-          <p className="mt-1 text-xs text-amber-700">{hata}</p>
+          <p className="mt-1 text-xs text-warn">{hata}</p>
         ) : item.name !== null && cjk.test(item.name) ? (
           <button
             type="button"
-            className="mt-1 inline-flex items-center gap-1 text-xs text-slate-500 hover:text-brand-600"
+            className="mt-1 inline-flex items-center gap-1 text-xs text-ink-3 hover:text-navy"
             disabled={ceviriDurumu === 'bekliyor'}
             onClick={() => void cevir()}
           >
@@ -103,18 +106,25 @@ export default function InboxRow({ item, secili, onSec, onAc, onTasi, onSil, sec
         ) : null}
 
         {item.status === 'error' ? (
-          <p className="mt-1 text-xs text-amber-700">
+          <p className="mt-1 text-xs text-warn">
             Eksik veri: {item.error_note ?? 'doğrulanamadı'} — taşınırsa yeniden denetlenir.
           </p>
         ) : null}
       </div>
 
-      <button type="button" className="btn-ghost" disabled={busy} onClick={onTasi}>
-        Taşı
-      </button>
-      <button type="button" className="btn-ghost text-red-600" disabled={busy} onClick={onSil} aria-label="Sil">
-        <Trash2 className="h-4 w-4" aria-hidden />
-      </button>
+      {/* C10/B11: satır eylemi de meşgul/başarı/hata üçlüsünü gösterir. */}
+      <EylemDugmesi className="btn-ghost" mesgulEtiketi="Taşınıyor" disabled={busy} onEylem={onTasi}>
+        Listeye taşı
+      </EylemDugmesi>
+      <EylemDugmesi
+        className="btn-ghost text-err"
+        mesgulEtiketi="Siliniyor"
+        disabled={busy}
+        onEylem={onSil}
+        aria-label="Sil"
+      >
+        Sil
+      </EylemDugmesi>
     </li>
   );
 }

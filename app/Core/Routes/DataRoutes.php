@@ -16,6 +16,7 @@ use App\Controllers\TrashController;
 use App\Core\Connection;
 use App\Middleware\Auth;
 use App\Middleware\Csrf;
+use App\Middleware\KuyrukSupurme;
 use App\Middleware\MigrationGuard;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Slim\App;
@@ -40,6 +41,7 @@ final class DataRoutes
         SettingsController $settingsController,
         \App\Controllers\InboxController $inboxController,
         CategoryController $categoryController,
+        \App\Controllers\KesifController $kesifController,
         ActivityController $activityController,
         ListController $listController,
         ProductController $productController,
@@ -51,6 +53,8 @@ final class DataRoutes
         ResponseFactoryInterface $responseFactory,
         Connection $connection,
         string $migrationsDir,
+        // D12: panel ziyaretinde kuyruk turu tetikler (cron'suz çalışma emniyeti).
+        \App\Services\Kuyruk\KuyrukTetikleyici $kuyrukTetikleyici,
     ): void {
         // İE#19 G7 — AKTİVİTE DEFTERİ BİLEREK KAPI DIŞINDA.
         //
@@ -66,22 +70,43 @@ final class DataRoutes
             ->add(new Csrf($services->session, $responseFactory))
             ->add(new Auth($services, $responseFactory));
 
-        $app->group('/api', static function (RouteCollectorProxy $group) use ($settingsController, $categoryController, $translationController): void {
+        $app->group('/api', static function (RouteCollectorProxy $group) use ($settingsController, $categoryController, $translationController, $kesifController): void {
             $group->get('/settings', [$settingsController, 'show']);
             $group->put('/settings/rates', [$settingsController, 'updateRates']);
             $group->get('/settings/rates/history', [$settingsController, 'rateHistory']);
+            // İE#21 B5: güncel kur ÖNERİSİ — okur, döner, KAYDETMEZ (K4).
+            $group->get('/settings/rates/suggest', [$settingsController, 'suggestRates']);
             // İE#13 F1: belge antedi (çıktı üst bandı) — boş alan basılmaz.
             $group->put('/settings/document-header', [$settingsController, 'updateDocumentHeader']);
             // İE#14 A2 (K56 Katman 1): Ayarlar > Terminoloji — dosya tabanlı sözlük.
+            // İE#21 EK-4 (B7): kilit ekranındaki anahtar talebi köprüsünün numarası.
+            $group->put('/settings/share-contact', [$settingsController, 'updateShareContact']);
+            // rc8/K4: paylaşım/QR tabanı — parola tekrarı ister (F-08).
+            $group->put('/settings/app-url', [$settingsController, 'updateAppUrl']);
             $group->get('/settings/glossary', [$translationController, 'glossaryIndex']);
             $group->put('/settings/glossary', [$translationController, 'glossarySave']);
+            // İE#20 C4: Ayarlar > Çeviri (sağlayıcı, anahtar, model, hedef diller).
+            $group->get('/settings/translation', [$translationController, 'translationSettings']);
+            $group->put('/settings/translation', [$translationController, 'translationSettingsSave']);
+            // İE#20 D1: bağlantı testi — YEDEĞE DÜŞMEZ, sağlayıcının hatasını gösterir.
+            $group->post('/settings/translation/test', [$translationController, 'translationTest']);
 
             // İE#11: eklenti token yönetimi (Faz 3 rozeti kalktı).
             $group->post('/settings/extension-token', [$settingsController, 'extensionTokenCreate']);
             $group->delete('/settings/extension-token', [$settingsController, 'extensionTokenRevoke']);
 
+            // İE#21 B1: KEŞİF HAVUZU — listeye girmemiş ürünleri de kapsayan
+            // istihbarat yüzeyi. Filtreler VE ile birleşir, sayfalama zorunludur.
+            $group->get('/kesif', [$kesifController, 'index']);
+            $group->get('/kesif/gorunumler', [$kesifController, 'views']);
+            $group->post('/kesif/gorunumler', [$kesifController, 'saveView']);
+            $group->delete('/kesif/gorunumler/{ad}', [$kesifController, 'deleteView']);
+            $group->post('/kesif/karsilastir', [$kesifController, 'compare']);
+
             $group->get('/categories', [$categoryController, 'index']);
             $group->post('/categories', [$categoryController, 'store']);
+            // İE#21 B10: toplu içe aktarım — idempotent (aynı ad iki kez eklenmez).
+            $group->post('/categories/import', [$categoryController, 'import']);
             $group->patch('/categories/{id}', [$categoryController, 'update']);
             $group->delete('/categories/{id}', [$categoryController, 'destroy']);
         })
@@ -105,6 +130,8 @@ final class DataRoutes
             $group->post('/lists/{id}/share', [$shareController, 'create']);
             $group->delete('/lists/{id}/share', [$shareController, 'destroy']);
             // İE#18 G6 (K62): erişim anahtarı — göster · yenile · aç/kapat.
+            // İE#21 B6: kanal metni (tr/en/zh) — şablon sunucudan, {link} panelde dolar.
+            $group->get('/lists/{id}/share-text', [$shareController, 'text']);
             $group->get('/lists/{id}/share-key', [$shareController, 'keyShow']);
             $group->post('/lists/{id}/share-key', [$shareController, 'keyRotate']);
             $group->patch('/lists/{id}/share-key', [$shareController, 'keyToggle']);
@@ -122,6 +149,11 @@ final class DataRoutes
 
             // İE#19 E11: tekil ürün — düzenleme ekranı tüm listeyi çekmez.
             $group->get('/products/{id}', [$productController, 'show']);
+            // İE#20 C8: "HAZIR" kalite kapısı — kural sunucuda zorlanır.
+            $group->patch('/products/{id}/hazir', [$productController, 'setHazir']);
+            // İE#21 B3: ürün çekmecesi — ürün + ilan + kademe + skor TEK istekte.
+            $group->get('/products/{id}/cekmece', [$productController, 'cekmece']);
+            $group->get('/lists/{id}/hazirlik', [$productController, 'listeHazirligi']);
 
             // bulk, {id} deseninden ÖNCE tanımlanır; aksi hâlde "bulk" bir kimlik sanılır.
             $group->patch('/products/bulk', [$productController, 'bulk']);
@@ -134,6 +166,9 @@ final class DataRoutes
             // İE#11 Görev D: Gelen Kutusu.
             $group->get('/inbox', [$inboxController, 'index']);
             $group->post('/inbox/assign', [$inboxController, 'assign']);
+            // İE#21 B4: DESTE MODU — tek tuş, tek geçiş, geri alınabilir.
+            $group->post('/inbox/deste', [$inboxController, 'deck']);
+            $group->post('/inbox/deste/geri-al', [$inboxController, 'deckUndo']);
             // İE#13 B1: toplu silme — sabit yol, {id} deseninden ÖNCE tanımlanır.
             $group->post('/inbox/delete', [$inboxController, 'bulkDelete']);
             $group->get('/inbox/{id}', [$inboxController, 'show']);
@@ -143,6 +178,12 @@ final class DataRoutes
             $group->post('/panel/translate-suggest', [$translationController, 'suggest']);
             // İE#14 A2: ürünün TAMAMI tek çağrıda (K56 Katman 2 arayüzü üstünden).
             $group->post('/panel/translate-product', [$translationController, 'translateProduct']);
+            // İE#20 C4: "çevrilmemiş N ürünü çevir" — kuyruğa alır, beklemez.
+            $group->post('/panel/translate-backfill', [$translationController, 'translateBackfill']);
+            // D12: toplu çevirinin ilerleme sorgusu (panel "N/M" göstergesi).
+            $group->get('/panel/translate-progress', [$translationController, 'translateProgress']);
+            // D12: ürün kartındaki "Çevir" düğmesi — SENKRON, kuyruğa yazmaz.
+            $group->post('/products/{id}/translate', [$translationController, 'translateProductNow']);
 
             $group->get('/trash', [$trashController, 'index']);
             $group->post('/trash/{type}/{id}/restore', [$trashController, 'restore']);
@@ -150,6 +191,10 @@ final class DataRoutes
         })
             ->add(new Csrf($services->session, $responseFactory))
             ->add(new Auth($services, $responseFactory))
+            // D12 madde 3: panel ziyareti kuyruk turu tetikler. Ara katman
+            // Auth'un DIŞINDA değil İÇİNDE durur — yalnız oturumlu istekler
+            // tur açar, dışarıdan gelen bir GET sunucuda iş koşturamaz.
+            ->add(new KuyrukSupurme($kuyrukTetikleyici))
             // İE#10.5 Blok 2: bekleyen migration varken veri uçları 503 MIGRATION_PENDING
             // döner (canlı ders: 0018 bekleyenken panel çöküyordu).
             ->add(new MigrationGuard($connection, $migrationsDir, $responseFactory));

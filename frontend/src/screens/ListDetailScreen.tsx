@@ -2,7 +2,18 @@ import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, Download, ImageOff, Plus, Search, Share2, Trash2 } from 'lucide-react';
 import { exports as exportsApi, lists as listsApi, products as productsApi, share as shareApi } from '../api/endpoints';
-import CiktiSecenekleri, { paylasimAdresiAnahtari } from './liste/CiktiSecenekleri';
+import CiktiSecenekleri from './liste/CiktiSecenekleri';
+import AsamaCubugu from './liste/AsamaCubugu';
+import OzetSeridi from './liste/OzetSeridi';
+import UyariCipleri from './liste/UyariCipleri';
+import UrunTablosu from './liste/UrunTablosu';
+import UrunCekmecesi from './liste/UrunCekmecesi';
+import PaylasPenceresi from './liste/PaylasPenceresi';
+import TopluEylemCubugu from './liste/TopluEylemCubugu';
+import TabloDenetimleri from './liste/TabloDenetimleri';
+import { tercihOku, tercihYaz, type TabloTercihi } from '../lib/tabloTercihi';
+import { type EksikAlan, eksikAlanlar } from '../lib/eksikler';
+import { useSuzgecSecimi } from '../lib/secim';
 import type { ListStatus, Product, ProductStatus } from '../api/types';
 import { useAsync, messageOf } from '../lib/useAsync';
 import { count, dateTime, money, rate } from '../lib/format';
@@ -33,11 +44,32 @@ export default function ListDetailScreen() {
   const machine = useReference((state) => state.machine);
 
   const [shareOpen, setShareOpen] = useState(false);
+  // Paylaşım adresi bellekte (shareUrlCache) yaşar; bu sayaç yalnız pencereyi
+  // yeniden çizmek için artar — adresi state'e kopyalamak iki gerçek yaratırdı.
+  const [shareTick, setShareTick] = useState(0);
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<ProductStatus | ''>('');
+  // Uyarı çipi süzgeci: "2 üründe kategori eksik" çipine basınca yalnız o ürünler.
+  const [uyariFiltresi, setUyariFiltresi] = useState<EksikAlan | null>(null);
+  // Tablo tercihi (sütun/yoğunluk/gruplama) kullanıcının cihazında yaşar.
+  const [tercih, setTercih] = useState<TabloTercihi>(() => tercihOku());
+  // Açık çekmecenin ürünü (İE#21 B3). Kimlik tutulur, ürünün kopyası değil:
+  // çekmece veriyi kendisi çeker ve tabloda bir güncelleme olduğunda bayat
+  // bir kopyayı göstermez.
+  const [cekmeceId, setCekmeceId] = useState<number | null>(null);
+  const tercihDegistir = (yeni: TabloTercihi) => {
+    setTercih(yeni);
+    tercihYaz(yeni);
+  };
   const [sort, setSort] = useState<{ key: SortKey; asc: boolean }>({ key: 'sort_no', asc: true });
   const [selected, setSelected] = useState<number[]>([]);
   const [busyId, setBusyId] = useState<number | null>(null);
+  // Toplu işlem uçarken çubuk KAPANIR: çift tık ikinci bir toplu geçiş
+  // başlatmasın (E2E-PNL-24).
+  const [topluMesgul, setTopluMesgul] = useState(false);
+
+  // Süzgeç değişince seçim sıfırlanır (E2E-PNL-23 — gerekçe: lib/secim.ts).
+  useSuzgecSecimi(`${query}|${statusFilter}|${uyariFiltresi ?? ''}`, selected.length, () => setSelected([]));
 
   const listState = useAsync(() => listsApi.find(listId), [listId]);
   const productState = useAsync(
@@ -65,8 +97,11 @@ export default function ListDetailScreen() {
           return direction * numericCollator.compare(String(a.sort_no), String(b.sort_no));
       }
     });
-    return rows;
-  }, [productState.data, sort]);
+    return uyariFiltresi === null ? rows : rows.filter((row) => eksikAlanlar(row).includes(uyariFiltresi));
+  }, [productState.data, sort, uyariFiltresi]);
+
+  /** Çipler ve özet TÜM listeye bakar — süzgeç açıkken sayılar küçülmemeli. */
+  const tumUrunler = useMemo(() => productState.data ?? [], [productState.data]);
 
   const refresh = () => {
     listState.reload();
@@ -86,6 +121,32 @@ export default function ListDetailScreen() {
     }
   };
 
+  const changeQty = async (product: Product, qty: number) => {
+    try {
+      await productsApi.update(product.id, { qty });
+      refresh();
+      push(`"${product.name}" miktarı ${count(qty)} oldu.`);
+    } catch (caught) {
+      push(messageOf(caught), 'error');
+      // Hücrenin eski değerine dönebilmesi için hata YUKARI verilir.
+      throw caught;
+    }
+  };
+
+  const toggleHazir = async (product: Product) => {
+    setBusyId(product.id);
+    try {
+      const sonuc = await productsApi.setHazir(product.id, !product.hazir);
+      refresh();
+      push(sonuc.hazir ? `"${product.name}" HAZIR işaretlendi.` : `"${product.name}" hazır işareti kaldırıldı.`);
+    } catch (caught) {
+      // Kapı sunucudadır: eksik varsa gerekçesi mesajda gelir (C8).
+      push(messageOf(caught), 'error');
+    } finally {
+      setBusyId(null);
+    }
+  };
+
   const removeProduct = async (product: Product) => {
     try {
       await productsApi.remove(product.id);
@@ -97,6 +158,8 @@ export default function ListDetailScreen() {
   };
 
   const bulkStatus = async (next: ProductStatus) => {
+    if (topluMesgul) return;
+    setTopluMesgul(true);
     try {
       const result = await productsApi.bulk({ ids: selected, action: 'status', status: next });
       setSelected([]);
@@ -109,6 +172,23 @@ export default function ListDetailScreen() {
       );
     } catch (caught) {
       push(messageOf(caught), 'error');
+    } finally {
+      setTopluMesgul(false);
+    }
+  };
+
+  const bulkDelete = async () => {
+    if (topluMesgul) return;
+    setTopluMesgul(true);
+    try {
+      const result = await productsApi.bulk({ ids: selected, action: 'delete' });
+      setSelected([]);
+      refresh();
+      push(`${count(result.updated)} ürün çöp kutusuna atıldı.`, 'success');
+    } catch (caught) {
+      push(messageOf(caught), 'error');
+    } finally {
+      setTopluMesgul(false);
     }
   };
 
@@ -130,7 +210,7 @@ export default function ListDetailScreen() {
 
   return (
     <>
-      <Link to="/listeler" className="mb-3 inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-800">
+      <Link to="/listeler" className="mb-3 inline-flex items-center gap-1 text-sm text-ink-3 hover:text-ink">
         <ArrowLeft className="h-4 w-4" aria-hidden />
         Listeler
       </Link>
@@ -147,7 +227,7 @@ export default function ListDetailScreen() {
               {list.rate_locked_at ? ` (kilitli — ${dateTime(list.rate_locked_at)})` : ' (taslak, güncel kuru izliyor)'}
             </span>
             {list.is_export_stale && list.last_export && (
-              <span className="badge bg-amber-50 text-amber-800 ring-amber-200">Çıktı güncel değil</span>
+              <span className="badge bg-warn-soft text-warn ring-warn/20">Çıktı güncel değil</span>
             )}
           </span>
         }
@@ -159,7 +239,12 @@ export default function ListDetailScreen() {
             </Link>
             {/* İE#11 Görev E: üretim CSRF'li POST · İE#13 F2/F5/F6: kopya türü, durum filtresi, QR. */}
             <CiktiSecenekleri listId={listId} onDone={refresh} />
-            <button type="button" className="btn-ghost" onClick={() => setShareOpen((value) => !value)}>
+            <button
+              type="button"
+              className="btn-ghost"
+              data-testid="paylas-ac"
+              onClick={() => setShareOpen((value) => !value)}
+            >
               <Share2 className="h-4 w-4" aria-hidden />
               Paylaş
             </button>
@@ -167,25 +252,57 @@ export default function ListDetailScreen() {
         }
       />
 
-      {shareOpen ? <SharePanel listId={listId} tokenPrefix={list.share_token_prefix} onChanged={refresh} /> : null}
+      {shareOpen ? (
+        <PaylasPenceresi
+          key={shareTick}
+          listId={listId}
+          tokenPrefix={list.share_token_prefix}
+          adres={shareUrlCache.get(listId) ?? null}
+          onAdres={(yeni) => {
+            if (yeni === null) shareUrlCache.delete(listId);
+            else shareUrlCache.set(listId, yeni);
+            // Adres bellekte tutulur; pencere yeniden çizilsin diye durum tazelenir.
+            setShareTick((sayac) => sayac + 1);
+          }}
+          onDegisti={refresh}
+          onKapat={() => setShareOpen(false)}
+          anahtarBlogu={<ErisimAnahtari listId={listId} />}
+        />
+      ) : null}
 
-      {allowedListStatuses.length > 0 && (
-        <div className="card mb-4 flex flex-wrap items-center gap-2 p-3 text-sm">
-          <span className="text-slate-600">Liste durumunu ilerlet:</span>
-          {allowedListStatuses.map((next) => (
-            <button key={next} type="button" className="btn-ghost" onClick={() => void changeListStatus(next)}>
-              {listStatusLabels[next]}
-            </button>
-          ))}
-          {list.status === 'draft' && (
-            <span className="text-xs text-slate-500">"İletildi" seçildiğinde kur bu listeye kilitlenir.</span>
-          )}
+      {/* İE#21 B2: komuta merkezi — aşama çubuğu (5B) · özet şerit · uyarı çipleri. */}
+      <AsamaCubugu
+        durum={list.status}
+        izinliGecisler={allowedListStatuses}
+        kurKilitli={list.rate_locked_at !== null}
+        onGecis={(next) => void changeListStatus(next)}
+      />
+
+      {/* İptal, çubuğun dışında bir çıkıştır: ayrı ve sessiz durur. */}
+      {allowedListStatuses.includes('cancelled') && (
+        <div className="mb-4 text-right">
+          <button type="button" className="btn-ghost !text-xs" onClick={() => void changeListStatus('cancelled')}>
+            Listeyi iptal et
+          </button>
         </div>
       )}
 
+      <OzetSeridi liste={list} urunler={tumUrunler} />
+
+      <UyariCipleri
+        urunler={tumUrunler}
+        secili={uyariFiltresi}
+        kurKilitli={list.rate_locked_at !== null}
+        onSec={setUyariFiltresi}
+      />
+
+      <div className="hidden md:block">
+        <TabloDenetimleri tercih={tercih} onDegis={tercihDegistir} />
+      </div>
+
       <div className="mb-4 flex flex-col gap-3 sm:flex-row">
         <label className="relative flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-3" aria-hidden />
           <input
             className="field-input pl-9"
             placeholder="Ürün ara"
@@ -209,19 +326,14 @@ export default function ListDetailScreen() {
         </select>
       </div>
 
-      {selected.length > 0 && (
-        <div className="card mb-3 flex flex-wrap items-center gap-2 border-brand-200 bg-brand-50 p-3 text-sm">
-          <span className="font-semibold text-brand-800">{count(selected.length)} ürün seçildi</span>
-          {(['ordered', 'in_transit', 'received', 'cancelled'] as ProductStatus[]).map((next) => (
-            <button key={next} type="button" className="btn-ghost" onClick={() => void bulkStatus(next)}>
-              {productStatusLabels[next]} yap
-            </button>
-          ))}
-          <button type="button" className="btn-ghost" onClick={() => setSelected([])}>
-            Seçimi temizle
-          </button>
-        </div>
-      )}
+      <TopluEylemCubugu
+        secili={selected}
+        urunler={tumUrunler}
+        mesgul={topluMesgul}
+        onDurum={(hedef) => void bulkStatus(hedef)}
+        onSil={() => void bulkDelete()}
+        onTemizle={() => setSelected([])}
+      />
 
       {productState.loading ? (
         <Skeleton rows={3} />
@@ -250,10 +362,14 @@ export default function ListDetailScreen() {
                 <div className="flex gap-3">
                   <Thumb product={product} onChanged={productState.reload} />
                   <div className="min-w-0 flex-1">
-                    <Link to={`/listeler/${listId}/urun/${product.id}`} className="block truncate font-semibold">
+                    <button
+                      type="button"
+                      className="block max-w-full truncate text-left font-semibold"
+                      onClick={() => setCekmeceId(product.id)}
+                    >
                       {product.name}
-                    </Link>
-                    <div className="text-xs text-slate-500">{categoryName(product.category_id)}</div>
+                    </button>
+                    <div className="text-xs text-ink-3">{categoryName(product.category_id)}</div>
                     <div className="mt-1 text-sm">
                       {count(product.qty)} adet × ¥{money(product.price_yuan)}
                     </div>
@@ -267,7 +383,7 @@ export default function ListDetailScreen() {
                     />
                     <button
                       type="button"
-                      className="mt-2 inline-flex h-11 w-11 items-center justify-center rounded-xl text-rose-600"
+                      className="mt-2 inline-flex h-11 w-11 items-center justify-center rounded-xl text-err"
                       aria-label="Ürünü sil"
                       onClick={() => void removeProduct(product)}
                     >
@@ -279,111 +395,39 @@ export default function ListDetailScreen() {
             ))}
           </ul>
 
-          {/* Masaüstü: tablo görünümü */}
-          <div className="card hidden md:block">
-            <div className="table-scroll">
-              <table className="w-full text-sm">
-                <thead className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
-                  <tr>
-                    <th className="w-10 px-3 py-3">
-                      <input
-                        type="checkbox"
-                        aria-label="Tümünü seç"
-                        className="h-4 w-4"
-                        checked={selected.length === items.length && items.length > 0}
-                        onChange={(event) => setSelected(event.target.checked ? items.map((item) => item.id) : [])}
-                      />
-                    </th>
-                    <th className="w-16 px-3 py-3">Görsel</th>
-                    <SortHeader label="Ürün" sortKey="name" sort={sort} onSort={setSort} />
-                    <th className="px-3 py-3">Kategori</th>
-                    <SortHeader label="Adet" sortKey="qty" sort={sort} onSort={setSort} align="right" />
-                    <SortHeader label="¥ Birim" sortKey="price_yuan" sort={sort} onSort={setSort} align="right" />
-                    <th className="px-3 py-3 text-right">¥ Satır</th>
-                    <th className="px-3 py-3 text-right">₺ Birim</th>
-                    <th className="px-3 py-3 text-right">$ DDP</th>
-                    <SortHeader label="₺ Satır" sortKey="line_total_yuan_tl" sort={sort} onSort={setSort} align="right" />
-                    <SortHeader label="Durum" sortKey="status" sort={sort} onSort={setSort} />
-                    <th className="w-12 px-3 py-3" />
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {items.map((product) => (
-                    <tr key={product.id} className="hover:bg-slate-50">
-                      <td className="px-3 py-2">
-                        <input
-                          type="checkbox"
-                          className="h-4 w-4"
-                          aria-label={`${product.name} seç`}
-                          checked={selected.includes(product.id)}
-                          onChange={(event) =>
-                            setSelected((current) =>
-                              event.target.checked
-                                ? [...current, product.id]
-                                : current.filter((value) => value !== product.id),
-                            )
-                          }
-                        />
-                      </td>
-                      <td className="px-3 py-2">
-                        <Thumb product={product} onChanged={productState.reload} />
-                      </td>
-                      <td className="max-w-xs px-3 py-2">
-                        <Link to={`/listeler/${listId}/urun/${product.id}`} className="block truncate font-medium">
-                          {product.name}
-                        </Link>
-                        {product.detail && <span className="block truncate text-xs text-slate-500">{product.detail}</span>}
-                      </td>
-                      <td className="px-3 py-2 text-slate-600">{categoryName(product.category_id)}</td>
-                      <td className="px-3 py-2 text-right">{count(product.qty)}</td>
-                      <td className="px-3 py-2 text-right">¥{money(product.price_yuan)}</td>
-                      <td className="px-3 py-2 text-right">¥{money(product.line_total_yuan)}</td>
-                      <td className="px-3 py-2 text-right">₺{money(product.price_yuan_tl)}</td>
-                      <td className="px-3 py-2 text-right">${money(product.price_ddp_usd)}</td>
-                      <td className="px-3 py-2 text-right font-semibold">₺{money(product.line_total_yuan_tl)}</td>
-                      <td className="px-3 py-2">
-                        <StatusMenu
-                          status={product.status}
-                          busy={busyId === product.id}
-                          onChange={(next) => void changeStatus(product, next)}
-                        />
-                      </td>
-                      <td className="px-3 py-2">
-                        <button
-                          type="button"
-                          className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-rose-600"
-                          aria-label="Ürünü sil"
-                          onClick={() => void removeProduct(product)}
-                        >
-                          <Trash2 className="h-4 w-4" aria-hidden />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-                {/* TOPLAM satırı: değerler backend'in MoneyService'inden gelir. */}
-                <tfoot className="border-t-2 border-slate-200 bg-slate-50 font-semibold">
-                  <tr>
-                    <td className="px-3 py-3" colSpan={4}>
-                      TOPLAM
-                    </td>
-                    {/* Hiza: Adet → boş(¥Birim) → ¥Satır toplamı → boş(₺Birim) → $ → ₺Satır toplamı */}
-                    <td className="px-3 py-3 text-right">{count(list.totals.qty)}</td>
-                    <td className="px-3 py-3" />
-                    <td className="px-3 py-3 text-right">¥{money(list.totals.yuan)}</td>
-                    <td className="px-3 py-3" />
-                    <td className="px-3 py-3 text-right">${money(list.totals.ddp_usd)}</td>
-                    <td className="px-3 py-3 text-right">₺{money(list.totals.yuan_tl)}</td>
-                    <td className="px-3 py-3" colSpan={2} />
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-          </div>
+          {/* Masaüstü: tablo görünümü (İE#21 B2 — sütun/yoğunluk/gruplama denetimli). */}
+          <UrunTablosu
+            liste={list}
+            urunler={items}
+            tercih={tercih}
+            secili={selected}
+            mesgulId={busyId}
+            kategoriAdi={categoryName}
+            gorsel={(urun) => <Thumb product={urun} onChanged={productState.reload} />}
+            siralamaBasligi={(anahtar, etiket, saga) => (
+              <SortHeader
+                key={anahtar}
+                label={etiket}
+                sortKey={anahtar}
+                sort={sort}
+                onSort={setSort}
+                align={saga ? 'right' : 'left'}
+                sadeceIcerik
+              />
+            )}
+            eylemler={{
+              onDurum: (urun, hedef) => void changeStatus(urun, hedef),
+              onMiktar: (urun, yeni) => changeQty(urun, yeni),
+              onHazir: (urun) => void toggleHazir(urun),
+              onSil: (urun) => void removeProduct(urun),
+            }}
+            onSecili={setSelected}
+            onAc={(urun) => setCekmeceId(urun.id)}
+          />
 
           {/* Telefonda toplam ayrı kartta durur — tablo dayatılmaz. */}
           <div className="card mt-3 p-4 md:hidden">
-            <div className="text-xs uppercase tracking-wide text-slate-500">Toplam</div>
+            <div className="text-xs uppercase tracking-wide text-ink-3">Toplam</div>
             <dl className="mt-2 space-y-1 text-sm">
               <Row label="Adet" value={count(list.totals.qty)} />
               <Row label="Yuan" value={`¥${money(list.totals.yuan)}`} />
@@ -396,116 +440,33 @@ export default function ListDetailScreen() {
       )}
 
       <ExportHistory listId={listId} refreshKey={list.revision + (list.last_export?.created_at ?? '')} />
+
+      {cekmeceId !== null ? (
+        <UrunCekmecesi
+          urunId={cekmeceId}
+          // D12: çeviri biter bitmez tablo da tazelenir — çekmece güncel,
+          // arkadaki liste eski kalmaz (D11 tek kaynak).
+          onTazele={refresh}
+          onKapat={() => {
+            setCekmeceId(null);
+            // Çekmecede yapılan bir değişiklik (düzenleme ekranına gidip dönüş)
+            // tabloya yansısın diye kapanışta tazeleme yapılır.
+            refresh();
+          }}
+        />
+      ) : null}
     </>
   );
 }
 
 /**
- * İE#10 Blok 4 — paylaşım paneli: link üret/yenile/iptal + hızlı paylaşım (K20:
- * WhatsApp wa.me, e-posta mailto, kopyala). Tam token YALNIZ üretim yanıtında
- * görünür; sayfa yenilenince yalnız önek kalır — link o an kopyalanmalıdır.
- */
-/**
- * İE#10.5 ek (a): tam link yalnız üretim yanıtında gelir; veri tazelemesi ekranı
- * yeniden kurunca kaybolmamalı — oturum ömürlü bellek önbelleğinde tutulur
- * (sayfa YENİLENİRSE kaybolur, bu bilinçli: link kalıcı saklanmaz — K51).
+ * İE#10.5 ek (a): tam paylaşım adresi yalnız üretim yanıtında gelir; veri
+ * tazelemesi ekranı yeniden kurunca kaybolmamalı — oturum ömürlü bellek
+ * önbelleğinde tutulur (sayfa YENİLENİRSE kaybolur, bu bilinçli: adres kalıcı
+ * bir yere yazılmaz — K51). Pencerenin kendisi `PaylasPenceresi`nde (İE#21 B6).
  */
 const shareUrlCache = new Map<number, string>();
 
-function SharePanel({ listId, tokenPrefix, onChanged }: { listId: number; tokenPrefix: string | null; onChanged: () => void }) {
-  const push = useToast((state) => state.push);
-  const [busy, setBusy] = useState(false);
-  const [url, setUrlState] = useState<string | null>(shareUrlCache.get(listId) ?? null);
-  const setUrl = (value: string | null) => {
-    if (value === null) {
-      shareUrlCache.delete(listId);
-    } else {
-      shareUrlCache.set(listId, value);
-    }
-    setUrlState(value);
-  };
-
-  const create = async () => {
-    setBusy(true);
-    try {
-      const result = await shareApi.create(listId);
-      setUrl(result.share_url);
-      // F6: QR için tam adres GEREKİR ama sunucuda saklanmaz (K51). Sekme ömrü kadar
-      // sessionStorage'da tutulur; sekme kapanınca silinir, kalıcı bir yere yazılmaz.
-      sessionStorage.setItem(paylasimAdresiAnahtari(listId), result.share_url);
-      onChanged();
-      push('Paylaşım linki hazır — bu link yalnız şimdi görünür, kopyalayın.');
-    } catch (caught) {
-      push(messageOf(caught), 'error');
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const revoke = async () => {
-    setBusy(true);
-    try {
-      await shareApi.revoke(listId);
-      setUrl(null);
-      onChanged();
-      sessionStorage.removeItem(paylasimAdresiAnahtari(listId));
-      push('Paylaşım linki iptal edildi — eski link artık açılmaz.');
-    } catch (caught) {
-      push(messageOf(caught), 'error');
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const copy = () => {
-    if (url) {
-      void navigator.clipboard.writeText(url).then(() => push('Link kopyalandı.'));
-    }
-  };
-
-  const message = url ? `Sipariş listemiz hazır, buradan inceleyebilirsiniz: ${url}` : '';
-
-  return (
-    <section className="card mb-4 p-4">
-      <h2 className="mb-2 text-sm font-semibold text-slate-700">Paylaşım linki</h2>
-      <ErisimAnahtari listId={listId} />
-      {url ? (
-        <>
-          <p className="break-all rounded-lg bg-slate-50 p-2 font-mono text-xs">{url}</p>
-          <p className="mt-1 text-xs text-amber-700">
-            Bu link yalnız şimdi görünür (güvenlik gereği kaydedilmez) — kopyalamadan sayfadan ayrılmayın.
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <button type="button" className="btn-primary" onClick={copy}>Bağlantıyı kopyala</button>
-            <a className="btn-ghost" href={`https://wa.me/?text=${encodeURIComponent(message)}`} target="_blank" rel="noreferrer">
-              WhatsApp
-            </a>
-            <a className="btn-ghost" href={`mailto:?subject=${encodeURIComponent('Sipariş listesi')}&body=${encodeURIComponent(message)}`}>
-              E-posta
-            </a>
-            <button type="button" className="btn-ghost" disabled={busy} onClick={() => void revoke()}>Linki iptal et</button>
-          </div>
-        </>
-      ) : (
-        <>
-          <p className="text-xs text-slate-500">
-            {tokenPrefix
-              ? `Aktif bir paylaşım linki var (${tokenPrefix}…). Yenilemek eski linki öldürür; iptal etmek sayfayı kapatır.`
-              : 'Firma için girişsiz, salt-okunur bir sayfa linki üretilir. Liste güncellendikçe sayfa da güncel kalır.'}
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <button type="button" className="btn-primary" disabled={busy} onClick={() => void create()}>
-              {tokenPrefix ? 'Linki yenile' : 'Link üret'}
-            </button>
-            {tokenPrefix ? (
-              <button type="button" className="btn-ghost" disabled={busy} onClick={() => void revoke()}>Linki iptal et</button>
-            ) : null}
-          </div>
-        </>
-      )}
-    </section>
-  );
-}
 
 /** İE#10 Blok 1 — export geçmişi: tarih + tür + indir (kayıt snapshot'ından yeniden üretim). */
 function ExportHistory({ listId, refreshKey }: { listId: number; refreshKey: string | number }) {
@@ -515,12 +476,12 @@ function ExportHistory({ listId, refreshKey }: { listId: number; refreshKey: str
 
   return (
     <section className="card mt-4 p-4">
-      <h2 className="mb-2 text-sm font-semibold text-slate-700">Export geçmişi</h2>
-      <ul className="divide-y divide-slate-100 text-sm">
+      <h2 className="mb-2 text-sm font-semibold text-ink-2">Export geçmişi</h2>
+      <ul className="divide-y divide-line-soft text-sm">
         {(state.data ?? []).map((entry) => (
           <li key={entry.id} className="flex items-center justify-between gap-3 py-2">
-            <span className="uppercase text-slate-500">{entry.format}</span>
-            <span className="flex-1 text-slate-600">{dateTime(entry.created_at)}</span>
+            <span className="uppercase text-ink-3">{entry.format}</span>
+            <span className="flex-1 text-ink-2">{dateTime(entry.created_at)}</span>
             <a className="btn-ghost" href={exportsApi.fileUrl(entry.id)}>
               <Download className="h-4 w-4" aria-hidden />
               İndir
@@ -528,7 +489,7 @@ function ExportHistory({ listId, refreshKey }: { listId: number; refreshKey: str
           </li>
         ))}
       </ul>
-      <p className="mt-2 text-xs text-slate-500">
+      <p className="mt-2 text-xs text-ink-3">
         Her indirme, kaydın üretildiği ANDAKİ anlık görüntüyü verir — liste sonradan değiştiyse yeni export alın.
       </p>
     </section>
@@ -538,7 +499,7 @@ function ExportHistory({ listId, refreshKey }: { listId: number; refreshKey: str
 function Row({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
   return (
     <div className="flex justify-between">
-      <dt className="text-slate-500">{label}</dt>
+      <dt className="text-ink-3">{label}</dt>
       <dd className={strong ? 'font-bold' : 'font-medium'}>{value}</dd>
     </div>
   );
@@ -555,16 +516,16 @@ function Thumb({ product, onChanged }: { product: Product; onChanged?: () => voi
   const [retrying, setRetrying] = useState(false);
   const source = product.main_image ?? product.images[0]?.url ?? null;
   if (!source) {
-    return <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-xs text-slate-400">—</span>;
+    return <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-g100 text-xs text-ink-3">—</span>;
   }
 
   if (broken) {
     return (
-      <span className="flex h-14 w-14 shrink-0 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-slate-300 bg-slate-50 text-center">
-        <ImageOff className="h-4 w-4 text-slate-400" aria-hidden />
+      <span className="flex h-14 w-14 shrink-0 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-g300 bg-g50 text-center">
+        <ImageOff className="h-4 w-4 text-ink-3" aria-hidden />
         <button
           type="button"
-          className="text-[10px] font-medium text-brand-600 disabled:opacity-50"
+          className="text-[10px] font-medium text-navy disabled:opacity-50"
           disabled={retrying}
           onClick={() => {
             setRetrying(true);
@@ -594,38 +555,49 @@ function Thumb({ product, onChanged }: { product: Product; onChanged?: () => voi
       alt=""
       loading="lazy"
       onError={() => setBroken(true)}
-      className="h-14 w-14 shrink-0 rounded-xl border border-slate-200 object-cover"
+      className="h-14 w-14 shrink-0 rounded-xl border border-line object-cover"
     />
   );
 }
 
+/**
+ * Sıralama başlığı.
+ *
+ * `sadeceIcerik`: yalnız düğmeyi döner, `<th>` sarmalamaz. Sütunlar artık VERİ
+ * olarak tanımlandığı için (bkz. `UrunTablosu`) hücreyi tablo kendisi sarar;
+ * ikisi birden sarsa iç içe `<th>` çıkardı ve tablo erişilebilirliği bozulurdu.
+ */
 function SortHeader({
   label,
   sortKey,
   sort,
   onSort,
   align = 'left',
+  sadeceIcerik = false,
 }: {
   label: string;
   sortKey: SortKey;
   sort: { key: SortKey; asc: boolean };
   onSort: (value: { key: SortKey; asc: boolean }) => void;
   align?: 'left' | 'right';
+  sadeceIcerik?: boolean;
 }) {
   const active = sort.key === sortKey;
-  return (
-    <th className={`px-3 py-3 ${align === 'right' ? 'text-right' : 'text-left'}`}>
-      <button
-        type="button"
-        className="inline-flex items-center gap-1 uppercase tracking-wide"
-        onClick={() => onSort({ key: sortKey, asc: active ? !sort.asc : true })}
-        aria-sort={active ? (sort.asc ? 'ascending' : 'descending') : 'none'}
-      >
-        {label}
-        {active && <span aria-hidden>{sort.asc ? '↑' : '↓'}</span>}
-      </button>
-    </th>
+  const dugme = (
+    <button
+      type="button"
+      className="inline-flex items-center gap-1 uppercase tracking-wide"
+      onClick={() => onSort({ key: sortKey, asc: active ? !sort.asc : true })}
+      aria-sort={active ? (sort.asc ? 'ascending' : 'descending') : 'none'}
+    >
+      {label}
+      {active && <span aria-hidden>{sort.asc ? '↑' : '↓'}</span>}
+    </button>
   );
+
+  if (sadeceIcerik) return dugme;
+
+  return <th className={`px-3 py-3 ${align === 'right' ? 'text-right' : 'text-left'}`}>{dugme}</th>;
 }
 
 /**
@@ -680,14 +652,14 @@ function ErisimAnahtari({ listId }: { listId: number }) {
     }
   };
 
-  if (durum.loading) return <p className="mb-3 text-xs text-slate-500">Erişim anahtarı okunuyor…</p>;
+  if (durum.loading) return <p className="mb-3 text-xs text-ink-3">Erişim anahtarı okunuyor…</p>;
   if (durum.error) return <ErrorNote message={durum.error} onRetry={durum.reload} />;
 
   return (
-    <div className="mb-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+    <div className="mb-3 rounded-xl border border-line bg-g50 p-3">
       <div className="flex flex-wrap items-center gap-3">
-        <span className="text-xs font-semibold text-slate-600">Erişim anahtarı</span>
-        <code className="rounded-lg border border-slate-200 bg-white px-3 py-1 font-mono text-base font-bold tracking-[0.3em]">
+        <span className="text-xs font-semibold text-ink-2">Erişim anahtarı</span>
+        <code className="rounded-lg border border-line bg-surface px-3 py-1 font-mono text-base font-bold tracking-[0.3em]">
           {gecerliAcik ? gecerliAnahtar : '—'}
         </code>
         <button
@@ -704,7 +676,7 @@ function ErisimAnahtari({ listId }: { listId: number }) {
         <button type="button" className="btn-ghost !min-h-8 !px-3 !text-xs" disabled={busy} onClick={() => void yenile()}>
           Yenile
         </button>
-        <label className="ml-auto flex items-center gap-2 text-xs text-slate-600">
+        <label className="ml-auto flex items-center gap-2 text-xs text-ink-2">
           <input
             type="checkbox"
             checked={gecerliAcik}
@@ -714,7 +686,7 @@ function ErisimAnahtari({ listId }: { listId: number }) {
           Anahtar sorulsun
         </label>
       </div>
-      <p className="mt-2 text-xs text-amber-700">
+      <p className="mt-2 text-xs text-warn">
         Anahtarı <strong>linkten ayrı bir kanaldan</strong> gönderin (ör. link e-postayla, anahtar WhatsApp'tan) —
         ikisi aynı yerden giderse koruma anlamsız kalır. Yenilemek eski anahtarı anında geçersiz kılar.
       </p>

@@ -12,6 +12,7 @@ import type {
   SystemStatus,
   Trash,
   User,
+  UrunCekmecesiVerisi,
   Visibility,
 } from './types';
 
@@ -72,6 +73,12 @@ export const products = {
   create: (listId: number, body: Record<string, unknown>) =>
     api.post<Product>(`/api/lists/${listId}/products`, body),
   update: (id: number, body: Record<string, unknown>) => api.patch<Product>(`/api/products/${id}`, body),
+  /** İE#21 B3: ürün çekmecesi — ürün + ilan + kademe + skor TEK istekte. */
+  cekmece: (id: number, signal?: AbortSignal) =>
+    api.get<UrunCekmecesiVerisi>(`/api/products/${id}/cekmece`, { signal }),
+  /** C8 HAZIR kapısı: eksik varsa sunucu 422 ile reddeder (İE#21 B2). */
+  setHazir: (id: number, hazir: boolean) =>
+    api.patch<{ hazir: boolean; eksikler: string[] }>(`/api/products/${id}/hazir`, { hazir }),
   setStatus: (id: number, status: ProductStatus) =>
     api.patch<Product>(`/api/products/${id}/status`, { status }),
   remove: (id: number) => api.delete<void>(`/api/products/${id}`),
@@ -103,6 +110,110 @@ export const exports = {
     ),
   fileUrl: (exportId: number) => `/api/exports/${exportId}/file`,
 };
+
+/** İE#20 C4 — Ayarlar > Çeviri. API anahtarı ASLA dönmez; yalnız maskeli önizleme. */
+export interface CeviriAyarlariOzeti {
+  saglayici: string;
+  /** İstekte KULLANILAN model (ayar boşsa sağlayıcının varsayılanı). */
+  model: string;
+  /** Ayarda YAZAN değer — boşsa panel gri yer tutucu gösterir (D1). */
+  model_ham: string;
+  /** Ayar boşken etkin olacak ad; yer tutucu metni budur. */
+  varsayilan_model: string;
+  hedef_diller: string[];
+  acik: boolean;
+  anahtar_tanimli: boolean;
+  anahtar_onizleme: string | null;
+  saglayicilar: string[];
+}
+
+export const ceviri = {
+  ayarlar: (signal?: AbortSignal) => api.get<CeviriAyarlariOzeti>('/api/settings/translation', { signal }),
+  ayarlariKaydet: (body: Record<string, unknown>) =>
+    api.put<CeviriAyarlariOzeti>('/api/settings/translation', body),
+  /**
+   * D1: bağlantı testi. YEDEĞE DÜŞMEZ — sağlayıcının hatası (model_not_found,
+   * 401, 429 …) olduğu gibi döner. Yanıt 200'dür; sonucu `basarili` söyler.
+   */
+  baglantiTesti: () =>
+    api.post<{
+      basarili: boolean;
+      saglayici: string;
+      model: string;
+      hata?: string;
+      sure_ms?: number;
+      ornek_yanit?: string;
+    }>('/api/settings/translation/test'),
+
+  /**
+   * D12: toplu çeviriyi bir PARÇA işler ve kalanı söyler.
+   *
+   * Artık "kuyruğa alındı" demiyor: bu istek zaman bütçesi kadar gerçekten
+   * çevirir. Panel `devam_var` true olduğu sürece aynı ucu yeniden çağırır;
+   * sekme kapanırsa kalanlar kuyrukta durur ve bir sonraki tetikte sürer.
+   */
+  topluCevir: (listId?: number) =>
+    api.post<{
+      toplam: number;
+      cevrilen: number;
+      hatali: number;
+      kalan: number;
+      devam_var: boolean;
+      /** İlerleme yoksa SEBEBİ (ör. sağlayıcı yapılandırılmamış); yoksa null. */
+      engel: string | null;
+      mesaj: string;
+    }>('/api/panel/translate-backfill', listId === undefined ? {} : { list_id: listId }),
+
+  /** D12: kaç ürünün üç dili eksik? ("N/M çevrildi" göstergesi bunu okur.) */
+  ceviriIlerlemesi: (listId?: number) =>
+    api.get<{ kalan: number }>(
+      '/api/panel/translate-progress' + (listId === undefined ? '' : `?list_id=${listId}`),
+    ),
+
+  /**
+   * D12: TEK ÜRÜNÜ ŞİMDİ çevirir (ürün kartındaki "Çevir" düğmesi).
+   * Senkrondur: yanıt döndüğünde eksik diller tamamlanmıştır.
+   */
+  urunuCevir: (urunId: number) =>
+    api.post<{
+      urun_id: number;
+      kaynak_dil: string | null;
+      /** İstek anında eksik olan diller. Boşsa ürün zaten tamamdı. */
+      eksikti: string[];
+      cevrilen: string[];
+      /** Hâlâ eksik kalanlar — boş değilse `engel` sebebi söyler. */
+      kalan: string[];
+      zaten_vardi: string[];
+      /** İE#22 B2: tamamlandi | kismen | kuyruga_alindi. */
+      durum: 'tamamlandi' | 'kismen' | 'kuyruga_alindi';
+      engel: string | null;
+    }>(`/api/products/${urunId}/translate`),
+};
+
+/** İE#20 C3 — kuyruk sağlığı. */
+export interface KuyrukDurumuVerisi {
+  kurulu: boolean;
+  mesaj?: string;
+  bekleyen: number;
+  calisan: number;
+  olu: number;
+  en_eski_bekleyen_dakika: number | null;
+  turler: Record<string, number>;
+  /** İE#21 B11 metrikleri — "kuyruk çalışıyor mu" sorusunun sayısal cevabı. */
+  saatlik_biten?: number;
+  saatlik_olen?: number;
+  hata_orani_yuzde?: number;
+  yeniden_denenen?: number;
+  olu_isler: {
+    id: number;
+    tur: string;
+    anahtar: string | null;
+    hata: string | null;
+    deneme: number;
+    yuk?: unknown;
+  }[];
+  uyari: string | null;
+}
 
 export interface InboxItem {
   id: number;
@@ -150,6 +261,25 @@ export const inbox = {
   },
   detail: (id: number) => api.get<InboxDetail>(`/api/inbox/${id}`),
   /** `names`: yalnız kullanıcının "Kullan" dediği çeviri önerileri (K54). */
+  /**
+   * İE#21 B4 — DESTE MODU: tek yakalama, tek hedef, tek geçiş.
+   * Yanıt geri alma bilgisini taşır; çöpe atma geri ALINAMAZ ve bunu söyler.
+   */
+  deste: (id: number, hedef: 'cop' | 'havuz' | 'liste', listId?: number) =>
+    api.post<{
+      hedef: 'cop' | 'havuz' | 'liste';
+      inbox_id: number;
+      liste_id?: number;
+      urun_id?: number | null;
+      geri_alinabilir: boolean;
+    }>('/api/inbox/deste', { id, hedef, ...(listId ? { list_id: listId } : {}) }),
+
+  desteGeriAl: (urunId: number, inboxId: number) =>
+    api.post<{ geri_alindi: boolean; neden?: string }>('/api/inbox/deste/geri-al', {
+      urun_id: urunId,
+      inbox_id: inboxId,
+    }),
+
   assign: (ids: number[], listId: number, names: Record<number, string> = {}) =>
     api.post<{ moved: number; failed: { id: number; error: string }[] }>('/api/inbox/assign', {
       ids,
@@ -192,7 +322,9 @@ export const translate = {
       category?: string;
       attributes?: Record<string, string>;
       variants?: string[];
-      meta: { provider: string; sources: Record<string, string> };
+      /** İE#20 C4/C5: dil → alanlar (TR ve EN aynı istekte üretilir). */
+      ceviriler?: Record<string, { name?: string; category?: string } | undefined>;
+      meta?: { provider?: string; sources?: Record<string, string>; target_langs?: string[] };
     }>('/api/panel/translate-product', urun),
 };
 
@@ -204,10 +336,27 @@ export const share = {
     ),
   revoke: (listId: number) => api.delete<void>(`/api/lists/${listId}/share`),
 
+  /**
+   * İE#21 B6: kanal metni. Şablon SUNUCUDAN gelir (üç dil tek yerde) ve `{link}`
+   * yer tutucusu OLDUĞU GİBİ döner — tam token istek satırına düşmez (K51).
+   */
+  text: (listId: number, lang: 'tr' | 'en' | 'zh') =>
+    api.get<{ dil: string; dil_adi: string; mesaj: string; konu: string }>(
+      `/api/lists/${listId}/share-text?lang=${lang}`,
+    ),
+
   // İE#18 G6 (K62): erişim anahtarı — paylaşım linki artık tek başına yetmez.
   key: (listId: number) => api.get<{ key: string; enabled: boolean }>(`/api/lists/${listId}/share-key`),
   rotateKey: (listId: number) =>
     api.post<{ key: string; enabled: boolean }>(`/api/lists/${listId}/share-key`, {}),
+  /**
+   * İE#21 EK-4 (B7): kilit ekranındaki "Yeni anahtar iste" köprüsünün numarası.
+   * Boş değer düğmeyi kapatır.
+   */
+  updateContact: (phone: string) =>
+    api.put<{ share_contact_phone: string | null }>('/api/settings/share-contact', {
+      share_contact_phone: phone,
+    }),
   toggleKey: (listId: number, enabled: boolean) =>
     api.patch<{ enabled: boolean }>(`/api/lists/${listId}/share-key`, { enabled }),
 };
@@ -221,6 +370,16 @@ export const categories = {
 
 export const settings = {
   read: () => api.get<Settings>('/api/settings'),
+  /**
+   * rc8/K4: panelin dışa verilen adresi. PAROLA TEKRARI ister — açık oturumu
+   * ele geçiren biri tek alanla tüm paylaşım linklerini kendi sunucusuna
+   * yönlendirebilirdi.
+   */
+  updateAppUrl: (appUrl: string, password: string) =>
+    api.put<{ app_url: string; app_url_kanonik: boolean }>('/api/settings/app-url', {
+      app_url: appUrl,
+      password,
+    }),
   /** İE#11: eklenti token'ı — tam değer yalnız üretim yanıtında bir kez. */
   extensionTokenCreate: () =>
     api.post<{ token: string; extension_token_preview: string }>('/api/settings/extension-token'),
@@ -234,9 +393,29 @@ export const settings = {
     }>('/api/settings/rates', body),
   rateHistory: (currency?: string) =>
     api.get<RateHistoryEntry[]>(`/api/settings/rates/history${currency ? `?currency=${currency}` : ''}`),
+  /**
+   * İE#21 B5: TCMB'den güncel kur ÖNERİSİ. KAYDETMEZ — panel formu doldurur,
+   * kullanıcı onaylayınca kaydedilir (K4: kur bir ticari karardır).
+   */
+  suggestRates: (signal?: AbortSignal) =>
+    api.get<{
+      yuan_tl: string;
+      usd_tl: string;
+      kaynak: string;
+      tarih: string | null;
+      mevcut: { yuan_tl: string; usd_tl: string };
+    }>('/api/settings/rates/suggest', { signal }),
 };
 
 export const system = {
+  /** İE#20 C3: kuyruk sağlığı — panel Sistem durumu bölümü. */
+  kuyruk: (signal?: AbortSignal) => api.get<KuyrukDurumuVerisi>('/api/system/queue', { signal }),
+  kuyrukYenidenDene: (id: number) => api.post<{ queued: boolean }>(`/api/system/queue/${id}/retry`),
+  /** İE#21 B11: ölü mektup eylemlerinin kalan ikisi. */
+  kuyrukVazgec: (id: number) => api.post<{ silindi: boolean }>(`/api/system/queue/${id}/discard`),
+  kuyrukDuzelt: (id: number, yuk: Record<string, unknown>) =>
+    api.post<{ duzeltildi: boolean }>(`/api/system/queue/${id}/fix`, { yuk }),
+
   status: () => api.get<SystemStatus>('/api/system/status'),
   /** İzinli durum geçişleri — arayüz kendi kopyasını TUTMAZ (İE#8 §2). */
   stateMachine: () => api.get<StateMachineMap>('/api/system/state-machine'),

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#FFF8F1"/>
+  <circle cx="1120" cy="40" r="280" fill="#FF4D3D" opacity=".18"/>
+  <circle cx="60" cy="620" r="260" fill="#FFB000" opacity=".22"/>
+  <g transform="translate(90 95) scale(.72)">
+    <rect x="16" y="16" width="480" height="480" rx="112" fill="#FF6B00"/>
+    <path d="M104 240 208 180l48 28-106 62z" fill="#FFB000"/>
+    <path d="m408 240-104-60-48 28 106 62z" fill="#FF4D3D"/>
+    <path d="M150 270 256 328l106-58v98c0 18-10 34-25 43l-57 33c-15 9-33 9-48 0l-57-33c-15-9-25-25-25-43z" fill="#1F2530"/>
+    <path d="M170 78h172v64h-52v66h42l-76 82-76-82h42v-66h-52z" fill="#FFFFFF"/>
+  </g>
+  <text x="530" y="270" font-family="DejaVu Sans, Arial, sans-serif" font-size="84" font-weight="700" fill="#1F2530">Tedarik <tspan fill="#FF6B00">App</tspan></text>
+  <text x="535" y="338" font-family="DejaVu Sans, Arial, sans-serif" font-size="28" font-weight="600" letter-spacing="5" fill="#6B7280">AKILLI TEDARİK YÖNETİMİ</text>
+  <text x="535" y="418" font-family="DejaVu Sans, Arial, sans-serif" font-size="25" fill="#1F2530">Keşiften siparişe, tüm ürün verisi tek yerde.</text>
+  <rect x="535" y="468" width="252" height="56" rx="28" fill="#FF6B00"/>
+  <text x="661" y="504" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" font-weight="700" fill="#FFFFFF">TEDARİKAPP</text>
+</svg>

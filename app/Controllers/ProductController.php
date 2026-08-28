@@ -123,6 +123,240 @@ final class ProductController extends ApiController
     }
 
     /**
+     * PATCH /api/products/{id}/hazir — "HAZIR" kalite kapısı (İE#20 C8).
+     *
+     * Kapı SUNUCUDA zorlanır: eksik alanı olan ürün hazır işaretlenemez. Panelin
+     * düğmeyi gizlemesi yeterli değildir — kural yalnız arayüzdeyse, arayüzü
+     * atlayan her istemci (betik, eski panel, elle atılan istek) onu delip geçer.
+     *
+     * Reddedilen istek EKSİKLERİ İSİM İSİM döner: kullanıcı neyi tamamlayacağını
+     * bilmeden "hazır değil" uyarısı almamalı.
+     *
+     * @param array<string, string> $args
+     */
+    public function setHazir(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    {
+        $productId = $this->intArg($args, 'id');
+        $product = $productId === null ? null : $this->products->find($productId);
+        if ($product === null) {
+            return Response::error($response, 'NOT_FOUND', 'Ürün bulunamadı.', 404);
+        }
+
+        $list = $this->lists->find((int) $product['list_id']);
+        if ($list === null) {
+            return Response::error($response, 'NOT_FOUND', 'Ürün bulunamadı.', 404);
+        }
+        if ($this->mutationPolicy->isTerminal($list)) {
+            return $this->listImmutable($response, $list);
+        }
+
+        $hazir = ($this->body($request)['hazir'] ?? true) !== false;
+        $eksikler = \App\Services\Ilan\HazirlikKapisi::eksikler($product);
+
+        if ($hazir && $eksikler !== []) {
+            return Response::error(
+                $response,
+                'VALIDATION',
+                'Bu ürün henüz hazır işaretlenemez: ' . implode(', ', $eksikler) . ' eksik.',
+                422,
+                ['hazir' => implode(', ', $eksikler) . ' tamamlanmalı.'],
+                ['eksikler' => $eksikler],
+            );
+        }
+
+        $now = $this->clock->now();
+        $this->connection->transaction(function () use ($request, $product, $hazir, $now): void {
+            $statement = $this->connection->pdo()->prepare(
+                'UPDATE products SET hazir = :hazir, hazir_at = :hazir_at, updated_at = :updated_at WHERE id = :id',
+            );
+            $zaman = \App\Core\Dates::toStorage($now);
+            $statement->execute([
+                'hazir' => $hazir ? 1 : 0,
+                'hazir_at' => $hazir ? $zaman : null,
+                'updated_at' => $zaman,
+                'id' => (int) $product['id'],
+            ]);
+
+            $this->log(
+                $request,
+                $hazir ? 'product_ready' : 'product_unready',
+                (int) $product['id'],
+                (string) $product['name'],
+            );
+        });
+
+        return Response::success($response, ['hazir' => $hazir, 'eksikler' => $eksikler]);
+    }
+
+    /**
+     * GET /api/products/{id}/cekmece — ÜRÜN ÇEKMECESİ (İE#21 B3).
+     *
+     * Tek istekte ürünün TAM hikâyesi: ürün alanları, ilan sinyalleri, fiyat
+     * kademeleri, yorum özeti ve skor. Çekmece bir tıkla açıldığı için birden
+     * fazla tur kabul edilemezdi; 300 satırlık bir listede her tık üç istek
+     * demek, çekmeceyi kullanılmaz kılardı.
+     *
+     * VERİ YOKSA "—", uydurma YOK (K67): ilan kaydı olmayan (elle girilmiş) ürün
+     * `ilan: null` döner; sinyali olmayan alan NULL kalır. Yurt içi kıyas için
+     * bugün bir veri kaynağı YOKTUR — alan `null` gelir ve arayüz bunu "veri yok"
+     * diye yazar; "yakında" gibi bir vaat verilmez (C1 kapsam sınırı).
+     *
+     * @param array<string, string> $args
+     */
+    public function cekmece(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    {
+        $productId = $this->intArg($args, 'id');
+        $product = $productId === null ? null : $this->products->find($productId);
+        if ($product === null) {
+            return Response::error($response, 'NOT_FOUND', 'Ürün bulunamadı.', 404);
+        }
+
+        $list = $this->lists->find((int) $product['list_id']);
+        if ($list === null) {
+            return Response::error($response, 'NOT_FOUND', 'Ürün bulunamadı.', 404);
+        }
+
+        $ilan = $this->ilanSatiri((int) $product['id']);
+
+        return Response::success($response, [
+            'urun' => $this->presenter->product($product, $list),
+            'ilan' => $ilan === null ? null : $this->ilanGorunumu($ilan),
+            'kademeler' => $ilan === null ? [] : $this->kademeler((int) $ilan['id']),
+            'yorum_ozeti' => $ilan === null ? null : $this->yorumOzeti($ilan),
+            // Yurt içi kıyas: veri kaynağı yok (V3-C kapsamı). Sessiz boş dizi
+            // yerine açık null — arayüz "veri yok" diyebilsin.
+            'yurtici_kiyas' => null,
+        ]);
+    }
+
+    /** @return array<string, mixed>|null */
+    private function ilanSatiri(int $urunId): ?array
+    {
+        $statement = $this->connection->pdo()->prepare(
+            'SELECT * FROM listings WHERE product_id = :id ORDER BY id LIMIT 1',
+        );
+        $statement->execute(['id' => $urunId]);
+        $satir = $statement->fetch();
+
+        return is_array($satir) ? $satir : null;
+    }
+
+    /**
+     * @param array<string, mixed> $ilan
+     *
+     * @return array<string, mixed>
+     */
+    private function ilanGorunumu(array $ilan): array
+    {
+        $skor = $ilan['skor'] === null ? null : (int) $ilan['skor'];
+        $bilesenler = is_string($ilan['skor_bilesenleri'] ?? null)
+            ? json_decode((string) $ilan['skor_bilesenleri'], true)
+            : null;
+
+        return [
+            'platform' => $this->nullableStr($ilan['platform_kod'] ?? null),
+            'external_id' => $this->nullableStr($ilan['external_id'] ?? null),
+            'url' => $this->nullableStr($ilan['url'] ?? null),
+            'baslik_orijinal' => $this->nullableStr($ilan['baslik_orijinal'] ?? null),
+            'satici_ad' => $this->nullableStr($ilan['satici_ad'] ?? null),
+            'satici_url' => $this->nullableStr($ilan['satici_url'] ?? null),
+            'satici_yil' => $this->nullableSayi($ilan['satici_yil'] ?? null),
+            'satici_puan' => $this->nullableStr($ilan['satici_puan'] ?? null),
+            'yanit_orani' => $this->nullableStr($ilan['yanit_orani'] ?? null),
+            'satis_adedi' => $this->nullableSayi($ilan['satis_adedi'] ?? null),
+            'satis_toplam' => $this->nullableSayi($ilan['satis_toplam'] ?? null),
+            'moq' => $this->nullableSayi($ilan['moq'] ?? null),
+            'birim_fiyat' => $this->nullableStr($ilan['birim_fiyat'] ?? null),
+            'para_birimi' => $this->nullableStr($ilan['para_birimi'] ?? null),
+            'skor' => $skor,
+            'bant' => \App\Services\Ilan\SkorHesaplayici::bant($skor),
+            'skor_bilesenleri' => is_array($bilesenler) ? $bilesenler : null,
+        ];
+    }
+
+    /** @return list<array{min_adet: int, birim_fiyat: string}> */
+    private function kademeler(int $ilanId): array
+    {
+        $statement = $this->connection->pdo()->prepare(
+            'SELECT min_adet, birim_fiyat FROM listing_price_tiers WHERE listing_id = :id ORDER BY min_adet',
+        );
+        $statement->execute(['id' => $ilanId]);
+
+        $kademeler = [];
+        /** @var array<string, mixed> $satir */
+        foreach ($statement->fetchAll() as $satir) {
+            $kademeler[] = [
+                'min_adet' => (int) $satir['min_adet'],
+                'birim_fiyat' => (string) $satir['birim_fiyat'],
+            ];
+        }
+
+        return $kademeler;
+    }
+
+    /**
+     * @param array<string, mixed> $ilan
+     *
+     * @return array{adet: int|null, puan: string|null}|null
+     */
+    private function yorumOzeti(array $ilan): ?array
+    {
+        $adet = $this->nullableSayi($ilan['degerlendirme_adedi'] ?? null);
+        $puan = $this->nullableStr($ilan['degerlendirme_puani'] ?? null);
+
+        // İkisi de yoksa "0 yorum" demek yerine hiç özet göstermeyiz.
+        return $adet === null && $puan === null ? null : ['adet' => $adet, 'puan' => $puan];
+    }
+
+    private function nullableStr(mixed $deger): ?string
+    {
+        if ($deger === null) {
+            return null;
+        }
+        $metin = trim((string) $deger);
+
+        return $metin === '' ? null : $metin;
+    }
+
+    private function nullableSayi(mixed $deger): ?int
+    {
+        return $deger === null || !is_numeric($deger) ? null : (int) $deger;
+    }
+
+    /**
+     * GET /api/lists/{id}/hazirlik — listenin hazırlık özeti (C8).
+     *
+     * @param array<string, string> $args
+     */
+    public function listeHazirligi(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    {
+        $listId = $this->intArg($args, 'id');
+        $list = $listId === null ? null : $this->lists->find($listId);
+        if ($list === null) {
+            return Response::error($response, 'NOT_FOUND', 'Liste bulunamadı.', 404);
+        }
+
+        $urunler = $this->products->forList((int) $list['id']);
+        $ozet = \App\Services\Ilan\HazirlikKapisi::listeTamamlanabilirMi($urunler);
+
+        $eksikDokumu = [];
+        foreach ($urunler as $urun) {
+            foreach (\App\Services\Ilan\HazirlikKapisi::eksikler($urun) as $eksik) {
+                $eksikDokumu[$eksik] = ($eksikDokumu[$eksik] ?? 0) + 1;
+            }
+        }
+        arsort($eksikDokumu);
+
+        return Response::success($response, [
+            'urun' => count($urunler),
+            'hazir_olmayan' => $ozet['hazir_olmayan'],
+            'tamamlanabilir' => $ozet['tamamlanabilir'],
+            'neden' => $ozet['neden'],
+            'eksik_dokumu' => $eksikDokumu,
+        ]);
+    }
+
+    /**
      * GET /api/products/{id} — TEK ÜRÜN (İE#19 E11).
      *
      * Düzenleme ekranı ürünü, listenin TÜM ürünlerini çekip içinden aramakla

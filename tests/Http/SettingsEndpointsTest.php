@@ -35,6 +35,69 @@ final class SettingsEndpointsTest extends AuthTestCase
 
     // ─────────────── Ayarlar ───────────────
 
+    // ─────────────── Uygulama adresi (rc8/K4 · F-08) ───────────────
+
+    /**
+     * Alan panelde GÖRÜNÜR: değer + kanonik bayrağı. Bayrak false ise ekran
+     * kırmızı şerit basar; kurulumdan APP_URL'siz çıkmış bir sistem paylaşım
+     * üretemez ve kullanıcının bunu ayarlar ekranında görmesi gerekir.
+     */
+    public function testUYGULAMAADRESIAYARLARDAGORUNUR(): void
+    {
+        $data = $this->json($this->call('GET', '/api/settings'))['data'];
+
+        self::assertArrayHasKey('app_url', $data);
+        self::assertArrayHasKey('app_url_kanonik', $data);
+        self::assertFalse($data['app_url_kanonik'], 'Test kurulumunda APP_URL yok — bayrak false olmalı.');
+    }
+
+    public function testUYGULAMAADRESIPAROLAILEKAYDEDILIR(): void
+    {
+        $yanit = $this->write('PUT', '/api/settings/app-url', [
+            'app_url' => 'https://tedarik.firma.com/',
+            'password' => 'cok-gizli-sifre',
+        ]);
+
+        self::assertSame(200, $yanit->getStatusCode(), (string) $yanit->getBody());
+        // Kanonikleştirme kaydedilen değere de uygulanır: sondaki `/` düşer.
+        self::assertSame('https://tedarik.firma.com', $this->json($yanit)['data']['app_url']);
+
+        $data = $this->json($this->call('GET', '/api/settings'))['data'];
+        self::assertSame('https://tedarik.firma.com', $data['app_url']);
+        self::assertTrue($data['app_url_kanonik']);
+    }
+
+    public function testPAROLASIZVEYAYANLISPAROLAYLAADRESDEGISMEZ(): void
+    {
+        foreach (['', 'yanlis-parola'] as $parola) {
+            $yanit = $this->write('PUT', '/api/settings/app-url', [
+                'app_url' => 'https://saldirgan.example',
+                'password' => $parola,
+            ]);
+
+            self::assertSame(422, $yanit->getStatusCode());
+            self::assertArrayHasKey('password', $this->json($yanit)['error']['fields']);
+        }
+
+        self::assertNull(
+            $this->json($this->call('GET', '/api/settings'))['data']['app_url'],
+            'Parola doğrulanmadan adres YAZILMAMALI.',
+        );
+    }
+
+    public function testKANONIKOLMAYANADRESREDDEDILIR(): void
+    {
+        foreach (['https://firma.com/panel', 'https://kullanici:p@firma.com', 'firma.com', ''] as $bozuk) {
+            $yanit = $this->write('PUT', '/api/settings/app-url', [
+                'app_url' => $bozuk,
+                'password' => 'cok-gizli-sifre',
+            ]);
+
+            self::assertSame(422, $yanit->getStatusCode(), $bozuk . ' kabul edilmemeli.');
+            self::assertArrayHasKey('app_url', $this->json($yanit)['error']['fields']);
+        }
+    }
+
     public function testAyarlarOkunur(): void
     {
         $data = $this->json($this->call('GET', '/api/settings'))['data'];

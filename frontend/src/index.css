@@ -1,25 +1,90 @@
 @import 'tailwindcss';
+@import './styles/tokens.css';
 
 /*
- * Tilbe Home görsel dili (docs/09 §1): sade, yüksek kontrast, mobile-first.
- * Dokunma hedefleri ≥44px; kritik aksiyonlar başparmak bölgesinde.
+ * TASARIM SİSTEMİ (İE#16 Dilim 1 — V3 kanonu §4).
+ *
+ * TEK KAYNAK `styles/tokens.css`tir (docs/v3/prototip/tasarim-tokenlari.css'in
+ * birebir kopyası). Buradaki `@theme` bloğu Tailwind yardımcı sınıflarını O
+ * token'lara BAĞLAR: `bg-surface` → `var(--surface)`. Böylece koyu tema tek
+ * yerden çalışır — `[data-theme="dark"]` token'ları değiştirir, bileşenlerin
+ * CSS'i tekrar yazılmaz.
+ *
+ * KURAL: bileşende `bg-white`, `text-slate-500`, `border-slate-200` gibi sabit
+ * değer YASAKTIR (D1.1). Yerine anlam taşıyan adlar kullanılır:
+ *   yüzey:  bg-app · bg-surface · bg-g50/g100/g200
+ *   metin:  text-ink · text-ink-2 · text-ink-3
+ *   kenar:  border-line · border-line-soft
+ *   marka:  bg-navy · text-gold · bg-blue · bg-blue-soft
+ *   anlam:  ok · warn · err · info (+ -soft arka planları)
  */
 @theme {
-  --color-brand-50: #eef4ff;
-  --color-brand-100: #dbe6ff;
-  --color-brand-500: #2563eb;
-  --color-brand-600: #1d4ed8;
-  --color-brand-700: #1e40af;
+  /* Marka */
+  --color-navy: var(--navy);
+  --color-navy-2: var(--navy-2);
+  --color-navy-3: var(--navy-3);
+  --color-gold: var(--gold);
+  --color-blue: var(--blue);
+  --color-blue-soft: var(--blue-soft);
 
-  /*
-   * Kurumsal palet (İE#13 EK-B + Blok F — ONAYLI): lacivert taban, altın vurgu.
-   * Giriş ekranı, şablon v2 çıktıları ve paylaşım sayfası AYNI değişkenleri kullanır;
-   * ton bir yerde değişirse üç yüzeyde birden değişsin diye tek kaynakta durur.
-   */
-  --color-lacivert-700: #16336e;
-  --color-lacivert-900: #0f2557;
-  --color-altin-400: #e0b640;
-  --color-altin-500: #d4a017;
+  /* Nötr ölçek */
+  --color-g50: var(--g50);
+  --color-g100: var(--g100);
+  --color-g200: var(--g200);
+  --color-g300: var(--g300);
+  --color-g400: var(--g400);
+  --color-g500: var(--g500);
+  --color-g700: var(--g700);
+  --color-g900: var(--g900);
+
+  /* Yüzeyler ve kenarlar */
+  --color-app: var(--bg);
+  --color-surface: var(--surface);
+  --color-line: var(--line);
+  --color-line-soft: var(--line-soft);
+
+  /* Metin */
+  --color-ink: var(--text);
+  --color-ink-2: var(--text-2);
+  --color-ink-3: var(--text-3);
+
+  /* Anlam renkleri — renk TEK BAŞINA anlam taşımaz, ikon+metinle birlikte kullanılır */
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-bg);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-bg);
+  --color-err: var(--err);
+  --color-err-soft: var(--err-bg);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-bg);
+
+  /* Platform rozetleri (varsayılan; gerçek değer platform kaydından gelir) */
+  --color-plat-1688: var(--plat-1688-fg);
+  --color-plat-1688-soft: var(--plat-1688-bg);
+  --color-plat-alibaba: var(--plat-alibaba-fg);
+  --color-plat-alibaba-soft: var(--plat-alibaba-bg);
+  --color-plat-amazon: var(--plat-amazon-fg);
+  --color-plat-amazon-soft: var(--plat-amazon-bg);
+
+  /* Yarıçap · gölge · yazı ölçeği — hepsi token'dan */
+  --radius-sm: var(--r-sm);
+  --radius-DEFAULT: var(--r);
+  --radius-lg: var(--r-lg);
+
+  --shadow-1: var(--sh-1);
+  --shadow-2: var(--sh-2);
+  --shadow-3: var(--sh-3);
+
+  --text-xs: var(--fs-xs);
+  --text-sm: var(--fs-sm);
+  --text-md: var(--fs-md);
+  --text-base: var(--fs-base);
+  --text-lg: var(--fs-lg);
+  --text-xl: var(--fs-xl);
+  --text-2xl: var(--fs-2xl);
+
+  --font-sans: var(--font);
+  --font-cjk: var(--font-cjk);
 }
 
 @layer base {
@@ -28,51 +93,90 @@
   }
 
   body {
-    @apply bg-slate-50 text-slate-900 antialiased;
-    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    -webkit-font-smoothing: antialiased;
   }
 
-  /* Klavye kullanıcısı odağı her yerde görsün (erişilebilirlik temeli). */
+  /* Sayılar hizalı okunur (kanon §4: tabular rakam). */
+  table,
+  .sayi {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Çince metin CJK yığınıyla dizilir — Latin metin Inter'de kalır. */
+  .zh,
+  [lang='zh'] {
+    font-family: var(--font-cjk);
+  }
+
+  /* Klavye kullanıcısı odağı her yerde görür (token dosyasındaki kuralın eşi). */
   :focus-visible {
-    @apply outline-2 outline-offset-2 outline-brand-500;
+    outline: 2px solid var(--blue);
+    outline-offset: 2px;
+  }
+
+  /* Hareketi azalt tercihi: anlam taşıyan geçişler bile kısalır. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
 
 /*
  * `btn` bir "utility" olarak tanımlanır: Tailwind v4'te yalnızca utility'ler
- * @apply ile başka sınıfların içine alınabilir; @layer components içindeki bir
- * sınıfı @apply etmek derleme hatası verir.
+ * @apply ile başka sınıfların içine alınabilir.
  */
 @utility btn {
-  @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold
+  @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 text-base font-semibold
          transition-colors disabled:cursor-not-allowed disabled:opacity-50;
 }
 
 @layer components {
+  /* ── Düğmeler: birincil · ikincil · ghost · tehlikeli (D1.3) ── */
   .btn-primary {
-    @apply btn bg-brand-600 text-white hover:bg-brand-700;
+    @apply btn bg-navy text-white hover:bg-navy-2;
+  }
+  .btn-secondary {
+    @apply btn border border-line bg-surface text-ink hover:bg-g50;
   }
   .btn-ghost {
-    @apply btn border border-slate-200 bg-white text-slate-700 hover:bg-slate-50;
+    @apply btn border border-line bg-surface text-ink-2 hover:bg-g50 hover:text-ink;
   }
   .btn-danger {
-    @apply btn bg-rose-600 text-white hover:bg-rose-700;
+    @apply btn bg-err text-white hover:opacity-90;
+  }
+  .btn-sm {
+    @apply min-h-8 rounded-lg px-3 text-sm;
   }
 
+  /* ── Form ── */
   .field-label {
-    @apply mb-1 block text-sm font-semibold text-slate-700;
+    @apply mb-1 block text-md font-semibold text-ink-2;
   }
   .field-input {
-    @apply min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-base
-           placeholder:text-slate-400 focus:border-brand-500 focus:outline-none;
+    @apply min-h-11 w-full rounded-xl border border-line bg-surface px-3 text-base text-ink
+           placeholder:text-ink-3 focus:border-blue focus:outline-none;
   }
 
+  /* ── Yüzeyler ── */
   .card {
-    @apply rounded-2xl border border-slate-200 bg-white;
+    @apply rounded-lg border border-line bg-surface shadow-1;
   }
 
   .badge {
     @apply inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset;
+  }
+
+  /* Çip: seçili filtre — çarpıyla çıkarılabilir (Keşif havuzu, Dilim 4). */
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-line bg-surface
+           px-2.5 py-1 text-sm font-medium text-ink-2;
   }
 
   /* Geniş tablolar telefonda sayfayı yatay kaydırmaz, kendi içinde kayar. */

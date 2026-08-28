@@ -211,6 +211,23 @@ final class MaintenanceTasks
                 $purgedLists++;
             }
 
+            // rc8-01 (F-14): BAKIM YALNIZ SAYAR, ONARMAZ.
+            //
+            // `.tmp` artıkları ve kırık `main_image` kayıtları burada RAPORLANIR;
+            // silme/yeniden indirme `bin/medya-envanter.php --onar` ile ELLE
+            // tetiklenir. Gerekçe bilinçlidir: bir bakım görevinin gece yarısı
+            // sessizce dosya silmesi, geri alınamaz bir karardır ve operatör
+            // ertesi sabah neyin kaybolduğunu bilemez.
+            $tmpSayisi = count(glob(
+                $this->basePath . '/' . trim($this->config->get('MEDIA_PATH', 'public/media'), '/') . '/*.tmp',
+            ) ?: []);
+            if ($tmpSayisi > 0) {
+                $uyarilar[] = sprintf(
+                    '%d adet .tmp medya artığı var — envanter: php bin/medya-envanter.php (onarım: --onar)',
+                    $tmpSayisi,
+                );
+            }
+
             return [$purgedLists, $purgedProducts, count($janitor->deleteUnreferenced($mediaReferences)), count($janitor->purgeOrphans())];
         } catch (\Throwable $exception) {
             $uyarilar[] = 'çöp kutusu/medya: ' . $exception->getMessage();

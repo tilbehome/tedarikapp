@@ -126,7 +126,8 @@ final class ProductDetails
         }
 
         $parcalar = [];
-        foreach (ProductFacts::build($product, $values) as [$tr, , $deger]) {
+        // Detay satırı PANEL/BELGE tarafındadır ve Türkçedir; etiket dili de öyle.
+        foreach (ProductFacts::build($product, $values) as [$tr, $deger]) {
             if ($deger === null || in_array($tr, self::DETAY_DISI, true)) {
                 continue;
             }

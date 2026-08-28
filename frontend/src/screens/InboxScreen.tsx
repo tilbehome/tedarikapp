@@ -1,11 +1,14 @@
+import EylemDugmesi from '../components/EylemDugmesi';
 import { useState } from 'react';
 import { inbox as inboxApi, lists as listsApi } from '../api/endpoints';
 import { useAsync, messageOf } from '../lib/useAsync';
+import { useUrlDurumu } from '../lib/useUrlDurumu';
 import { count } from '../lib/format';
 import { EmptyState, ErrorNote, PageHeader, Skeleton } from '../components/ui';
 import { useToast } from '../components/Toast';
 import InboxRow from './inbox/InboxRow';
 import InboxDetailDrawer from './inbox/InboxDetailDrawer';
+import DesteModu, { type DesteHedefi, type DesteSonucu } from './inbox/DesteModu';
 
 /**
  * E3 — Gelen Kutusu v2 (İE#13 Blok B).
@@ -19,17 +22,23 @@ import InboxDetailDrawer from './inbox/InboxDetailDrawer';
 export default function InboxScreen() {
   const push = useToast((state) => state.push);
 
-  const [q, setQ] = useState('');
-  const [aramaMetni, setAramaMetni] = useState('');
-  const [platform, setPlatform] = useState('');
-  const [from, setFrom] = useState('');
-  const [to, setTo] = useState('');
-  const [page, setPage] = useState(1);
+  // İE#16 D1.4: süzgeçler ADRESTE. `aramaMetni` yalnız yazarken tutulan ARA
+  // durumdur (her harfte istek atılmasın diye); "Ara" denince URL'e yazılır.
+  const [durum, setDurum] = useUrlDurumu({ q: '', platform: '', from: '', to: '', page: 1 });
+  const { q, platform, from, to, page } = durum;
+  const [aramaMetni, setAramaMetni] = useState(durum.q);
+  const setQ = (deger: string) => setDurum({ q: deger });
+  const setPlatform = (deger: string) => setDurum({ platform: deger });
+  const setFrom = (deger: string) => setDurum({ from: deger });
+  const setTo = (deger: string) => setDurum({ to: deger });
+  const setPage = (deger: number) => setDurum({ page: deger });
 
   const state = useAsync(() => inboxApi.queue({ q, platform, from, to, page }), [q, platform, from, to, page]);
   const listsState = useAsync(() => listsApi.all({ visibility: 'active' }), []);
 
   const [selected, setSelected] = useState<number[]>([]);
+  // İE#21 B4: deste modu — 40 ürünü 2 dakikada elemek için tek kart, tek tuş.
+  const [desteAcik, setDesteAcik] = useState(false);
   const [adlar, setAdlar] = useState<Record<number, string>>({});
   const [targetList, setTargetList] = useState<number | '' | 'YENI'>('');
   const [yeniListeAdi, setYeniListeAdi] = useState('');
@@ -37,6 +46,47 @@ export default function InboxScreen() {
   const [busy, setBusy] = useState(false);
 
   const items = state.data?.data ?? [];
+
+  /**
+   * Deste modunun tek eylemi. Hedef liste seçili değilse "Listeye" tuşu kapalıdır
+   * (bileşen bunu `hedefListeAdi` ile bilir) — sessizce yanlış listeye taşımaktansa
+   * düğmeyi kapatmak dürüsttür.
+   */
+  const desteEylemi = async (hedef: DesteHedefi, kart: { id: number }): Promise<DesteSonucu | null> => {
+    try {
+      const sonuc = await inboxApi.deste(
+        kart.id,
+        hedef,
+        hedef === 'liste' && typeof targetList === 'number' ? targetList : undefined,
+      );
+      state.reload();
+      push(
+        hedef === 'cop' ? 'Yakalama silindi.' : hedef === 'havuz' ? 'Havuza alındı.' : 'Listeye taşındı.',
+      );
+
+      return {
+        inbox_id: sonuc.inbox_id,
+        urun_id: sonuc.urun_id ?? null,
+        hedef: sonuc.hedef,
+        geri_alinabilir: sonuc.geri_alinabilir,
+      };
+    } catch (hata) {
+      push(messageOf(hata), 'error');
+
+      return null;
+    }
+  };
+
+  const desteGeriAl = async (sonuc: DesteSonucu) => {
+    if (sonuc.urun_id === null) return;
+    try {
+      const cevap = await inboxApi.desteGeriAl(sonuc.urun_id, sonuc.inbox_id);
+      state.reload();
+      push(cevap.geri_alindi ? 'Geri alındı.' : (cevap.neden ?? 'Zaten geri alınmış.'));
+    } catch (hata) {
+      push(messageOf(hata), 'error');
+    }
+  };
   const meta = state.data?.meta ?? {};
   const total = Number(meta.total ?? items.length);
   const perPage = Number(meta.per_page ?? 20);
@@ -145,7 +195,7 @@ export default function InboxScreen() {
       <div className="card mb-4 space-y-3 p-3">
         <div className="flex flex-wrap items-end gap-2">
           <form className="flex items-end gap-2" onSubmit={araNoktala}>
-            <label className="text-xs text-slate-500">
+            <label className="text-xs text-ink-3">
               Ara (başlıkta)
               <input
                 type="search"
@@ -160,7 +210,7 @@ export default function InboxScreen() {
             </button>
           </form>
 
-          <label className="text-xs text-slate-500">
+          <label className="text-xs text-ink-3">
             Platform
             <select
               className="field-input mt-1 w-36"
@@ -179,7 +229,7 @@ export default function InboxScreen() {
             </select>
           </label>
 
-          <label className="text-xs text-slate-500">
+          <label className="text-xs text-ink-3">
             Başlangıç
             <input
               type="date"
@@ -191,7 +241,7 @@ export default function InboxScreen() {
               }}
             />
           </label>
-          <label className="text-xs text-slate-500">
+          <label className="text-xs text-ink-3">
             Bitiş
             <input
               type="date"
@@ -211,8 +261,8 @@ export default function InboxScreen() {
           ) : null}
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3 text-sm">
-          <label className="flex items-center gap-2 text-slate-600">
+        <div className="flex flex-wrap items-center gap-2 border-t border-line-soft pt-3 text-sm">
+          <label className="flex items-center gap-2 text-ink-2">
             <input
               type="checkbox"
               checked={items.length > 0 && selected.length === items.length}
@@ -222,7 +272,7 @@ export default function InboxScreen() {
             Tümünü seç
           </label>
 
-          <span className="text-slate-600">Hedef liste:</span>
+          <span className="text-ink-2">Hedef liste:</span>
           <select
             aria-label="Hedef liste"
             className="field-input max-w-56"
@@ -251,26 +301,50 @@ export default function InboxScreen() {
             />
           ) : null}
 
-          <button
-            type="button"
+          {/* C10/B11: toplu eylemler de meşgul durumunu düğmenin ÜSTÜNDE gösterir;
+              çift tık ikinci istek üretmez (EylemDugmesi senkron kilit tutar). */}
+          <EylemDugmesi
             className="btn-primary"
+            mesgulEtiketi="Taşınıyor"
             disabled={busy || selected.length === 0}
-            onClick={() => void assign(selected)}
+            onEylem={() => assign(selected)}
           >
             Seçilenleri taşı ({selected.length})
-          </button>
-          <button
-            type="button"
-            className="btn-ghost text-red-600"
+          </EylemDugmesi>
+          <EylemDugmesi
+            className="btn-ghost text-err"
+            mesgulEtiketi="Siliniyor"
             disabled={busy || selected.length === 0}
-            onClick={() => void remove(selected)}
+            onEylem={() => remove(selected)}
           >
             Seçilenleri sil
+          </EylemDugmesi>
+
+          {/* İE#21 B4: deste modu — tek kart, tek tuş, 40 ürün 2 dakika. */}
+          <button
+            type="button"
+            className={desteAcik ? 'btn-primary' : 'btn-ghost'}
+            onClick={() => setDesteAcik((a) => !a)}
+            disabled={items.length === 0}
+          >
+            {desteAcik ? 'Listeye dön' : 'Deste modu'}
           </button>
         </div>
       </div>
 
-      {state.loading ? (
+      {desteAcik ? (
+        <DesteModu
+          kartlar={items}
+          hedefListeAdi={
+            typeof targetList === 'number'
+              ? (listsState.data ?? []).find((l) => l.id === targetList)?.name ?? null
+              : null
+          }
+          onEylem={desteEylemi}
+          onGeriAl={desteGeriAl}
+          onKapat={() => setDesteAcik(false)}
+        />
+      ) : state.loading ? (
         <Skeleton rows={3} />
       ) : state.error ? (
         <ErrorNote message={state.error} onRetry={state.reload} />
@@ -293,8 +367,8 @@ export default function InboxScreen() {
                 secili={selected.includes(item.id)}
                 onSec={() => toggle(item.id)}
                 onAc={() => setAcikDetay(item.id)}
-                onTasi={() => void assign([item.id])}
-                onSil={() => void remove([item.id])}
+                onTasi={() => assign([item.id])}
+                onSil={() => remove([item.id])}
                 secilenAd={adlar[item.id]}
                 onAdSec={(ad) => setAdlar((current) => ({ ...current, [item.id]: ad }))}
                 busy={busy}
@@ -302,15 +376,15 @@ export default function InboxScreen() {
             ))}
           </ul>
 
-          <div className="mt-4 flex items-center justify-between text-sm text-slate-500">
+          <div className="mt-4 flex items-center justify-between text-sm text-ink-3">
             <span>
               {count(total)} kayıt · sayfa {page}/{sonSayfa}
             </span>
             <div className="flex gap-2">
-              <button type="button" className="btn-ghost" disabled={page === 1} onClick={() => setPage((v) => v - 1)}>
+              <button type="button" className="btn-ghost" disabled={page === 1} onClick={() => setPage(page - 1)}>
                 Önceki
               </button>
-              <button type="button" className="btn-ghost" disabled={page >= sonSayfa} onClick={() => setPage((v) => v + 1)}>
+              <button type="button" className="btn-ghost" disabled={page >= sonSayfa} onClick={() => setPage(page + 1)}>
                 Sonraki
               </button>
             </div>

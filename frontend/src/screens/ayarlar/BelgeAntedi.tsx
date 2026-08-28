@@ -4,6 +4,7 @@ import { messageOf } from '../../lib/useAsync';
 import { useToast } from '../../components/Toast';
 import { Field } from '../../components/ui';
 import { ApiError } from '../../api/client';
+import { otomatikDoldurmaKapali, useAutofillKalkani } from '../../lib/autofill';
 
 /**
  * Ayarlar > Belge Antedi (İE#13 F1).
@@ -24,6 +25,9 @@ export default function BelgeAntedi({ mevcut, onSaved }: { mevcut: DocumentHeade
   });
   const [fields, setFields] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
+  // D3: serbest metin kutuları tarayıcı doldurmasına kapalı (lib/autofill.ts).
+  const firmaKalkani = useAutofillKalkani();
+  const webKalkani = useAutofillKalkani();
 
   const set = (key: keyof typeof form, value: string) => setForm((current) => ({ ...current, [key]: value }));
 
@@ -47,20 +51,44 @@ export default function BelgeAntedi({ mevcut, onSaved }: { mevcut: DocumentHeade
 
   return (
     <section className="card mb-4 p-4">
-      <h2 className="mb-1 text-sm font-semibold text-slate-700">Belge antedi</h2>
-      <p className="mb-3 text-xs text-slate-500">
+      <h2 className="mb-1 text-sm font-semibold text-ink-2">Belge antedi</h2>
+      <p className="mb-3 text-xs text-ink-3">
         Excel/PDF çıktılarının ve paylaşım sayfasının üst bandında görünür. Boş bıraktığınız alan basılmaz.
       </p>
 
       <form onSubmit={(event) => void kaydet(event)} className="grid gap-3 sm:grid-cols-2">
         <Field label="Firma adı" error={fields['company']}>
-          <input className="field-input" value={form.company} onChange={(e) => set('company', e.target.value)} placeholder="Tilbe Home" />
+          <input
+            {...otomatikDoldurmaKapali('antet-firma')}
+            {...firmaKalkani}
+            className="field-input"
+            value={form.company}
+            onChange={(e) => set('company', e.target.value)}
+            placeholder="Tilbe Home"
+          />
         </Field>
         <Field label="Web adresi" error={fields['web']}>
-          <input className="field-input" value={form.web} onChange={(e) => set('web', e.target.value)} placeholder="tilbehome.com" />
+          <input
+            {...otomatikDoldurmaKapali('antet-web')}
+            {...webKalkani}
+            className="field-input"
+            value={form.web}
+            onChange={(e) => set('web', e.target.value)}
+            placeholder="tilbehome.com"
+          />
         </Field>
         <Field label="E-posta" error={fields['email']}>
-          <input className="field-input" value={form.email} onChange={(e) => set('email', e.target.value)} placeholder="info@tilbehome.com" />
+          <input
+            className="field-input"
+            type="email"
+            name="antet-eposta"
+            autoComplete="email"
+            autoCapitalize="none"
+            spellCheck={false}
+            value={form.email}
+            onChange={(e) => set('email', e.target.value)}
+            placeholder="info@tilbehome.com"
+          />
         </Field>
         <Field label="Hazırlayan" hint="Belgelerin imza satırında görünür" error={fields['prepared_by']}>
           <input
@@ -72,7 +100,7 @@ export default function BelgeAntedi({ mevcut, onSaved }: { mevcut: DocumentHeade
         </Field>
 
         <div className="sm:col-span-2">
-          <p className="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">
+          <p className="rounded-lg bg-g50 px-3 py-2 text-xs text-ink-2">
             Önizleme: <span className="font-medium">{onizleme === '' ? '(antet boş — yalnız liste bilgisi basılır)' : onizleme}</span>
           </p>
         </div>

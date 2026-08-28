@@ -1,0 +1,337 @@
+{
+  "schema_version": "1.0",
+  "set_adi": "TedarikApp Skoru v1 Ticari Kalibrasyon Seti",
+  "kaynak": "Görev #5A demo-urun-seti.json (DM-001..DM-100)",
+  "amac": "Platform içi normalize edilen Skor v1 çıktısını satış, puan, tazelik, satıcı karnesi ve veri tamlığı açısından insan ticari aklıyla sınamak. Yüksek MOQ ve özel üretim bilgi sinyalidir; skor cezası değildir.",
+  "bant_tanimlari": {
+    "yuksek": "Birden fazla güçlü sinyali birlikte taşıyan, kritik veri eksiği ve belirgin ticari engeli olmayan aday.",
+    "orta": "Güçlü ve zayıf sinyalleri birlikte taşıyan; inceleme veya veri doğrulaması gerektiren aday.",
+    "dusuk": "Satış/ivme zayıflığı, düşük puan, kategori uyumsuzluğu veya birden fazla olumsuz sinyal nedeniyle önceliği düşük aday.",
+    "gizli": "Skor hesabının temel girdileri olan metrikler veya satıcı karnesi eksik olduğundan sayısal skor gösterilmemesi gereken aday."
+  },
+  "secimler": [
+    {
+      "demo_id": "DM-001",
+      "beklenen_bant": "yuksek",
+      "gerekce": "Yeni ilanda toplam satışa çok yaklaşan 30 günlük satış güçlü ivmeye işaret ediyor; puanı iyi ve veri seti tam. Satıcı karnesi kusursuz olmasa da aday üst bantta kalmalı.",
+      "sinyaller": ["ivme_yuksek", "puan_yuksek", "taze", "veri_tam", "kume_uyesi"]
+    },
+    {
+      "demo_id": "DM-003",
+      "beklenen_bant": "yuksek",
+      "gerekce": "Yüksek dönemsel ve toplam satış, 4,80 puan ve güçlü satıcı karnesi birlikte bulunuyor. Kritik veri eksiği olmadığı için üst bant beklenir.",
+      "sinyaller": ["satis_guclu", "puan_yuksek", "satici_karnesi_guclu", "veri_tam"]
+    },
+    {
+      "demo_id": "DM-005",
+      "beklenen_bant": "orta",
+      "gerekce": "Satış hacmi çok güçlü olsa da 3,63 puan kalite/memnuniyet riskidir. Hacim tek başına ürünü yüksek banda taşımamalıdır.",
+      "sinyaller": ["satis_cok_guclu", "puan_dusuk", "satici_karnesi_orta", "veri_tam", "varyant_cok"]
+    },
+    {
+      "demo_id": "DM-007",
+      "beklenen_bant": "dusuk",
+      "gerekce": "Güncel satış yalnız 7, toplam satış 316 ve puan 4,21 seviyesinde; ürün eski ve fiyat kademesi eksik. Güçlü 48 saat sevk oranı bu tabloyu tek başına kurtaramaz.",
+      "sinyaller": ["satis_zayif", "puan_orta_alt", "eski", "veri_eksik_fiyat_kademesi"]
+    },
+    {
+      "demo_id": "DM-010",
+      "beklenen_bant": "orta",
+      "gerekce": "Satış ve satıcı kalite sinyali çok güçlüdür; buna karşılık 3,71 puan kalıcı bir kalite riski oluşturur. Bu nedenle yüksek yerine orta bant ticari olarak daha güvenlidir.",
+      "sinyaller": ["satis_cok_guclu", "puan_dusuk", "satici_karnesi_guclu", "veri_tam"]
+    },
+    {
+      "demo_id": "DM-011",
+      "beklenen_bant": "yuksek",
+      "gerekce": "Yeni ve ivmeli satış, 4,90 puan ve hızlı sevk güçlü bir üst bant profili oluşturur. 1.500 koli MOQ ve özel üretim şartı bilgi amaçlıdır; skoru düşürmez.",
+      "sinyaller": ["ivme_yuksek", "puan_yuksek", "taze", "satici_karnesi_guclu", "ozel_uretim", "moq_yuksek", "moq_skor_cezasi_degil"]
+    },
+    {
+      "demo_id": "DM-012",
+      "beklenen_bant": "dusuk",
+      "gerekce": "Aynı ürün kümesinde olmasına rağmen güncel satış 3, toplam satış 356 ve puan 4,21'dir. Eski ve düşük hareketli profil düşük bantta kalmalıdır.",
+      "sinyaller": ["satis_zayif", "puan_orta_alt", "eski", "veri_tam", "kume_uyesi"]
+    },
+    {
+      "demo_id": "DM-015",
+      "beklenen_bant": "orta",
+      "gerekce": "Satış ve satıcı karnesi güçlü, fakat 3,79 puan ile koli CBM eksikliği hem kalite hem lojistik belirsizlik yaratıyor. Ürün yüksek bant yerine doğrulama gerektiren orta bantta olmalıdır.",
+      "sinyaller": ["satis_cok_guclu", "puan_dusuk", "satici_karnesi_guclu", "veri_eksik_cbm"]
+    },
+    {
+      "demo_id": "DM-016",
+      "beklenen_bant": "yuksek",
+      "gerekce": "Yeni ilanda güçlü satış ivmesi, 4,81 puan ve yüksek satıcı kalite oranı birlikte bulunuyor. Veri tam olduğu için yüksek bant beklenir.",
+      "sinyaller": ["ivme_yuksek", "puan_yuksek", "taze", "satici_karnesi_guclu", "veri_tam", "kume_uyesi"]
+    },
+    {
+      "demo_id": "DM-018",
+      "beklenen_bant": "yuksek",
+      "gerekce": "Güçlü satış, 4,80 puan, yüksek sevk oranı ve tam veri dengeli bir ticari profil oluşturuyor. Tek bir zayıf sinyal üst bandı bozacak ağırlıkta değildir.",
+      "sinyaller": ["satis_guclu", "puan_yuksek", "satici_karnesi_guclu", "veri_tam"]
+    },
+    {
+      "demo_id": "DM-022",
+      "beklenen_bant": "dusuk",
+      "gerekce": "Güncel satış 4 ve puan 4,21 ile ürün eski/düşük hareketli profildedir. Video bilgisinin eksik olması da veri güvenini azaltır.",
+      "sinyaller": ["satis_zayif", "puan_orta_alt", "eski", "veri_eksik_video"]
+    },
+    {
+      "demo_id": "DM-023",
+      "beklenen_bant": "yuksek",
+      "gerekce": "Güçlü satış, 4,94 puan ve yüksek satıcı kalite sinyali aynı üründe birleşiyor. Çok varyantlı yapı yönetim gerektirse de keşif açısından üst banttır.",
+      "sinyaller": ["satis_guclu", "puan_cok_yuksek", "satici_karnesi_guclu", "veri_tam", "varyant_cok", "kume_uyesi"]
+    },
+    {
+      "demo_id": "DM-024",
+      "beklenen_bant": "orta",
+      "gerekce": "Puan iyi, satış hacmi düşük ve satıcı karnesi orta düzeydedir; bu karışık profil orta banttır. 3.000 set MOQ ve özel üretim şartı skoru düşürmeyen bilgi sinyalidir.",
+      "sinyaller": ["satis_dusuk", "puan_yuksek", "satici_karnesi_orta", "ozel_uretim", "moq_yuksek", "moq_skor_cezasi_degil"]
+    },
+    {
+      "demo_id": "DM-025",
+      "beklenen_bant": "orta",
+      "gerekce": "Satış çok güçlüdür ancak 3,63 puan belirgin kalite/memnuniyet riski taşır. Aynı kümedeki yüksek puanlı alternatifler varken ürün otomatik olarak üst banda çıkmamalıdır.",
+      "sinyaller": ["satis_cok_guclu", "puan_dusuk", "satici_karnesi_orta", "veri_tam", "kume_uyesi"]
+    },
+    {
+      "demo_id": "DM-029",
+      "beklenen_bant": "gizli",
+      "gerekce": "Satış, toplam satış, puan ve yorum metrikleri yoktur. Temel skor girdileri eksik olduğundan sayı veya bant türetilmemelidir.",
+      "sinyaller": ["metrics_eksik", "skor_hesaplanamaz"]
+    },
+    {
+      "demo_id": "DM-030",
+      "beklenen_bant": "orta",
+      "gerekce": "Çok güçlü satış ve satıcı karnesine karşılık 3,71 puan kalite riskidir. Düşük puan cezası satış hacminin yüksek bant üretmesini engellemelidir.",
+      "sinyaller": ["satis_cok_guclu", "puan_dusuk", "satici_karnesi_cok_guclu", "veri_tam"]
+    },
+    {
+      "demo_id": "DM-033",
+      "beklenen_bant": "yuksek",
+      "gerekce": "Güçlü satış, 4,80 puan, iyi kalite ve sevk oranları ile tam veri dengeli bir üst bant profilidir.",
+      "sinyaller": ["satis_guclu", "puan_yuksek", "satici_karnesi_guclu", "veri_tam"]
+    },
+    {
+      "demo_id": "DM-034",
+      "beklenen_bant": "orta",
+      "gerekce": "Puan yüksek fakat satış hacmi düşük ve satıcı kalite/sevk oranları orta seviyededir. Ürün umut verici olsa da üst bant için yeterli ticari kanıt yoktur.",
+      "sinyaller": ["satis_dusuk", "puan_yuksek", "satici_karnesi_orta", "veri_tam", "kume_uyesi"]
+    },
+    {
+      "demo_id": "DM-036",
+      "beklenen_bant": "orta",
+      "gerekce": "Yeni ilanda belirgin satış ivmesi ve iyi satıcı karnesi var; puan 4,72 ile güçlü fakat fiyat kademesi eksik. Eksiklik nedeniyle yüksek yerine orta bant beklenir.",
+      "sinyaller": ["ivme_yuksek", "puan_yuksek", "taze", "satici_karnesi_guclu", "veri_eksik_fiyat_kademesi"]
+    },
+    {
+      "demo_id": "DM-037",
+      "beklenen_bant": "dusuk",
+      "gerekce": "Güncel satış 1, puan 4,21 ve satıcı kalite oranı düşüktür; bu üç temel skor sinyali düşük bandı zorunlu kılar. Özel üretim ve MOQ bilgisi bant kararına etki etmez.",
+      "sinyaller": ["satis_zayif", "puan_orta_alt", "eski", "satici_karnesi_zayif", "ozel_uretim", "moq_yuksek", "moq_skor_cezasi_degil"]
+    },
+    {
+      "demo_id": "DM-038",
+      "beklenen_bant": "yuksek",
+      "gerekce": "Aynı ürün kümesinde güçlü satış, 4,94 puan ve yüksek tekrar alış oranı bulunuyor. Veri tamlığıyla birlikte üst bant beklenir.",
+      "sinyaller": ["satis_guclu", "puan_cok_yuksek", "tekrar_alis_guclu", "veri_tam", "kume_uyesi"]
+    },
+    {
+      "demo_id": "DM-043",
+      "beklenen_bant": "orta",
+      "gerekce": "Satış, 4,87 puan ve satıcı karnesi güçlüdür; ancak CBM eksikliği ithalat maliyetini doğrulamayı engeller. Bu lojistik veri tamamlanana kadar orta bant uygundur.",
+      "sinyaller": ["satis_guclu", "puan_yuksek", "satici_karnesi_guclu", "veri_eksik_cbm"]
+    },
+    {
+      "demo_id": "DM-048",
+      "beklenen_bant": "yuksek",
+      "gerekce": "Güçlü satış, 4,80 puan, iyi sevk oranı ve tam veri üst bant için yeterli dengeli kanıt sunuyor.",
+      "sinyaller": ["satis_guclu", "puan_yuksek", "satici_karnesi_guclu", "veri_tam", "kume_uyesi"]
+    },
+    {
+      "demo_id": "DM-050",
+      "beklenen_bant": "orta",
+      "gerekce": "Satış ve satıcı kalite oranı çok güçlü; buna karşılık 3,71 puan ve eksik video verisi karşı sinyallerdir. Özel üretim/MOQ skoru düşürmez; orta bant kararını düşük puan ve veri eksikliği belirler.",
+      "sinyaller": ["satis_cok_guclu", "puan_dusuk", "ozel_uretim", "moq_yuksek", "moq_skor_cezasi_degil", "veri_eksik_video", "varyant_cok"]
+    },
+    {
+      "demo_id": "DM-053",
+      "beklenen_bant": "yuksek",
+      "gerekce": "Güçlü satış, 4,94 puan, yüksek kalite ve tekrar alış oranı birlikte bulunuyor. Veri tamlığı bu adayı üst banda taşır.",
+      "sinyaller": ["satis_guclu", "puan_cok_yuksek", "satici_karnesi_guclu", "tekrar_alis_guclu", "veri_tam", "kume_uyesi"]
+    },
+    {
+      "demo_id": "DM-057",
+      "beklenen_bant": "gizli",
+      "gerekce": "Satıcı alanları bulunsa da satış, puan ve yorum metrikleri eksiktir. Küme üyeliği veya satıcı kalitesi kullanılarak yapay skor üretilmemelidir.",
+      "sinyaller": ["metrics_eksik", "skor_hesaplanamaz", "kume_uyesi"]
+    },
+    {
+      "demo_id": "DM-059",
+      "beklenen_bant": "orta",
+      "gerekce": "4,97 puan ve iyi satıcı karnesi olumlu, ancak satış hacmi düşüktür. 22 varyant operasyon yükü de dikkate alındığında insan incelemesi gerektiren orta bant uygundur.",
+      "sinyaller": ["satis_dusuk", "puan_cok_yuksek", "satici_karnesi_guclu", "varyant_cok", "veri_tam", "kume_uyesi"]
+    },
+    {
+      "demo_id": "DM-060",
+      "beklenen_bant": "orta",
+      "gerekce": "Satış ve satıcı karnesi çok güçlü olsa da 3,55 puan setin en belirgin kalite risklerinden biridir. Motor satış hacmine aşırı ağırlık verip bu ürünü yüksek banda taşımamalıdır.",
+      "sinyaller": ["satis_cok_guclu", "puan_cok_dusuk", "satici_karnesi_cok_guclu", "veri_tam", "kume_uyesi"]
+    },
+    {
+      "demo_id": "DM-063",
+      "beklenen_bant": "yuksek",
+      "gerekce": "Satış, puan ve satıcı karnesi güçlü; veri tamdır. 2.500 koli MOQ ve özel üretim şartı bilgi amaçlıdır, skor cezası olmadığı için ürün yüksek bantta kalır.",
+      "sinyaller": ["satis_guclu", "puan_yuksek", "satici_karnesi_guclu", "veri_tam", "ozel_uretim", "moq_yuksek", "moq_skor_cezasi_degil"]
+    },
+    {
+      "demo_id": "DM-064",
+      "beklenen_bant": "orta",
+      "gerekce": "Puan, sevk oranı ve tazelik olumlu; satış hacmi düşük, kalite sinyali zayıf ve fiyat kademesi eksiktir. Karışık sinyaller orta bandı gerektirir.",
+      "sinyaller": ["satis_dusuk", "puan_yuksek", "taze", "satici_karnesi_karisik", "veri_eksik_fiyat_kademesi", "kume_uyesi"]
+    },
+    {
+      "demo_id": "DM-068",
+      "beklenen_bant": "yuksek",
+      "gerekce": "Güçlü satış, 4,94 puan, yüksek tekrar alış ve tam veri birlikte üst bant oluşturur. Çok varyant operasyon yüküdür fakat keşif kalitesini tek başına düşürmez.",
+      "sinyaller": ["satis_guclu", "puan_cok_yuksek", "tekrar_alis_guclu", "veri_tam", "varyant_cok", "kume_uyesi"]
+    },
+    {
+      "demo_id": "DM-071",
+      "beklenen_bant": "orta",
+      "gerekce": "Yeni ilanda yüksek ivme, 4,90 puan ve iyi sevk oranı bulunuyor; ancak CBM eksik ve satıcı kalite oranı orta düzeydedir. Lojistik veri tamamlanana kadar orta bant uygundur.",
+      "sinyaller": ["ivme_yuksek", "puan_yuksek", "taze", "veri_eksik_cbm", "satici_karnesi_karisik"]
+    },
+    {
+      "demo_id": "DM-073",
+      "beklenen_bant": "yuksek",
+      "gerekce": "Güçlü satış, 4,87 puan, iyi satıcı karnesi ve tam veri dengeli bir üst bant profilidir.",
+      "sinyaller": ["satis_guclu", "puan_yuksek", "satici_karnesi_guclu", "veri_tam"]
+    },
+    {
+      "demo_id": "DM-076",
+      "beklenen_bant": "yuksek",
+      "gerekce": "Yeni ve ivmeli satış, iyi puan ve güçlü satıcı sinyalleri üst bant oluşturur. 1.500 set MOQ ve özel üretim koşulu skoru düşürmeyen bilgi sinyalidir.",
+      "sinyaller": ["ivme_yuksek", "puan_yuksek", "taze", "satici_karnesi_guclu", "ozel_uretim", "moq_yuksek", "moq_skor_cezasi_degil"]
+    },
+    {
+      "demo_id": "DM-078",
+      "beklenen_bant": "orta",
+      "gerekce": "Satış ve puan güçlüdür; buna karşılık fiyat kademesi eksik ve satıcı kalite/tekrar alış sinyalleri sınırlıdır. Eksik ticari fiyat yapısı yüksek bandı engellemelidir.",
+      "sinyaller": ["satis_guclu", "puan_yuksek", "veri_eksik_fiyat_kademesi", "satici_karnesi_karisik"]
+    },
+    {
+      "demo_id": "DM-083",
+      "beklenen_bant": "yuksek",
+      "gerekce": "Güçlü satış, 4,94 puan, iyi kalite ve tekrar alış oranı tam veriyle birleşiyor. Üst bant için yeterli ticari kanıt vardır.",
+      "sinyaller": ["satis_guclu", "puan_cok_yuksek", "satici_karnesi_guclu", "tekrar_alis_guclu", "veri_tam"]
+    },
+    {
+      "demo_id": "DM-085",
+      "beklenen_bant": "dusuk",
+      "gerekce": "Satış çok güçlü olsa da 3,63 puan, düşük tekrar alış ve eksik CBM birlikte kalite ve lojistik riski oluşturur. Motor satış hacmiyle bu ürünü orta-yüksek banda taşımamalıdır.",
+      "sinyaller": ["satis_cok_guclu", "puan_dusuk", "tekrar_alis_zayif", "veri_eksik_cbm"]
+    },
+    {
+      "demo_id": "DM-089",
+      "beklenen_bant": "orta",
+      "gerekce": "Puan ve satıcı karnesi iyi, satış hacmi ise düşüktür; bu nedenle orta bant uygundur. 3.000 koli MOQ ve özel üretim şartı skoru düşürmez.",
+      "sinyaller": ["satis_dusuk", "puan_cok_yuksek", "satici_karnesi_guclu", "ozel_uretim", "moq_yuksek", "moq_skor_cezasi_degil"]
+    },
+    {
+      "demo_id": "DM-093",
+      "beklenen_bant": "orta",
+      "gerekce": "Satış, puan ve satıcı karnesi güçlüdür; ancak ürün ev/yaşam ana kapsamı dışındaki güneş panelidir. Genel keşif skoru iyi olsa da Tilbe Home ticari uygunluğu nedeniyle orta bantta insan incelemesine gitmelidir.",
+      "sinyaller": ["satis_guclu", "puan_yuksek", "satici_karnesi_guclu", "veri_tam", "alan_disi"]
+    },
+    {
+      "demo_id": "DM-098",
+      "beklenen_bant": "orta",
+      "gerekce": "Satış ve puan güçlü görünse de ürün ev/yaşam ana kapsamı dışındadır; insan incelemesi gerektiren orta bant uygundur. 2.500 set MOQ ve özel üretim şartı skoru düşürmez.",
+      "sinyaller": ["satis_guclu", "puan_cok_yuksek", "ozel_uretim", "moq_yuksek", "moq_skor_cezasi_degil", "alan_disi"]
+    }
+  ],
+  "siralama_kisitlari": [
+    {
+      "ustte": "DM-003",
+      "altta": "DM-007",
+      "gerekce": "Güçlü satış + yüksek puan + güçlü satıcı karnesi, eski ve neredeyse hareketsiz üründen yukarıda olmalıdır."
+    },
+    {
+      "ustte": "DM-018",
+      "altta": "DM-012",
+      "gerekce": "Yerleşik güçlü satış ve iyi puan, aynı dönemde satış üretmeyen düşük puanlı profili geçmelidir."
+    },
+    {
+      "ustte": "DM-033",
+      "altta": "DM-022",
+      "gerekce": "Tam verili güçlü aday, eski/düşük hareketli ve video verisi eksik adayın üstünde kalmalıdır."
+    },
+    {
+      "ustte": "DM-073",
+      "altta": "DM-024",
+      "gerekce": "Güçlü satış ve iyi puan birlikte, yalnız yüksek puanlı fakat düşük hacimli üründen yukarıda olmalıdır; MOQ bu kıyasın gerekçesi değildir."
+    },
+    {
+      "ustte": "DM-093",
+      "altta": "DM-037",
+      "gerekce": "Alan dışı inceleme gerektirse de güçlü ve tam sinyalli ürün, ölü satışlı ve düşük puanlı üründen yukarıda kalmalıdır."
+    },
+    {
+      "ustte": "DM-083",
+      "altta": "DM-085",
+      "gerekce": "Yüksek satış + yüksek puan + tam veri, yüksek satışa rağmen düşük puanlı ve CBM'si eksik üründen üstte olmalıdır."
+    },
+    {
+      "ustte": "DM-053",
+      "altta": "DM-089",
+      "gerekce": "Güçlü satış ve yüksek puan birlikte, yüksek puanlı fakat düşük hacimli profilden yukarıda olmalıdır; MOQ bu kıyasın gerekçesi değildir."
+    },
+    {
+      "ustte": "DM-001",
+      "altta": "DM-012",
+      "gerekce": "Aynı ürün kümesinde yeni satış ivmesi gösteren üye, eski ve düşük hareketli üyeden üstte olmalıdır."
+    },
+    {
+      "ustte": "DM-038",
+      "altta": "DM-034",
+      "gerekce": "Aynı ürün kümesinde güçlü satış ve yüksek puan birlikte, yalnız yüksek puanlı fakat düşük hacimli üyeyi geçmelidir."
+    },
+    {
+      "ustte": "DM-068",
+      "altta": "DM-064",
+      "gerekce": "Aynı kümede güçlü satış + yüksek puan + tam veri, düşük hacimli ve fiyat kademesi eksik üyeden yukarıda olmalıdır."
+    },
+    {
+      "ustte": "DM-053",
+      "altta": "DM-050",
+      "gerekce": "Yüksek puanlı ve tam verili ürün, daha yüksek satışlı olsa bile düşük puanlı ve eksik verili ürünü geçmelidir; özel üretim/MOQ bu kıyasta ceza değildir."
+    },
+    {
+      "ustte": "DM-083",
+      "altta": "DM-078",
+      "gerekce": "Benzer güçlü satışta daha yüksek puan ve daha iyi veri tamlığı, fiyat kademesi eksik profilden üstün olmalıdır."
+    },
+    {
+      "ustte": "DM-023",
+      "altta": "DM-025",
+      "gerekce": "Aynı yağlık kümesinde yüksek puan ve daha güçlü kalite sinyali, salt satış hacmi yüksek fakat puanı düşük üyeden önde olmalıdır."
+    },
+    {
+      "ustte": "DM-063",
+      "altta": "DM-007",
+      "gerekce": "Güçlü satış, iyi puan ve tam veri; eski, düşük hareketli ve fiyat kademesi eksik üründen yukarıda olmalıdır."
+    }
+  ],
+  "puanlama_sozlesmesi": {
+    "c6_kabul_kosullari": {
+      "bant_isabeti_minimum_yuzde": 80,
+      "siralama_kisiti_azami_ihlal": 0,
+      "gizli_beklenenlerin_skor_gostermemesi_yuzde": 100
+    },
+    "bant_degerlendirme": "Beklenen bant ile motor bandı aynıysa isabet sayılır. Komşu bant kayması (yuksek↔orta veya orta↔dusuk) insan incelemesine gider ve tek başına otomatik red değildir; iki bantlık kayma veya gizli ürünün puanlanması kritik hatadır. Yüksek MOQ ve özel üretim tek başına bant düşürmez.",
+    "siralama_degerlendirme": "Her kısıtta 'ustte' ürünün normalize skoru 'altta' üründen büyük olmalıdır. Eşitlik ihlal sayılır.",
+    "gizli_degerlendirme": "beklenen_bant=gizli olan ürünlerde sayı, yüzde, yıldız, renkli bant veya sıralamaya katılan gizli bir skor üretilmez; kullanıcıya yalnız 'Skor için veri yetersiz' durumu gösterilir.",
+    "c6_karari": "Üç kabul koşulunun tamamı aynı koşuda sağlanırsa C6 GEÇTİ; herhangi biri sağlanmazsa C6 KALDI."
+  }
+}

@@ -11,6 +11,7 @@
 import { parse1688, PARSER_VERSION } from '../modules/m1688/parser';
 import { hasCjk, priceLabel, variationLabel } from '../modules/m1688/format';
 import type { CapturePayload, PageData, ParseResult, SelectorSet } from '../core/types';
+import { baglantiyiDene } from '../core/baglanti';
 
 export interface PanelListesi {
   id: number;
@@ -248,25 +249,21 @@ export function mountCaptureForm(host: CaptureFormHost): CaptureFormHandle {
   async function baslat(): Promise<void> {
     host.onStatus('bağlantı denetleniyor…', 'bilgi');
 
-    let listeler: PanelListesi[];
-    try {
-      listeler = await host.send<PanelListesi[]>({ type: 'LISTS' });
-    } catch (hata) {
-      const mesaj = hata instanceof Error ? hata.message : String(hata);
-      host.onStatus(mesaj === 'AYAR_EKSIK' ? 'ayar gerekli' : 'bağlantı yok', 'hata');
-      host.onNeedSettings(
-        mesaj === 'AYAR_EKSIK'
-          ? 'Panel adresi ve token girilmeli.'
-          : /token/i.test(mesaj) || /geçersiz|iptal/i.test(mesaj)
-            ? 'Token geçersiz veya iptal edilmiş — panelden yeni token üretip buraya yapıştırın.'
-            : 'Sebep: ' + mesaj,
-      );
+    // D5: popup ve sayfa içi panel bağlantıyı AYNI modülden sorar; sınıflandırma
+    // ve cümleler tek yerde durur, iki yüzey bir daha ayrışmaz.
+    const baglanti = await baglantiyiDene<PanelListesi>({
+      listeleriGetir: () => host.send<PanelListesi[]>({ type: 'LISTS' }),
+    });
+
+    if (baglanti.durum !== 'BAGLI') {
+      host.onStatus(baglanti.durum === 'AYAR_EKSIK' ? 'ayar gerekli' : 'bağlantı yok', 'hata');
+      host.onNeedSettings(baglanti.mesaj);
 
       return;
     }
 
     host.onStatus('bağlı ✓', 'ok');
-    await listeleriDoldur(listeler);
+    await listeleriDoldur(baglanti.ham);
 
     const sayfa = await host.readPage();
     if (!sayfa.ok) {

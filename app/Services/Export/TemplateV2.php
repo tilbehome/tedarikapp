@@ -43,15 +43,30 @@ final class TemplateV2
      * Durum rozetleri: [iki satırlı metin, zemin, yazı rengi].
      * Sütun dardır — rozet İKİ SATIRA bölünür (şartname).
      */
+    /**
+     * İE#21 B8-2/B13 — BU LİSTE ARTIK TEK KAYNAK DEĞİLDİR.
+     *
+     * Etiketler `config/durumlar.json`dan gelir (docs/04 §5B durum makinesi
+     * kazanır). Buradaki dizi yalnız YEDEKTİR: sözlük dosyası okunamazsa belge
+     * üretimi durmasın diye durur. Eski metinler bilinçli olarak DEĞİŞTİ —
+     * "Bekleme Listesinde" 5B'de "Verilecek"tir; belgenin ve panelin aynı duruma
+     * farklı kelimeler demesi canlı bir kusurdu (paylasim-sayfasi.png kanıtı).
+     */
     public const STATUS_BADGES = [
-        // Anahtarlar StateMachine::PRODUCT_* ile BİREBİRDİR (to_order/ordered/
-        // in_transit/received/cancelled); uydurma kod nötr rozetle basılır.
-        'to_order' => ["● Bekleme\nListesinde", 'FEF3C7', '92400E'],
-        'ordered' => ["● Sipariş\nVerildi", 'DCFCE7', '166534'],
-        'in_transit' => ["● Yolda\n(Sevkiyatta)", 'E0E7FF', '3730A3'],
-        'received' => ["● Geldi\n(Teslim)", 'DBEAFE', '1E40AF'],
-        'cancelled' => ["● İptal\nEdildi", 'FEE2E2', '991B1B'],
+        'to_order' => ['● Verilecek', 'F3F4F6', '4B5563'],
+        'ordered' => ['● Verildi', 'FEF3C7', '92400E'],
+        'in_transit' => ['● Yolda', 'E0E7FF', '3730A3'],
+        'received' => ['● Geldi', 'DBEAFE', '1E40AF'],
+        'cancelled' => ['● İptal', 'FEE2E2', 'B91C1C'],
     ];
+
+    /** Sözlük tembel bağlanır; bağlanmazsa yukarıdaki YEDEK liste kullanılır. */
+    private static ?\App\Services\DurumSozlugu $sozluk = null;
+
+    public static function sozlukBagla(string $basePath): void
+    {
+        self::$sozluk = new \App\Services\DurumSozlugu($basePath);
+    }
 
     /** Kaynak rozeti: kod → görünen ad (bilinmeyen platform kendi kodunu yazar). */
     public const PLATFORM_LABELS = [
@@ -143,8 +158,22 @@ final class TemplateV2
     public const ROW_DATA_START = 11;
 
     /** @return array{0: string, 1: string, 2: string} */
-    public static function badge(string $status): array
+    /**
+     * @param string $dil belge dili — rozet de belgenin dilinde basılır (üç dilli çıktı)
+     *
+     * @return array{0: string, 1: string, 2: string} [metin, arka plan HEX, ön plan HEX]
+     */
+    public static function badge(string $status, string $dil = 'tr'): array
     {
+        if (self::$sozluk !== null) {
+            $etiket = self::$sozluk->etiket(\App\Services\DurumSozlugu::URUN, $status, $dil);
+            if ($etiket !== $status) {
+                $renk = self::$sozluk->renk(\App\Services\DurumSozlugu::URUN, $status);
+
+                return ['● ' . $etiket, ltrim($renk['bg'], '#'), ltrim($renk['fg'], '#')];
+            }
+        }
+
         return self::STATUS_BADGES[$status] ?? ['● ' . $status, 'F1F5F9', self::SOLUK];
     }
 

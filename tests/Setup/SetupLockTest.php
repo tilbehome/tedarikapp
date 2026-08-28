@@ -32,6 +32,84 @@ final class SetupLockTest extends AuthTestCase
         return new DateTimeImmutable('2026-08-16 18:00:00');
     }
 
+    /**
+     * Kilit okumasını istenen HATA ile düşüren bir bağlantı.
+     *
+     * Gerçek arıza sınıflarını taklit eder: tablo yok · yetki yok · bozuk şema.
+     * Her biri farklı SQLSTATE üretir ve `SetupLock` bunları AYIRT ETMELİDİR.
+     */
+    private function hataliBaglanti(string $sqlState, int $suruculKod, string $mesaj): Connection
+    {
+        $pdo = new class ($sqlState, $suruculKod, $mesaj) extends \PDO {
+            public function __construct(
+                private readonly string $sqlState,
+                private readonly int $suruculKod,
+                private readonly string $mesaj,
+            ) {
+                parent::__construct('sqlite::memory:');
+            }
+
+            public function prepare(string $query, array $options = []): \PDOStatement|false
+            {
+                // `settings` okuması patlar; `SELECT 1` yoklaması (query) çalışır.
+                $hata = new \PDOException($this->mesaj, 0);
+                $hata->errorInfo = [$this->sqlState, $this->suruculKod, $this->mesaj];
+
+                throw $hata;
+            }
+        };
+
+        return Connection::fromCallable(static fn (): \PDO => $pdo);
+    }
+
+    // ── rc8-02 / dış denetim F-02 ────────────────────────────────────────────
+
+    public function testTABLOYOKSA_KILITSIZ_SAYILIR(): void
+    {
+        // Kurulumun normal ORTA HÂLİ: config yazıldı, migrate henüz koşmadı.
+        $kilit = new SetupLock(
+            $this->hataliBaglanti('42S02', 1146, 'SQLSTATE[42S02]: Base table or view not found'),
+            $this->tempPath('storage'),
+        );
+
+        self::assertSame(SetupLock::STATE_UNLOCKED, $kilit->status());
+        self::assertFalse($kilit->isLocked());
+    }
+
+    public function testSELECTYETKISIYOKSA_BILINMIYOR_VE_KILITLI_SAYILIR(): void
+    {
+        // Sahadaki tehlikeli hâl: DB ayakta ama `settings` okunamıyor. Eski kod
+        // bunu KİLİTSİZ sayıyor ve kurulu sistemde kurulum rotalarını açıyordu.
+        $kilit = new SetupLock(
+            $this->hataliBaglanti('42000', 1142, "SELECT command denied to user 'app'@'localhost' for table 'settings'"),
+            $this->tempPath('storage'),
+        );
+
+        self::assertSame(SetupLock::STATE_UNKNOWN, $kilit->status());
+        self::assertTrue($kilit->isLocked(), 'Belirsizlik KAPALI tarafa yazılmalı (K37).');
+    }
+
+    public function testBOZUKSEMA_BILINMIYOR_URETIR(): void
+    {
+        $kilit = new SetupLock(
+            $this->hataliBaglanti('42S22', 1054, "Unknown column 'value' in 'field list'"),
+            $this->tempPath('storage'),
+        );
+
+        self::assertSame(SetupLock::STATE_UNKNOWN, $kilit->status());
+    }
+
+    public function testSQLITE_NOSUCHTABLE_METNI_DE_TABLOYOK_SAYILIR(): void
+    {
+        // SQLite SQLSTATE olarak HY000 verir; ayrımı yalnız metin taşır.
+        $kilit = new SetupLock(
+            $this->hataliBaglanti('HY000', 1, 'SQLSTATE[HY000]: General error: 1 no such table: settings'),
+            $this->tempPath('storage'),
+        );
+
+        self::assertSame(SetupLock::STATE_UNLOCKED, $kilit->status());
+    }
+
     public function testBastaKilitliDegildir(): void
     {
         self::assertFalse($this->lock()->isLocked());

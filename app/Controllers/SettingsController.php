@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Auth\PasswordHasher;
+use App\Core\AppUrl;
 use App\Core\ClientIp;
 use App\Core\Clock;
 use App\Core\Connection;
 use App\Core\Dates;
 use App\Core\Response;
+use App\Models\ListRepository;
 use App\Models\SettingsRepository;
 use App\Services\ActivityLog;
 use App\Services\InputValidator;
@@ -36,8 +39,14 @@ final class SettingsController extends ApiController
         private readonly ActivityLog $activity,
         private readonly Clock $clock,
         private readonly DateTimeZone $timezone,
+        // rc8/K4: APP_URL değişikliği parola tekrarı ister — yapıcının SONUNA
+        // eklenir, konumsal çağrılar bozulmaz.
+        private readonly PasswordHasher $passwords,
     ) {
     }
+
+    /** `settings` tablosundaki taban adres anahtarı (kurulum sihirbazı da bunu yazar). */
+    private const KEY_APP_URL = 'APP_URL';
 
     /** GET /api/settings */
     public function show(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
@@ -53,6 +62,117 @@ final class SettingsController extends ApiController
             'media_writable' => $this->media->isWritable(),
             // İE#13 F1: belge antedi — çıktı ve paylaşım sayfası bandında görünür.
             'document_header' => $this->settings->documentHeader(),
+            // İE#21 EK-4 (B7): kilit ekranındaki "yeni anahtar iste" köprüsünün
+            // hedefi. Boşsa düğme basılmaz.
+            'share_contact_phone' => $this->settings->get(SettingsRepository::KEY_SHARE_CONTACT_PHONE),
+            // rc8/K4 (dış denetim F-08): paylaşım bağlantısının ve QR'ın tabanı.
+            // Ekran hem DEĞERİ hem de KANONİK olup olmadığını gösterir; eksikse
+            // kırmızı şerit basar — çünkü bu ayar olmadan paylaşım üretilemez.
+            'app_url' => $this->settings->get(self::KEY_APP_URL),
+            'app_url_kanonik' => AppUrl::kanonik($this->settings->get(self::KEY_APP_URL)) !== null,
+        ]);
+    }
+
+    /**
+     * PUT /api/settings/app-url — panelin DIŞA VERİLEN adresi (rc8/K4, F-08).
+     *
+     * Bu değer paylaşım bağlantısının, QR kodunun ve e-postaya kopyalanan
+     * adresin tabanıdır. Yanlışsa müşteriye çalışmayan bir link gider; boşsa
+     * uygulama link üretmeyi tümden reddeder (`AppUrlYokException`) — yani
+     * alan sessiz kalamaz.
+     *
+     * PAROLA TEKRARI İSTENİR: açık oturumu ele geçiren biri bu tek alanı
+     * değiştirerek bundan sonraki tüm paylaşım linklerini kendi sunucusuna
+     * yönlendirebilirdi. Doğrulama, oturumun değil KULLANICININ kararı
+     * olduğunu garanti eder.
+     */
+    public function updateAppUrl(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        $body = $this->body($request);
+        $ham = is_string($body['app_url'] ?? null) ? trim((string) $body['app_url']) : '';
+        $parola = is_string($body['password'] ?? null) ? (string) $body['password'] : '';
+
+        $kullanici = $this->user($request);
+        if ($parola === '' || !$this->passwords->verify($parola, $kullanici->passwordHash)) {
+            return Response::error($response, 'VALIDATION', 'Doğrulama hatası', 422, [
+                'password' => 'Parolanız doğrulanamadı; adres değiştirilmedi.',
+            ]);
+        }
+
+        $kanonik = AppUrl::kanonik($ham);
+        if ($kanonik === null) {
+            return Response::error($response, 'VALIDATION', 'Doğrulama hatası', 422, [
+                'app_url' => 'Panelin tam adresini şema ile girin; yol, sorgu ya da '
+                    . 'kullanıcı adı içeremez (örnek: https://tedarik.firma.com).',
+            ]);
+        }
+
+        $onceki = $this->settings->get(self::KEY_APP_URL);
+        $this->settings->set(self::KEY_APP_URL, $kanonik);
+
+        $this->activity->record(
+            'settings',
+            null,
+            'app_url_updated',
+            // Adresin kendisi kayda GİRER: bu bir sır değil, denetim izidir —
+            // "linkler ne zaman nereye bakmaya başladı" sorusu cevaplanabilmeli.
+            ($onceki === null || $onceki === '' ? '(boş)' : $onceki) . ' → ' . $kanonik,
+            ClientIp::from($request),
+            $this->clock->now(),
+            ActivityLog::ACTOR_ADMIN,
+            $kullanici->id,
+        );
+
+        return Response::success($response, [
+            'app_url' => $kanonik,
+            'app_url_kanonik' => true,
+        ]);
+    }
+
+    /**
+     * PUT /api/settings/share-contact — paylaşım iletişim numarası (İE#21 EK-4).
+     *
+     * İSTEĞE BAĞLIDIR ve boş bırakılabilir; boş değer düğmeyi kapatır. Numara
+     * ülke koduyla beklenir ("+90 532 …"); kaydederken kullanıcının yazdığı biçim
+     * korunur, wa.me bağlantısı için rakama indirgeme OKUMA anında yapılır —
+     * kullanıcı ayarlar ekranında kendi yazdığını görmeli.
+     */
+    public function updateShareContact(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        $body = $this->body($request);
+        $ham = is_string($body['share_contact_phone'] ?? null) ? trim((string) $body['share_contact_phone']) : '';
+
+        if ($ham !== '') {
+            $rakam = preg_replace('/\D+/', '', $ham) ?? '';
+            if (mb_strlen($ham) > 32) {
+                return Response::error($response, 'VALIDATION', 'Doğrulama hatası', 422, [
+                    'share_contact_phone' => 'En fazla 32 karakter olabilir.',
+                ]);
+            }
+            // 8 hane altı bir numara ülke kodlu olamaz; wa.me böyle bir bağlantıyı
+            // sessizce boş sayfaya götürür — kullanıcı hatayı burada görmeli.
+            if (strlen($rakam) < 8) {
+                return Response::error($response, 'VALIDATION', 'Doğrulama hatası', 422, [
+                    'share_contact_phone' => 'Ülke koduyla birlikte girin (örn. +90 532 123 45 67).',
+                ]);
+            }
+        }
+
+        $this->settings->set(SettingsRepository::KEY_SHARE_CONTACT_PHONE, $ham);
+
+        $this->activity->record(
+            'settings',
+            null,
+            'share_contact_updated',
+            $ham === '' ? 'temizlendi' : 'güncellendi',
+            \App\Core\ClientIp::from($request),
+            $this->clock->now(),
+            \App\Services\ActivityLog::ACTOR_ADMIN,
+            $this->user($request)->id,
+        );
+
+        return Response::success($response, [
+            'share_contact_phone' => $this->settings->get(SettingsRepository::KEY_SHARE_CONTACT_PHONE),
         ]);
     }
 
@@ -216,10 +336,29 @@ final class SettingsController extends ApiController
             $now = $this->clock->now();
             // K37 §B5: ayar + rate_history + aktivite tek transaction — geçmişsiz kur kalmaz.
             $this->connection->transaction(function () use ($request, $changes, $now): void {
+                // İE#22 A2: KAYNAK BİLGİSİ TAŞINIR. Kullanıcı TCMB önerisini
+                // onayladıysa gövdede `kaynak=tcmb` gelir; K4 gereği otomatik
+                // yazma YOKTUR — yazan yine kullanıcının onayıdır, yalnız
+                // değerin nereden geldiği kayda geçer.
+                $kaynak = ($this->body($request)['kaynak'] ?? null) === \App\Models\RateSnapshotRepository::KAYNAK_TCMB
+                    ? \App\Models\RateSnapshotRepository::KAYNAK_TCMB
+                    : \App\Models\RateSnapshotRepository::KAYNAK_ELLE;
+                $kullaniciId = $this->user($request)->id;
+
                 foreach ($changes as $change) {
+                    // Ayar kopyası ve snapshot AYNI transaction'da yazılır —
+                    // çift kaynak riski ancak böyle kapanır (Nöbet Raporu 4 §2d).
                     $this->settings->set($change['key'], $change['value']);
-                    $this->recordRate($change['currency'], $change['value'], $now);
+                    $this->recordRate($change['currency'], $change['value'], $now, $kaynak, $kullaniciId);
                 }
+
+                // İE#21 B5: kilitlenmemiş listeler güncel kuru İZLER. Aynı transaction
+                // içindedir — kur değişip listeler eski kurda kalırsa panel ile belge
+                // birbirini yalanlar ve hangisinin doğru olduğu anlaşılmaz.
+                $tazelenen = (new ListRepository($this->connection))->kilitsizKurlariTazele(
+                    $this->settings->yuanRate(),
+                    $this->settings->usdRate(),
+                );
 
                 $this->activity->record(
                     'settings',
@@ -228,7 +367,7 @@ final class SettingsController extends ApiController
                     implode(', ', array_map(
                         static fn (array $c): string => $c['currency'] . '=' . $c['from'] . '→' . $c['value'],
                         $changes,
-                    )),
+                    )) . ($tazelenen > 0 ? sprintf(' · %d kilitlenmemiş liste tazelendi', $tazelenen) : ''),
                     ClientIp::from($request),
                     $now,
                     ActivityLog::ACTOR_ADMIN,
@@ -248,45 +387,106 @@ final class SettingsController extends ApiController
         ]);
     }
 
+    /**
+     * GET /api/settings/rates/suggest — TCMB'den güncel kur ÖNERİSİ (İE#21 B5).
+     *
+     * KAYDETMEZ. Yanıt panele gider, panel FORMU doldurur, kullanıcı "Kaydet"
+     * derse kur değişir (K4: kur bir ticari karardır, kendiliğinden değişmez).
+     * Kaynağa ulaşılamazsa hata GÖRÜNÜR — sessizce eski değerle devam edilmez.
+     */
+    public function suggestRates(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        $sonuc = (new \App\Services\Kur\KurKaynagi())->getir($this->clock->now());
+
+        if ($sonuc['ok'] !== true) {
+            return Response::error(
+                $response,
+                'UPSTREAM_UNAVAILABLE',
+                isset($sonuc['hata']) ? (string) $sonuc['hata'] : 'Kur kaynağına ulaşılamadı.',
+                502,
+            );
+        }
+
+        return Response::success($response, [
+            'yuan_tl' => $this->money->formatRate((string) $sonuc['yuan_tl']),
+            'usd_tl' => $this->money->formatRate((string) $sonuc['usd_tl']),
+            'kaynak' => $sonuc['kaynak'] ?? 'TCMB',
+            'tarih' => $sonuc['tarih'] ?? null,
+            // Panel bunu "şu an kayıtlı olan" ile karşılaştırıp değişimi gösterir.
+            'mevcut' => [
+                'yuan_tl' => $this->money->formatRate($this->settings->yuanRate()),
+                'usd_tl' => $this->money->formatRate($this->settings->usdRate()),
+            ],
+        ]);
+    }
+
     /** GET /api/settings/rates/history */
     public function rateHistory(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
         $currency = strtoupper($this->query($request, 'currency'));
-
-        $sql = 'SELECT id, currency, rate, set_at FROM rate_history';
-        $params = [];
-        if ($currency !== '') {
-            if (!in_array($currency, ['CNY', 'USD'], true)) {
-                return Response::error($response, 'VALIDATION', 'Doğrulama hatası', 422, [
-                    'currency' => 'Para birimi CNY veya USD olmalı.',
-                ]);
-            }
-            $sql .= ' WHERE currency = :currency';
-            $params['currency'] = $currency;
+        if ($currency !== '' && !in_array($currency, \App\Models\RateSnapshotRepository::PARA_BIRIMLERI, true)) {
+            return Response::error($response, 'VALIDATION', 'Doğrulama hatası', 422, [
+                'currency' => 'Para birimi CNY veya USD olmalı.',
+            ]);
         }
-        $sql .= ' ORDER BY set_at DESC, id DESC';
 
-        $statement = $this->connection->pdo()->prepare($sql);
-        $statement->execute($params);
+        // İE#22 A3: kaynak `rate_history` DEĞİL `rate_snapshots`.
+        //
+        // Ekran artık üç şeyi birden söyler: hangi satır GEÇERLİ (aktif),
+        // değeri nereden geldi (elle/TCMB) ve ne zamandan beri geçerli.
+        // Eski tablo yerinde duruyor ama okuma buradan yapılır; iki kaynağı
+        // aynı ekranda tutmak, hangisinin doğru olduğunu belirsizleştirirdi.
+        $satirlar = (new \App\Models\RateSnapshotRepository($this->connection))
+            ->gecmis($currency === '' ? null : $currency, 100);
 
-        /** @var list<array<string, mixed>> $rows */
-        $rows = $statement->fetchAll();
-
-        $history = [];
-        foreach ($rows as $row) {
-            $history[] = [
-                'id' => (int) $row['id'],
-                'currency' => (string) $row['currency'],
-                'rate' => $this->money->formatRate((string) $row['rate']),
-                'set_at' => Dates::toIso((string) $row['set_at'], $this->timezone),
+        $gecmis = [];
+        foreach ($satirlar as $satir) {
+            $gecmis[] = [
+                'id' => $satir['id'],
+                'currency' => $satir['currency'],
+                'rate' => $this->money->formatRate($satir['rate']),
+                // Eski sözleşmedeki alan adı KORUNUR: panelin kur tarihçesi
+                // tablosu `set_at` okuyor ve bu emirde ekran sözleşmesini
+                // kırmak yok. Anlamı da aynı: kaydın geçerlilik başlangıcı.
+                'set_at' => Dates::toIso($satir['effective_from'], $this->timezone),
+                // İE#22 A3 — YENİ ALANLAR: hangi satır geçerli, değeri nereden
+                // geldi, ne zaman devre dışı kaldı.
+                'aktif' => $satir['aktif'],
+                'kaynak' => $satir['source'],
+                'superseded_at' => $satir['superseded_at'] === null
+                    ? null
+                    : Dates::toIso($satir['superseded_at'], $this->timezone),
             ];
         }
 
-        return Response::success($response, $history);
+        return Response::success($response, $gecmis);
+
     }
 
-    private function recordRate(string $currency, string $rate, \DateTimeImmutable $now): void
-    {
+    /**
+     * Kur değişikliğini KALICI hâle getirir (İE#22 A2).
+     *
+     * İki yere birden yazar ve bu bilinçlidir:
+     *   · `rate_snapshots` — YENİ GERÇEK. Öncekine bitiş damgası basılır,
+     *     yeni satır aktif olur. Kaynak (elle/TCMB) ve onaylayan kullanıcı
+     *     burada durur.
+     *   · `rate_history` — eski defter. Silinmedi: dışarıdan okuyan bir şey
+     *     kalmış olabilir ve göç dosyası (0034) onu kaynak alıyor. Yeni satır
+     *     yazmayı bırakırsak iki tablo ayrışır; K85 gereği ikisi de aynı
+     *     transaction'da güncellenir.
+     *
+     * Çağıran transaction AÇMIŞ olmalıdır (K37 §B5).
+     */
+    private function recordRate(
+        string $currency,
+        string $rate,
+        \DateTimeImmutable $now,
+        string $kaynak = \App\Models\RateSnapshotRepository::KAYNAK_ELLE,
+        ?int $kullaniciId = null,
+    ): void {
+        (new \App\Models\RateSnapshotRepository($this->connection))
+            ->yeniSurum($currency, $rate, $now, $kaynak, $kullaniciId);
+
         $statement = $this->connection->pdo()->prepare(
             'INSERT INTO rate_history (currency, rate, set_at) VALUES (:currency, :rate, :set_at)',
         );

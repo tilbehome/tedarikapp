@@ -1,0 +1,2234 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "schema_version": "1.0.0",
+  "document_name": "TedarikApp V3-M Dil Denetim Vektörleri",
+  "generated_at": "2026-08-26",
+  "record_schema": {
+    "id_pattern": "^DL-[0-9]{3}$",
+    "required_input_fields": [
+      "output_type",
+      "language",
+      "list_status_key",
+      "empty_field_scenario",
+      "fixture"
+    ],
+    "output_type_enum": [
+      "Excel",
+      "PDF",
+      "CSV",
+      "Paylaşım sayfası",
+      "Kanal metni"
+    ],
+    "language_enum": [
+      "tr",
+      "en",
+      "zh"
+    ],
+    "list_status_enum": [
+      "status.preparing",
+      "status.waiting_price",
+      "status.found",
+      "status.not_found",
+      "status.alternative_available",
+      "status.waiting_approval",
+      "status.approved",
+      "status.rejected",
+      "status.ready",
+      "status.missing_data",
+      "status.sent",
+      "status.archived",
+      "status.cancelled",
+      "status.waiting_supplier",
+      "status.expired"
+    ],
+    "result_enum": [
+      "PASS",
+      "FAIL"
+    ]
+  },
+  "source_contracts": {
+    "5b": {
+      "file": "cikti-terimleri.json",
+      "term_count": 185,
+      "status_key_count": 15
+    },
+    "acceptance": [
+      "KT-032",
+      "KT-033",
+      "KT-034",
+      "KT-035",
+      "KT-036",
+      "KT-037",
+      "KT-038"
+    ],
+    "k55": "DM-016 original value must remain 高硼硅玻璃油壶 550ml",
+    "k57_k61_number_mapping": "kanıtlanmadı",
+    "task_rules": [
+      "zero mixed system language",
+      "missing value em dash",
+      "PDF tier header remains three logical rows"
+    ]
+  },
+  "acceptance_gate": {
+    "minimum_vector_count": 40,
+    "actual_vector_count": 70,
+    "mixed_language_system_label_count": 0,
+    "unknown_status_key_count": 0,
+    "visible_null_token_count": 0,
+    "k55_mutation_count": 0,
+    "zh_missing_glyph_count": 0
+  },
+  "vectors": [
+    {
+      "id": "DL-001",
+      "category": "baseline_output_locale",
+      "input": {
+        "output_type": "Excel",
+        "language": "tr",
+        "list_status_key": "status.ready",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "list_name": "LIST-22",
+          "product_count": 3,
+          "ready_count": 2
+        }
+      },
+      "expected": {
+        "result": "PASS",
+        "required_texts": [
+          {
+            "source_key": "doc.offer_list",
+            "text": "Teklif Listesi"
+          },
+          {
+            "source_key": "col.product_name",
+            "text": "Ürün Adı"
+          },
+          {
+            "source_key": "col.status",
+            "text": "Durum"
+          },
+          {
+            "source_key": "status.ready",
+            "text": "Siparişe hazır"
+          },
+          {
+            "source_key": "footnote.rounding",
+            "text": "Yuvarlama nedeniyle küçük toplam farkları oluşabilir."
+          }
+        ],
+        "forbidden_system_texts": [
+          "Minor total differences may occur due to rounding.",
+          "Product Name",
+          "Quotation List",
+          "Ready to Order",
+          "Status",
+          "产品名称",
+          "可下单",
+          "因四舍五入，合计金额可能存在微小差异。",
+          "报价单",
+          "状态"
+        ],
+        "formats": {
+          "number": "1.234,56",
+          "date": "26.08.2026",
+          "time": "14:05",
+          "try": "₺1.234,56",
+          "cny": "¥1.234,56",
+          "missing": "—"
+        },
+        "mixed_language_system_label_count": 0
+      }
+    },
+    {
+      "id": "DL-002",
+      "category": "baseline_output_locale",
+      "input": {
+        "output_type": "Excel",
+        "language": "en",
+        "list_status_key": "status.ready",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "list_name": "LIST-22",
+          "product_count": 3,
+          "ready_count": 2
+        }
+      },
+      "expected": {
+        "result": "PASS",
+        "required_texts": [
+          {
+            "source_key": "doc.offer_list",
+            "text": "Quotation List"
+          },
+          {
+            "source_key": "col.product_name",
+            "text": "Product Name"
+          },
+          {
+            "source_key": "col.status",
+            "text": "Status"
+          },
+          {
+            "source_key": "status.ready",
+            "text": "Ready to Order"
+          },
+          {
+            "source_key": "footnote.rounding",
+            "text": "Minor total differences may occur due to rounding."
+          }
+        ],
+        "forbidden_system_texts": [
+          "Durum",
+          "Siparişe hazır",
+          "Teklif Listesi",
+          "Yuvarlama nedeniyle küçük toplam farkları oluşabilir.",
+          "Ürün Adı",
+          "产品名称",
+          "可下单",
+          "因四舍五入，合计金额可能存在微小差异。",
+          "报价单",
+          "状态"
+        ],
+        "formats": {
+          "number": "1,234.56",
+          "date": "26 Aug 2026",
+          "time": "14:05",
+          "try": "TRY 1,234.56",
+          "cny": "CNY 1,234.56",
+          "missing": "—"
+        },
+        "mixed_language_system_label_count": 0
+      }
+    },
+    {
+      "id": "DL-003",
+      "category": "baseline_output_locale",
+      "input": {
+        "output_type": "Excel",
+        "language": "zh",
+        "list_status_key": "status.ready",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "list_name": "LIST-22",
+          "product_count": 3,
+          "ready_count": 2
+        }
+      },
+      "expected": {
+        "result": "PASS",
+        "required_texts": [
+          {
+            "source_key": "doc.offer_list",
+            "text": "报价单"
+          },
+          {
+            "source_key": "col.product_name",
+            "text": "产品名称"
+          },
+          {
+            "source_key": "col.status",
+            "text": "状态"
+          },
+          {
+            "source_key": "status.ready",
+            "text": "可下单"
+          },
+          {
+            "source_key": "footnote.rounding",
+            "text": "因四舍五入，合计金额可能存在微小差异。"
+          }
+        ],
+        "forbidden_system_texts": [
+          "Durum",
+          "Minor total differences may occur due to rounding.",
+          "Product Name",
+          "Quotation List",
+          "Ready to Order",
+          "Siparişe hazır",
+          "Status",
+          "Teklif Listesi",
+          "Yuvarlama nedeniyle küçük toplam farkları oluşabilir.",
+          "Ürün Adı"
+        ],
+        "formats": {
+          "number": "1,234.56",
+          "date": "2026年8月26日",
+          "time": "14:05",
+          "try": "TRY 1,234.56",
+          "cny": "¥1,234.56",
+          "missing": "—"
+        },
+        "mixed_language_system_label_count": 0
+      }
+    },
+    {
+      "id": "DL-004",
+      "category": "baseline_output_locale",
+      "input": {
+        "output_type": "PDF",
+        "language": "tr",
+        "list_status_key": "status.ready",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "list_name": "LIST-22",
+          "product_count": 3,
+          "ready_count": 2
+        }
+      },
+      "expected": {
+        "result": "PASS",
+        "required_texts": [
+          {
+            "source_key": "doc.purchase_list",
+            "text": "Satın Alma Listesi"
+          },
+          {
+            "source_key": "col.product_name",
+            "text": "Ürün Adı"
+          },
+          {
+            "source_key": "col.status",
+            "text": "Durum"
+          },
+          {
+            "source_key": "status.ready",
+            "text": "Siparişe hazır"
+          },
+          {
+            "source_key": "doc.page",
+            "text": "Sayfa 1/1"
+          }
+        ],
+        "forbidden_system_texts": [
+          "Page 1/1",
+          "Product Name",
+          "Purchase List",
+          "Ready to Order",
+          "Status",
+          "产品名称",
+          "可下单",
+          "状态",
+          "第 1/1 页",
+          "采购清单"
+        ],
+        "formats": {
+          "number": "1.234,56",
+          "date": "26.08.2026",
+          "time": "14:05",
+          "try": "₺1.234,56",
+          "cny": "¥1.234,56",
+          "missing": "—"
+        },
+        "mixed_language_system_label_count": 0
+      }
+    },
+    {
+      "id": "DL-005",
+      "category": "baseline_output_locale",
+      "input": {
+        "output_type": "PDF",
+        "language": "en",
+        "list_status_key": "status.ready",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "list_name": "LIST-22",
+          "product_count": 3,
+          "ready_count": 2
+        }
+      },
+      "expected": {
+        "result": "PASS",
+        "required_texts": [
+          {
+            "source_key": "doc.purchase_list",
+            "text": "Purchase List"
+          },
+          {
+            "source_key": "col.product_name",
+            "text": "Product Name"
+          },
+          {
+            "source_key": "col.status",
+            "text": "Status"
+          },
+          {
+            "source_key": "status.ready",
+            "text": "Ready to Order"
+          },
+          {
+            "source_key": "doc.page",
+            "text": "Page 1/1"
+          }
+        ],
+        "forbidden_system_texts": [
+          "Durum",
+          "Satın Alma Listesi",
+          "Sayfa 1/1",
+          "Siparişe hazır",
+          "Ürün Adı",
+          "产品名称",
+          "可下单",
+          "状态",
+          "第 1/1 页",
+          "采购清单"
+        ],
+        "formats": {
+          "number": "1,234.56",
+          "date": "26 Aug 2026",
+          "time": "14:05",
+          "try": "TRY 1,234.56",
+          "cny": "CNY 1,234.56",
+          "missing": "—"
+        },
+        "mixed_language_system_label_count": 0
+      }
+    },
+    {
+      "id": "DL-006",
+      "category": "baseline_output_locale",
+      "input": {
+        "output_type": "PDF",
+        "language": "zh",
+        "list_status_key": "status.ready",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "list_name": "LIST-22",
+          "product_count": 3,
+          "ready_count": 2
+        }
+      },
+      "expected": {
+        "result": "PASS",
+        "required_texts": [
+          {
+            "source_key": "doc.purchase_list",
+            "text": "采购清单"
+          },
+          {
+            "source_key": "col.product_name",
+            "text": "产品名称"
+          },
+          {
+            "source_key": "col.status",
+            "text": "状态"
+          },
+          {
+            "source_key": "status.ready",
+            "text": "可下单"
+          },
+          {
+            "source_key": "doc.page",
+            "text": "第 1/1 页"
+          }
+        ],
+        "forbidden_system_texts": [
+          "Durum",
+          "Page 1/1",
+          "Product Name",
+          "Purchase List",
+          "Ready to Order",
+          "Satın Alma Listesi",
+          "Sayfa 1/1",
+          "Siparişe hazır",
+          "Status",
+          "Ürün Adı"
+        ],
+        "formats": {
+          "number": "1,234.56",
+          "date": "2026年8月26日",
+          "time": "14:05",
+          "try": "TRY 1,234.56",
+          "cny": "¥1,234.56",
+          "missing": "—"
+        },
+        "mixed_language_system_label_count": 0
+      }
+    },
+    {
+      "id": "DL-007",
+      "category": "baseline_output_locale",
+      "input": {
+        "output_type": "CSV",
+        "language": "tr",
+        "list_status_key": "status.ready",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "list_name": "LIST-22",
+          "product_count": 3,
+          "ready_count": 2
+        }
+      },
+      "expected": {
+        "result": "PASS",
+        "required_texts": [
+          {
+            "source_key": "col.product_name",
+            "text": "Ürün Adı"
+          },
+          {
+            "source_key": "col.status",
+            "text": "Durum"
+          },
+          {
+            "source_key": "status.ready",
+            "text": "Siparişe hazır"
+          }
+        ],
+        "forbidden_system_texts": [
+          "Product Name",
+          "Ready to Order",
+          "Status",
+          "产品名称",
+          "可下单",
+          "状态"
+        ],
+        "formats": {
+          "number": "1.234,56",
+          "date": "26.08.2026",
+          "time": "14:05",
+          "try": "₺1.234,56",
+          "cny": "¥1.234,56",
+          "missing": "—"
+        },
+        "mixed_language_system_label_count": 0
+      }
+    },
+    {
+      "id": "DL-008",
+      "category": "baseline_output_locale",
+      "input": {
+        "output_type": "CSV",
+        "language": "en",
+        "list_status_key": "status.ready",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "list_name": "LIST-22",
+          "product_count": 3,
+          "ready_count": 2
+        }
+      },
+      "expected": {
+        "result": "PASS",
+        "required_texts": [
+          {
+            "source_key": "col.product_name",
+            "text": "Product Name"
+          },
+          {
+            "source_key": "col.status",
+            "text": "Status"
+          },
+          {
+            "source_key": "status.ready",
+            "text": "Ready to Order"
+          }
+        ],
+        "forbidden_system_texts": [
+          "Durum",
+          "Siparişe hazır",
+          "Ürün Adı",
+          "产品名称",
+          "可下单",
+          "状态"
+        ],
+        "formats": {
+          "number": "1,234.56",
+          "date": "26 Aug 2026",
+          "time": "14:05",
+          "try": "TRY 1,234.56",
+          "cny": "CNY 1,234.56",
+          "missing": "—"
+        },
+        "mixed_language_system_label_count": 0
+      }
+    },
+    {
+      "id": "DL-009",
+      "category": "baseline_output_locale",
+      "input": {
+        "output_type": "CSV",
+        "language": "zh",
+        "list_status_key": "status.ready",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "list_name": "LIST-22",
+          "product_count": 3,
+          "ready_count": 2
+        }
+      },
+      "expected": {
+        "result": "PASS",
+        "required_texts": [
+          {
+            "source_key": "col.product_name",
+            "text": "产品名称"
+          },
+          {
+            "source_key": "col.status",
+            "text": "状态"
+          },
+          {
+            "source_key": "status.ready",
+            "text": "可下单"
+          }
+        ],
+        "forbidden_system_texts": [
+          "Durum",
+          "Product Name",
+          "Ready to Order",
+          "Siparişe hazır",
+          "Status",
+          "Ürün Adı"
+        ],
+        "formats": {
+          "number": "1,234.56",
+          "date": "2026年8月26日",
+          "time": "14:05",
+          "try": "TRY 1,234.56",
+          "cny": "¥1,234.56",
+          "missing": "—"
+        },
+        "mixed_language_system_label_count": 0
+      }
+    },
+    {
+      "id": "DL-010",
+      "category": "baseline_output_locale",
+      "input": {
+        "output_type": "Paylaşım sayfası",
+        "language": "tr",
+        "list_status_key": "status.ready",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "list_name": "LIST-22",
+          "product_count": 3,
+          "ready_count": 2
+        }
+      },
+      "expected": {
+        "result": "PASS",
+        "required_texts": [
+          {
+            "source_key": "doc.offer_list",
+            "text": "Teklif Listesi"
+          },
+          {
+            "source_key": "col.product_name",
+            "text": "Ürün Adı"
+          },
+          {
+            "source_key": "col.status",
+            "text": "Durum"
+          },
+          {
+            "source_key": "filter.search",
+            "text": "Ürünlerde ara"
+          },
+          {
+            "source_key": "footnote.translation",
+            "text": "Çeviri bilgilendirme amaçlıdır; ticari koşullarda kaynak metin esas alınır."
+          }
+        ],
+        "forbidden_system_texts": [
+          "Product Name",
+          "Quotation List",
+          "Search Products",
+          "Status",
+          "The translation is for information; the source text governs commercial terms.",
+          "产品名称",
+          "报价单",
+          "搜索产品",
+          "状态",
+          "译文仅供参考，商业条款以原文为准。"
+        ],
+        "formats": {
+          "number": "1.234,56",
+          "date": "26.08.2026",
+          "time": "14:05",
+          "try": "₺1.234,56",
+          "cny": "¥1.234,56",
+          "missing": "—"
+        },
+        "mixed_language_system_label_count": 0
+      }
+    },
+    {
+      "id": "DL-011",
+      "category": "baseline_output_locale",
+      "input": {
+        "output_type": "Paylaşım sayfası",
+        "language": "en",
+        "list_status_key": "status.ready",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "list_name": "LIST-22",
+          "product_count": 3,
+          "ready_count": 2
+        }
+      },
+      "expected": {
+        "result": "PASS",
+        "required_texts": [
+          {
+            "source_key": "doc.offer_list",
+            "text": "Quotation List"
+          },
+          {
+            "source_key": "col.product_name",
+            "text": "Product Name"
+          },
+          {
+            "source_key": "col.status",
+            "text": "Status"
+          },
+          {
+            "source_key": "filter.search",
+            "text": "Search Products"
+          },
+          {
+            "source_key": "footnote.translation",
+            "text": "The translation is for information; the source text governs commercial terms."
+          }
+        ],
+        "forbidden_system_texts": [
+          "Durum",
+          "Teklif Listesi",
+          "Çeviri bilgilendirme amaçlıdır; ticari koşullarda kaynak metin esas alınır.",
+          "Ürün Adı",
+          "Ürünlerde ara",
+          "产品名称",
+          "报价单",
+          "搜索产品",
+          "状态",
+          "译文仅供参考，商业条款以原文为准。"
+        ],
+        "formats": {
+          "number": "1,234.56",
+          "date": "26 Aug 2026",
+          "time": "14:05",
+          "try": "TRY 1,234.56",
+          "cny": "CNY 1,234.56",
+          "missing": "—"
+        },
+        "mixed_language_system_label_count": 0
+      }
+    },
+    {
+      "id": "DL-012",
+      "category": "baseline_output_locale",
+      "input": {
+        "output_type": "Paylaşım sayfası",
+        "language": "zh",
+        "list_status_key": "status.ready",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "list_name": "LIST-22",
+          "product_count": 3,
+          "ready_count": 2
+        }
+      },
+      "expected": {
+        "result": "PASS",
+        "required_texts": [
+          {
+            "source_key": "doc.offer_list",
+            "text": "报价单"
+          },
+          {
+            "source_key": "col.product_name",
+            "text": "产品名称"
+          },
+          {
+            "source_key": "col.status",
+            "text": "状态"
+          },
+          {
+            "source_key": "filter.search",
+            "text": "搜索产品"
+          },
+          {
+            "source_key": "footnote.translation",
+            "text": "译文仅供参考，商业条款以原文为准。"
+          }
+        ],
+        "forbidden_system_texts": [
+          "Durum",
+          "Product Name",
+          "Quotation List",
+          "Search Products",
+          "Status",
+          "Teklif Listesi",
+          "The translation is for information; the source text governs commercial terms.",
+          "Çeviri bilgilendirme amaçlıdır; ticari koşullarda kaynak metin esas alınır.",
+          "Ürün Adı",
+          "Ürünlerde ara"
+        ],
+        "formats": {
+          "number": "1,234.56",
+          "date": "2026年8月26日",
+          "time": "14:05",
+          "try": "TRY 1,234.56",
+          "cny": "¥1,234.56",
+          "missing": "—"
+        },
+        "mixed_language_system_label_count": 0
+      }
+    },
+    {
+      "id": "DL-013",
+      "category": "baseline_output_locale",
+      "input": {
+        "output_type": "Kanal metni",
+        "language": "tr",
+        "list_status_key": "status.ready",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "list_name": "LIST-22",
+          "product_count": 3,
+          "ready_count": 2
+        }
+      },
+      "expected": {
+        "result": "PASS",
+        "required_texts": [
+          {
+            "source_key": "msg.ready_summary",
+            "text": "2/3 ürün siparişe hazırdır."
+          },
+          {
+            "source_key": "status.ready",
+            "text": "Siparişe hazır"
+          }
+        ],
+        "forbidden_system_texts": [
+          "2/3 products are ready to order.",
+          "2/3 个产品可下单。",
+          "Ready to Order",
+          "可下单"
+        ],
+        "formats": {
+          "number": "1.234,56",
+          "date": "26.08.2026",
+          "time": "14:05",
+          "try": "₺1.234,56",
+          "cny": "¥1.234,56",
+          "missing": "—"
+        },
+        "mixed_language_system_label_count": 0
+      }
+    },
+    {
+      "id": "DL-014",
+      "category": "baseline_output_locale",
+      "input": {
+        "output_type": "Kanal metni",
+        "language": "en",
+        "list_status_key": "status.ready",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "list_name": "LIST-22",
+          "product_count": 3,
+          "ready_count": 2
+        }
+      },
+      "expected": {
+        "result": "PASS",
+        "required_texts": [
+          {
+            "source_key": "msg.ready_summary",
+            "text": "2/3 products are ready to order."
+          },
+          {
+            "source_key": "status.ready",
+            "text": "Ready to Order"
+          }
+        ],
+        "forbidden_system_texts": [
+          "2/3 ürün siparişe hazırdır.",
+          "2/3 个产品可下单。",
+          "Siparişe hazır",
+          "可下单"
+        ],
+        "formats": {
+          "number": "1,234.56",
+          "date": "26 Aug 2026",
+          "time": "14:05",
+          "try": "TRY 1,234.56",
+          "cny": "CNY 1,234.56",
+          "missing": "—"
+        },
+        "mixed_language_system_label_count": 0
+      }
+    },
+    {
+      "id": "DL-015",
+      "category": "baseline_output_locale",
+      "input": {
+        "output_type": "Kanal metni",
+        "language": "zh",
+        "list_status_key": "status.ready",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "list_name": "LIST-22",
+          "product_count": 3,
+          "ready_count": 2
+        }
+      },
+      "expected": {
+        "result": "PASS",
+        "required_texts": [
+          {
+            "source_key": "msg.ready_summary",
+            "text": "2/3 个产品可下单。"
+          },
+          {
+            "source_key": "status.ready",
+            "text": "可下单"
+          }
+        ],
+        "forbidden_system_texts": [
+          "2/3 products are ready to order.",
+          "2/3 ürün siparişe hazırdır.",
+          "Ready to Order",
+          "Siparişe hazır"
+        ],
+        "formats": {
+          "number": "1,234.56",
+          "date": "2026年8月26日",
+          "time": "14:05",
+          "try": "TRY 1,234.56",
+          "cny": "¥1,234.56",
+          "missing": "—"
+        },
+        "mixed_language_system_label_count": 0
+      }
+    },
+    {
+      "id": "DL-016",
+      "category": "all_accepted_statuses",
+      "input": {
+        "output_type": "Excel",
+        "language": "tr",
+        "list_status_key": "status.preparing",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "render_status": "status.preparing"
+        }
+      },
+      "expected": {
+        "result": "PASS",
+        "required_texts": [
+          {
+            "source_key": "status.preparing",
+            "text": "Hazırlanıyor"
+          }
+        ],
+        "forbidden_system_texts": [
+          "Preparing",
+          "准备中"
+        ],
+        "unknown_status_count": 0
+      }
+    },
+    {
+      "id": "DL-017",
+      "category": "all_accepted_statuses",
+      "input": {
+        "output_type": "PDF",
+        "language": "en",
+        "list_status_key": "status.waiting_price",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "render_status": "status.waiting_price"
+        }
+      },
+      "expected": {
+        "result": "PASS",
+        "required_texts": [
+          {
+            "source_key": "status.waiting_price",
+            "text": "Awaiting Price"
+          }
+        ],
+        "forbidden_system_texts": [
+          "Fiyat bekleniyor",
+          "待报价"
+        ],
+        "unknown_status_count": 0
+      }
+    },
+    {
+      "id": "DL-018",
+      "category": "all_accepted_statuses",
+      "input": {
+        "output_type": "CSV",
+        "language": "zh",
+        "list_status_key": "status.found",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "render_status": "status.found"
+        }
+      },
+      "expected": {
+        "result": "PASS",
+        "required_texts": [
+          {
+            "source_key": "status.found",
+            "text": "已找到"
+          }
+        ],
+        "forbidden_system_texts": [
+          "Bulundu",
+          "Found"
+        ],
+        "unknown_status_count": 0
+      }
+    },
+    {
+      "id": "DL-019",
+      "category": "all_accepted_statuses",
+      "input": {
+        "output_type": "Paylaşım sayfası",
+        "language": "tr",
+        "list_status_key": "status.not_found",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "render_status": "status.not_found"
+        }
+      },
+      "expected": {
+        "result": "PASS",
+        "required_texts": [
+          {
+            "source_key": "status.not_found",
+            "text": "Bulunamadı"
+          }
+        ],
+        "forbidden_system_texts": [
+          "Not Found",
+          "未找到"
+        ],
+        "unknown_status_count": 0
+      }
+    },
+    {
+      "id": "DL-020",
+      "category": "all_accepted_statuses",
+      "input": {
+        "output_type": "Kanal metni",
+        "language": "en",
+        "list_status_key": "status.alternative_available",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "render_status": "status.alternative_available"
+        }
+      },
+      "expected": {
+        "result": "PASS",
+        "required_texts": [
+          {
+            "source_key": "status.alternative_available",
+            "text": "Alternative Available"
+          }
+        ],
+        "forbidden_system_texts": [
+          "Alternatif var",
+          "有替代品"
+        ],
+        "unknown_status_count": 0
+      }
+    },
+    {
+      "id": "DL-021",
+      "category": "all_accepted_statuses",
+      "input": {
+        "output_type": "Excel",
+        "language": "zh",
+        "list_status_key": "status.waiting_approval",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "render_status": "status.waiting_approval"
+        }
+      },
+      "expected": {
+        "result": "PASS",
+        "required_texts": [
+          {
+            "source_key": "status.waiting_approval",
+            "text": "待确认"
+          }
+        ],
+        "forbidden_system_texts": [
+          "Onay bekliyor",
+          "Awaiting Approval"
+        ],
+        "unknown_status_count": 0
+      }
+    },
+    {
+      "id": "DL-022",
+      "category": "all_accepted_statuses",
+      "input": {
+        "output_type": "PDF",
+        "language": "tr",
+        "list_status_key": "status.approved",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "render_status": "status.approved"
+        }
+      },
+      "expected": {
+        "result": "PASS",
+        "required_texts": [
+          {
+            "source_key": "status.approved",
+            "text": "Onaylandı"
+          }
+        ],
+        "forbidden_system_texts": [
+          "Approved",
+          "已确认"
+        ],
+        "unknown_status_count": 0
+      }
+    },
+    {
+      "id": "DL-023",
+      "category": "all_accepted_statuses",
+      "input": {
+        "output_type": "CSV",
+        "language": "en",
+        "list_status_key": "status.rejected",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "render_status": "status.rejected"
+        }
+      },
+      "expected": {
+        "result": "PASS",
+        "required_texts": [
+          {
+            "source_key": "status.rejected",
+            "text": "Rejected"
+          }
+        ],
+        "forbidden_system_texts": [
+          "Reddedildi",
+          "已拒绝"
+        ],
+        "unknown_status_count": 0
+      }
+    },
+    {
+      "id": "DL-024",
+      "category": "all_accepted_statuses",
+      "input": {
+        "output_type": "Paylaşım sayfası",
+        "language": "zh",
+        "list_status_key": "status.ready",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "render_status": "status.ready"
+        }
+      },
+      "expected": {
+        "result": "PASS",
+        "required_texts": [
+          {
+            "source_key": "status.ready",
+            "text": "可下单"
+          }
+        ],
+        "forbidden_system_texts": [
+          "Siparişe hazır",
+          "Ready to Order"
+        ],
+        "unknown_status_count": 0
+      }
+    },
+    {
+      "id": "DL-025",
+      "category": "all_accepted_statuses",
+      "input": {
+        "output_type": "Kanal metni",
+        "language": "tr",
+        "list_status_key": "status.missing_data",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "render_status": "status.missing_data"
+        }
+      },
+      "expected": {
+        "result": "PASS",
+        "required_texts": [
+          {
+            "source_key": "status.missing_data",
+            "text": "Eksik veri"
+          }
+        ],
+        "forbidden_system_texts": [
+          "Missing Data",
+          "数据不完整"
+        ],
+        "unknown_status_count": 0
+      }
+    },
+    {
+      "id": "DL-026",
+      "category": "all_accepted_statuses",
+      "input": {
+        "output_type": "Excel",
+        "language": "en",
+        "list_status_key": "status.sent",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "render_status": "status.sent"
+        }
+      },
+      "expected": {
+        "result": "PASS",
+        "required_texts": [
+          {
+            "source_key": "status.sent",
+            "text": "Sent"
+          }
+        ],
+        "forbidden_system_texts": [
+          "Gönderildi",
+          "已发送"
+        ],
+        "unknown_status_count": 0
+      }
+    },
+    {
+      "id": "DL-027",
+      "category": "all_accepted_statuses",
+      "input": {
+        "output_type": "PDF",
+        "language": "zh",
+        "list_status_key": "status.archived",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "render_status": "status.archived"
+        }
+      },
+      "expected": {
+        "result": "PASS",
+        "required_texts": [
+          {
+            "source_key": "status.archived",
+            "text": "已归档"
+          }
+        ],
+        "forbidden_system_texts": [
+          "Arşivlendi",
+          "Archived"
+        ],
+        "unknown_status_count": 0
+      }
+    },
+    {
+      "id": "DL-028",
+      "category": "all_accepted_statuses",
+      "input": {
+        "output_type": "CSV",
+        "language": "tr",
+        "list_status_key": "status.cancelled",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "render_status": "status.cancelled"
+        }
+      },
+      "expected": {
+        "result": "PASS",
+        "required_texts": [
+          {
+            "source_key": "status.cancelled",
+            "text": "İptal edildi"
+          }
+        ],
+        "forbidden_system_texts": [
+          "Cancelled",
+          "已取消"
+        ],
+        "unknown_status_count": 0
+      }
+    },
+    {
+      "id": "DL-029",
+      "category": "all_accepted_statuses",
+      "input": {
+        "output_type": "Paylaşım sayfası",
+        "language": "en",
+        "list_status_key": "status.waiting_supplier",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "render_status": "status.waiting_supplier"
+        }
+      },
+      "expected": {
+        "result": "PASS",
+        "required_texts": [
+          {
+            "source_key": "status.waiting_supplier",
+            "text": "Awaiting Supplier Response"
+          }
+        ],
+        "forbidden_system_texts": [
+          "Tedarikçi yanıtı bekleniyor",
+          "等待供应商回复"
+        ],
+        "unknown_status_count": 0
+      }
+    },
+    {
+      "id": "DL-030",
+      "category": "all_accepted_statuses",
+      "input": {
+        "output_type": "Kanal metni",
+        "language": "zh",
+        "list_status_key": "status.expired",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "render_status": "status.expired"
+        }
+      },
+      "expected": {
+        "result": "PASS",
+        "required_texts": [
+          {
+            "source_key": "status.expired",
+            "text": "已过期"
+          }
+        ],
+        "forbidden_system_texts": [
+          "Güncelliğini yitirdi",
+          "Expired"
+        ],
+        "unknown_status_count": 0
+      }
+    },
+    {
+      "id": "DL-031",
+      "category": "mixed_language_trap",
+      "input": {
+        "output_type": "Excel",
+        "language": "en",
+        "list_status_key": "status.ready",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "rendered_system_text": "Ürün Adı",
+          "claimed_source_key": "col.product_name"
+        }
+      },
+      "expected": {
+        "result": "FAIL",
+        "error_codes": [
+          "LANGUAGE_LEAK_TR_IN_EN"
+        ],
+        "offending_text": "Ürün Adı",
+        "mixed_language_system_label_count": 1
+      }
+    },
+    {
+      "id": "DL-032",
+      "category": "mixed_language_trap",
+      "input": {
+        "output_type": "Paylaşım sayfası",
+        "language": "zh",
+        "list_status_key": "status.waiting_price",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "rendered_system_text": "Awaiting Price",
+          "claimed_source_key": "status.waiting_price"
+        }
+      },
+      "expected": {
+        "result": "FAIL",
+        "error_codes": [
+          "LANGUAGE_LEAK_EN_IN_ZH"
+        ],
+        "offending_text": "Awaiting Price",
+        "mixed_language_system_label_count": 1
+      }
+    },
+    {
+      "id": "DL-033",
+      "category": "mixed_language_trap",
+      "input": {
+        "output_type": "PDF",
+        "language": "tr",
+        "list_status_key": "status.sent",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "rendered_system_text": "Page 1/2",
+          "claimed_source_key": "doc.page"
+        }
+      },
+      "expected": {
+        "result": "FAIL",
+        "error_codes": [
+          "LANGUAGE_LEAK_EN_IN_TR"
+        ],
+        "offending_text": "Page 1/2",
+        "mixed_language_system_label_count": 1
+      }
+    },
+    {
+      "id": "DL-034",
+      "category": "mixed_language_trap",
+      "input": {
+        "output_type": "CSV",
+        "language": "en",
+        "list_status_key": "status.approved",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "rendered_system_text": "Durum",
+          "claimed_source_key": "col.status"
+        }
+      },
+      "expected": {
+        "result": "FAIL",
+        "error_codes": [
+          "LANGUAGE_LEAK_TR_IN_EN"
+        ],
+        "offending_text": "Durum",
+        "mixed_language_system_label_count": 1
+      }
+    },
+    {
+      "id": "DL-035",
+      "category": "mixed_language_trap",
+      "input": {
+        "output_type": "Kanal metni",
+        "language": "zh",
+        "list_status_key": "status.ready",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "rendered_system_text": "Your file is ready.",
+          "claimed_source_key": "msg.download_ready"
+        }
+      },
+      "expected": {
+        "result": "FAIL",
+        "error_codes": [
+          "LANGUAGE_LEAK_EN_IN_ZH"
+        ],
+        "offending_text": "Your file is ready.",
+        "mixed_language_system_label_count": 1
+      }
+    },
+    {
+      "id": "DL-036",
+      "category": "mixed_language_trap",
+      "input": {
+        "output_type": "PDF",
+        "language": "en",
+        "list_status_key": "status.expired",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "rendered_system_text": "已过期",
+          "claimed_source_key": "status.expired"
+        }
+      },
+      "expected": {
+        "result": "FAIL",
+        "error_codes": [
+          "LANGUAGE_LEAK_ZH_IN_EN"
+        ],
+        "offending_text": "已过期",
+        "mixed_language_system_label_count": 1
+      }
+    },
+    {
+      "id": "DL-037",
+      "category": "date_language_trap",
+      "input": {
+        "output_type": "PDF",
+        "language": "zh",
+        "list_status_key": "status.ready",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "rendered_date": "26 Ağustos 2026"
+        }
+      },
+      "expected": {
+        "result": "FAIL",
+        "error_codes": [
+          "TR_MONTH_NAME_IN_ZH"
+        ],
+        "expected_date": "2026年8月26日"
+      }
+    },
+    {
+      "id": "DL-038",
+      "category": "date_language_positive",
+      "input": {
+        "output_type": "PDF",
+        "language": "zh",
+        "list_status_key": "status.ready",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "rendered_date": "2026年8月26日"
+        }
+      },
+      "expected": {
+        "result": "PASS",
+        "expected_date": "2026年8月26日"
+      }
+    },
+    {
+      "id": "DL-039",
+      "category": "currency_language_trap",
+      "input": {
+        "output_type": "Excel",
+        "language": "en",
+        "list_status_key": "status.ready",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "currency": "TRY",
+          "raw_amount": "1234.56",
+          "rendered_amount": "1.234,56 ₺"
+        }
+      },
+      "expected": {
+        "result": "FAIL",
+        "error_codes": [
+          "TR_NUMBER_FORMAT_IN_EN",
+          "TRY_FORMAT_IN_EN"
+        ],
+        "expected_amount": "TRY 1,234.56"
+      }
+    },
+    {
+      "id": "DL-040",
+      "category": "currency_language_positive",
+      "input": {
+        "output_type": "Excel",
+        "language": "en",
+        "list_status_key": "status.ready",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "currency": "TRY",
+          "raw_amount": "1234.56",
+          "rendered_amount": "TRY 1,234.56"
+        }
+      },
+      "expected": {
+        "result": "PASS",
+        "expected_amount": "TRY 1,234.56"
+      }
+    },
+    {
+      "id": "DL-041",
+      "category": "null_leak_trap",
+      "input": {
+        "output_type": "Excel",
+        "language": "tr",
+        "list_status_key": "status.missing_data",
+        "empty_field_scenario": "missing_metric",
+        "fixture": {
+          "raw_value": null,
+          "rendered_value": "null"
+        }
+      },
+      "expected": {
+        "result": "FAIL",
+        "error_codes": [
+          "NULL_VISIBLE"
+        ],
+        "expected_text": "—",
+        "zero_must_not_be_invented": true
+      }
+    },
+    {
+      "id": "DL-042",
+      "category": "null_leak_trap",
+      "input": {
+        "output_type": "CSV",
+        "language": "en",
+        "list_status_key": "status.missing_data",
+        "empty_field_scenario": "missing_metric",
+        "fixture": {
+          "raw_value": null,
+          "rendered_value": "null"
+        }
+      },
+      "expected": {
+        "result": "FAIL",
+        "error_codes": [
+          "NULL_VISIBLE"
+        ],
+        "expected_text": "—",
+        "zero_must_not_be_invented": true
+      }
+    },
+    {
+      "id": "DL-043",
+      "category": "null_leak_trap",
+      "input": {
+        "output_type": "Excel",
+        "language": "zh",
+        "list_status_key": "status.missing_data",
+        "empty_field_scenario": "missing_metric",
+        "fixture": {
+          "raw_value": null,
+          "rendered_value": "null"
+        }
+      },
+      "expected": {
+        "result": "FAIL",
+        "error_codes": [
+          "NULL_VISIBLE"
+        ],
+        "expected_text": "—",
+        "zero_must_not_be_invented": true
+      }
+    },
+    {
+      "id": "DL-044",
+      "category": "empty_value_positive",
+      "input": {
+        "output_type": "Excel",
+        "language": "tr",
+        "list_status_key": "status.missing_data",
+        "empty_field_scenario": "missing_metric",
+        "fixture": {
+          "raw_value": null,
+          "rendered_value": "—"
+        }
+      },
+      "expected": {
+        "result": "PASS",
+        "expected_text": "—",
+        "candidate_id": "ADAY-22-001",
+        "zero_must_not_be_invented": true
+      }
+    },
+    {
+      "id": "DL-045",
+      "category": "empty_value_positive",
+      "input": {
+        "output_type": "CSV",
+        "language": "en",
+        "list_status_key": "status.missing_data",
+        "empty_field_scenario": "missing_metric",
+        "fixture": {
+          "raw_value": null,
+          "rendered_value": "—"
+        }
+      },
+      "expected": {
+        "result": "PASS",
+        "expected_text": "—",
+        "candidate_id": "ADAY-22-001",
+        "zero_must_not_be_invented": true
+      }
+    },
+    {
+      "id": "DL-046",
+      "category": "empty_value_positive",
+      "input": {
+        "output_type": "Excel",
+        "language": "zh",
+        "list_status_key": "status.missing_data",
+        "empty_field_scenario": "missing_metric",
+        "fixture": {
+          "raw_value": null,
+          "rendered_value": "—"
+        }
+      },
+      "expected": {
+        "result": "PASS",
+        "expected_text": "—",
+        "candidate_id": "ADAY-22-001",
+        "zero_must_not_be_invented": true
+      }
+    },
+    {
+      "id": "DL-047",
+      "category": "tier_header_flattening_trap",
+      "input": {
+        "output_type": "PDF",
+        "language": "tr",
+        "list_status_key": "status.waiting_price",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "rendered_header_lines": [
+            "Kademe başlangıç miktarı / Kademe bitiş miktarı / Kademe birim fiyatı"
+          ],
+          "logical_line_count": 1
+        }
+      },
+      "expected": {
+        "result": "FAIL",
+        "error_codes": [
+          "TIER_HEADER_NOT_THREE_ROWS"
+        ],
+        "expected_header_lines": [
+          "Kademe başlangıç miktarı",
+          "Kademe bitiş miktarı",
+          "Kademe birim fiyatı"
+        ],
+        "expected_line_count": 3
+      }
+    },
+    {
+      "id": "DL-048",
+      "category": "tier_header_flattening_trap",
+      "input": {
+        "output_type": "PDF",
+        "language": "en",
+        "list_status_key": "status.waiting_price",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "rendered_header_lines": [
+            "Tier minimum quantity / Tier maximum quantity / Tier unit price"
+          ],
+          "logical_line_count": 1
+        }
+      },
+      "expected": {
+        "result": "FAIL",
+        "error_codes": [
+          "TIER_HEADER_NOT_THREE_ROWS"
+        ],
+        "expected_header_lines": [
+          "Tier minimum quantity",
+          "Tier maximum quantity",
+          "Tier unit price"
+        ],
+        "expected_line_count": 3
+      }
+    },
+    {
+      "id": "DL-049",
+      "category": "tier_header_flattening_trap",
+      "input": {
+        "output_type": "PDF",
+        "language": "zh",
+        "list_status_key": "status.waiting_price",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "rendered_header_lines": [
+            "阶梯起订数量 / 阶梯最高数量 / 阶梯单价"
+          ],
+          "logical_line_count": 1
+        }
+      },
+      "expected": {
+        "result": "FAIL",
+        "error_codes": [
+          "TIER_HEADER_NOT_THREE_ROWS"
+        ],
+        "expected_header_lines": [
+          "阶梯起订数量",
+          "阶梯最高数量",
+          "阶梯单价"
+        ],
+        "expected_line_count": 3
+      }
+    },
+    {
+      "id": "DL-050",
+      "category": "tier_header_positive",
+      "input": {
+        "output_type": "PDF",
+        "language": "tr",
+        "list_status_key": "status.waiting_price",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "rendered_header_lines": [
+            "Kademe başlangıç miktarı",
+            "Kademe bitiş miktarı",
+            "Kademe birim fiyatı"
+          ],
+          "logical_line_count": 3
+        }
+      },
+      "expected": {
+        "result": "PASS",
+        "expected_header_lines": [
+          "Kademe başlangıç miktarı",
+          "Kademe bitiş miktarı",
+          "Kademe birim fiyatı"
+        ],
+        "expected_line_count": 3,
+        "candidate_ids": [
+          "ADAY-22-004",
+          "ADAY-22-005",
+          "ADAY-22-006"
+        ],
+        "source_status": "5B'ye aday; 7B semantik dayanak"
+      }
+    },
+    {
+      "id": "DL-051",
+      "category": "tier_header_positive",
+      "input": {
+        "output_type": "PDF",
+        "language": "en",
+        "list_status_key": "status.waiting_price",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "rendered_header_lines": [
+            "Tier minimum quantity",
+            "Tier maximum quantity",
+            "Tier unit price"
+          ],
+          "logical_line_count": 3
+        }
+      },
+      "expected": {
+        "result": "PASS",
+        "expected_header_lines": [
+          "Tier minimum quantity",
+          "Tier maximum quantity",
+          "Tier unit price"
+        ],
+        "expected_line_count": 3,
+        "candidate_ids": [
+          "ADAY-22-004",
+          "ADAY-22-005",
+          "ADAY-22-006"
+        ],
+        "source_status": "5B'ye aday; 7B semantik dayanak"
+      }
+    },
+    {
+      "id": "DL-052",
+      "category": "tier_header_positive",
+      "input": {
+        "output_type": "PDF",
+        "language": "zh",
+        "list_status_key": "status.waiting_price",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "rendered_header_lines": [
+            "阶梯起订数量",
+            "阶梯最高数量",
+            "阶梯单价"
+          ],
+          "logical_line_count": 3
+        }
+      },
+      "expected": {
+        "result": "PASS",
+        "expected_header_lines": [
+          "阶梯起订数量",
+          "阶梯最高数量",
+          "阶梯单价"
+        ],
+        "expected_line_count": 3,
+        "candidate_ids": [
+          "ADAY-22-004",
+          "ADAY-22-005",
+          "ADAY-22-006"
+        ],
+        "source_status": "5B'ye aday; 7B semantik dayanak"
+      }
+    },
+    {
+      "id": "DL-053",
+      "category": "k55_original_positive",
+      "input": {
+        "output_type": "Excel",
+        "language": "tr",
+        "list_status_key": "status.ready",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "demo_id": "DM-016",
+          "original_value": "高硼硅玻璃油壶 550ml",
+          "original_role": "K55"
+        }
+      },
+      "expected": {
+        "result": "PASS",
+        "expected_original_value": "高硼硅玻璃油壶 550ml",
+        "expected_demo_id": "DM-016",
+        "translation_field_must_be_separate": true
+      }
+    },
+    {
+      "id": "DL-054",
+      "category": "k55_original_positive",
+      "input": {
+        "output_type": "Excel",
+        "language": "en",
+        "list_status_key": "status.ready",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "demo_id": "DM-016",
+          "original_value": "高硼硅玻璃油壶 550ml",
+          "original_role": "K55"
+        }
+      },
+      "expected": {
+        "result": "PASS",
+        "expected_original_value": "高硼硅玻璃油壶 550ml",
+        "expected_demo_id": "DM-016",
+        "translation_field_must_be_separate": true
+      }
+    },
+    {
+      "id": "DL-055",
+      "category": "k55_original_positive",
+      "input": {
+        "output_type": "Excel",
+        "language": "zh",
+        "list_status_key": "status.ready",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "demo_id": "DM-016",
+          "original_value": "高硼硅玻璃油壶 550ml",
+          "original_role": "K55"
+        }
+      },
+      "expected": {
+        "result": "PASS",
+        "expected_original_value": "高硼硅玻璃油壶 550ml",
+        "expected_demo_id": "DM-016",
+        "translation_field_must_be_separate": true
+      }
+    },
+    {
+      "id": "DL-056",
+      "category": "k55_original_mutation_trap",
+      "input": {
+        "output_type": "Excel",
+        "language": "en",
+        "list_status_key": "status.ready",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "demo_id": "DM-016",
+          "original_value": "High borosilicate oil dispenser 550 ml",
+          "original_role": "K55"
+        }
+      },
+      "expected": {
+        "result": "FAIL",
+        "error_codes": [
+          "K55_ORIGINAL_MUTATED"
+        ],
+        "expected_original_value": "高硼硅玻璃油壶 550ml"
+      }
+    },
+    {
+      "id": "DL-057",
+      "category": "csv_tr_positive",
+      "input": {
+        "output_type": "CSV",
+        "language": "tr",
+        "list_status_key": "status.ready",
+        "empty_field_scenario": "missing_metric",
+        "fixture": {
+          "delimiter": ";",
+          "row": "Ürün Adı;Durum;₺1.234,56;—",
+          "encoding": "UTF-8-BOM"
+        }
+      },
+      "expected": {
+        "result": "PASS",
+        "expected_delimiter": ";",
+        "expected_number": "1.234,56",
+        "expected_missing": "—"
+      }
+    },
+    {
+      "id": "DL-058",
+      "category": "csv_en_positive",
+      "input": {
+        "output_type": "CSV",
+        "language": "en",
+        "list_status_key": "status.ready",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "delimiter": ",",
+          "row": "Product Name,Status,\"TRY 1,234.56\"",
+          "encoding": "UTF-8-BOM"
+        }
+      },
+      "expected": {
+        "result": "PASS",
+        "expected_quoted_field": "\"TRY 1,234.56\"",
+        "rfc4180": true
+      }
+    },
+    {
+      "id": "DL-059",
+      "category": "csv_zh_positive",
+      "input": {
+        "output_type": "CSV",
+        "language": "zh",
+        "list_status_key": "status.ready",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "delimiter": ",",
+          "row": "产品名称,状态,\"¥1,234.56\"",
+          "encoding": "UTF-8-BOM"
+        }
+      },
+      "expected": {
+        "result": "PASS",
+        "expected_quoted_field": "\"¥1,234.56\"",
+        "cjk_preserved": true
+      }
+    },
+    {
+      "id": "DL-060",
+      "category": "numeric_sort_positive",
+      "input": {
+        "output_type": "Paylaşım sayfası",
+        "language": "tr",
+        "list_status_key": "status.ready",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "raw_values": [
+            "20.00",
+            "3.00",
+            "100.00"
+          ],
+          "rendered_values": [
+            "20,00",
+            "3,00",
+            "100,00"
+          ],
+          "sort": "ascending"
+        }
+      },
+      "expected": {
+        "result": "PASS",
+        "expected_raw_order": [
+          "3.00",
+          "20.00",
+          "100.00"
+        ],
+        "must_not_sort_rendered_strings": true
+      }
+    },
+    {
+      "id": "DL-061",
+      "category": "date_sort_positive",
+      "input": {
+        "output_type": "Paylaşım sayfası",
+        "language": "zh",
+        "list_status_key": "status.ready",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "raw_dates": [
+            "2026-10-01",
+            "2026-08-26",
+            "2026-09-03"
+          ],
+          "sort": "ascending"
+        }
+      },
+      "expected": {
+        "result": "PASS",
+        "expected_raw_order": [
+          "2026-08-26",
+          "2026-09-03",
+          "2026-10-01"
+        ],
+        "render_after_sort": true
+      }
+    },
+    {
+      "id": "DL-062",
+      "category": "zh_text_collation_positive",
+      "input": {
+        "output_type": "Paylaşım sayfası",
+        "language": "zh",
+        "list_status_key": "status.ready",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "values": [
+            "杯子",
+            "玻璃",
+            "餐具"
+          ],
+          "collation": "zh-Hans-CN",
+          "tie_breaker": "source_id"
+        }
+      },
+      "expected": {
+        "result": "PASS",
+        "expected_policy": "locale collator; eşitlikte source_id",
+        "byte_sort_forbidden": true
+      }
+    },
+    {
+      "id": "DL-063",
+      "category": "channel_placeholder_positive",
+      "input": {
+        "output_type": "Kanal metni",
+        "language": "tr",
+        "list_status_key": "status.missing_data",
+        "empty_field_scenario": "missing_metric",
+        "fixture": {
+          "template_key": "msg.missing_data",
+          "rendered_message": "Cam Yağlık kaydında eksik alanlar var: Hacim."
+        }
+      },
+      "expected": {
+        "result": "PASS",
+        "expected_message": "Cam Yağlık kaydında eksik alanlar var: Hacim.",
+        "unresolved_placeholder_count": 0,
+        "wrong_locale_value_count": 0
+      }
+    },
+    {
+      "id": "DL-064",
+      "category": "channel_placeholder_positive",
+      "input": {
+        "output_type": "Kanal metni",
+        "language": "en",
+        "list_status_key": "status.missing_data",
+        "empty_field_scenario": "missing_metric",
+        "fixture": {
+          "template_key": "msg.missing_data",
+          "rendered_message": "Glass Oil Dispenser has missing fields: Volume."
+        }
+      },
+      "expected": {
+        "result": "PASS",
+        "expected_message": "Glass Oil Dispenser has missing fields: Volume.",
+        "unresolved_placeholder_count": 0,
+        "wrong_locale_value_count": 0
+      }
+    },
+    {
+      "id": "DL-065",
+      "category": "channel_placeholder_positive",
+      "input": {
+        "output_type": "Kanal metni",
+        "language": "zh",
+        "list_status_key": "status.missing_data",
+        "empty_field_scenario": "missing_metric",
+        "fixture": {
+          "template_key": "msg.missing_data",
+          "rendered_message": "玻璃油壶 存在缺失字段：体积。"
+        }
+      },
+      "expected": {
+        "result": "PASS",
+        "expected_message": "玻璃油壶 存在缺失字段：体积。",
+        "unresolved_placeholder_count": 0,
+        "wrong_locale_value_count": 0
+      }
+    },
+    {
+      "id": "DL-066",
+      "category": "original_allowlist_abuse_trap",
+      "input": {
+        "output_type": "Paylaşım sayfası",
+        "language": "en",
+        "list_status_key": "status.ready",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "field": "color",
+          "rendered_value": "奶油白",
+          "claimed_role": "original"
+        }
+      },
+      "expected": {
+        "result": "FAIL",
+        "error_codes": [
+          "ORIGINAL_ALLOWLIST_ABUSE",
+          "LANGUAGE_LEAK_ZH_IN_EN"
+        ],
+        "expected_value": "Cream white"
+      }
+    },
+    {
+      "id": "DL-067",
+      "category": "zh_font_subset_positive",
+      "input": {
+        "output_type": "PDF",
+        "language": "zh",
+        "list_status_key": "status.ready",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "text": "高硼硅玻璃油壶 550ml · ¥1,234.56 — 可下单",
+          "font": "Noto Sans SC subset",
+          "cmap_missing": []
+        }
+      },
+      "expected": {
+        "result": "PASS",
+        "required_glyphs_covered": true,
+        "tofu_count": 0
+      }
+    },
+    {
+      "id": "DL-068",
+      "category": "zh_font_fallback_positive",
+      "input": {
+        "output_type": "PDF",
+        "language": "zh",
+        "list_status_key": "status.ready",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "text": "新增字符：𠮷",
+          "subset_missing": [
+            "U+20BB7"
+          ],
+          "fallback": "document-specific regenerated Noto Sans SC subset"
+        }
+      },
+      "expected": {
+        "result": "PASS",
+        "fallback_used": true,
+        "post_fallback_missing": [],
+        "tofu_count": 0
+      }
+    },
+    {
+      "id": "DL-069",
+      "category": "zh_font_no_fallback_trap",
+      "input": {
+        "output_type": "PDF",
+        "language": "zh",
+        "list_status_key": "status.ready",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "text": "新增字符：𠮷",
+          "subset_missing": [
+            "U+20BB7"
+          ],
+          "fallback": null
+        }
+      },
+      "expected": {
+        "result": "FAIL",
+        "error_codes": [
+          "ZH_GLYPH_UNCOVERED"
+        ],
+        "publication_blocked": true
+      }
+    },
+    {
+      "id": "DL-070",
+      "category": "unknown_status_trap",
+      "input": {
+        "output_type": "Excel",
+        "language": "tr",
+        "list_status_key": "status.ready",
+        "empty_field_scenario": "none",
+        "fixture": {
+          "rendered_status_key": "status.completed",
+          "rendered_status_text": "Tamamlandı"
+        }
+      },
+      "expected": {
+        "result": "FAIL",
+        "error_codes": [
+          "STATUS_KEY_NOT_IN_5B"
+        ],
+        "new_status_created": false,
+        "allowed_status_key_count": 15
+      }
+    }
+  ]
+}

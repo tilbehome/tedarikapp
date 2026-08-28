@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
+  <rect width="1600" height="900" fill="#FFF8F1"/>
+  <rect width="540" height="900" fill="#FF6B00"/>
+  <circle cx="80" cy="790" r="260" fill="#FFB000" opacity=".75"/>
+  <circle cx="500" cy="90" r="220" fill="#FF4D3D" opacity=".7"/>
+  <g transform="translate(104 226) scale(.65)">
+    <rect x="16" y="16" width="480" height="480" rx="112" fill="#FFFDF8"/>
+    <path d="M104 240 208 180l48 28-106 62z" fill="#FFB000"/>
+    <path d="m408 240-104-60-48 28 106 62z" fill="#FF4D3D"/>
+    <path d="M150 270 256 328l106-58v98c0 18-10 34-25 43l-57 33c-15 9-33 9-48 0l-57-33c-15-9-25-25-25-43z" fill="#1F2530"/>
+    <path d="M170 78h172v64h-52v66h42l-76 82-76-82h42v-66h-52z" fill="#FF6B00"/>
+  </g>
+  <text x="650" y="225" font-family="DejaVu Sans, Arial, sans-serif" font-size="76" font-weight="700" fill="#1F2530">Tedarik Listesi</text>
+  <text x="650" y="305" font-family="DejaVu Sans, Arial, sans-serif" font-size="42" font-weight="600" fill="#FF6B00">Sourcing List</text>
+  <text x="650" y="375" font-family="DejaVu Sans, Arial, sans-serif" font-size="42" font-weight="600" fill="#FF4D3D">ZH-CN PROCUREMENT LIST</text>
+  <rect x="650" y="455" width="820" height="2" fill="#E7D9CA"/>
+  <text x="650" y="540" font-family="DejaVu Sans, Arial, sans-serif" font-size="24" font-weight="700" fill="#1F2530">LİSTE NUMARASI</text>
+  <text x="650" y="585" font-family="DejaVu Sans Mono, monospace" font-size="30" fill="#6B7280">TA-0001</text>
+  <text x="1010" y="540" font-family="DejaVu Sans, Arial, sans-serif" font-size="24" font-weight="700" fill="#1F2530">TARİH</text>
+  <text x="1010" y="585" font-family="DejaVu Sans Mono, monospace" font-size="30" fill="#6B7280">2026-08-23</text>
+  <rect x="650" y="676" width="326" height="62" rx="31" fill="#1F2530"/>
+  <text x="813" y="716" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="22" font-weight="700" fill="#FFFFFF">TEDARİKÇİ SÜRÜMÜ</text>
+  <text x="650" y="815" font-family="DejaVu Sans, Arial, sans-serif" font-size="22" fill="#6B7280">Ürün görselleri, varyantlar, miktarlar ve fiyat hedefleri</text>
+</svg>

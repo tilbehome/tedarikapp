@@ -352,6 +352,220 @@ final class SystemController
         return Response::success($response, (new \App\Services\IntegrityChecker($this->basePath))->check());
     }
 
+    /**
+     * GET /api/system/queue — KUYRUK SAĞLIĞI (İE#20 C3).
+     *
+     * Panel "Sistem durumu" ekranının veri kaynağı. Üç sayı ve bir yaş: bekleyen,
+     * çalışan, ölü ve en eski bekleyen işin yaşı. Son ikisi ASIL SİNYALDİR:
+     * ölü iş varsa bir şey kalıcı olarak bozuk; en eski bekleyen yaşlanıyorsa
+     * cron koşmuyor demektir. İkisi de sessizce sürerse kimse fark etmez.
+     */
+    public function queue(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        $this->authenticatedUser($request);
+
+        $kuyruk = new \App\Services\Kuyruk\JobQueue($this->connection);
+        $now = $this->clock->now();
+
+        try {
+            $saglik = $kuyruk->saglik($now);
+            $olu = $kuyruk->oluIsler(20);
+        } catch (Throwable $e) {
+            // Kuyruk tablosu henüz yoksa (migration bekliyor) ekran ÇÖKMEZ.
+            return Response::success($response, [
+                'kurulu' => false,
+                'mesaj' => 'Kuyruk tablosu yok — veritabanı güncellemesi bekliyor olabilir.',
+            ]);
+        }
+
+        return Response::success($response, [
+            'kurulu' => true,
+            'bekleyen' => $saglik['bekleyen'],
+            'calisan' => $saglik['calisan'],
+            'olu' => $saglik['olu'],
+            'en_eski_bekleyen_dakika' => $saglik['en_eski_bekleyen_dakika'],
+            // D9: işçinin GERÇEKTEN alabileceği iş sayısı. `bekleyen` ile
+            // ayrışması bir arızadır ve panelde sayı olarak görünür.
+            'alinabilir' => $saglik['alinabilir'],
+            'ileri_tarihli' => $saglik['ileri_tarihli'],
+            'en_yakin_calisacak_dakika' => $saglik['en_yakin_calisacak_dakika'],
+            'turler' => $saglik['turler'],
+            'olu_isler' => $olu,
+            // İE#21 B11 metrikleri: "kuyruk çalışıyor mu" sorusu sayılarla yanıtlanır.
+            'saatlik_biten' => $saglik['saatlik_biten'],
+            'saatlik_olen' => $saglik['saatlik_olen'],
+            'hata_orani_yuzde' => $saglik['hata_orani_yuzde'],
+            'yeniden_denenen' => $saglik['yeniden_denenen'],
+            // Cron koşmuyorsa bekleyen iş yaşlanır; eşik geçilince panel uyarır.
+            'uyari' => $this->kuyrukUyarisi($saglik),
+        ]);
+    }
+
+    /**
+     * @param array<string, mixed> $saglik
+     */
+    private function kuyrukUyarisi(array $saglik): ?string
+    {
+        if ((int) $saglik['olu'] > 0) {
+            return $saglik['olu'] . ' iş kalıcı olarak başarısız oldu (ölü raf). Hatalarını inceleyip yeniden deneyin.';
+        }
+        // D12 — "CRON KOŞMUYOR OLABİLİR" UYARISI KALKTI.
+        //
+        // Cron artık ZORUNLU DEĞİL: panel ziyareti ve yakalama da tur açıyor
+        // (KuyrukTetikleyici). Kullanıcıya kurmadığı bir cron'u hatırlatmak,
+        // olmayan bir arızayı bildirmekti — üstelik kuyruk/cron kavramının
+        // kullanıcıya görünmemesi Ürün Sahibi kararıdır.
+        //
+        // YERİNE TEK BİR GERÇEK ARIZA UYARISI: birikme VAR ve hiçbir tetikleyici
+        // işleyemiyor. İkisi birlikte doğruysa sistem gerçekten tıkanmıştır.
+        $bekleyen = (int) ($saglik['alinabilir'] ?? 0);
+        $yas = (int) ($saglik['en_eski_bekleyen_dakika'] ?? 0);
+        if ($bekleyen > 0 && $yas > 60 && !$this->tetikleyiciCalistiMi()) {
+            return $bekleyen . ' iş ' . $yas . ' dakikadır bekliyor ve hiçbir tetikleyici onları işleyemiyor. '
+                . 'Panel isteklerinin arkasında çalışan tur başarısız oluyor olabilir — sunucu günlüğüne bakın.';
+        }
+        // B11: ölü iş yokken de sağlıksız olabilir — sürekli yeniden denenen bir
+        // sağlayıcı, üçüncü denemede tuttuğu için "ölü" sayısına hiç yansımaz.
+        if ((int) ($saglik['hata_orani_yuzde'] ?? 0) >= 30) {
+            return 'Son bir saatte işlerin %' . $saglik['hata_orani_yuzde']
+                . '\'i başarısız oldu. Sağlayıcı ayarlarını (Ayarlar > Çeviri) kontrol edin.';
+        }
+
+        return null;
+    }
+
+    /**
+     * Son bir saat içinde herhangi bir tetikleyici tur AÇABİLDİ Mİ? (D12)
+     *
+     * Tetikleyici her turda ayarlara bir zaman damgası yazar. Damga tazeyse
+     * sistem çalışıyordur ve bekleyen iş yalnız sıradadır; damga yoksa ya da
+     * eskiyse turlar gerçekten koşmuyordur — uyarı ancak o zaman anlamlıdır.
+     */
+    private function tetikleyiciCalistiMi(): bool
+    {
+        $son = (new \App\Models\SettingsRepository($this->connection))
+            ->get(\App\Services\Kuyruk\KuyrukTetikleyici::KEY_SON_TUR);
+        if (!is_string($son) || $son === '') {
+            return false;
+        }
+
+        try {
+            $sonZaman = new \DateTimeImmutable($son);
+        } catch (Throwable) {
+            return false;
+        }
+
+        return ($this->clock->now()->getTimestamp() - $sonZaman->getTimestamp()) <= 3600;
+    }
+
+    /**
+     * POST /api/system/queue/{id}/discard — ÖLÜ işi kuyruktan siler (İE#21 B11).
+     *
+     * @param array<string, string> $args
+     */
+    public function queueDiscard(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    {
+        $user = $this->authenticatedUser($request);
+        $id = (int) ($args['id'] ?? 0);
+        if ($id <= 0) {
+            return Response::error($response, 'VALIDATION', 'Geçersiz iş kimliği.', 422);
+        }
+
+        $silindi = (new \App\Services\Kuyruk\JobQueue($this->connection))->vazgec($id);
+        if (!$silindi) {
+            return Response::error(
+                $response,
+                'CONFLICT',
+                'Yalnız ÖLÜ işler silinebilir. Bekleyen ya da çalışan bir işi silmek kuyruğu sessizce eksiltirdi.',
+                409,
+            );
+        }
+
+        (new ActivityLog($this->connection))->record(
+            'system',
+            $id,
+            'queue_discard',
+            $user->email . ': ölü işten vazgeçildi (silindi)',
+            \App\Core\ClientIp::from($request),
+            $this->clock->now(),
+            ActivityLog::ACTOR_ADMIN,
+            $user->id,
+        );
+
+        return Response::success($response, ['silindi' => true]);
+    }
+
+    /**
+     * POST /api/system/queue/{id}/fix — ölü işin YÜKÜNÜ düzeltip yeniden kuyruğa alır.
+     *
+     * @param array<string, string> $args
+     */
+    public function queueFix(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    {
+        $user = $this->authenticatedUser($request);
+        $id = (int) ($args['id'] ?? 0);
+        if ($id <= 0) {
+            return Response::error($response, 'VALIDATION', 'Geçersiz iş kimliği.', 422);
+        }
+
+        $govde = $request->getParsedBody();
+        $yuk = is_array($govde) && is_array($govde['yuk'] ?? null) ? $govde['yuk'] : null;
+        if ($yuk === null) {
+            return Response::error($response, 'VALIDATION', 'Doğrulama hatası', 422, [
+                'yuk' => 'Düzeltilmiş yük bir nesne olmalı.',
+            ]);
+        }
+
+        $now = $this->clock->now();
+        $duzeltildi = (new \App\Services\Kuyruk\JobQueue($this->connection))->yukuDuzelt($id, $yuk, $now);
+        if (!$duzeltildi) {
+            return Response::error($response, 'CONFLICT', 'Yalnız ÖLÜ işlerin yükü düzeltilebilir.', 409);
+        }
+
+        (new ActivityLog($this->connection))->record(
+            'system',
+            $id,
+            'queue_fix',
+            $user->email . ': ölü işin yükü düzeltildi ve yeniden kuyruğa alındı',
+            \App\Core\ClientIp::from($request),
+            $now,
+            ActivityLog::ACTOR_ADMIN,
+            $user->id,
+        );
+
+        return Response::success($response, ['duzeltildi' => true]);
+    }
+
+    /**
+     * POST /api/system/queue/{id}/retry — ölü rafındaki işi yeniden kuyruğa alır.
+     *
+     * @param array<string, string> $args
+     */
+    public function queueRetry(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    {
+        $user = $this->authenticatedUser($request);
+        $id = (int) ($args['id'] ?? 0);
+        if ($id <= 0) {
+            return Response::error($response, 'VALIDATION', 'Geçersiz iş kimliği.', 422);
+        }
+
+        $now = $this->clock->now();
+        (new \App\Services\Kuyruk\JobQueue($this->connection))->dirilt($id, $now);
+
+        (new ActivityLog($this->connection))->record(
+            'system',
+            $id,
+            'queue_retry',
+            $user->email . ': ölü iş yeniden kuyruğa alındı',
+            ClientIp::from($request),
+            $now,
+            ActivityLog::ACTOR_ADMIN,
+            $user->id,
+        );
+
+        return Response::success($response, ['queued' => true]);
+    }
+
     public function status(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
         $this->authenticatedUser($request);

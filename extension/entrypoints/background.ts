@@ -10,6 +10,8 @@
 import { defineBackground } from 'wxt/utils/define-background';
 
 import { panelApi } from '../core/api';
+import { Kuyruk, MAKS_DENEME, chromeDeposu } from '../core/kuyruk';
+import { GonderimIzi, toparlanacakKayitlar } from '../core/toparlama';
 import type { CapturePayload } from '../core/types';
 
 interface ManifestContentScript {
@@ -54,9 +56,81 @@ export async function acikSekmelereEnjekteEt(): Promise<number> {
   return sayac;
 }
 
+const kuyruk = new Kuyruk(chromeDeposu());
+const gonderimIzi = new GonderimIzi(chromeDeposu());
+
+/**
+ * YAKALAMAYI KUYRUKLA GÖNDER (İE#21 A4).
+ *
+ * Sıra: önce KUYRUĞA YAZ, sonra gönder. Ters sırada yazsaydık, gönderim
+ * sırasında worker uyutulduğunda yakalama hiçbir yerde durmuyor olurdu.
+ */
+async function kuyrukluGonder(yuk: CapturePayload): Promise<unknown> {
+  const simdi = Date.now();
+  await kuyruk.ekle(yuk, new Date(simdi).toISOString());
+  await gonderimIzi.isaretle(yuk.capture_id, simdi);
+
+  try {
+    const yanit = await panelApi.capture(yuk);
+    await kuyruk.dusur(yuk.capture_id);
+    await gonderimIzi.temizle(yuk.capture_id);
+
+    return yanit;
+  } catch (hata) {
+    const mesaj = hata instanceof Error ? hata.message : String(hata);
+    await kuyruk.basarisiz(yuk.capture_id, mesaj);
+    await gonderimIzi.temizle(yuk.capture_id);
+
+    throw hata;
+  }
+}
+
+/**
+ * MV3 UYANIŞ TOPARLAMASI (İE#21 sertleştirme).
+ *
+ * Sahipsiz "gönderiliyor" damgaları temizlenir ve hakkı kalan kayıtlar yeniden
+ * denenir. Hakkı biten kayıtlar DOKUNULMADAN kalır: arayüz onları rozetle
+ * gösterir, kullanıcı komutu bekler (dead-letter deseni · B11 ikizi).
+ */
+export async function uyanistaToparla(): Promise<number> {
+  const simdi = Date.now();
+  await gonderimIzi.sahipsizleriKurtar(simdi);
+
+  const bekleyenler = toparlanacakKayitlar(await kuyruk.liste(), await gonderimIzi.damgalar(), simdi, MAKS_DENEME);
+  let gonderilen = 0;
+
+  for (const kayit of bekleyenler) {
+    try {
+      await kuyrukluGonder(kayit.yuk);
+      gonderilen += 1;
+    } catch {
+      // Hata zaten kuyruğa işlendi; sıradaki kayda geçilir.
+    }
+  }
+
+  return gonderilen;
+}
+
+/** Duran (hakkı bitmiş) kayıtlar — arayüzdeki rozet bunları gösterir. */
+async function duranKayitlar(): Promise<{ captureId: string; ad: string; sonHata: string | null }[]> {
+  return (await kuyruk.liste())
+    .filter((kayit) => kayit.deneme >= MAKS_DENEME)
+    .map((kayit) => ({
+      captureId: kayit.captureId,
+      ad: kayit.yuk.normalized?.name ?? kayit.captureId,
+      sonHata: kayit.sonHata,
+    }));
+}
+
 export default defineBackground(() => {
   chrome.runtime.onInstalled.addListener(() => {
     void acikSekmelereEnjekteEt();
+    void uyanistaToparla();
+  });
+
+  // Uyanışta toparlama: MV3'te worker her an uyutulur.
+  chrome.runtime.onStartup?.addListener(() => {
+    void uyanistaToparla();
   });
 
   chrome.runtime.onMessage.addListener((message: { type: string; payload?: unknown }, _sender, sendResponse) => {
@@ -75,7 +149,17 @@ export default defineBackground(() => {
       case 'TRANSLATE':
         return respond(panelApi.translate(String((message.payload as { text?: unknown })?.text ?? '')));
       case 'CAPTURE':
-        return respond(panelApi.capture(message.payload as CapturePayload));
+        return respond(kuyrukluGonder(message.payload as CapturePayload));
+      case 'KUYRUK_DURANLAR':
+        return respond(duranKayitlar());
+      case 'KUYRUK_EYLEM': {
+        const { captureId, eylem } = (message.payload ?? {}) as { captureId?: string; eylem?: string };
+        if (typeof captureId !== 'string') return respond(Promise.resolve({ ok: false }));
+        if (eylem === 'VAZGEC') return respond(kuyruk.dusur(captureId).then(() => ({ ok: true })));
+        // YENIDEN ve DUZELT: hak sıfırlanır. DUZELT'te kullanıcı panelde düzeltir;
+        // ikisinde de kayıt otomatik toparlamaya yeniden UYGUN hâle gelir.
+        return respond(kuyruk.denemeleriSifirla(captureId).then(() => uyanistaToparla()));
+      }
       default:
         return false;
     }

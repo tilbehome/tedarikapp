@@ -1,0 +1,573 @@
+{
+  "schema_version": "1.0",
+  "katalog_adi": "TedarikApp Bildirim Merkezi Olay Kataloğu",
+  "ilke": "Kullanıcı veya sistem tarafından başlatılan önemli hiçbir işlem sessiz çalışmaz. Yüksek frekanslı olaylar belirtilen pencere ve grup anahtarıyla tek satırda birleştirilir.",
+  "onem_tanimlari": {
+    "bilgi": "İşlem tamamlandı veya iz bırakıldı; acil eylem gerekmez.",
+    "uyari": "Akış yavaşladı ya da kullanıcı kontrolü gerekir.",
+    "kritik": "Veri, güvenlik veya teslim akışı durdu; öncelikli müdahale gerekir."
+  },
+  "birlestirme_sozlesmesi": {
+    "izinli": "true ise aynı olay kodu ve grup_anahtari, pencere_dakika içinde tek bildirimde sayılır.",
+    "toplu_govde_tr": "Birleştirilmiş satırda kullanılacak zorunlu gövde; {n} birleştirilen olay sayısıdır.",
+    "false_davranisi": "izinli=false olan olay tekil ve değiştirilemez audit bağlantısıyla gösterilir."
+  },
+  "olaylar": [
+    {
+      "olay_kodu": "NTF-CAPTURE-ACCEPTED",
+      "tetik": "Yakalama isteği API tarafından kabul edilip idempotency anahtarıyla kuyruğa yazıldı.",
+      "onem": "bilgi",
+      "baslik_tr": "Ürün yakalandı",
+      "govde_tr": "{urun_adi} panele kabul edildi ve işleme sırasına alındı.",
+      "grup": "kuyruk",
+      "eylem_linki": "/panel/urunler/{urun_id}",
+      "birlestirme": {
+        "izinli": true,
+        "pencere_dakika": 5,
+        "grup_anahtari": "kullanici_id+platform",
+        "toplu_govde_tr": "{n} ürün panele kabul edildi ve işleme sırasına alındı."
+      }
+    },
+    {
+      "olay_kodu": "NTF-CAPTURE-BATCH-ACCEPTED",
+      "tetik": "Oturum grubundaki yakalamalar tek toplu işlem olarak kabul edildi.",
+      "onem": "bilgi",
+      "baslik_tr": "Yakalama grubu alındı",
+      "govde_tr": "{n} ürünlük {oturum_adi} grubu işleme alındı.",
+      "grup": "kuyruk",
+      "eylem_linki": "/panel/gelen-kutusu?oturum={oturum_id}",
+      "birlestirme": {
+        "izinli": false,
+        "pencere_dakika": 0,
+        "grup_anahtari": null,
+        "toplu_govde_tr": null
+      }
+    },
+    {
+      "olay_kodu": "NTF-OFFLINE-QUEUED",
+      "tetik": "Eklenti çevrimdışıyken yakalama kalıcı yerel kuyruğa yazıldı.",
+      "onem": "uyari",
+      "baslik_tr": "Yakalama çevrimdışı sırada",
+      "govde_tr": "{urun_adi} bağlantı geri geldiğinde gönderilecek.",
+      "grup": "kuyruk",
+      "eylem_linki": "/panel/ayarlar/yakalama-eklenti?kuyruk=cevrimdisi",
+      "birlestirme": {
+        "izinli": true,
+        "pencere_dakika": 10,
+        "grup_anahtari": "cihaz_id",
+        "toplu_govde_tr": "{n} yakalama bağlantı geri geldiğinde gönderilecek."
+      }
+    },
+    {
+      "olay_kodu": "NTF-JOB-RETRY-SCHEDULED",
+      "tetik": "Geçici hata alan iş yeni available_at değeriyle retry_wait durumuna geçti.",
+      "onem": "uyari",
+      "baslik_tr": "İş yeniden denenecek",
+      "govde_tr": "{is_turu} işi {deneme}. denemeden sonra {zaman} için yeniden planlandı.",
+      "grup": "kuyruk",
+      "eylem_linki": "/panel/ayarlar/kuyruk?durum=retry_wait",
+      "birlestirme": {
+        "izinli": true,
+        "pencere_dakika": 10,
+        "grup_anahtari": "is_turu+hata_kodu",
+        "toplu_govde_tr": "{n} {is_turu} işi geçici hata nedeniyle yeniden planlandı."
+      }
+    },
+    {
+      "olay_kodu": "NTF-JOB-RECOVERED",
+      "tetik": "Önceki denemeleri başarısız olan iş sonraki denemede tamamlandı.",
+      "onem": "bilgi",
+      "baslik_tr": "İş normale döndü",
+      "govde_tr": "{is_turu} işi {deneme}. denemede başarıyla tamamlandı.",
+      "grup": "kuyruk",
+      "eylem_linki": "/panel/ayarlar/kuyruk/{is_id}",
+      "birlestirme": {
+        "izinli": true,
+        "pencere_dakika": 10,
+        "grup_anahtari": "is_turu",
+        "toplu_govde_tr": "{n} {is_turu} işi yeniden denemede normale döndü."
+      }
+    },
+    {
+      "olay_kodu": "NTF-JOB-DEAD",
+      "tetik": "İş deneme bütçesini tüketip dead durumuna geçti.",
+      "onem": "kritik",
+      "baslik_tr": "İş kalıcı olarak durdu",
+      "govde_tr": "{is_turu} işi tamamlanamadı: {hata_ozeti}",
+      "grup": "kuyruk",
+      "eylem_linki": "/panel/ayarlar/kuyruk/{is_id}",
+      "birlestirme": {
+        "izinli": false,
+        "pencere_dakika": 0,
+        "grup_anahtari": null,
+        "toplu_govde_tr": null
+      }
+    },
+    {
+      "olay_kodu": "NTF-JOB-REPLAYED",
+      "tetik": "Yetkili kullanıcı dead işi düzeltme sonrası yeniden çalıştırdı.",
+      "onem": "bilgi",
+      "baslik_tr": "Duran iş yeniden başlatıldı",
+      "govde_tr": "{is_turu} işi {kullanici} tarafından yeniden sıraya alındı.",
+      "grup": "kuyruk",
+      "eylem_linki": "/panel/ayarlar/kuyruk/{is_id}",
+      "birlestirme": {
+        "izinli": false,
+        "pencere_dakika": 0,
+        "grup_anahtari": null,
+        "toplu_govde_tr": null
+      }
+    },
+    {
+      "olay_kodu": "NTF-QUEUE-STALLED",
+      "tetik": "En eski hazır iş ayarlı bekleme eşiğini aştı.",
+      "onem": "kritik",
+      "baslik_tr": "Kuyruk ilerlemiyor",
+      "govde_tr": "{n} hazır iş var; en eskisi {dakika} dakikadır başlamadı.",
+      "grup": "kuyruk",
+      "eylem_linki": "/panel/ayarlar/kuyruk?durum=ready",
+      "birlestirme": {
+        "izinli": false,
+        "pencere_dakika": 0,
+        "grup_anahtari": null,
+        "toplu_govde_tr": null
+      }
+    },
+    {
+      "olay_kodu": "NTF-DUPLICATE-SUPPRESSED",
+      "tetik": "Aynı idempotency anahtarı veya payload hash ile gelen mükerrer iş bastırıldı.",
+      "onem": "bilgi",
+      "baslik_tr": "Mükerrer işlem engellendi",
+      "govde_tr": "{kaynak} için aynı işlem ikinci kez oluşturulmadı.",
+      "grup": "kuyruk",
+      "eylem_linki": "/panel/ayarlar/kuyruk?filtre=mukerrer",
+      "birlestirme": {
+        "izinli": true,
+        "pencere_dakika": 15,
+        "grup_anahtari": "is_turu+kaynak",
+        "toplu_govde_tr": "{n} mükerrer işlem güvenli biçimde engellendi."
+      }
+    },
+    {
+      "olay_kodu": "NTF-LIST-CREATED",
+      "tetik": "Yeni liste başarıyla oluşturuldu.",
+      "onem": "bilgi",
+      "baslik_tr": "Liste oluşturuldu",
+      "govde_tr": "{liste_adi} Hazırlanıyor durumunda oluşturuldu.",
+      "grup": "liste",
+      "eylem_linki": "/panel/listeler/{liste_id}",
+      "birlestirme": {
+        "izinli": false,
+        "pencere_dakika": 0,
+        "grup_anahtari": null,
+        "toplu_govde_tr": null
+      }
+    },
+    {
+      "olay_kodu": "NTF-LIST-PRODUCTS-ADDED",
+      "tetik": "Bir veya daha fazla ürün listeye eklendi.",
+      "onem": "bilgi",
+      "baslik_tr": "Listeye ürün eklendi",
+      "govde_tr": "{urun_adi}, {liste_adi} listesine eklendi.",
+      "grup": "liste",
+      "eylem_linki": "/panel/listeler/{liste_id}",
+      "birlestirme": {
+        "izinli": true,
+        "pencere_dakika": 5,
+        "grup_anahtari": "liste_id+kullanici_id",
+        "toplu_govde_tr": "{liste_adi} listesine {n} ürün eklendi."
+      }
+    },
+    {
+      "olay_kodu": "NTF-LIST-PRODUCTS-REMOVED",
+      "tetik": "Bir veya daha fazla ürün aktif listeden çıkarıldı.",
+      "onem": "bilgi",
+      "baslik_tr": "Listeden ürün çıkarıldı",
+      "govde_tr": "{urun_adi}, {liste_adi} listesinden çıkarıldı.",
+      "grup": "liste",
+      "eylem_linki": "/panel/listeler/{liste_id}?gecmis=1",
+      "birlestirme": {
+        "izinli": true,
+        "pencere_dakika": 5,
+        "grup_anahtari": "liste_id+kullanici_id",
+        "toplu_govde_tr": "{liste_adi} listesinden {n} ürün çıkarıldı."
+      }
+    },
+    {
+      "olay_kodu": "NTF-LIST-STATUS-CHANGED",
+      "tetik": "Liste geçerli durum makinesi üzerinden yeni status.* değerine geçti.",
+      "onem": "bilgi",
+      "baslik_tr": "Liste durumu değişti",
+      "govde_tr": "{liste_adi}: {onceki_durum} → {yeni_durum}.",
+      "grup": "liste",
+      "eylem_linki": "/panel/listeler/{liste_id}?gecmis=1",
+      "birlestirme": {
+        "izinli": false,
+        "pencere_dakika": 0,
+        "grup_anahtari": null,
+        "toplu_govde_tr": null
+      }
+    },
+    {
+      "olay_kodu": "NTF-LIST-READY-BLOCKED",
+      "tetik": "HAZIR kapısı eksik zorunlu alan veya boş liste nedeniyle geçişi reddetti.",
+      "onem": "uyari",
+      "baslik_tr": "Liste Siparişe hazır olamadı",
+      "govde_tr": "{liste_adi} için {n} zorunlu eksik var: {eksik_ozeti}",
+      "grup": "liste",
+      "eylem_linki": "/panel/listeler/{liste_id}?filtre=eksik",
+      "birlestirme": {
+        "izinli": false,
+        "pencere_dakika": 0,
+        "grup_anahtari": null,
+        "toplu_govde_tr": null
+      }
+    },
+    {
+      "olay_kodu": "NTF-LIST-RATE-LOCKED",
+      "tetik": "Listeye onaylı kur snapshot'ı bağlandı ve kilitlendi.",
+      "onem": "bilgi",
+      "baslik_tr": "Liste kuru kilitlendi",
+      "govde_tr": "{liste_adi} listesi {kur} {kur_cifti} kuru ve {kur_zamani} sürümüyle kilitlendi.",
+      "grup": "liste",
+      "eylem_linki": "/panel/listeler/{liste_id}?sekme=finans",
+      "birlestirme": {
+        "izinli": false,
+        "pencere_dakika": 0,
+        "grup_anahtari": null,
+        "toplu_govde_tr": null
+      }
+    },
+    {
+      "olay_kodu": "NTF-LIST-RATE-DRIFT",
+      "tetik": "Kilitli liste kuru ile güncel onaylı kur arasındaki sapma ayarlı eşiği aştı.",
+      "onem": "uyari",
+      "baslik_tr": "Kilitli kurda sapma var",
+      "govde_tr": "{liste_adi} listesinde güncel kura göre %{oran} sapma oluştu; kilit değiştirilmedi.",
+      "grup": "liste",
+      "eylem_linki": "/panel/listeler/{liste_id}?sekme=finans",
+      "birlestirme": {
+        "izinli": false,
+        "pencere_dakika": 0,
+        "grup_anahtari": null,
+        "toplu_govde_tr": null
+      }
+    },
+    {
+      "olay_kodu": "NTF-LIST-SENT",
+      "tetik": "Liste İletildi/Gönderildi akışına geçti ve paylaşım/çıktı sürümü bağlandı.",
+      "onem": "bilgi",
+      "baslik_tr": "Liste Gönderildi",
+      "govde_tr": "{liste_adi}, {firma_adi} firmasına iletildi.",
+      "grup": "liste",
+      "eylem_linki": "/panel/listeler/{liste_id}",
+      "birlestirme": {
+        "izinli": false,
+        "pencere_dakika": 0,
+        "grup_anahtari": null,
+        "toplu_govde_tr": null
+      }
+    },
+    {
+      "olay_kodu": "NTF-LIST-REVISION-CREATED",
+      "tetik": "İletilmiş liste üzerinde değişiklik için yeni revision oluşturuldu.",
+      "onem": "bilgi",
+      "baslik_tr": "Yeni liste revizyonu açıldı",
+      "govde_tr": "{liste_adi} için revizyon {revizyon} oluşturuldu; önceki sürüm salt okunur kaldı.",
+      "grup": "liste",
+      "eylem_linki": "/panel/listeler/{liste_id}?revizyon={revizyon}",
+      "birlestirme": {
+        "izinli": false,
+        "pencere_dakika": 0,
+        "grup_anahtari": null,
+        "toplu_govde_tr": null
+      }
+    },
+    {
+      "olay_kodu": "NTF-SUPPLIER-RESPONSE-RECEIVED",
+      "tetik": "Firma portalından bir veya daha fazla satır yanıtı eşitlendi.",
+      "onem": "bilgi",
+      "baslik_tr": "Firma yanıtı geldi",
+      "govde_tr": "{firma_adi}, {liste_adi} listesindeki {n} satırı yanıtladı.",
+      "grup": "liste",
+      "eylem_linki": "/panel/listeler/{liste_id}?sekme=teklif",
+      "birlestirme": {
+        "izinli": true,
+        "pencere_dakika": 10,
+        "grup_anahtari": "liste_id+firma_id",
+        "toplu_govde_tr": "{firma_adi}, {liste_adi} için toplam {n} satır yanıtladı."
+      }
+    },
+    {
+      "olay_kodu": "NTF-LIST-EXPIRED",
+      "tetik": "Liste veya bağlı teklif fiyat geçerlilik süresini geçti.",
+      "onem": "uyari",
+      "baslik_tr": "Liste Güncelliğini yitirdi",
+      "govde_tr": "{liste_adi} için fiyat geçerlilik süresi doldu.",
+      "grup": "liste",
+      "eylem_linki": "/panel/listeler/{liste_id}?eylem=revizyon",
+      "birlestirme": {
+        "izinli": false,
+        "pencere_dakika": 0,
+        "grup_anahtari": null,
+        "toplu_govde_tr": null
+      }
+    },
+    {
+      "olay_kodu": "NTF-LIST-ARCHIVED",
+      "tetik": "Liste kullanıcı işlemi veya arşiv kuralıyla Arşivlendi durumuna geçti.",
+      "onem": "bilgi",
+      "baslik_tr": "Liste Arşivlendi",
+      "govde_tr": "{liste_adi} arşive taşındı.",
+      "grup": "liste",
+      "eylem_linki": "/panel/arsiv/{liste_id}",
+      "birlestirme": {
+        "izinli": true,
+        "pencere_dakika": 15,
+        "grup_anahtari": "kullanici_id",
+        "toplu_govde_tr": "{n} liste arşive taşındı."
+      }
+    },
+    {
+      "olay_kodu": "NTF-SHARE-CREATED",
+      "tetik": "Liste revision'ına bağlı yeni paylaşım linki ve altı haneli anahtar üretildi.",
+      "onem": "bilgi",
+      "baslik_tr": "Paylaşım hazır",
+      "govde_tr": "{liste_adi} için paylaşım oluşturuldu; link ve anahtarı ayrı kanallardan iletin.",
+      "grup": "paylasim",
+      "eylem_linki": "/panel/listeler/{liste_id}?pencere=paylas",
+      "birlestirme": {
+        "izinli": false,
+        "pencere_dakika": 0,
+        "grup_anahtari": null,
+        "toplu_govde_tr": null
+      }
+    },
+    {
+      "olay_kodu": "NTF-SHARE-KEY-RENEWED",
+      "tetik": "Paylaşım anahtarı atomik yenilendi ve eski anahtar geçersiz oldu.",
+      "onem": "uyari",
+      "baslik_tr": "Erişim anahtarı yenilendi",
+      "govde_tr": "{liste_adi} için eski anahtar geçersiz kılındı.",
+      "grup": "paylasim",
+      "eylem_linki": "/panel/listeler/{liste_id}?pencere=paylas",
+      "birlestirme": {
+        "izinli": false,
+        "pencere_dakika": 0,
+        "grup_anahtari": null,
+        "toplu_govde_tr": null
+      }
+    },
+    {
+      "olay_kodu": "NTF-SHARE-INVALID-ACCESS",
+      "tetik": "Paylaşım sayfasında yanlış veya eski anahtar denendi.",
+      "onem": "uyari",
+      "baslik_tr": "Geçersiz erişim denemesi",
+      "govde_tr": "{liste_adi} paylaşımında {hata_sayisi} başarısız anahtar denemesi oldu.",
+      "grup": "paylasim",
+      "eylem_linki": "/panel/listeler/{liste_id}?sekme=paylasim-guvenligi",
+      "birlestirme": {
+        "izinli": true,
+        "pencere_dakika": 15,
+        "grup_anahtari": "paylasim_id+ip_hash",
+        "toplu_govde_tr": "{liste_adi} paylaşımında {n} geçersiz erişim denemesi oldu."
+      }
+    },
+    {
+      "olay_kodu": "NTF-SHARE-RATE-LIMITED",
+      "tetik": "Paylaşım anahtar doğrulaması hız sınırına takıldı.",
+      "onem": "kritik",
+      "baslik_tr": "Paylaşım erişimi sınırlandı",
+      "govde_tr": "{liste_adi} paylaşımında çok sayıda deneme nedeniyle {dakika} dakikalık sınır uygulandı.",
+      "grup": "paylasim",
+      "eylem_linki": "/panel/listeler/{liste_id}?sekme=paylasim-guvenligi",
+      "birlestirme": {
+        "izinli": false,
+        "pencere_dakika": 0,
+        "grup_anahtari": null,
+        "toplu_govde_tr": null
+      }
+    },
+    {
+      "olay_kodu": "NTF-SHARE-REVOKED",
+      "tetik": "Yetkili kullanıcı aktif paylaşımı süresi dolmadan iptal etti.",
+      "onem": "uyari",
+      "baslik_tr": "Paylaşım iptal edildi",
+      "govde_tr": "{liste_adi} paylaşımı {kullanici} tarafından erişime kapatıldı.",
+      "grup": "paylasim",
+      "eylem_linki": "/panel/listeler/{liste_id}?sekme=gecmis",
+      "birlestirme": {
+        "izinli": false,
+        "pencere_dakika": 0,
+        "grup_anahtari": null,
+        "toplu_govde_tr": null
+      }
+    },
+    {
+      "olay_kodu": "NTF-FX-UPDATED",
+      "tetik": "Getirilen kur önizlemesi kullanıcı tarafından onaylanıp yeni aktif sürüm oldu.",
+      "onem": "bilgi",
+      "baslik_tr": "Kur güncellendi",
+      "govde_tr": "{kur_cifti} kuru {kur} olarak onaylandı; kaynak: {kaynak}.",
+      "grup": "sistem",
+      "eylem_linki": "/panel/ayarlar/kur?surum={kur_surumu}",
+      "birlestirme": {
+        "izinli": false,
+        "pencere_dakika": 0,
+        "grup_anahtari": null,
+        "toplu_govde_tr": null
+      }
+    },
+    {
+      "olay_kodu": "NTF-TOKEN-INVALID",
+      "tetik": "Eklenti veya API tokenı doğrulanamadı ya da iptal edildi.",
+      "onem": "kritik",
+      "baslik_tr": "Bağlantı kimliği geçersiz",
+      "govde_tr": "{istemci_adi} artık panele bağlanamıyor; tokenı yenileyin.",
+      "grup": "sistem",
+      "eylem_linki": "/panel/ayarlar/guvenlik-api",
+      "birlestirme": {
+        "izinli": true,
+        "pencere_dakika": 15,
+        "grup_anahtari": "istemci_id+hata_kodu",
+        "toplu_govde_tr": "{istemci_adi} için {n} geçersiz bağlantı denemesi oldu."
+      }
+    },
+    {
+      "olay_kodu": "NTF-SETTINGS-CHANGED",
+      "tetik": "Bir ayar grubu başarıyla kaydedildi.",
+      "onem": "bilgi",
+      "baslik_tr": "Ayarlar güncellendi",
+      "govde_tr": "{sekme_adi} bölümünde {n} ayar {kullanici} tarafından değiştirildi.",
+      "grup": "sistem",
+      "eylem_linki": "/panel/ayarlar/{sekme_kodu}?gecmis=1",
+      "birlestirme": {
+        "izinli": true,
+        "pencere_dakika": 5,
+        "grup_anahtari": "kullanici_id+sekme_kodu",
+        "toplu_govde_tr": "{sekme_adi} bölümünde toplam {n} ayar değişikliği kaydedildi."
+      }
+    },
+    {
+      "olay_kodu": "NTF-CAPTURE-HEALTH-LOW",
+      "tetik": "Yakalama başarı oranı ayarlı eşiğin altına düştü.",
+      "onem": "uyari",
+      "baslik_tr": "Yakalama sağlığı düştü",
+      "govde_tr": "{platform} için son {saat} saatte başarı oranı %{oran} oldu.",
+      "grup": "sistem",
+      "eylem_linki": "/panel/ayarlar/yakalama-eklenti?sekme=saglik",
+      "birlestirme": {
+        "izinli": false,
+        "pencere_dakika": 0,
+        "grup_anahtari": null,
+        "toplu_govde_tr": null
+      }
+    },
+    {
+      "olay_kodu": "NTF-CAPTURE-NO-ACTIVITY",
+      "tetik": "Başarılı yakalama yaşı ayarlı sessizlik eşiğini aştı.",
+      "onem": "uyari",
+      "baslik_tr": "Uzun süredir yakalama yok",
+      "govde_tr": "{gun} gündür başarılı ürün yakalama kaydı oluşmadı.",
+      "grup": "sistem",
+      "eylem_linki": "/panel/ayarlar/yakalama-eklenti?sekme=saglik",
+      "birlestirme": {
+        "izinli": false,
+        "pencere_dakika": 0,
+        "grup_anahtari": null,
+        "toplu_govde_tr": null
+      }
+    },
+    {
+      "olay_kodu": "NTF-TRANSLATION-BATCH-COMPLETE",
+      "tetik": "Çeviri işi veya toplu çeviri grubu kalite kapısını geçip tamamlandı.",
+      "onem": "bilgi",
+      "baslik_tr": "Çeviri tamamlandı",
+      "govde_tr": "{urun_adi} için {dil} çevirisi kalite kapısını geçti.",
+      "grup": "ceviri",
+      "eylem_linki": "/panel/urunler/{urun_id}?sekme=ceviri",
+      "birlestirme": {
+        "izinli": true,
+        "pencere_dakika": 10,
+        "grup_anahtari": "dil+kullanici_id",
+        "toplu_govde_tr": "{dil} dilinde {n} ürün çevirisi tamamlandı."
+      }
+    },
+    {
+      "olay_kodu": "NTF-TRANSLATION-JOB-FAILED",
+      "tetik": "Çeviri işi sağlayıcı veya işleme hatasıyla tamamlanamadı.",
+      "onem": "uyari",
+      "baslik_tr": "Çeviri tamamlanamadı",
+      "govde_tr": "{urun_adi} için {dil} çevirisi başarısız: {hata_ozeti}",
+      "grup": "ceviri",
+      "eylem_linki": "/panel/ayarlar/ceviri?hata={hata_kodu}",
+      "birlestirme": {
+        "izinli": true,
+        "pencere_dakika": 10,
+        "grup_anahtari": "dil+hata_kodu",
+        "toplu_govde_tr": "{dil} dilinde {n} çeviri aynı hata nedeniyle tamamlanamadı."
+      }
+    },
+    {
+      "olay_kodu": "NTF-TRANSLATION-QUALITY-BLOCKED",
+      "tetik": "Çeviri sonucu Görev #4A kritik kalite kapısını geçemedi ve kanonik ürüne terfi etmedi.",
+      "onem": "uyari",
+      "baslik_tr": "Çeviri kalite kapısında durdu",
+      "govde_tr": "{urun_adi} için {dil} sonucu {kural} kontrolünü geçemedi.",
+      "grup": "ceviri",
+      "eylem_linki": "/panel/urunler/{urun_id}?sekme=ceviri-kalite",
+      "birlestirme": {
+        "izinli": true,
+        "pencere_dakika": 10,
+        "grup_anahtari": "dil+kural",
+        "toplu_govde_tr": "{dil} dilinde {n} sonuç {kural} kalite kontrolünde durdu."
+      }
+    },
+    {
+      "olay_kodu": "NTF-TRANSLATION-QUOTA-LOW",
+      "tetik": "Sağlayıcının kalan kota yüzdesi uyarı eşiğine indi.",
+      "onem": "uyari",
+      "baslik_tr": "Çeviri kotası azalıyor",
+      "govde_tr": "{saglayici} kotasının %{oran} kadarı kaldı; bekleyen {n} iş var.",
+      "grup": "ceviri",
+      "eylem_linki": "/panel/ayarlar/ceviri?sekme=kullanim",
+      "birlestirme": {
+        "izinli": false,
+        "pencere_dakika": 0,
+        "grup_anahtari": null,
+        "toplu_govde_tr": null
+      }
+    },
+    {
+      "olay_kodu": "NTF-TRANSLATION-QUOTA-EXHAUSTED",
+      "tetik": "Çeviri sağlayıcısı kota kalmadığını bildirdi ve kuyruk devre kesiciyle durdu.",
+      "onem": "kritik",
+      "baslik_tr": "Çeviri kotası tükendi",
+      "govde_tr": "{saglayici} yeni çeviri kabul etmiyor; {n} iş bekliyor.",
+      "grup": "ceviri",
+      "eylem_linki": "/panel/ayarlar/ceviri?sekme=kullanim",
+      "birlestirme": {
+        "izinli": false,
+        "pencere_dakika": 0,
+        "grup_anahtari": null,
+        "toplu_govde_tr": null
+      }
+    },
+    {
+      "olay_kodu": "NTF-GLOSSARY-IMPORTED",
+      "tetik": "Sözlük CSV doğrulandı ve yeni sözlük sürümü olarak kaydedildi.",
+      "onem": "bilgi",
+      "baslik_tr": "Sözlük güncellendi",
+      "govde_tr": "{dosya_adi}: {eklenen} eklendi, {guncellenen} güncellendi, {reddedilen} reddedildi; sürüm {sozluk_surumu}.",
+      "grup": "ceviri",
+      "eylem_linki": "/panel/ayarlar/diller-sozluk?surum={sozluk_surumu}",
+      "birlestirme": {
+        "izinli": false,
+        "pencere_dakika": 0,
+        "grup_anahtari": null,
+        "toplu_govde_tr": null
+      }
+    }
+  ],
+  "k82_notu": "K82 (25 Ağu 2026): NTF-SHARE-EXPIRY-NEAR ve NTF-SHARE-EXPIRED katalogdan DÜŞÜRÜLDÜ. Erişim anahtarının ömrü yoktur (K62), dolayısıyla \"süresi doluyor/doldu\" diye bir olay üretilemez. Süre kavramı V3-C'de teklif geçerliliğine bağlanınca YENİ bir NTF kodu açılacaktır. Olay sayısı: 37."
+}

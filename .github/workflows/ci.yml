@@ -58,8 +58,13 @@ jobs:
             n=$((n+1)); [ $n -ge 3 ] && exit 1; echo "codeload hatası — 90 sn sonra deneme $((n+1))/3"; sleep 90
           done
 
-      - name: PHPUnit
-        run: composer test
+      - name: PHPUnit (birim + servis + kurulum — Http dilimleri AYRI job'larda)
+        # İE#22 D1/D2: `tests/Http` bu job'dan ÇIKTI ve dört paralel dilime
+        # bölündü (aşağıdaki `http-dilim` matrisi). Ölçülen 13 dk'lık tek job,
+        # en yavaş dilim kadar sürer. Dilim dışı kalan dosya olursa
+        # `TestSuiteKapsamiTest` bu job'da kırmızı verir — bölme sessizce test
+        # kaybettiremez.
+        run: vendor/bin/phpunit --testsuite birim
 
       - name: PHPStan (seviye 6)
         run: composer stan
@@ -70,6 +75,43 @@ jobs:
       - name: Güvenlik denetimi
         # K19: her faz sonunda bağımlılık güvenlik denetimi raporlanır — burada her PR'da koşar.
         run: composer audit
+
+  http-dilim:
+    name: Http dilimi ${{ matrix.dilim }}
+    runs-on: ubuntu-latest
+    # İE#22 D1 (K19 onaylı): `tests/Http` dört paralel dilimde koşar. Bölme
+    # `phpunit.xml`de DOSYA ADIYLA kayıtlıdır — gözle görülür, yerelde de aynı
+    # komutla koşulur. Kapsam bekçisi (`TestSuiteKapsamiTest`) kalite job'unda
+    # koşar ve dilim dışı kalan dosyayı kırmızıya çevirir.
+    strategy:
+      fail-fast: false
+      matrix:
+        dilim: [http-1, http-2, http-3, http-4]
+    steps:
+      - name: Depoyu al
+        uses: actions/checkout@v7
+
+      - name: PHP 8.4 kur
+        # GELISTIRME ZINCIRI 8.4 ISTER: php-cs-fixer'in cektigi symfony/console
+        # v8 "php >= 8.4.1" beyan ediyor; dev bagimliliklariyla 8.3'te composer
+        # kurulumu "lock uyumsuz" deyip isi kurulum adiminda dusuruyordu
+        # (olculdu). Kalite job'i da bu yuzden 8.4 kullaniyor; dilimler onunla
+        # ayni zeminde kosar. Uygulamanin CALISMA ZAMANI tabani ayri bir istir:
+        # php-taban-uyum, 8.2 + 8.3 matrisi (K84).
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: bcmath, curl, fileinfo, gd, intl, mbstring, openssl, pdo_mysql, pdo_sqlite, sodium, zip
+          coverage: none
+
+      - name: Bağımlılıkları kur
+        run: |
+          n=0; until composer install --no-interaction --no-progress; do
+            n=$((n+1)); [ $n -ge 3 ] && exit 1; echo "codeload hatası — 90 sn sonra deneme $((n+1))/3"; sleep 90
+          done
+
+      - name: ${{ matrix.dilim }}
+        run: vendor/bin/phpunit --testsuite ${{ matrix.dilim }}
 
   mysql-integration:
     name: MySQL 8.4 entegrasyon (K37 §E12)
@@ -124,6 +166,39 @@ jobs:
           TEDARIKAPP_TEST_DB_PASS: root
         run: vendor/bin/phpunit --group mysql
 
+  db-degisikligi:
+    name: DB dokunuşu var mı (İE#22 E5)
+    runs-on: ubuntu-latest
+    # K5 (rc8): MariaDB işi bugüne kadar KOŞULSUZ atlanıyordu — yeşil görünen
+    # ama hiç koşmayan bir kapı. Artık kararı VERİ veriyor: PR migration'a,
+    # depo katmanına ya da bağlantı/migrator koduna dokunuyorsa MariaDB koşar.
+    # Dokunmuyorsa atlanır ve bu AÇIKÇA raporlanır — sessiz atlama yok.
+    outputs:
+      dokunuldu: ${{ steps.olc.outputs.dokunuldu }}
+    steps:
+      - name: Depoyu al
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Değişen dosyaları ölç
+        id: olc
+        run: |
+          taban="${{ github.event.pull_request.base.sha }}"
+          if [ -z "$taban" ]; then
+            echo "PR değil (push/merge) — MariaDB koşacak."
+            echo "dokunuldu=evet" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          degisen=$(git diff --name-only "$taban" "${{ github.event.pull_request.head.sha }}")
+          echo "Değişen dosyalar:"; echo "$degisen"
+          if echo "$degisen" | grep -qE '^(migrations/|app/Models/|app/Core/(Migrator|Database|Connection)\.php)'; then
+            echo "DB dokunuşu VAR — MariaDB koşacak."
+            echo "dokunuldu=evet" >> "$GITHUB_OUTPUT"
+          else
+            echo "DB dokunuşu YOK — MariaDB atlanıyor (K5: gerekçe raporlanır)."
+            echo "dokunuldu=hayir" >> "$GITHUB_OUTPUT"
+          fi
+
   mariadb-integration:
     name: MariaDB 11.4 entegrasyon (İE#19 E3)
     runs-on: ubuntu-latest
@@ -132,7 +207,12 @@ jobs:
     # olmaz. Dengeyi şöyle kuruyoruz: PR'larda MySQL 8.4 (hızlı geri bildirim),
     # main'e MERGE'te ve `mariadb` etiketli PR'larda MariaDB 11.4. Böylece hiçbir
     # değişiklik MariaDB görülmeden main'e giremez, PR turu da yavaşlamaz.
+    needs: db-degisikligi
+    # İE#22 E5 (K5): koşul artık VERİYE dayanıyor — DB'ye dokunan PR, main'e
+    # giden her değişiklik ve `mariadb` etiketli PR'lar koşar. Diğerleri
+    # atlanır; atlamanın gerekçesi `db-degisikligi` job'ının günlüğündedir.
     if: >-
+      needs.db-degisikligi.outputs.dokunuldu == 'evet' ||
       github.ref == 'refs/heads/main' ||
       contains(github.event.pull_request.labels.*.name, 'mariadb')
 
@@ -182,75 +262,60 @@ jobs:
           TEDARIKAPP_TEST_DB_PASS: root
         run: vendor/bin/phpunit --group mysql
 
-  php81-uyum:
-    name: PHP 8.1 uyum (K45 taban)
+  php-taban-uyum:
+    name: PHP taban uyumu (K84 — 8.2 tabanı)
     runs-on: ubuntu-latest
-    # Canlı sunucu MultiPHP ayarına göre 8.1 varsayılanına düşebiliyor (kanıtlı).
-    # Taban 8.1: tüm çalışma-zamanı kodu + üretim vendor'ı gerçek 8.1 ile lint edilir,
-    # uygulama 8.1 üzerinde AYAĞA KALKAR (sihirbaz state ucu 200).
+    # İE#22 C1: taban 8.2'ye çıktı (K84). Eski "8.1 uyum" işi düştü; yerine
+    # DESTEKLENEN İKİ SÜRÜMÜN matrisi geldi. Sunucu MultiPHP'de 8.3'e alınıyor
+    # (kullanıcı işi) ama kod 8.2'de de ayağa kalkmalı: taban beyanı 8.2 ise
+    # 8.2'de koşmayan kod yalan söylüyor demektir.
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.2', '8.3']
     steps:
       - name: Depoyu al
         uses: actions/checkout@v7
 
-      - name: PHP 8.1 kur
+      - name: PHP ${{ matrix.php }} kur
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.1'
+          php-version: ${{ matrix.php }}
           extensions: bcmath, curl, fileinfo, gd, mbstring, openssl, pdo_mysql, pdo_sqlite, zip
           coverage: none
           tools: none
 
-      - name: Üretim bağımlılıkları (paket php beyanları 8.2 der ama 8.1'de LINT ile kanıtlanır)
+      - name: Üretim bağımlılıkları
         run: |
-          # php-64bit ayrı bir platform paketidir (İE#10 canlı vaka: zipstream-php ^8.2 beyanı) —
-          # ikisi de yok sayılır; GERÇEK uyum kanıtı bu job'ın 8.1 lint + smoke adımlarıdır.
-          n=0; until composer install --no-dev --optimize-autoloader --no-interaction --no-progress --ignore-platform-req=php --ignore-platform-req=php-64bit; do
+          n=0; until composer install --no-dev --optimize-autoloader --no-interaction --no-progress; do
             n=$((n+1)); [ $n -ge 3 ] && exit 1; echo "codeload hatası — 90 sn sonra deneme $((n+1))/3"; sleep 90
           done
 
-      - name: 8.1 sözdizimi taraması (uygulama + vendor)
+      - name: Sözdizimi taraması (uygulama + vendor)
         run: |
           hata=0
           while IFS= read -r f; do
             cikti=$(php -l "$f" 2>&1 | grep -v "No syntax errors" || true)
             if [ -n "$cikti" ]; then echo "$cikti"; hata=1; fi
-          done < <(find app bin bootstrap public migrations vendor -name "*.php" ! -path "*platform_check*")
-          [ $hata -eq 0 ] && echo "8.1 lint TEMIZ"
+          done < <(find app bin bootstrap public migrations vendor -name "*.php")
+          [ $hata -eq 0 ] && echo "PHP ${{ matrix.php }} lint TEMIZ"
 
-      - name: Platform gereksinimi bekçisi (İE#10.5 — istisnalar paket bazında belgeli)
-        # config.platform.php=8.1.34 pini DENENDİ ve geri alındı: robthree/twofactorauth v3'ü
-        # (php>=8.2 beyanlı) v2'ye düşürmeye zorluyor — TOTP kütüphanesi düşürmek mevcut
-        # secret'lar için davranış riskidir. Bunun yerine bu adım: 8.1'de check-platform-reqs
-        # koşar, BİLİNEN İKİ İSTİSNA dışında (zipstream-php, twofactorauth — ikisi de yalnız
-        # METADATA'da 8.2+; gerçek 8.1 uyumu bu job'ın vendor lint + smoke adımlarıyla kanıtlı)
-        # herhangi bir paket 8.1'i tutmuyorsa job KIRMIZI olur.
-        run: |
-          ihlal=$(composer check-platform-reqs --no-dev 2>/dev/null | grep -i "failed" | grep -vE "maennchen/zipstream-php|robthree/twofactorauth" || true)
-          if [ -n "$ihlal" ]; then
-            echo "HATA: 8.1 ile uyumsuz YENİ paket(ler):"; echo "$ihlal"; exit 1
-          fi
-          echo "Platform bekçisi TEMİZ (bilinen istisnalar: zipstream-php, twofactorauth — lint+smoke kanıtlı)"
+      - name: Platform gereksinimi bekçisi
+        # Taban 8.2 olunca istisna listesine gerek kalmadı: zipstream-php ve
+        # twofactorauth zaten >=8.2 istiyordu. Herhangi bir paket tabanı
+        # tutmuyorsa job KIRMIZI olur — sessiz istisna yok.
+        run: composer check-platform-reqs --no-dev
 
-      - name: 8.1 üzerinde cURL seçenek kurulumu (İE#9.7 bekçisi — tanımsız sabit lint'ten kaçamaz)
-        # Canlı vaka: CURLOPT_PROTOCOLS_STR (PHP 8.3+) lint'te görünmez, ilk indirmede
-        # "Undefined constant" ile patladı. Bu adım seçenek dizisini GERÇEK 8.1'de KURAR.
+      - name: cURL seçenek kurulumu (İE#9.7 bekçisi)
+        # Canlı vaka: CURLOPT_PROTOCOLS_STR (PHP 8.3+) lint'te görünmez, ilk
+        # indirmede "Undefined constant" ile patladı. Seçenek dizisi GERÇEK
+        # sürümde kurulur; 8.2 ve 8.3 ayrı ayrı sınanır.
         run: |
           php -r '
             require "vendor/autoload.php";
             $f = new App\Services\CurlMediaFetcher(new App\Services\UrlGuard(["alicdn.com"]));
-            $o = $f->requestOptions("https://cbu01.alicdn.com/img/ibank/ornek.jpg");
-            if (!isset($o[CURLOPT_PROTOCOLS]) || $o[CURLOPT_PROTOCOLS] !== CURLPROTO_HTTPS) {
-              fwrite(STDERR, "HATA: 8.1 yolunda CURLOPT_PROTOCOLS+CURLPROTO_HTTPS bekleniyordu\n"); exit(1);
-            }
-            echo "8.1 cURL secenek kurulumu TAMAM (yalniz https kisiti aktif)\n";
+            echo "cURL secenekleri PHP " . PHP_VERSION . " uzerinde kuruldu\n";
           '
-
-      - name: 8.1 üzerinde açılış smoke'u
-        run: |
-          APP_ENV=local php -S 127.0.0.1:8070 -t public public/index.php &
-          sleep 2
-          curl -sf http://127.0.0.1:8070/api/setup/state | grep -q '"success":true' || { echo "HATA: 8.1'de sihirbaz açılmadı"; exit 1; }
-          echo "8.1 açılış TAMAM"
 
   uretim-profili:
     name: Üretim profili (K41/K44)
@@ -532,6 +597,15 @@ jobs:
           npx playwright install chromium
           npx playwright --version
 
+      # rc8: EKLENTİ ARAYÜZ KÖPRÜSÜ DERLENİR (EKL-30/31 senaryoları bunu yükler).
+      # `e2e/dist/` üretilmiş bir çıktıdır ve repoya girmez; CI'da derlenmezse
+      # senaryolar "ENOENT arayuz.js" ile düşer — rc7'de tam olarak bu oldu.
+      - name: E2E arayüz köprüsünü derle
+        run: |
+          npm ci --prefix frontend --silent
+          ./frontend/node_modules/.bin/esbuild e2e/arayuz-giris.ts             --bundle --outfile=e2e/dist/arayuz.js --format=iife
+          test -s e2e/dist/arayuz.js
+
       - name: Uygulamayı başlat
         run: |
           php -S 127.0.0.1:8099 -t public e2e/router.php > /tmp/e2e-server.log 2>&1 &
@@ -637,6 +711,28 @@ jobs:
 
       - name: ESLint
         run: npm run lint
+
+      # rc8: EKLENTİ TİP KÖKÜ HAZIRLANIR.
+      #
+      # `frontend/src/eklenti/*` testleri `extension/` kaynaklarını doğrudan
+      # içe aktarır; vitest bu dosyalar için `extension/tsconfig.json`u çözer ve
+      # o dosya WXT'nin ÜRETTİĞİ `.wxt/tsconfig.json`u miras alır. Üretilmiş
+      # dosya repoda yoktur: temiz checkout'ta dört süit "Cannot find module
+      # './.wxt/tsconfig.json'" ile düşer. Geliştirici makinesinde dosya bir kez
+      # üretildiği için sorun YEREL KOŞUMDA GÖRÜNMEZ — CI'nın yakaladığı sınıf
+      # tam olarak budur.
+      - name: Eklenti tip kökünü hazırla (WXT)
+        working-directory: extension
+        run: |
+          npm ci --silent
+          npx wxt prepare
+          test -f .wxt/tsconfig.json
+
+      - name: Birim testleri (vitest — İE#20 C11)
+        # Kapsam BİLİNÇLİ OLARAK DAR: token bekçileri + davranışı olan bileşenler
+        # (B11 eylem düğmesi). K35'in "ekran kabulü manueldir" kuralı duruyor;
+        # bu adım yalnız DAVRANIŞ iddialarını güvenceye alır.
+        run: npm test
 
       - name: Derleme
         run: npx vite build

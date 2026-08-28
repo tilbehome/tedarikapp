@@ -1,0 +1,702 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "schema_version": "1.0.0",
+  "document_name": "TedarikApp V3-F İzleme Eşikleri",
+  "generated_at": "2026-08-26",
+  "record_schema": {
+    "rule_id_pattern": "^THR-(PROD|STORE|CAT)-[A-Z0-9-]+$",
+    "required_threshold_fields": [
+      "rule_id",
+      "scope",
+      "metric",
+      "direction",
+      "default",
+      "adjustable_range",
+      "formula",
+      "evidence_gate",
+      "result_destination",
+      "notification_mapping"
+    ],
+    "scope_enum": [
+      "ürün",
+      "mağaza",
+      "kategori"
+    ],
+    "test_id_pattern": "^İZ-[0-9]{3}$"
+  },
+  "reference_files": [
+    "bildirim-olay-katalogu.json",
+    "platform-yetenek-matrisi.json",
+    "eklenti-v3-ozellik-katalogu.json",
+    "cikti-terimleri.json"
+  ],
+  "critical_terms_zh": {
+    "fiyat": "价格",
+    "stok": "库存",
+    "minimum_sipariş_miktarı": "起订量",
+    "mağaza_yeni_ürünü": "店铺上新",
+    "keşif": "发现"
+  },
+  "platform_independence": "Kurallar platform adı içermez; adaptör yalnız yetenek, kaynak kimliği, birim ve kanıt sağlar.",
+  "execution_boundary": "İzleme panel/sunucu tarafında, kullanıcının açıkça oluşturduğu izleme kaydı üzerinde çalışır. Chrome eklentisi kendiliğinden arka plan taraması yapmaz.",
+  "out_of_scope": [
+    "GTİP",
+    "gümrük",
+    "mevzuat",
+    "vergi/oran tespiti"
+  ],
+  "global_rules": {
+    "snapshot_required": true,
+    "unknown_is_zero": false,
+    "missing_is_no_change": false,
+    "same_product_variant_currency_unit_required": true,
+    "high_moq_alone_is_penalty": false,
+    "store_new_product_route": "Keşif",
+    "automatic_order_creation": false,
+    "cooldown": "Aynı kural+varlık+yön için birleşim penceresi dolmadan ikinci dış bildirim yok; snapshot/audit kayıtları korunur.",
+    "hysteresis": "Eşik üstünde kalan değer tekrar bildirilmez; eşik altına dönüp yeni snapshot ile yeniden aşarsa yeni değerlendirme yapılır."
+  },
+  "notification_catalog_contract": {
+    "task_declared_event_count": 37,
+    "available_reference_observed_event_count": 39,
+    "count_resolution": "PM_KARARI",
+    "rule": "Bu paket yeni NTF olayı açmaz. Birebir semantik karşılık kanıtlanmadığında catalog_event_code null ve PM_KARARI kalır.",
+    "known_nearby_events_not_repurposed": [
+      "NTF-CAPTURE-NO-ACTIVITY",
+      "NTF-CAPTURE-BATCH-ACCEPTED",
+      "NTF-LIST-EXPIRED",
+      "NTF-LIST-RATE-DRIFT"
+    ]
+  },
+  "thresholds": [
+    {
+      "rule_id": "THR-PROD-PRICE-UP",
+      "scope": "ürün",
+      "metric": "normalized_unit_price",
+      "direction": "artış",
+      "default": 5,
+      "adjustable_range": {
+        "min": 1,
+        "max": 50,
+        "unit": "%"
+      },
+      "formula": "(new-old)/old*100 >= threshold; old>0 ve aynı para/birim zorunlu",
+      "evidence_gate": "Fiyat alanı platform yetenek matrisinde YOK olamaz; DEĞİŞKEN ise sayfa snapshot kanıtı gerekir.",
+      "result_destination": "ürün izleme bulgusu",
+      "notification_mapping": {
+        "catalog_event_code": null,
+        "decision": "PM_KARARI",
+        "reason": "13B'de kaynak ürün fiyat artışı olayı kanıtlanmadı.",
+        "new_event_created_in_this_package": false,
+        "proposed_13b_merge_shape": {
+          "izinli": true,
+          "pencere_dakika": 60,
+          "grup_anahtari": "product_id+variant_id+direction",
+          "note": "Yalnız PM mevcut 13B olayını seçer veya ayrı değişiklik emriyle katalog genişletirse etkinleşir."
+        }
+      }
+    },
+    {
+      "rule_id": "THR-PROD-PRICE-DOWN",
+      "scope": "ürün",
+      "metric": "normalized_unit_price",
+      "direction": "düşüş",
+      "default": 5,
+      "adjustable_range": {
+        "min": 1,
+        "max": 50,
+        "unit": "%"
+      },
+      "formula": "(old-new)/old*100 >= threshold; old>0 ve aynı para/birim zorunlu",
+      "evidence_gate": "Kademe, paket adedi ve varyant eşleşmeden fiyatlar karşılaştırılmaz.",
+      "result_destination": "ürün izleme bulgusu",
+      "notification_mapping": {
+        "catalog_event_code": null,
+        "decision": "PM_KARARI",
+        "reason": "13B'de kaynak ürün fiyat düşüşü olayı kanıtlanmadı.",
+        "new_event_created_in_this_package": false,
+        "proposed_13b_merge_shape": {
+          "izinli": true,
+          "pencere_dakika": 60,
+          "grup_anahtari": "product_id+variant_id+direction",
+          "note": "Yalnız PM mevcut 13B olayını seçer veya ayrı değişiklik emriyle katalog genişletirse etkinleşir."
+        }
+      }
+    },
+    {
+      "rule_id": "THR-PROD-STOCK-DOWN",
+      "scope": "ürün",
+      "metric": "stock_qty",
+      "direction": "düşüş",
+      "default": 30,
+      "adjustable_range": {
+        "min": 5,
+        "max": 100,
+        "unit": "%"
+      },
+      "formula": "(old-new)/old*100 >= threshold; old>0",
+      "evidence_gate": "Platform stok sayısı sağlamıyorsa tetik değerlendirilmez; 'var/yok' sinyali sayısal stok yapılmaz.",
+      "result_destination": "ürün izleme bulgusu",
+      "notification_mapping": {
+        "catalog_event_code": null,
+        "decision": "PM_KARARI",
+        "reason": "13B'de ürün stok değişimi olayı kanıtlanmadı.",
+        "new_event_created_in_this_package": false,
+        "proposed_13b_merge_shape": {
+          "izinli": true,
+          "pencere_dakika": 120,
+          "grup_anahtari": "product_id+variant_id",
+          "note": "Yalnız PM mevcut 13B olayını seçer veya ayrı değişiklik emriyle katalog genişletirse etkinleşir."
+        }
+      }
+    },
+    {
+      "rule_id": "THR-PROD-STOCK-OUT",
+      "scope": "ürün",
+      "metric": "availability",
+      "direction": "var→yok",
+      "default": true,
+      "adjustable_range": {
+        "min": false,
+        "max": true,
+        "unit": "boolean"
+      },
+      "formula": "old=available and new=unavailable",
+      "evidence_gate": "Aynı ürün/varyant ve yeni snapshot zorunlu.",
+      "result_destination": "ürün izleme bulgusu",
+      "notification_mapping": {
+        "catalog_event_code": null,
+        "decision": "PM_KARARI",
+        "reason": "13B'de kaynak ürün stok tükenmesi olayı kanıtlanmadı.",
+        "new_event_created_in_this_package": false,
+        "proposed_13b_merge_shape": {
+          "izinli": true,
+          "pencere_dakika": 120,
+          "grup_anahtari": "product_id+variant_id",
+          "note": "Yalnız PM mevcut 13B olayını seçer veya ayrı değişiklik emriyle katalog genişletirse etkinleşir."
+        }
+      }
+    },
+    {
+      "rule_id": "THR-PROD-MOQ-CHANGE",
+      "scope": "ürün",
+      "metric": "moq",
+      "direction": "iki yön",
+      "default": 25,
+      "adjustable_range": {
+        "min": 5,
+        "max": 200,
+        "unit": "%"
+      },
+      "formula": "abs(new-old)/old*100 >= threshold; old>0",
+      "evidence_gate": "MOQ birimi aynı olmalı. Yüksek MOQ tek başına ceza değildir; yalnız değişim sinyali üretilir.",
+      "result_destination": "ürün izleme bulgusu",
+      "notification_mapping": {
+        "catalog_event_code": null,
+        "decision": "PM_KARARI",
+        "reason": "13B'de MOQ değişimi olayı kanıtlanmadı.",
+        "new_event_created_in_this_package": false,
+        "proposed_13b_merge_shape": {
+          "izinli": true,
+          "pencere_dakika": 240,
+          "grup_anahtari": "product_id+moq_unit",
+          "note": "Yalnız PM mevcut 13B olayını seçer veya ayrı değişiklik emriyle katalog genişletirse etkinleşir."
+        }
+      }
+    },
+    {
+      "rule_id": "THR-PROD-MOQ-CAP",
+      "scope": "ürün",
+      "metric": "moq",
+      "direction": "kullanıcı tavanını aşma",
+      "default": null,
+      "adjustable_range": {
+        "min": 1,
+        "max": 1000000,
+        "unit": "adet/set/koli"
+      },
+      "formula": "old<=user_cap and new>user_cap",
+      "evidence_gate": "Kullanıcı tavanı yoksa değerlendirilmez. Mutlak yüksek MOQ ceza değildir.",
+      "result_destination": "ürün izleme bulgusu",
+      "notification_mapping": {
+        "catalog_event_code": null,
+        "decision": "PM_KARARI",
+        "reason": "13B'de kullanıcı MOQ tavanı aşımı olayı kanıtlanmadı.",
+        "new_event_created_in_this_package": false,
+        "proposed_13b_merge_shape": {
+          "izinli": true,
+          "pencere_dakika": 240,
+          "grup_anahtari": "product_id+user_id",
+          "note": "Yalnız PM mevcut 13B olayını seçer veya ayrı değişiklik emriyle katalog genişletirse etkinleşir."
+        }
+      }
+    },
+    {
+      "rule_id": "THR-STORE-NEW-PRODUCT",
+      "scope": "mağaza",
+      "metric": "new_product_count",
+      "direction": "artış",
+      "default": 1,
+      "adjustable_range": {
+        "min": 1,
+        "max": 100,
+        "unit": "ürün/24s"
+      },
+      "formula": "deduped_new_products >= threshold",
+      "evidence_gate": "Platform ürün kimliği ve mağaza kimliği kanıtlanmalı; tekrar ilan yeni ürün sayılmaz.",
+      "result_destination": "Keşif",
+      "notification_mapping": {
+        "catalog_event_code": null,
+        "decision": "PM_KARARI",
+        "reason": "13B'de mağaza yeni ürün keşfi olayı kanıtlanmadı.",
+        "new_event_created_in_this_package": false,
+        "proposed_13b_merge_shape": {
+          "izinli": true,
+          "pencere_dakika": 360,
+          "grup_anahtari": "store_id",
+          "note": "Yalnız PM mevcut 13B olayını seçer veya ayrı değişiklik emriyle katalog genişletirse etkinleşir."
+        }
+      }
+    },
+    {
+      "rule_id": "THR-STORE-NEW-PRODUCT-BURST",
+      "scope": "mağaza",
+      "metric": "new_product_count",
+      "direction": "küme",
+      "default": 5,
+      "adjustable_range": {
+        "min": 2,
+        "max": 100,
+        "unit": "ürün/24s"
+      },
+      "formula": "deduped_new_products_24h >= threshold",
+      "evidence_gate": "Yeni ürünler kanonik kimlik veya güvenli eşleme ile tekilleştirilir.",
+      "result_destination": "Keşif",
+      "notification_mapping": {
+        "catalog_event_code": null,
+        "decision": "PM_KARARI",
+        "reason": "13B'de mağaza yeni ürün kümesi olayı kanıtlanmadı.",
+        "new_event_created_in_this_package": false,
+        "proposed_13b_merge_shape": {
+          "izinli": true,
+          "pencere_dakika": 360,
+          "grup_anahtari": "store_id",
+          "note": "Yalnız PM mevcut 13B olayını seçer veya ayrı değişiklik emriyle katalog genişletirse etkinleşir."
+        }
+      }
+    },
+    {
+      "rule_id": "THR-STORE-PRICE-BREADTH",
+      "scope": "mağaza",
+      "metric": "changed_product_share",
+      "direction": "iki yön",
+      "default": 30,
+      "adjustable_range": {
+        "min": 5,
+        "max": 100,
+        "unit": "% ürün"
+      },
+      "formula": "changed_comparable_products/comparable_products*100 >= threshold",
+      "evidence_gate": "En az 10 karşılaştırılabilir ürün; varyant/paket/para birimi kapıları geçmeli.",
+      "result_destination": "mağaza izleme bulgusu",
+      "notification_mapping": {
+        "catalog_event_code": null,
+        "decision": "PM_KARARI",
+        "reason": "13B'de mağaza geneli fiyat değişimi olayı kanıtlanmadı.",
+        "new_event_created_in_this_package": false,
+        "proposed_13b_merge_shape": {
+          "izinli": true,
+          "pencere_dakika": 720,
+          "grup_anahtari": "store_id+direction",
+          "note": "Yalnız PM mevcut 13B olayını seçer veya ayrı değişiklik emriyle katalog genişletirse etkinleşir."
+        }
+      }
+    },
+    {
+      "rule_id": "THR-STORE-SILENCE",
+      "scope": "mağaza",
+      "metric": "snapshot_age_days",
+      "direction": "yaşlanma",
+      "default": 14,
+      "adjustable_range": {
+        "min": 1,
+        "max": 90,
+        "unit": "gün"
+      },
+      "formula": "today-last_successful_snapshot_at >= threshold",
+      "evidence_gate": "İzleme planı aktif olmalı; erişim engeli 'değişim yok' sayılmaz.",
+      "result_destination": "izleme sağlık bulgusu",
+      "notification_mapping": {
+        "catalog_event_code": null,
+        "decision": "PM_KARARI",
+        "reason": "NTF-CAPTURE-NO-ACTIVITY genel yakalama sessizliğidir; mağaza izleme sessizliğine birebir eş olduğu kanıtlanmadı.",
+        "new_event_created_in_this_package": false,
+        "proposed_13b_merge_shape": {
+          "izinli": true,
+          "pencere_dakika": 0,
+          "grup_anahtari": "store_id",
+          "note": "Yalnız PM mevcut 13B olayını seçer veya ayrı değişiklik emriyle katalog genişletirse etkinleşir."
+        }
+      }
+    },
+    {
+      "rule_id": "THR-CAT-NEW-LISTINGS",
+      "scope": "kategori",
+      "metric": "new_product_count",
+      "direction": "artış",
+      "default": 10,
+      "adjustable_range": {
+        "min": 1,
+        "max": 1000,
+        "unit": "ürün/7g"
+      },
+      "formula": "deduped_new_products_7d >= threshold",
+      "evidence_gate": "Kategori eşlemesi ve platform kapsamı sabit olmalı.",
+      "result_destination": "kategori izleme bulgusu",
+      "notification_mapping": {
+        "catalog_event_code": null,
+        "decision": "PM_KARARI",
+        "reason": "13B'de kategori yeni ilan olayı kanıtlanmadı.",
+        "new_event_created_in_this_package": false,
+        "proposed_13b_merge_shape": {
+          "izinli": true,
+          "pencere_dakika": 720,
+          "grup_anahtari": "platform+category_id",
+          "note": "Yalnız PM mevcut 13B olayını seçer veya ayrı değişiklik emriyle katalog genişletirse etkinleşir."
+        }
+      }
+    },
+    {
+      "rule_id": "THR-CAT-LISTING-GROWTH",
+      "scope": "kategori",
+      "metric": "active_listing_count",
+      "direction": "artış",
+      "default": 15,
+      "adjustable_range": {
+        "min": 5,
+        "max": 200,
+        "unit": "%/30g"
+      },
+      "formula": "(current-baseline)/baseline*100 >= threshold; baseline>=20",
+      "evidence_gate": "Aynı platform+kategori; kapsama giren sayfa sayısı değişmediyse değerlendirilir.",
+      "result_destination": "kategori izleme bulgusu",
+      "notification_mapping": {
+        "catalog_event_code": null,
+        "decision": "PM_KARARI",
+        "reason": "13B'de kategori ilan büyümesi olayı kanıtlanmadı.",
+        "new_event_created_in_this_package": false,
+        "proposed_13b_merge_shape": {
+          "izinli": true,
+          "pencere_dakika": 1440,
+          "grup_anahtari": "platform+category_id",
+          "note": "Yalnız PM mevcut 13B olayını seçer veya ayrı değişiklik emriyle katalog genişletirse etkinleşir."
+        }
+      }
+    },
+    {
+      "rule_id": "THR-CAT-MEDIAN-PRICE",
+      "scope": "kategori",
+      "metric": "median_normalized_price",
+      "direction": "iki yön",
+      "default": 8,
+      "adjustable_range": {
+        "min": 2,
+        "max": 50,
+        "unit": "%/30g"
+      },
+      "formula": "abs(current_median-baseline_median)/baseline_median*100 >= threshold",
+      "evidence_gate": "En az 20 karşılaştırılabilir ürün; aynı para, satış birimi ve aykırı değer politikası.",
+      "result_destination": "kategori izleme bulgusu",
+      "notification_mapping": {
+        "catalog_event_code": null,
+        "decision": "PM_KARARI",
+        "reason": "13B'de kategori medyan fiyat olayı kanıtlanmadı.",
+        "new_event_created_in_this_package": false,
+        "proposed_13b_merge_shape": {
+          "izinli": true,
+          "pencere_dakika": 1440,
+          "grup_anahtari": "platform+category_id+direction",
+          "note": "Yalnız PM mevcut 13B olayını seçer veya ayrı değişiklik emriyle katalog genişletirse etkinleşir."
+        }
+      }
+    },
+    {
+      "rule_id": "THR-CAT-DATA-SILENCE",
+      "scope": "kategori",
+      "metric": "snapshot_age_days",
+      "direction": "yaşlanma",
+      "default": 7,
+      "adjustable_range": {
+        "min": 1,
+        "max": 60,
+        "unit": "gün"
+      },
+      "formula": "today-last_successful_snapshot_at >= threshold",
+      "evidence_gate": "Aktif kategori izleme kaydı ve beklenen çalışma takvimi zorunlu.",
+      "result_destination": "izleme sağlık bulgusu",
+      "notification_mapping": {
+        "catalog_event_code": null,
+        "decision": "PM_KARARI",
+        "reason": "NTF-CAPTURE-NO-ACTIVITY genel yakalama sessizliği içindir; kategoriye özel kullanım PM onayı gerektirir.",
+        "new_event_created_in_this_package": false,
+        "proposed_13b_merge_shape": {
+          "izinli": true,
+          "pencere_dakika": 0,
+          "grup_anahtari": "platform+category_id",
+          "note": "Yalnız PM mevcut 13B olayını seçer veya ayrı değişiklik emriyle katalog genişletirse etkinleşir."
+        }
+      }
+    }
+  ],
+  "test_vectors": [
+    {
+      "id": "İZ-001",
+      "rule_id": "THR-PROD-PRICE-UP",
+      "input": {
+        "old": 100,
+        "new": 104.99,
+        "same_currency_unit": true
+      },
+      "expected": {
+        "triggered": false,
+        "computed_pct": "4.99"
+      }
+    },
+    {
+      "id": "İZ-002",
+      "rule_id": "THR-PROD-PRICE-UP",
+      "input": {
+        "old": 100,
+        "new": 105,
+        "same_currency_unit": true
+      },
+      "expected": {
+        "triggered": true,
+        "computed_pct": "5.00"
+      }
+    },
+    {
+      "id": "İZ-003",
+      "rule_id": "THR-PROD-PRICE-DOWN",
+      "input": {
+        "old": 100,
+        "new": 95,
+        "same_currency_unit": true
+      },
+      "expected": {
+        "triggered": true,
+        "computed_pct": "5.00"
+      }
+    },
+    {
+      "id": "İZ-004",
+      "rule_id": "THR-PROD-PRICE-DOWN",
+      "input": {
+        "old": 100,
+        "new": 80,
+        "same_currency_unit": false
+      },
+      "expected": {
+        "triggered": false,
+        "reason": "NOT_COMPARABLE"
+      }
+    },
+    {
+      "id": "İZ-005",
+      "rule_id": "THR-PROD-STOCK-DOWN",
+      "input": {
+        "old": 100,
+        "new": 71
+      },
+      "expected": {
+        "triggered": false,
+        "computed_pct": "29.00"
+      }
+    },
+    {
+      "id": "İZ-006",
+      "rule_id": "THR-PROD-STOCK-DOWN",
+      "input": {
+        "old": 100,
+        "new": 70
+      },
+      "expected": {
+        "triggered": true,
+        "computed_pct": "30.00"
+      }
+    },
+    {
+      "id": "İZ-007",
+      "rule_id": "THR-PROD-STOCK-OUT",
+      "input": {
+        "old": "available",
+        "new": "unavailable"
+      },
+      "expected": {
+        "triggered": true
+      }
+    },
+    {
+      "id": "İZ-008",
+      "rule_id": "THR-PROD-MOQ-CHANGE",
+      "input": {
+        "old": 1000,
+        "new": 1100,
+        "same_unit": true
+      },
+      "expected": {
+        "triggered": false,
+        "computed_pct": "10.00",
+        "score_penalty": false
+      }
+    },
+    {
+      "id": "İZ-009",
+      "rule_id": "THR-PROD-MOQ-CHANGE",
+      "input": {
+        "old": 1000,
+        "new": 1250,
+        "same_unit": true
+      },
+      "expected": {
+        "triggered": true,
+        "computed_pct": "25.00",
+        "score_penalty": false
+      }
+    },
+    {
+      "id": "İZ-010",
+      "rule_id": "THR-PROD-MOQ-CAP",
+      "input": {
+        "old": 400,
+        "new": 600,
+        "user_cap": 500
+      },
+      "expected": {
+        "triggered": true,
+        "score_penalty": false
+      }
+    },
+    {
+      "id": "İZ-011",
+      "rule_id": "THR-PROD-MOQ-CAP",
+      "input": {
+        "old": 400,
+        "new": 600,
+        "user_cap": null
+      },
+      "expected": {
+        "triggered": false,
+        "reason": "USER_CAP_MISSING"
+      }
+    },
+    {
+      "id": "İZ-012",
+      "rule_id": "THR-STORE-NEW-PRODUCT",
+      "input": {
+        "raw_new": 2,
+        "deduped_new": 1
+      },
+      "expected": {
+        "triggered": true,
+        "destination": "Keşif",
+        "created_order": false
+      }
+    },
+    {
+      "id": "İZ-013",
+      "rule_id": "THR-STORE-NEW-PRODUCT-BURST",
+      "input": {
+        "deduped_new_24h": 4
+      },
+      "expected": {
+        "triggered": false
+      }
+    },
+    {
+      "id": "İZ-014",
+      "rule_id": "THR-STORE-NEW-PRODUCT-BURST",
+      "input": {
+        "deduped_new_24h": 5
+      },
+      "expected": {
+        "triggered": true,
+        "destination": "Keşif"
+      }
+    },
+    {
+      "id": "İZ-015",
+      "rule_id": "THR-STORE-PRICE-BREADTH",
+      "input": {
+        "changed": 3,
+        "comparable": 10
+      },
+      "expected": {
+        "triggered": true,
+        "computed_pct": "30.00"
+      }
+    },
+    {
+      "id": "İZ-016",
+      "rule_id": "THR-STORE-PRICE-BREADTH",
+      "input": {
+        "changed": 9,
+        "comparable": 9
+      },
+      "expected": {
+        "triggered": false,
+        "reason": "MIN_SAMPLE_10"
+      }
+    },
+    {
+      "id": "İZ-017",
+      "rule_id": "THR-CAT-LISTING-GROWTH",
+      "input": {
+        "baseline": 100,
+        "current": 114
+      },
+      "expected": {
+        "triggered": false,
+        "computed_pct": "14.00"
+      }
+    },
+    {
+      "id": "İZ-018",
+      "rule_id": "THR-CAT-LISTING-GROWTH",
+      "input": {
+        "baseline": 100,
+        "current": 115
+      },
+      "expected": {
+        "triggered": true,
+        "computed_pct": "15.00"
+      }
+    },
+    {
+      "id": "İZ-019",
+      "rule_id": "THR-CAT-MEDIAN-PRICE",
+      "input": {
+        "baseline": 50,
+        "current": 54,
+        "sample": 20
+      },
+      "expected": {
+        "triggered": true,
+        "computed_pct": "8.00"
+      }
+    },
+    {
+      "id": "İZ-020",
+      "rule_id": "THR-CAT-MEDIAN-PRICE",
+      "input": {
+        "baseline": 50,
+        "current": 60,
+        "sample": 19
+      },
+      "expected": {
+        "triggered": false,
+        "reason": "MIN_SAMPLE_20"
+      }
+    }
+  ]
+}

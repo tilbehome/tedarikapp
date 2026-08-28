@@ -1,0 +1,400 @@
+{
+  "schema_version": "1.0",
+  "katalog_adi": "TedarikApp Panorama Brifing Motoru Kataloğu",
+  "durum_kaynagi": "cikti-terimleri.json:status.*",
+  "oncelik_aciklamasi": {
+    "1": "Acil; aynı gün müdahale",
+    "2": "Yüksek; gün içinde ele al",
+    "3": "Normal; planlı iş",
+    "4": "Düşük; uygun zamanda ele al",
+    "5": "Bilgi; işlem zorunlu değil"
+  },
+  "kosul_sozdizimi": "Mantıksal ifadeler salt okunur günlük özet görünümündeki alanlara uygulanır. status.* değerleri cikti-terimleri.json anahtarlarıdır; ayar.* alanları yönetilebilir eşiklerdir.",
+  "veri_sozlugu": [
+    {
+      "alan": "liste_durum_sayisi[status.*]",
+      "kaynak": "liste durumuna göre gruplanmış liste sayısı",
+      "turetme": "listeler.status GROUP BY status"
+    },
+    {
+      "alan": "liste_durum_en_eski_gun[status.*]",
+      "kaynak": "durumdaki en eski listenin bekleme yaşı",
+      "turetme": "bugün - listeler.status_changed_at"
+    },
+    {
+      "alan": "fiyat_gecerlilik_en_yakin_gun|fiyat_gecerlilik_yaklasan_sayisi",
+      "kaynak": "aktif tekliflerde en yakın fiyat geçerlilik bitişi",
+      "turetme": "MIN(teklifler.valid_until - bugün); ayarlı gün penceresinde süresi dolacak aktif teklif sayısı"
+    },
+    {
+      "alan": "eksik_urun_sayisi",
+      "kaynak": "zorunlu alanı eksik aktif liste satırı",
+      "turetme": "liste_satirlari.missing zorunlu alan filtresi"
+    },
+    {
+      "alan": "gelen_kutusu_bekleyen",
+      "kaynak": "deste modunda kararsız ürün sayısı",
+      "turetme": "gelen_kutusu aktif ve hedefi seçilmemiş kayıt sayısı"
+    },
+    {
+      "alan": "kuyruk.ready|retry_wait|dead|en_eski_hazir_dakika",
+      "kaynak": "iş kuyruğu durum özeti",
+      "turetme": "jobs.status ve available_at/created_at"
+    },
+    {
+      "alan": "kur.aktif_yas_saat|kilitli_liste_sayisi|kilitli_sapma_yuzde",
+      "kaynak": "aktif kur sürümü ve kilitli liste kuru",
+      "turetme": "aktif kur zamanı; kur snapshot'ı kilitli aktif liste sayısı; güncel kur ile liste kur snapshot karşılaştırması"
+    },
+    {
+      "alan": "yakalama.son_24s_basarim_yuzde|son_basarili_saat|son_24s_toplam|son_24s_hata_sayisi",
+      "kaynak": "yakalama/parser sağlık metrikleri",
+      "turetme": "capture audit ve parser sonucu agregasyonu; hata sayısı = toplam - başarılı"
+    },
+    {
+      "alan": "ceviri.kota_kalan_yuzde|bekleyen|en_eski_bekleyen_dakika|basarisiz_son_24s|son_24s_toplam|son_24s_hata_yuzde",
+      "kaynak": "çeviri sağlayıcı ve kuyruk özeti",
+      "turetme": "sağlayıcı kota snapshot + translation jobs agregasyonu; son_24s_hata_yuzde = basarisiz_son_24s / son_24s_toplam × 100"
+    }
+  ],
+  "brifing_sablonlari": [
+    {
+      "id": "BRF-001",
+      "kosul": "liste_durum_sayisi['status.waiting_price'] > 0 ve liste_durum_en_eski_gun['status.waiting_price'] >= 5",
+      "cumle": "{n} liste Fiyat bekleniyor durumunda; en eskisi {gun} gündür yanıtsız — hatırlatma zamanı.",
+      "oncelik": 1,
+      "eylem": "Fiyat bekleyen listelere git"
+    },
+    {
+      "id": "BRF-002",
+      "kosul": "liste_durum_sayisi['status.waiting_price'] > 0 ve liste_durum_en_eski_gun['status.waiting_price'] < 5",
+      "cumle": "{n} liste Fiyat bekleniyor durumunda; en eskisi {gun} gündür bekliyor.",
+      "oncelik": 3,
+      "eylem": "Fiyat bekleyen listelere git"
+    },
+    {
+      "id": "BRF-003",
+      "kosul": "liste_durum_sayisi['status.waiting_approval'] > 0",
+      "cumle": "{n} liste Onay bekliyor — karar verilirse akış ilerleyecek.",
+      "oncelik": 2,
+      "eylem": "Onay bekleyenleri aç"
+    },
+    {
+      "id": "BRF-004",
+      "kosul": "liste_durum_sayisi['status.ready'] > 0",
+      "cumle": "{n} liste Siparişe hazır; iletim öncesi son kontrol yapılabilir.",
+      "oncelik": 2,
+      "eylem": "Hazır listeleri aç"
+    },
+    {
+      "id": "BRF-005",
+      "kosul": "liste_durum_sayisi['status.sent'] > 0 ve fiyat_gecerlilik_yaklasan_sayisi > 0 ve fiyat_gecerlilik_en_yakin_gun <= 3",
+      "cumle": "Gönderilmiş listelerden {n} tanesinin fiyat geçerliliği en geç {gun} gün içinde doluyor.",
+      "oncelik": 1,
+      "eylem": "Süresi yaklaşanları aç"
+    },
+    {
+      "id": "BRF-006",
+      "kosul": "eksik_urun_sayisi > 0",
+      "cumle": "{n} ürün Eksik veri nedeniyle ilerleyemiyor — zorunlu alanları tamamlayın.",
+      "oncelik": 2,
+      "eylem": "Eksik ürünleri filtrele"
+    },
+    {
+      "id": "BRF-007",
+      "kosul": "liste_durum_sayisi['status.waiting_supplier'] > 0 ve liste_durum_en_eski_gun['status.waiting_supplier'] >= 3",
+      "cumle": "{n} liste Tedarikçi yanıtı bekleniyor durumunda; en eskisi {gun} gündür bekliyor.",
+      "oncelik": 2,
+      "eylem": "Tedarikçi bekleyenleri aç"
+    },
+    {
+      "id": "BRF-008",
+      "kosul": "liste_durum_sayisi['status.expired'] > 0",
+      "cumle": "{n} liste Güncelliğini yitirdi; fiyat ve termin yenilemesi gerekiyor.",
+      "oncelik": 2,
+      "eylem": "Güncelliğini yitirenleri aç"
+    },
+    {
+      "id": "BRF-009",
+      "kosul": "gelen_kutusu_bekleyen > 0",
+      "cumle": "Gelen Kutusunda {n} ürün karar bekliyor.",
+      "oncelik": 3,
+      "eylem": "Deste modunu aç"
+    },
+    {
+      "id": "BRF-010",
+      "kosul": "kuyruk.retry_wait > 0",
+      "cumle": "{n} iş yeniden deneme sırasına alındı; sistem bekleme sürelerini uyguluyor.",
+      "oncelik": 3,
+      "eylem": "Kuyruğu aç"
+    },
+    {
+      "id": "BRF-011",
+      "kosul": "kuyruk.dead > 0",
+      "cumle": "{n} iş kalıcı olarak durdu — nedeni incelenmeden akış tamamlanmayacak.",
+      "oncelik": 1,
+      "eylem": "Duran işleri incele"
+    },
+    {
+      "id": "BRF-012",
+      "kosul": "kuyruk.ready > 0 ve kuyruk.en_eski_hazir_dakika >= 15",
+      "cumle": "Kuyrukta {n} hazır iş var; en eskisi {dakika} dakikadır başlamadı.",
+      "oncelik": 2,
+      "eylem": "Kuyruk sağlığını aç"
+    },
+    {
+      "id": "BRF-013",
+      "kosul": "kur.aktif_yas_saat >= 24",
+      "cumle": "Aktif kur {saat} saattir yenilenmedi — listeleri hesaplamadan önce kontrol edin.",
+      "oncelik": 2,
+      "eylem": "Kur ayarını aç"
+    },
+    {
+      "id": "BRF-014",
+      "kosul": "yakalama.son_24s_toplam >= 10 ve yakalama.son_24s_basarim_yuzde < 95",
+      "cumle": "Son 24 saatte yakalama başarısı %{oran}; {hatali} kayıt dikkat istiyor.",
+      "oncelik": 2,
+      "eylem": "Yakalama sağlığını aç"
+    },
+    {
+      "id": "BRF-015",
+      "kosul": "yakalama.son_basarili_saat >= 72",
+      "cumle": "{gun} gündür başarılı yakalama yok — eklenti ve seçici sağlığını kontrol edin.",
+      "oncelik": 1,
+      "eylem": "Yakalama sağlığını aç"
+    },
+    {
+      "id": "BRF-016",
+      "kosul": "ceviri.kota_kalan_yuzde <= 20 ve ceviri.kota_kalan_yuzde > 0",
+      "cumle": "Çeviri kotasının %{oran} kadarı kaldı; bekleyen {n} iş için kapasiteyi kontrol edin.",
+      "oncelik": 2,
+      "eylem": "Çeviri kullanımını aç"
+    },
+    {
+      "id": "BRF-017",
+      "kosul": "ceviri.bekleyen > 0",
+      "cumle": "{n} çeviri işi bekliyor; en eski iş {dakika} dakikadır kuyrukta.",
+      "oncelik": 3,
+      "eylem": "Çeviri kuyruğunu aç"
+    },
+    {
+      "id": "BRF-018",
+      "kosul": "ceviri.basarisiz_son_24s > 0",
+      "cumle": "Son 24 saatte {n} çeviri kalite veya sağlayıcı hatasıyla tamamlanamadı.",
+      "oncelik": 2,
+      "eylem": "Çeviri hatalarını aç"
+    }
+  ],
+  "aksiyon_kartlari": [
+    {
+      "tip": "action.waiting_price",
+      "baslik": "Fiyat bekleyen listeler",
+      "satir": "Yanıt süresi uzayan teklif listelerini takip edin.",
+      "dugme": "Listeleri aç",
+      "hedef": "/panel/listeler?durum=status.waiting_price"
+    },
+    {
+      "tip": "action.inbox_triage",
+      "baslik": "Gelen Kutusunu düzenle",
+      "satir": "Karar bekleyen ürünleri Havuza, Listeye veya Çöpe taşıyın.",
+      "dugme": "Deste modunu aç",
+      "hedef": "/panel/gelen-kutusu?mod=deste"
+    },
+    {
+      "tip": "action.missing_data",
+      "baslik": "Eksik verileri tamamla",
+      "satir": "HAZIR kapısını engelleyen ürün alanlarını düzeltin.",
+      "dugme": "Eksikleri göster",
+      "hedef": "/panel/listeler?durum=status.missing_data"
+    },
+    {
+      "tip": "action.waiting_approval",
+      "baslik": "Onay bekleyenler",
+      "satir": "Karar verilmemiş listeleri tek yerde inceleyin.",
+      "dugme": "İncelemeye başla",
+      "hedef": "/panel/listeler?durum=status.waiting_approval"
+    },
+    {
+      "tip": "action.expiring_prices",
+      "baslik": "Süresi dolan fiyatlar",
+      "satir": "Geçerliliği yaklaşan teklifleri revizyona hazırlayın.",
+      "dugme": "Süreleri kontrol et",
+      "hedef": "/panel/listeler?fiyat_gecerlilik=yaklasan"
+    },
+    {
+      "tip": "action.exchange_rate",
+      "baslik": "Kuru güncelle",
+      "satir": "Yeni kuru getirip önizleyin ve onaylayın.",
+      "dugme": "Kur ayarına git",
+      "hedef": "/panel/ayarlar/kur"
+    },
+    {
+      "tip": "action.dead_jobs",
+      "baslik": "Duran işleri çöz",
+      "satir": "Deneme bütçesi biten işleri düzeltin veya yeniden çalıştırın.",
+      "dugme": "Duran işleri aç",
+      "hedef": "/panel/ayarlar/kuyruk?durum=dead"
+    },
+    {
+      "tip": "action.capture_health",
+      "baslik": "Yakalama sağlığını denetle",
+      "satir": "Seçici sürümleri ve son yakalama hatalarını inceleyin.",
+      "dugme": "Sağlık ekranını aç",
+      "hedef": "/panel/ayarlar/yakalama-sagligi"
+    },
+    {
+      "tip": "action.translation_usage",
+      "baslik": "Çeviri kapasitesini kontrol et",
+      "satir": "Kota, bekleyen işler ve kalite hatalarını birlikte görün.",
+      "dugme": "Çeviriyi aç",
+      "hedef": "/panel/ayarlar/ceviri"
+    },
+    {
+      "tip": "action.archive_cleanup",
+      "baslik": "Arşivi düzenle",
+      "satir": "Tamamlanan veya güncelliğini yitiren listeleri gözden geçirin.",
+      "dugme": "Arşivi aç",
+      "hedef": "/panel/arsiv"
+    }
+  ],
+  "anomali_kurallari": [
+    {
+      "id": "ANM-001",
+      "ad": "Kilitli listede kur sapması",
+      "kosul": "kur.kilitli_liste_sayisi > 0 ve kur.kilitli_sapma_yuzde > ayar.kur_sapma_yuzde",
+      "mesaj": "{n} kilitli listede güncel kura göre %{oran} sapma var; kilit değiştirilmeden ticari etkisini inceleyin.",
+      "onem": "uyari",
+      "ayarlanabilir": true,
+      "esikler": {
+        "kur_sapma_yuzde": {
+          "varsayilan": 3,
+          "birim": "yüzde"
+        }
+      }
+    },
+    {
+      "id": "ANM-002",
+      "ad": "Dead-letter işi",
+      "kosul": "kuyruk.dead > ayar.dead_is_esigi",
+      "mesaj": "Kuyrukta {n} kalıcı duran iş var.",
+      "onem": "kritik",
+      "ayarlanabilir": true,
+      "esikler": {
+        "dead_is_esigi": {
+          "varsayilan": 0,
+          "birim": "iş"
+        }
+      }
+    },
+    {
+      "id": "ANM-003",
+      "ad": "Uzun süre yakalama yok",
+      "kosul": "yakalama.son_basarili_saat >= ayar.yakalama_sessizlik_saat",
+      "mesaj": "{gun} gündür başarılı yakalama kaydı oluşmadı.",
+      "onem": "kritik",
+      "ayarlanabilir": true,
+      "esikler": {
+        "yakalama_sessizlik_saat": {
+          "varsayilan": 72,
+          "birim": "saat"
+        }
+      }
+    },
+    {
+      "id": "ANM-004",
+      "ad": "Yakalama başarı oranı düşüşü",
+      "kosul": "yakalama.son_24s_toplam >= ayar.yakalama_asgari_ornek ve yakalama.son_24s_basarim_yuzde < ayar.yakalama_basarim_yuzde",
+      "mesaj": "Yakalama başarı oranı %{oran} seviyesine düştü.",
+      "onem": "uyari",
+      "ayarlanabilir": true,
+      "esikler": {
+        "yakalama_asgari_ornek": {
+          "varsayilan": 10,
+          "birim": "yakalama"
+        },
+        "yakalama_basarim_yuzde": {
+          "varsayilan": 90,
+          "birim": "yüzde"
+        }
+      }
+    },
+    {
+      "id": "ANM-005",
+      "ad": "Kuyrukta uzun bekleme",
+      "kosul": "kuyruk.ready > 0 ve kuyruk.en_eski_hazir_dakika > ayar.kuyruk_bekleme_dakika",
+      "mesaj": "En eski hazır iş {dakika} dakikadır başlamadı.",
+      "onem": "uyari",
+      "ayarlanabilir": true,
+      "esikler": {
+        "kuyruk_bekleme_dakika": {
+          "varsayilan": 30,
+          "birim": "dakika"
+        }
+      }
+    },
+    {
+      "id": "ANM-006",
+      "ad": "Çeviri hata oranı artışı",
+      "kosul": "ceviri.son_24s_toplam >= ayar.ceviri_asgari_ornek ve ceviri.son_24s_hata_yuzde >= ayar.ceviri_hata_yuzde",
+      "mesaj": "Çeviri hata oranı son 24 saatte %{oran} oldu.",
+      "onem": "uyari",
+      "ayarlanabilir": true,
+      "esikler": {
+        "ceviri_asgari_ornek": {
+          "varsayilan": 20,
+          "birim": "iş"
+        },
+        "ceviri_hata_yuzde": {
+          "varsayilan": 10,
+          "birim": "yüzde"
+        }
+      }
+    },
+    {
+      "id": "ANM-007",
+      "ad": "Çeviri kotası kritik",
+      "kosul": "ceviri.kota_kalan_yuzde <= ayar.ceviri_kritik_kota_yuzde",
+      "mesaj": "Çeviri kotasının yalnız %{oran} kadarı kaldı.",
+      "onem": "kritik",
+      "ayarlanabilir": true,
+      "esikler": {
+        "ceviri_kritik_kota_yuzde": {
+          "varsayilan": 10,
+          "birim": "yüzde"
+        }
+      }
+    },
+    {
+      "id": "ANM-008",
+      "ad": "Tedarikçi yanıtı aşırı gecikmesi",
+      "kosul": "liste_durum_sayisi['status.waiting_supplier'] > 0 ve liste_durum_en_eski_gun['status.waiting_supplier'] >= ayar.tedarikci_bekleme_gun",
+      "mesaj": "En eski Tedarikçi yanıtı bekleniyor listesi {gun} gündür yanıtsız.",
+      "onem": "uyari",
+      "ayarlanabilir": true,
+      "esikler": {
+        "tedarikci_bekleme_gun": {
+          "varsayilan": 7,
+          "birim": "gün"
+        }
+      }
+    }
+  ],
+  "bos_gun_varyantlari": [
+    {
+      "id": "EMPTY-001",
+      "cumle": "Bugün acil müdahale gerektiren bir konu görünmüyor; akış sakin ilerliyor."
+    },
+    {
+      "id": "EMPTY-002",
+      "cumle": "Bekleyen kritik iş yok. Yeni ürün araştırmasına odaklanabilirsiniz."
+    },
+    {
+      "id": "EMPTY-003",
+      "cumle": "Kuyruk, listeler ve yakalama sağlığı normal görünüyor."
+    },
+    {
+      "id": "EMPTY-004",
+      "cumle": "Bugünün öncelik listesi temiz; Panorama yeni gelişmeleri burada gösterecek."
+    }
+  ]
+}

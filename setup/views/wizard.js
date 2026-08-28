@@ -95,6 +95,11 @@
     }
     lines.push('Uygulama: ' + (env.app_version || '?') + ' · PHP ' + (env.php_version || '?') + ' (' + (env.sapi || '?') + ')');
     lines.push('Sunucu: ' + (env.os || '?') + ' · MySQL: ' + (env.mysql_version || 'alınamadı'));
+    // rc8/K4 (F-08): paylaşım bağlantısının/QR'ın tabanı. BİLGİ SATIRIDIR,
+    // kurulumu durdurmaz — ama eksikse burada görünür.
+    lines.push('Uygulama adresi: ' + (env.app_url || '(yok)') + ' — kanonik ' + (env.app_url_kanonik ? '✓' : '⚠'));
+    // D12 (K91): anahtar yoksa çeviriler geçici katmanda kalır. BİLGİ satırıdır.
+    lines.push('LLM çeviri anahtarı: ' + (env.llm_anahtari ? 'tanımlı ✓' : 'YOK ⚠ (çeviriler geçici katmanda, üç dil garantisi yok)'));
     var extensions = env.extensions || {};
     lines.push('Eklentiler: ' + Object.keys(extensions).map(function (name) {
       return name + '=' + extensions[name];
@@ -150,7 +155,29 @@
 
   function clearAlert() { $('alert').hidden = true; clearFailure(); }
 
+  // D2-REV: teşhis/onarım ekranları normal adım dizisinin PARÇASI DEĞİLDİR —
+  // adım şeridinde yerleri yoktur, ama bir adıma geçildiğinde kapanmaları gerekir.
+  var ONARIM_PANELLERI = ['teshis', 'sahiplik', 'yikici', 'config-onar', 'guncelle'];
+
+  function onarimPaneliniGoster(ad) {
+    STEPS.forEach(function (name) {
+      var panel = $('panel-' + name);
+      if (panel) panel.hidden = true;
+    });
+    ONARIM_PANELLERI.forEach(function (name) {
+      var panel = $('panel-' + name);
+      if (panel) panel.hidden = name !== ad;
+    });
+    Array.prototype.forEach.call($('steps').children, function (item) { item.className = ''; });
+    $('steps').hidden = true;
+  }
+
   function showStep(step) {
+    ONARIM_PANELLERI.forEach(function (name) {
+      var panel = $('panel-' + name);
+      if (panel) panel.hidden = true;
+    });
+    $('steps').hidden = false;
     STEPS.forEach(function (name) {
       var panel = $('panel-' + name);
       if (panel) panel.hidden = name !== step;
@@ -315,6 +342,316 @@
       else if (data.warnings.length) alertBox('warn', data.warnings.join(' '));
       else clearAlert();
     })();
+  }
+
+
+  // ═════════════════ D2-REV: TEŞHİS + ONARIM MERKEZİ ═════════════════
+  //
+  // Sihirbaz artık "kilit var mı?" ile başlamaz; sunucuya "ne buldun?" diye sorar
+  // ve gelen duruma göre TEK doğru yolu sunar. Buradaki her seçenek sihirbaz
+  // İÇİNDE tamamlanır — kullanıcı hiçbir hâlde komut satırına ya da phpMyAdmin'e
+  // gönderilmez (tek istisna dosya yüklemedir; onun da tarifi ekrandadır).
+
+  var teshis = null;
+
+  var ROZET_SINIFI = { 'iyi': 'iyi', 'uyarı': 'uyari', 'kötü': 'kotu', 'nötr': '' };
+
+  function teshisYukle() {
+    return api('GET', '/api/setup/situation').then(function (data) {
+      teshis = data;
+      csrfToken = data.csrf_token || csrfToken;
+      teshisCiz(data);
+      return data;
+    });
+  }
+
+  function teshisCiz(data) {
+    onarimPaneliniGoster('teshis');
+
+    var rozet = $('teshis-rozet');
+    rozet.className = 'rozet ' + (ROZET_SINIFI[data.rozet] || '');
+    rozet.textContent = 'Teşhis: ' + data.durum.replace(/_/g, ' ').toLowerCase();
+    $('teshis-baslik').textContent = data.baslik;
+    $('teshis-aciklama').textContent = data.aciklama;
+
+    // Özet tablo — hangi ölçüm ne dedi.
+    var satirlar = [
+      ['Ayar dosyası', data.config.var ? (data.config.saglam ? 'var, sağlam' : 'var ama eksik: ' + data.config.eksik_alanlar.join(', ')) : 'yok'],
+      ['Veritabanı', data.veritabani.denendi ? (data.veritabani.erisim ? 'bağlanıldı' + (data.veritabani.surum ? ' (' + data.veritabani.surum + ')' : '') : 'HATA — ' + data.veritabani.hata) : 'denenmedi (ayar dosyası okunamadı)'],
+      ['Tablolar', data.sema.okundu ? String(data.sema.tablo_sayisi) : '—'],
+      ['Migration', data.sema.okundu ? (data.sema.uygulanan_sayisi + ' uygulandı · ' + data.sema.bekleyen_sayisi + ' bekliyor') : '—'],
+      ['Kurulum kilidi', data.kilit],
+      ['Sürüm', 'dosyalar ' + data.surum.dosya + ' · veritabanı ' + (data.surum.kurulu || 'kayıtsız')],
+      ['Paket dosyaları', data.dosyalar.manifest_var ? (data.dosyalar.tamam ? 'tam (' + data.dosyalar.toplam + ' dosya)' : data.dosyalar.eksik_sayisi + ' eksik · ' + data.dosyalar.bozuk_sayisi + ' bozuk') : 'MANIFEST yok (geliştirme kurulumu)']
+    ];
+    replaceContent($('teshis-detay'), definitions(satirlar));
+
+    // Migration tablosu — hangisi koşmuş, hangisi bekliyor.
+    var migrationKutu = $('teshis-migration');
+    if (data.sema.okundu && (data.sema.uygulanan.length || data.sema.bekleyen.length)) {
+      var liste = document.createElement('div');
+      data.sema.uygulanan.forEach(function (ad) { liste.appendChild(migrationSatiri(ad, true)); });
+      data.sema.bekleyen.forEach(function (ad) { liste.appendChild(migrationSatiri(ad, false)); });
+      replaceContent($('teshis-migration-tablo'), liste);
+      migrationKutu.hidden = false;
+    } else {
+      migrationKutu.hidden = true;
+    }
+
+    // Eksik/bozuk dosyalar.
+    var dosyaKutu = $('teshis-dosyalar');
+    if (data.dosyalar.manifest_var && !data.dosyalar.tamam) {
+      var kutu = document.createElement('div');
+      kutu.className = 'dosya-liste';
+      data.dosyalar.eksik.forEach(function (yol) { kutu.appendChild(dosyaSatiri('EKSİK', yol)); });
+      data.dosyalar.bozuk.forEach(function (yol) { kutu.appendChild(dosyaSatiri('BOZUK', yol)); });
+      replaceContent($('teshis-dosya-liste'), kutu);
+      dosyaKutu.hidden = false;
+    } else {
+      dosyaKutu.hidden = true;
+    }
+
+    seceneklerCiz(data.secenekler);
+  }
+
+  function migrationSatiri(ad, uygulandi) {
+    var satir = document.createElement('div');
+    satir.className = 'migration-satir ' + (uygulandi ? 'uygulandi' : 'bekliyor');
+    var durum = document.createElement('span');
+    durum.className = 'durum';
+    durum.textContent = uygulandi ? '✓ koştu' : '• bekliyor';
+    var isim = document.createElement('span');
+    isim.textContent = ad;
+    satir.appendChild(durum);
+    satir.appendChild(isim);
+    return satir;
+  }
+
+  function dosyaSatiri(etiket, yol) {
+    var satir = document.createElement('div');
+    satir.textContent = etiket + '  ' + yol;
+    return satir;
+  }
+
+  function seceneklerCiz(secenekler) {
+    var kutu = $('teshis-secenekler');
+    while (kutu.firstChild) kutu.removeChild(kutu.firstChild);
+
+    (secenekler || []).forEach(function (secenek, sira) {
+      var sarmal = document.createElement('div');
+      var dugme = document.createElement('button');
+      dugme.type = 'button';
+      dugme.textContent = secenek.etiket;
+      if (secenek.yikici || sira > 0) dugme.className = 'ghost';
+      dugme.addEventListener('click', function () { secenekCalistir(secenek.kod); });
+      var not = document.createElement('span');
+      not.className = 'secenek-aciklama';
+      not.textContent = secenek.aciklama;
+      sarmal.appendChild(dugme);
+      sarmal.appendChild(not);
+      kutu.appendChild(sarmal);
+    });
+  }
+
+  /** Seçilen yolu başlatır. Sahiplik gerektiren yollar önce doğrulamaya uğrar. */
+  function secenekCalistir(kod) {
+    clearAlert();
+
+    if (kod === 'panele_git') { location.href = '/panel'; return; }
+    if (kod === 'yeniden_tara') { teshisYukle().catch(failBox); return; }
+    if (kod === 'normal_kurulum') { showStep('requirements'); loadRequirements().catch(failBox); return; }
+
+    if (kod === 'db_bilgilerini_duzelt' || kod === 'config_onar') {
+      configOnarAc(kod === 'db_bilgilerini_duzelt');
+      return;
+    }
+
+    // Kalan yollar KURULU bir sisteme dokunur: önce sahiplik, sonra iş.
+    // Bilet zaten varsa (15 dakika içinde doğrulanmış) tekrar sorulmaz.
+    var devam = function () {
+      if (kod === 'temiz_kurulum') { onarimPaneliniGoster('yikici'); return; }
+      if (kod === 'guncelle' || kod === 'bekleyenleri_tamamla') { guncelleAc(); return; }
+      if (kod === 'devam_et') { showStep(teshis && teshis.oturum_adimi ? teshis.oturum_adimi : 'migrate'); return; }
+    };
+
+    var sahiplikGerekli = teshis && teshis.kilit === 'locked' && !teshis.bilet_var;
+    if (sahiplikGerekli) { sahiplikAc(devam); return; }
+    devam();
+  }
+
+  // ─────────── Sahiplik doğrulama ───────────
+
+  var sahiplikSonrasi = null;
+
+  function sahiplikAc(sonra) {
+    sahiplikSonrasi = sonra;
+    onarimPaneliniGoster('sahiplik');
+  }
+
+  function sahiplikGonder(govde, dugme) {
+    busy(dugme, true, 'Doğrulanıyor…');
+    return api('POST', '/api/setup/verify-owner', govde).then(function (data) {
+      alertBox('ok', data.mesaj);
+      return teshisYukle().then(function () {
+        var sonra = sahiplikSonrasi;
+        sahiplikSonrasi = null;
+        if (sonra) sonra();
+      });
+    }).catch(failBox).then(function () { busy(dugme, false); });
+  }
+
+  // ─────────── Ayar dosyası onarımı ───────────
+
+  function configOnarAc(appKeyKaniti) {
+    onarimPaneliniGoster('config-onar');
+    $('config-onar-kanit').hidden = !appKeyKaniti;
+    $('config-onar-manuel').hidden = true;
+    $('config-onar-not').textContent = appKeyKaniti
+      ? 'Mevcut ayar dosyasındaki APP_KEY KORUNUR — şifreli verileriniz (2FA, API anahtarları) '
+        + 'açılmaya devam eder. Yalnız bağlantı bilgileri değişir.'
+      : 'Ayar dosyasında APP_KEY kalmadıysa YENİ anahtar üretilir; eski anahtarla şifrelenmiş '
+        + 'veriler (2FA gizli anahtarı, API anahtarları) çözülemez ve yeniden girilmeleri gerekir. '
+        + 'Veritabanında zaten bir kurulum varsa yönetici e-postası ve şifresi sorulur.';
+  }
+
+  // ─────────── Güncelleme ───────────
+
+  function guncelleAc() {
+    onarimPaneliniGoster('guncelle');
+    $('guncelle-sonuc').hidden = true;
+    var bekleyen = teshis ? teshis.sema.bekleyen_sayisi : 0;
+    $('guncelle-ozet').textContent = teshis
+      ? ('Dosyalar ' + teshis.surum.dosya + ' sürümünde, veritabanı '
+         + (teshis.surum.kurulu || 'kayıtsız') + '. ' + bekleyen
+         + ' migration koşacak. Veriye dokunulmaz.')
+      : '';
+  }
+
+  function onarimBagla() {
+    $('teshis-yenile').addEventListener('click', function () {
+      clearAlert();
+      teshisYukle().catch(failBox);
+    });
+
+    $('sahiplik-vazgec').addEventListener('click', function () { teshisCiz(teshis); });
+
+    // B14: e-posta yazılınca hesapta 2FA olup olmadığı sorulur ve kod alanı
+    // yalnız gerekiyorsa açılır. Sorgu SIR SIZDIRMAZ: yalnız "kod gerekir mi"
+    // bilgisini döner, hesabın var olup olmadığını değil (yoksa da false döner).
+    $('sahiplik-form').email.addEventListener('blur', function (event) {
+      var eposta = event.target.value.trim();
+      if (!eposta) { $('sahiplik-kod-alani').hidden = true; return; }
+      api('POST', '/api/setup/owner-check', { email: eposta }).then(function (data) {
+        $('sahiplik-kod-alani').hidden = !data.iki_adimli;
+      }).catch(function () { /* sorgu başarısızsa alan gizli kalır; kod yine gönderilebilir */ });
+    });
+
+    $('sahiplik-form').addEventListener('submit', function (event) {
+      event.preventDefault();
+      clearAlert();
+      var form = event.target;
+      sahiplikGonder({
+        yontem: 'admin',
+        email: form.email.value.trim(),
+        sifre: form.sifre.value,
+        kod: form.kod ? form.kod.value.trim() : ''
+      }, form.querySelector('button[type="submit"]'));
+    });
+
+    $('sahiplik-appkey-gonder').addEventListener('click', function (event) {
+      clearAlert();
+      var anahtar = $('sahiplik-app-key').value.trim();
+      if (!anahtar) { alertBox('bad', 'APP_KEY boş olamaz.'); return; }
+      sahiplikGonder({ yontem: 'app_key', app_key: anahtar }, event.target);
+    });
+
+    // Yıkıcı yol: yazarak onay olmadan düğme açılmaz.
+    $('yikici-onay').addEventListener('input', function (event) {
+      $('yikici-calistir').disabled = event.target.value !== 'SIFIRLA';
+    });
+    $('yikici-vazgec').addEventListener('click', function () { teshisCiz(teshis); });
+    $('yikici-calistir').addEventListener('click', function (event) {
+      clearAlert();
+      if (!window.confirm('Veritabanındaki TÜM tablolar silinecek. Bu işlem geri alınamaz. Devam?')) return;
+      var dugme = event.target;
+      busy(dugme, true, 'Sıfırlanıyor…');
+      api('POST', '/api/setup/migrate', { fresh: true, confirm: 'SIFIRLA' }).then(function () {
+        alertBox('ok', 'Tablolar sıfırlandı ve yeniden kuruldu. Yönetici hesabı adımına geçiliyor.');
+        showStep('admin');
+      }).catch(function (error) {
+        // APP_KEY kanıtı isteniyorsa sahiplik ekranına yönlendir — çıkmaz sokak yok.
+        if (error.code === 'FORBIDDEN') { sahiplikAc(function () { onarimPaneliniGoster('yikici'); }); }
+        failBox(error);
+      }).then(function () { busy(dugme, false); });
+    });
+
+    $('config-onar-vazgec').addEventListener('click', function () { teshisCiz(teshis); });
+
+    $('config-onar-form').addEventListener('submit', function (event) {
+      event.preventDefault();
+      clearAlert();
+      var form = event.target;
+      var dugme = form.querySelector('button[type="submit"]');
+      busy(dugme, true, 'Test ediliyor…');
+      api('POST', '/api/setup/config-repair', {
+        host: form.host.value.trim(),
+        port: form.port.value.trim(),
+        name: form.name.value.trim(),
+        user: form.user.value.trim(),
+        pass: form.pass.value,
+        app_key: form.app_key ? form.app_key.value.trim() : '',
+        email: '',
+        sifre: ''
+      }).then(function (data) {
+        alertBox(data.yeni_app_key ? 'warn' : 'ok', data.uyari);
+        if (data.manual) {
+          $('config-onar-yonerge').textContent = data.instructions;
+          $('config-onar-icerik').textContent = data.content;
+          $('config-onar-manuel').hidden = false;
+        } else {
+          teshisYukle().catch(failBox);
+        }
+      }).catch(function (error) {
+        showFieldErrors(form, error.fields);
+        failBox(error);
+      }).then(function () { busy(dugme, false); });
+    });
+
+    $('config-onar-kopyala').addEventListener('click', function () {
+      var icerik = $('config-onar-icerik').textContent;
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(icerik).then(function () { alertBox('ok', 'İçerik kopyalandı.'); });
+      }
+    });
+
+    $('config-onar-dogrula').addEventListener('click', function (event) {
+      clearAlert();
+      var dugme = event.target;
+      busy(dugme, true, 'Doğrulanıyor…');
+      api('POST', '/api/setup/config-repair/verify', {}).then(function () {
+        alertBox('ok', 'Ayar dosyası doğrulandı.');
+        return teshisYukle();
+      }).catch(failBox).then(function () { busy(dugme, false); });
+    });
+
+    $('guncelle-vazgec').addEventListener('click', function () { teshisCiz(teshis); });
+
+    $('guncelle-calistir').addEventListener('click', function (event) {
+      clearAlert();
+      var dugme = event.target;
+      busy(dugme, true, 'Güncelleniyor…');
+      api('POST', '/api/setup/update', {}).then(function (data) {
+        var satirlar = [
+          ['Önceki sürüm', data.onceki_surum || 'kayıtsız'],
+          ['Yeni sürüm', data.yeni_surum],
+          ['Koşan migration', String(data.uygulanan.length)],
+          ['Kalan', String(data.kalan.length)]
+        ];
+        replaceContent($('guncelle-sonuc'), definitions(satirlar));
+        $('guncelle-sonuc').hidden = false;
+        alertBox('ok', 'Güncelleme tamamlandı.');
+      }).catch(failBox).then(function () { busy(dugme, false); });
+    });
   }
 
   // ─────────── Bağlama ───────────
@@ -579,12 +916,22 @@
     }).finally(function () { busy(button, false); });
   });
 
-  api('GET', '/api/setup/state').then(function (data) {
-    csrfToken = data.csrf_token;
+  // AÇILIŞ: her şeyden önce TEŞHİS. Eski açılış doğrudan `/api/setup/state`
+  // çağırıyordu; o uç yalnız "hangi adımdayız" der ve bozuk bir sistemde
+  // yanıltıcıdır (adım "requirements" görünür, oysa veritabanı düşmüştür).
+  teshisYukle().then(function (data) {
     bind();
-    showStep(data.step === 'done' ? 'done' : data.step);
-    if (data.step === 'requirements') {
+    onarimBagla();
+
+    // Temiz bir sistemde teşhis ekranında oyalanmayız: doğrudan kuruluma gireriz.
+    if (data.durum === 'KURULUM_YOK' && !data.config.var) {
+      showStep('requirements');
       return loadRequirements();
+    }
+    if (data.durum === 'YARIM' && data.bilet_var !== false && data.kilit !== 'locked') {
+      // Yarım kurulumda da teşhis ekranı gösterilir (seçenek: devam / baştan),
+      // ama adım bilgisi hazır dursun.
+      return null;
     }
     return null;
   }).catch(function (error) {

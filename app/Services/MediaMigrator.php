@@ -105,6 +105,82 @@ final class MediaMigrator
         ];
     }
 
+    /**
+     * TEK ÜRÜNÜN medyasını arşive indirir (D11a, 25 Ağu 2026).
+     *
+     * SAHA BULGUSU: yakalamada yalnız ANA GÖRSEL indiriliyordu; galeri satırları
+     * alicdn adresiyle `remote` kalıyor ve tarayıcı onları çizemiyordu (alicdn
+     * Referer ACL). Çekmece "5 görsel" derken dördü boş kare görünüyordu.
+     *
+     * Parti taşıyıcısı (`migrateBatch`) tüm sistemi tarar; bu metot ise yeni
+     * yakalanan TEK ürünü hedefler ve kuyruk işinden çağrılır — yakalamadan
+     * dakikalar sonra galeri kendiliğinden yerele iner.
+     *
+     * @return array{indirilen: int, basarisiz: list<array{id: int, url: string, hata: string}>}
+     */
+    public function urununMedyasi(int $urunId, int $limit = 24): array
+    {
+        $indirilen = 0;
+        $basarisiz = [];
+
+        if ($this->media->mode() !== MediaService::MODE_DOWNLOAD) {
+            return ['indirilen' => 0, 'basarisiz' => []];
+        }
+
+        // 1) Ana görsel hâlâ uzaksa (yakalamada indirme başarısız olmuştur).
+        $anaSorgu = $this->connection->pdo()->prepare(
+            "SELECT id, main_image FROM products
+             WHERE id = :id AND deleted_at IS NULL AND main_image LIKE 'http%'",
+        );
+        $anaSorgu->execute(['id' => $urunId]);
+        $ana = $anaSorgu->fetch(\PDO::FETCH_ASSOC);
+        if (is_array($ana)) {
+            $sonuc = $this->fetchLocal((string) $ana['main_image']);
+            if (isset($sonuc['error'])) {
+                $basarisiz[] = ['id' => $urunId, 'url' => (string) $ana['main_image'], 'hata' => (string) $sonuc['error']];
+            } else {
+                $guncelle = $this->connection->pdo()->prepare(
+                    'UPDATE products SET main_image = :path, main_image_source = :source WHERE id = :id',
+                );
+                $guncelle->execute([
+                    'path' => $sonuc['url'],
+                    'source' => (string) $ana['main_image'],
+                    'id' => $urunId,
+                ]);
+                $indirilen++;
+            }
+        }
+
+        // 2) Galeri satırları.
+        $galeri = $this->connection->pdo()->prepare(
+            "SELECT id, path, source_url FROM product_images
+             WHERE product_id = :id AND storage_mode = 'remote'
+             ORDER BY sort, id LIMIT " . max(1, $limit),
+        );
+        $galeri->execute(['id' => $urunId]);
+        foreach ($galeri->fetchAll(\PDO::FETCH_ASSOC) ?: [] as $satir) {
+            $kaynak = (string) ($satir['source_url'] ?? '') !== ''
+                ? (string) $satir['source_url']
+                : (string) $satir['path'];
+            $sonuc = $this->fetchLocal($kaynak);
+            if (isset($sonuc['error'])) {
+                // BOZMAZ: satır remote kalır, arayüz bunu işaretler, sonraki tur
+                // yeniden dener. Sessiz boş kare artık yok.
+                $basarisiz[] = ['id' => (int) $satir['id'], 'url' => $kaynak, 'hata' => (string) $sonuc['error']];
+
+                continue;
+            }
+
+            $guncelle = $this->connection->pdo()->prepare(
+                "UPDATE product_images SET path = :path, storage_mode = 'local', source_url = :source WHERE id = :id",
+            );
+            $guncelle->execute(['path' => $sonuc['path'], 'source' => $kaynak, 'id' => (int) $satir['id']]);
+            $indirilen++;
+        }
+
+        return ['indirilen' => $indirilen, 'basarisiz' => $basarisiz];
+    }
+
     /** Taşınmayı bekleyen toplam uzak kayıt sayısı (main_image + galeri). */
     public function remainingCount(): int
     {

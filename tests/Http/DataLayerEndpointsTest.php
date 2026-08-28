@@ -326,7 +326,20 @@ final class DataLayerEndpointsTest extends AuthTestCase
         self::assertSame(1, $after['revision']);
     }
 
-    public function testNotDuzenlemeRevisionArtirmaz(): void
+    /**
+     * İE#20 C9 — DAVRANIŞ DEĞİŞTİ VE ESKİ BEKLENTİ YANLIŞTI.
+     *
+     * Bu test "not düzenlemek revizyonu artırmaz" diyordu. Oysa NOT, şablon v2'nin
+     * sütunlarından biridir ve firmaya giden belgede BASILIR. Yani not değişince
+     * belge değişiyor, revizyon harfi ise yerinde kalıyordu:
+     *   • firmaya aynı "Rev C" ile FARKLI iki belge gidebiliyordu,
+     *   • "çıktı güncel değil" rozeti (K25) yalan söylüyordu,
+     *   • K57'nin "harf içerikten türer" kuralı çiğneniyordu.
+     *
+     * Doğru kural: BELGEYE GİREN HER ALAN revizyonu ilerletir. Belgeye girmeyen
+     * alanlar (kargo takip no) ilerletmez — aşağıdaki test onu sınar.
+     */
+    public function testNotDuzenlemeRevisionARTIRIR(): void
     {
         $list = $this->createList();
         $product = $this->addProduct((int) $list['id']);
@@ -335,7 +348,21 @@ final class DataLayerEndpointsTest extends AuthTestCase
         $this->write('PATCH', '/api/products/' . $product['id'], ['note' => 'Renk teyit edilecek']);
         $after = $this->json($this->call('GET', '/api/lists/' . $list['id']))['data']['revision'];
 
-        self::assertSame($before, $after, 'Not düzenlemek çıktıyı eskitmez (K25).');
+        self::assertSame($before + 1, $after, 'Not BELGEDE basılır; değişince revizyon ilerlemeli (K57).');
+    }
+
+    public function testKargoTakipNoRevisionARTIRMAZ(): void
+    {
+        // Takip numarası belgede YOKTUR: değişince firmaya "yeni revizyon" demek
+        // yanlış alarmdır ve revizyon harfini anlamsızlaştırır.
+        $list = $this->createList();
+        $product = $this->addProduct((int) $list['id']);
+        $before = $this->json($this->call('GET', '/api/lists/' . $list['id']))['data']['revision'];
+
+        $this->write('PATCH', '/api/products/' . $product['id'], ['tracking_no' => 'YT123456789']);
+        $after = $this->json($this->call('GET', '/api/lists/' . $list['id']))['data']['revision'];
+
+        self::assertSame($before, $after, 'Belgede olmayan alan revizyonu artırmamalı.');
     }
 
     public function testFiyatDegisikligiRevisionArtirir(): void

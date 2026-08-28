@@ -45,6 +45,29 @@ final class Glossary
     ) {
     }
 
+    /**
+     * SÖZLÜK SÜRÜMÜ (İE#21 B12) — içeriğin özeti, dosya zamanı DEĞİL.
+     *
+     * Önbellek anahtarına bu girer: sözlüğe terim eklenince eski çeviriler
+     * geçersizleşmelidir. Neden mtime değil: dosyayı açıp kapatmak, kopyalamak
+     * ya da deploy etmek zamanı değiştirir ama çeviriyi değiştirmez — bütün
+     * önbelleği boşuna çöpe atardık. İçerik özeti yalnız GERÇEK değişimde döner.
+     *
+     * Tüm diller birlikte özetlenir: LLM isteğine hepsi gömülür, dolayısıyla
+     * herhangi birindeki değişiklik çıktıyı etkileyebilir.
+     */
+    public function surum(): string
+    {
+        $parcalar = [];
+        foreach (self::DILLER as $dil) {
+            $terimler = $this->all($dil);
+            ksort($terimler);
+            $parcalar[] = $dil . ':' . count($terimler) . ':' . hash('sha256', serialize($terimler));
+        }
+
+        return substr(hash('sha256', implode('|', $parcalar)), 0, 12);
+    }
+
     /** Metnin kaynak dili: CJK varsa zh, yoksa en. */
     public static function detect(string $metin): string
     {

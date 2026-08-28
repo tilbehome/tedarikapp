@@ -1,0 +1,616 @@
+{
+  "dosya_ozeti_5_satir": [
+    "Ne işe yarar: Yurtiçi NET alış ile ithalat NET landed costunu karşılaştırır; fark, başabaş, senaryo ve toplam yükü kalibre eder.",
+    "Hangi fazda: V3-E Yurtiçi Fiyat Defteri, İthalat Avantajı ve karar günlüğü motorunda kullanılır.",
+    "Temel ilke: NET esastır; DDP brüt varsayılan %20 ile ayrılır, ürün bazlı açık oran varsayılanı ezer ve 16C tanımı değişmez.",
+    "Çıktı: Matematik sözleşmesi, karar snapshot’ı ve İA-001..İA-016 kuruş kesinliğinde kalibrasyon vakalarıdır.",
+    "Kapsam dışı: GTİP, mevzuat, gümrük vergisi oranı veya hukuki/vergi niteliğinde yorum üretmek kalıcı RET’tir."
+  ],
+  "schema_version": "1.0",
+  "yurtici_fiyat_defteri_sozlesmesi": {
+    "required_fields": [
+      "price_record_id",
+      "product_match_id",
+      "variant_match_id",
+      "supplier_name",
+      "observed_at",
+      "currency",
+      "price_basis",
+      "unit",
+      "pack_qty",
+      "evidence_ref"
+    ],
+    "money_fields": [
+      "gross_unit_price",
+      "vat_rate_pct",
+      "net_unit_price",
+      "shipping_net_unit"
+    ],
+    "formula": "net_unit_price = gross_unit_price / (1 + vat_rate_pct/100); açık net fiyat varsa gross ayrıştırması yapılmaz.",
+    "comparability_gate": "Aynı ürün/varyant, aynı satış birimi, karşılaştırılabilir paket miktarı ve geçerli tarih olmadan fiyat avantaj hesabına girmez.",
+    "history_rule": "Eski kayıt üzerine yazılmaz; yeni tarihli immutable snapshot eklenir."
+  },
+  "net_basis_contract": {
+    "system_basis": "NET",
+    "ddp_default_vat_rate_pct": "20",
+    "formula": "ddp_net = ddp_gross / (1 + vat_rate/100)",
+    "override": "Ürün bazında açık vat_rate_pct varsayılan %20’yi ezer.",
+    "landed_cost_reference": "Görev #16C landed-cost-kalibrasyon.json ACTUAL/OFFER_DDP tanımı",
+    "rounding": "Para sonuçları HALF_UP 0.01; ara işlemler yüksek hassasiyette."
+  },
+  "comparison_formulas": {
+    "advantage_tl_unit": "domestic_net_unit - import_net_unit",
+    "advantage_pct": "advantage_tl_unit / domestic_net_unit * 100",
+    "total_advantage_tl": "advantage_tl_unit * effective_qty"
+  },
+  "effective_quantity_contract": {
+    "carton_count": "ceil(requested_qty / units_per_carton)",
+    "effective_qty": "carton_count * units_per_carton",
+    "reference": "Görev #16D cbm-matematik.json",
+    "moq_gate": "effective_qty >= moq; değilse yazılı istisna olmadan sert engel."
+  },
+  "landed_curve": {
+    "tier_selection": "effective_qty değerini kapsayan en yüksek min_qty kademesi; max_qty varsa sınır dahil kontrol edilir.",
+    "product_tl_unit": "tier_foreign_unit_price * locked_fx",
+    "fixed_expense_unit": "fixed_expense_net_total / effective_qty",
+    "import_net_unit": "product_tl_unit + variable_expense_net_unit + fixed_expense_unit",
+    "break_even": "MOQ’yu karşılayan ilk koli katından başlayarak artan etkin adetlerde import_net_unit <= domestic_net_unit koşulunu sağlayan en küçük adet.",
+    "boundary_rule": "Kademe eşikleri koli katına yukarı yuvarlanır; aday adet hem kademe hem koli hem MOQ bekçilerini sağlamalıdır."
+  },
+  "total_load_components": {
+    "wait_time": {
+      "value": "wait_days",
+      "cost": "bound_cash_tl * annual_financing_rate_pct/100 * wait_days/365",
+      "missing": "Girdi yoksa veri yok; 0 yazılmaz."
+    },
+    "moq": {
+      "excess_qty": "max(0, effective_qty - planned_demand_qty)",
+      "excess_cash": "excess_qty * import_net_unit"
+    },
+    "bound_cash": {
+      "formula": "import_net_unit * effective_qty",
+      "note": "Ödeme takviminde yalnız bağlanan bölüm biliniyorsa o bölüm ayrıca gösterilir; bilinmiyorsa tüm landed toplam üst sınırdır."
+    },
+    "fx_risk": {
+      "formula": "Aynı kur duyarlı ürün ve masraf satırlarını senaryo kuruyla yeniden çevir; TL sabit masrafları değiştirme.",
+      "missing": "Kur aralığı/senaryosu yoksa veri yok."
+    }
+  },
+  "scenario_math": "Kur, navlun/sabit masraf veya istenen adet değiştiğinde kademe seçimi, koliye yuvarlama, sabit masraf/adet, landed unit, fark ve uyarı baştan hesaplanır; eski snapshot değişmez.",
+  "warning_thresholds": {
+    "AVANTAJ_KALMADI": "advantage_tl_unit <= 0.00 veya seçili risk senaryosunda <= 0.00",
+    "AVANTAJ_ZAYIF": "0.00 < advantage_pct < configurable_min_advantage_pct; varsayılan kalibrasyon %5",
+    "ADVANTAGE": "advantage_pct >= configurable_min_advantage_pct"
+  },
+  "decision_log_contract": {
+    "required_fields": [
+      "decision_id",
+      "product_match_id",
+      "decision",
+      "reason",
+      "decided_at",
+      "decided_by",
+      "domestic_price_snapshot",
+      "import_cost_snapshot",
+      "fx_snapshot",
+      "quantity_snapshot",
+      "scenario_snapshot",
+      "advantage_tl_unit",
+      "advantage_pct",
+      "warning_state"
+    ],
+    "immutable": true,
+    "decisions": [
+      "IMPORT",
+      "BUY_DOMESTIC",
+      "WAIT",
+      "REJECT_DATA"
+    ]
+  },
+  "calibration_cases": [
+    {
+      "id": "İA-001",
+      "ad": "Basit NET kıyas",
+      "tuzakli": false,
+      "girdiler": {
+        "domestic": {
+          "net_unit": "150.00"
+        },
+        "import": {
+          "net_unit": "100.00"
+        },
+        "requested_qty": 100,
+        "units_per_carton": 1
+      },
+      "beklenen": {
+        "effective_qty": 100,
+        "domestic_net_unit": "150.00",
+        "import_net_unit": "100.00",
+        "advantage_tl_unit": "50.00",
+        "advantage_pct": "33.33",
+        "total_advantage_tl": "5000.00",
+        "warning": "ADVANTAGE"
+      }
+    },
+    {
+      "id": "İA-002",
+      "ad": "Her iki tarafta %20 brütten NET",
+      "tuzakli": false,
+      "girdiler": {
+        "domestic": {
+          "gross_unit": "180.00",
+          "vat_rate_pct": "20"
+        },
+        "import": {
+          "ddp_gross_unit": "120.00",
+          "vat_rate_pct": null
+        },
+        "requested_qty": 100,
+        "units_per_carton": 1
+      },
+      "beklenen": {
+        "effective_qty": 100,
+        "domestic_net_unit": "150.00",
+        "import_net_unit": "100.00",
+        "advantage_tl_unit": "50.00",
+        "advantage_pct": "33.33",
+        "total_advantage_tl": "5000.00",
+        "warning": "ADVANTAGE"
+      }
+    },
+    {
+      "id": "İA-003",
+      "ad": "Tuzak: KDV oranları farklı",
+      "tuzakli": true,
+      "girdiler": {
+        "domestic": {
+          "gross_unit": "118.00",
+          "vat_rate_pct": "18"
+        },
+        "import": {
+          "ddp_gross_unit": "120.00",
+          "vat_rate_pct": null
+        },
+        "requested_qty": 100,
+        "units_per_carton": 1
+      },
+      "beklenen": {
+        "effective_qty": 100,
+        "domestic_net_unit": "100.00",
+        "import_net_unit": "100.00",
+        "advantage_tl_unit": "0.00",
+        "advantage_pct": "0.00",
+        "total_advantage_tl": "0.00",
+        "warning": "AVANTAJ_KALMADI"
+      }
+    },
+    {
+      "id": "İA-004",
+      "ad": "Ürün bazlı KDV oranı varsayılanı ezer",
+      "tuzakli": false,
+      "girdiler": {
+        "domestic": {
+          "net_unit": "120.00"
+        },
+        "import": {
+          "ddp_gross_unit": "110.00",
+          "vat_rate_pct": "10"
+        },
+        "requested_qty": 100,
+        "units_per_carton": 1
+      },
+      "beklenen": {
+        "effective_qty": 100,
+        "domestic_net_unit": "120.00",
+        "import_net_unit": "100.00",
+        "advantage_tl_unit": "20.00",
+        "advantage_pct": "16.67",
+        "total_advantage_tl": "2000.00",
+        "warning": "ADVANTAGE"
+      }
+    },
+    {
+      "id": "İA-005",
+      "ad": "Sabit ve değişken masraf dağıtımı",
+      "tuzakli": false,
+      "girdiler": {
+        "domestic": {
+          "net_unit": "100.00"
+        },
+        "import": {
+          "product_net_unit": "50.00",
+          "variable_expense_net_unit": "10.00",
+          "fixed_expense_net_total": "2000.00"
+        },
+        "requested_qty": 100,
+        "units_per_carton": 1
+      },
+      "beklenen": {
+        "effective_qty": 100,
+        "domestic_net_unit": "100.00",
+        "fixed_expense_unit": "20.00",
+        "import_net_unit": "80.00",
+        "advantage_tl_unit": "20.00",
+        "advantage_pct": "20.00",
+        "total_advantage_tl": "2000.00",
+        "warning": "ADVANTAGE"
+      }
+    },
+    {
+      "id": "İA-006",
+      "ad": "Koli katı etkin adedi büyütür",
+      "tuzakli": false,
+      "girdiler": {
+        "domestic": {
+          "net_unit": "100.00"
+        },
+        "import": {
+          "product_net_unit": "60.00",
+          "variable_expense_net_unit": "5.00",
+          "fixed_expense_net_total": "2160.00"
+        },
+        "requested_qty": 101,
+        "units_per_carton": 12
+      },
+      "beklenen": {
+        "effective_qty": 108,
+        "excess_qty": 7,
+        "domestic_net_unit": "100.00",
+        "fixed_expense_unit": "20.00",
+        "import_net_unit": "85.00",
+        "advantage_tl_unit": "15.00",
+        "advantage_pct": "15.00",
+        "total_advantage_tl": "1620.00",
+        "bound_cash_tl": "9180.00",
+        "warning": "ADVANTAGE"
+      }
+    },
+    {
+      "id": "İA-007",
+      "ad": "Sabit masrafla başabaş adedi",
+      "tuzakli": false,
+      "girdiler": {
+        "domestic": {
+          "net_unit": "100.00"
+        },
+        "curve": {
+          "currency": "TRY",
+          "fx": "1.00",
+          "tiers": [
+            {
+              "min_qty": 10,
+              "unit_price": "80.00"
+            }
+          ],
+          "moq": 10,
+          "units_per_carton": 10,
+          "variable_expense_net_unit": "0.00",
+          "fixed_expense_net_total": "3000.00"
+        },
+        "requested_qty": 100
+      },
+      "beklenen": {
+        "effective_qty": 100,
+        "current_import_net_unit": "110.00",
+        "current_warning": "AVANTAJ_KALMADI",
+        "break_even_qty": 150,
+        "break_even_import_net_unit": "100.00",
+        "break_even_advantage_tl_unit": "0.00"
+      }
+    },
+    {
+      "id": "İA-008",
+      "ad": "Tuzak: MOQ talep tavanını aşıyor",
+      "tuzakli": true,
+      "girdiler": {
+        "domestic": {
+          "net_unit": "100.00"
+        },
+        "curve": {
+          "currency": "TRY",
+          "fx": "1.00",
+          "tiers": [
+            {
+              "min_qty": 100,
+              "unit_price": "80.00"
+            }
+          ],
+          "moq": 100,
+          "units_per_carton": 10,
+          "variable_expense_net_unit": "0.00",
+          "fixed_expense_net_total": "0.00"
+        },
+        "demand_cap_qty": 80
+      },
+      "beklenen": {
+        "minimum_effective_qty": 100,
+        "mathematical_import_net_unit": "80.00",
+        "feasible_break_even_qty": null,
+        "status": "UNREACHABLE",
+        "reason": "MOQ_EXCEEDS_DEMAND_CAP"
+      }
+    },
+    {
+      "id": "İA-009",
+      "ad": "Tuzak: Kademe sınırında kesişim",
+      "tuzakli": true,
+      "girdiler": {
+        "domestic": {
+          "net_unit": "100.00"
+        },
+        "curve": {
+          "currency": "TRY",
+          "fx": "1.00",
+          "tiers": [
+            {
+              "min_qty": 12,
+              "max_qty": 119,
+              "unit_price": "90.00"
+            },
+            {
+              "min_qty": 120,
+              "unit_price": "70.00"
+            }
+          ],
+          "moq": 12,
+          "units_per_carton": 12,
+          "variable_expense_net_unit": "0.00",
+          "fixed_expense_net_total": "2400.00"
+        },
+        "requested_qty": 108
+      },
+      "beklenen": {
+        "effective_qty": 108,
+        "current_import_net_unit": "112.22",
+        "current_advantage_tl_unit": "-12.22",
+        "current_warning": "AVANTAJ_KALMADI",
+        "break_even_qty": 120,
+        "break_even_import_net_unit": "90.00",
+        "break_even_advantage_tl_unit": "10.00"
+      }
+    },
+    {
+      "id": "İA-010",
+      "ad": "Tuzak: Kur artışında yön değişimi",
+      "tuzakli": true,
+      "girdiler": {
+        "domestic": {
+          "net_unit": "100.00"
+        },
+        "curve": {
+          "currency": "USD",
+          "fx": "10.00",
+          "tiers": [
+            {
+              "min_qty": 1,
+              "unit_price": "8.00"
+            }
+          ],
+          "moq": 1,
+          "units_per_carton": 1,
+          "variable_expense_net_unit": "10.00",
+          "fixed_expense_net_total": "0.00"
+        },
+        "requested_qty": 100,
+        "scenario": {
+          "fx": "12.00"
+        }
+      },
+      "beklenen": {
+        "effective_qty": 100,
+        "base_import_net_unit": "90.00",
+        "base_advantage_tl_unit": "10.00",
+        "base_advantage_pct": "10.00",
+        "scenario_import_net_unit": "106.00",
+        "scenario_advantage_tl_unit": "-6.00",
+        "scenario_advantage_pct": "-6.00",
+        "scenario_warning": "AVANTAJ_KALMADI"
+      }
+    },
+    {
+      "id": "İA-011",
+      "ad": "Navlun artışında avantaj kaybı",
+      "tuzakli": false,
+      "girdiler": {
+        "domestic": {
+          "net_unit": "100.00"
+        },
+        "import": {
+          "product_net_unit": "70.00",
+          "variable_expense_net_unit": "0.00",
+          "fixed_expense_net_total": "2000.00"
+        },
+        "requested_qty": 100,
+        "units_per_carton": 1,
+        "scenario": {
+          "fixed_expense_net_total": "4000.00"
+        }
+      },
+      "beklenen": {
+        "effective_qty": 100,
+        "base_import_net_unit": "90.00",
+        "base_advantage_tl_unit": "10.00",
+        "scenario_import_net_unit": "110.00",
+        "scenario_advantage_tl_unit": "-10.00",
+        "scenario_warning": "AVANTAJ_KALMADI"
+      }
+    },
+    {
+      "id": "İA-012",
+      "ad": "Adet artışı kademe ve sabit masrafı değiştirir",
+      "tuzakli": false,
+      "girdiler": {
+        "domestic": {
+          "net_unit": "100.00"
+        },
+        "curve": {
+          "currency": "TRY",
+          "fx": "1.00",
+          "tiers": [
+            {
+              "min_qty": 10,
+              "max_qty": 99,
+              "unit_price": "90.00"
+            },
+            {
+              "min_qty": 100,
+              "unit_price": "75.00"
+            }
+          ],
+          "moq": 10,
+          "units_per_carton": 10,
+          "variable_expense_net_unit": "0.00",
+          "fixed_expense_net_total": "1000.00"
+        },
+        "requested_qty": 50,
+        "scenario": {
+          "requested_qty": 100
+        }
+      },
+      "beklenen": {
+        "base_effective_qty": 50,
+        "base_import_net_unit": "110.00",
+        "base_warning": "AVANTAJ_KALMADI",
+        "scenario_effective_qty": 100,
+        "scenario_import_net_unit": "85.00",
+        "scenario_advantage_tl_unit": "15.00",
+        "break_even_qty": 100
+      }
+    },
+    {
+      "id": "İA-013",
+      "ad": "Bekleme maliyetinde veri yok",
+      "tuzakli": false,
+      "girdiler": {
+        "domestic": {
+          "net_unit": "100.00"
+        },
+        "import": {
+          "net_unit": "80.00"
+        },
+        "requested_qty": 100,
+        "units_per_carton": 1,
+        "wait_days": null,
+        "annual_financing_rate_pct": null
+      },
+      "beklenen": {
+        "effective_qty": 100,
+        "bound_cash_tl": "8000.00",
+        "waiting_cost_tl": null,
+        "waiting_cost_display": "veri yok",
+        "advantage_tl_unit": "20.00",
+        "warning": "ADVANTAGE"
+      }
+    },
+    {
+      "id": "İA-014",
+      "ad": "Bağlanan nakit ve bekleme maliyeti",
+      "tuzakli": false,
+      "girdiler": {
+        "domestic": {
+          "net_unit": "100.00"
+        },
+        "import": {
+          "net_unit": "80.00"
+        },
+        "requested_qty": 100,
+        "units_per_carton": 1,
+        "wait_days": 90,
+        "annual_financing_rate_pct": "30.00"
+      },
+      "beklenen": {
+        "effective_qty": 100,
+        "bound_cash_tl": "8000.00",
+        "waiting_cost_tl": "591.78",
+        "advantage_tl_unit": "20.00",
+        "warning": "ADVANTAGE"
+      }
+    },
+    {
+      "id": "İA-015",
+      "ad": "Tuzak: Gümrük vergisi oranı kapsam dışı",
+      "tuzakli": true,
+      "girdiler": {
+        "domestic": {
+          "net_unit": "100.00"
+        },
+        "import": {
+          "product_net_unit": "70.00",
+          "customs_duty_rate_pct": "12.00"
+        },
+        "requested_qty": 100,
+        "units_per_carton": 1
+      },
+      "beklenen": {
+        "status": "REJECTED",
+        "error_code": "OUT_OF_SCOPE_CUSTOMS_TAX_RATE",
+        "message": "Mevzuat/GTİP/gümrük vergisi oranı hesabı kalıcı kapsam dışıdır."
+      }
+    },
+    {
+      "id": "İA-016",
+      "ad": "Tuzak: Yabancı para navlun da kurla değişir",
+      "tuzakli": true,
+      "girdiler": {
+        "domestic": {
+          "net_unit": "200.00"
+        },
+        "curve": {
+          "currency": "USD",
+          "fx": "30.00",
+          "tiers": [
+            {
+              "min_qty": 1,
+              "unit_price": "5.00"
+            }
+          ],
+          "moq": 1,
+          "units_per_carton": 1,
+          "foreign_fixed_expense": {
+            "amount": "100.00",
+            "currency": "USD"
+          },
+          "variable_expense_net_unit": "0.00"
+        },
+        "requested_qty": 100,
+        "scenario": {
+          "fx": "35.00"
+        }
+      },
+      "beklenen": {
+        "effective_qty": 100,
+        "base_product_net_unit": "150.00",
+        "base_freight_net_unit": "30.00",
+        "base_import_net_unit": "180.00",
+        "base_advantage_tl_unit": "20.00",
+        "base_advantage_pct": "10.00",
+        "scenario_product_net_unit": "175.00",
+        "scenario_freight_net_unit": "35.00",
+        "scenario_import_net_unit": "210.00",
+        "scenario_advantage_tl_unit": "-10.00",
+        "scenario_warning": "AVANTAJ_KALMADI"
+      }
+    }
+  ],
+  "acceptance_gate": "Uygulama İA-001..İA-016 vakalarının %100’ünü kuruş farksız geçmeli; REJECTED kapsam-dışı vakayı hesaplamaya zorlamamalıdır.",
+  "sources": [
+    {
+      "id": "SRC-IA-01",
+      "title": "landed-cost-kalibrasyon.json",
+      "type": "accepted_internal_contract",
+      "use": "NET/DDP ayrıştırma, masraf ve yuvarlama"
+    },
+    {
+      "id": "SRC-IA-02",
+      "title": "cbm-matematik.json",
+      "type": "accepted_internal_contract",
+      "use": "koli sayısı ve etkin adet"
+    },
+    {
+      "id": "SRC-IA-03",
+      "title": "Görev #17 ürün kararı",
+      "type": "task_contract",
+      "use": "Yurtiçi fiyat defteri, başabaş, senaryo ve kapsam dışı sınırı"
+    }
+  ]
+}

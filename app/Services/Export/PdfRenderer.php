@@ -15,6 +15,12 @@ use Mpdf\Mpdf;
  * Çince orijinal, GENEL TOPLAM bandında yalnız miktar + karta işaret notu.
  * Yatay A4; çok sayfada başlık TEKRARLAR (thead) ve alt bilgide "Sayfa X/Y" basılır.
  *
+ * DİL (İE#21 EK-5 · K81): belge SEÇİLEN DİLDE basılır — sütun başlıkları TEK
+ * SATIR (pdf-rev4) ve seçilen dilde; KPI etiketleri, TOPLAM bandı, şartlar ve
+ * alt bilgi de aynı dilde. PDF'te ÜÇ DİLLİ BAŞLIK BLOĞU YOKTUR: K81(b) istisnası
+ * EKRAN ve EXCEL içindir, kâğıtta üç kademe başlığı okunaksız kılar (G3 kararı).
+ * K55 orijinal Çince satırı DEĞİŞMEZ: ürün adının altında her dilde durur.
+ *
  * Kolon/renk tanımları TemplateV2'dedir — iki çıktı tek kaynaktan beslenir.
  *
  * Kütüphane: mpdf/mpdf ^8.3 (K19 onaylı; composer "php" beyanı 8.1'i kapsar; CI
@@ -47,6 +53,7 @@ final class PdfRenderer implements ExportRenderer
     public function render(array $snapshot): string
     {
         $tempDir = $this->resolveTempDir();
+        $dil = \App\Services\Share\ShareTexts::dil($snapshot['options']['lang'] ?? null);
 
         try {
             $mpdf = new Mpdf([
@@ -65,13 +72,32 @@ final class PdfRenderer implements ExportRenderer
             ]);
             $mpdf->SetTitle('tedarikapp — ' . (string) ($snapshot['list']['name'] ?? 'liste'));
             $icKopya = (($snapshot['options']['copy'] ?? 'firma') === 'ic');
+
+            // İE#21 B13 — FİLİGRAN. İki farklı amaç, iki farklı filigran:
+            //  · İÇ KOPYA'da METİN filigranı: bu belgenin firmaya gönderilmemesi
+            //    gereken kopya olduğu, sayfanın ortasında okunur durur. Kâğıda
+            //    basılıp masada karışan kopyaları alt bilgi satırı kurtarmıyordu.
+            //  · Firma kopyasında MARKA filigranı: belge kimliği taşır.
+            // Varlık yoksa filigran basılmaz, belge üretilir (K50/K61).
+            $marka = new BelgeMarkasi($this->basePath);
+            if ($icKopya) {
+                $mpdf->SetWatermarkText($this->metin($dil, 'pdf_filigran'));
+                $mpdf->watermarkTextAlpha = 0.08;
+                $mpdf->showWatermarkText = true;
+            } else {
+                $filigran = $marka->filigran();
+                if ($filigran !== null) {
+                    $mpdf->SetWatermarkImage($filigran, 0.05, 'F');
+                    $mpdf->showWatermarkImage = true;
+                }
+            }
             $mpdf->SetHTMLFooter(
                 '<div style="border-top:0.2mm solid #e2e8f0;padding-top:1mm;font-size:7pt;color:#64748b;text-align:center">'
-                . 'Tedarikapp — Ürün Tedarik Asistanı · Ürün adı kaynak platformdaki ilana köprülüdür'
-                . ($icKopya ? ' · <b style="color:#92400e">İÇ KOPYA — firmaya gönderilmez</b>' : '')
-                . ' · Sayfa {PAGENO}/{nbpg}</div>',
+                . $this->metin($dil, 'pdf_kunye')
+                . ($icKopya ? ' · <b style="color:#92400e">' . $this->metin($dil, 'pdf_ic_kopya') . '</b>' : '')
+                . ' · ' . $this->metin($dil, 'pdf_sayfa') . '</div>',
             );
-            $mpdf->WriteHTML($this->html($snapshot));
+            $mpdf->WriteHTML($this->html($snapshot, $dil));
 
             return $mpdf->OutputBinaryData();
         } catch (\Mpdf\MpdfException $e) {
@@ -118,11 +144,41 @@ final class PdfRenderer implements ExportRenderer
     }
 
     /**
+     * Belge metni — üç dil TEK KAYNAKTAN (`ShareTexts`).
+     *
+     * Paylaşım sayfası ve PDF aynı sözlüğü kullanır; belgeye özel anahtarlar
+     * `pdf_` önekiyle durur. Böylece "GENEL TOPLAM"ın İngilizcesi iki yerde iki
+     * türlü yazılamaz.
+     *
+     * @param array<string, string> $degerler
+     */
+    private function metin(string $dil, string $anahtar, array $degerler = []): string
+    {
+        return \App\Services\Share\ShareTexts::metin($dil, $anahtar, $degerler);
+    }
+
+    /**
+     * Antet bandındaki amblem (İE#21 B13).
+     *
+     * Amblem dosyası yoksa BOŞ döner: belge yazıyla kendini tanıtmaya devam eder.
+     * Görsel bir varlığın eksikliği belgeyi düşürmemeli.
+     */
+    private function amblemEtiketi(): string
+    {
+        $amblem = (new BelgeMarkasi($this->basePath))->amblem();
+        if ($amblem === null) {
+            return '';
+        }
+
+        return '<img src="' . htmlspecialchars($amblem, ENT_QUOTES, 'UTF-8') . '" style="height:6mm">';
+    }
+
+    /**
      * Şablon v2 gövdesi (F3) — rev7 sütun setinin HTML eşdeğeri.
      *
      * @param array<string, mixed> $snapshot
      */
-    private function html(array $snapshot): string
+    private function html(array $snapshot, string $dil = 'tr'): string
     {
         $e = static fn (mixed $value): string => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
         $list = $snapshot['list'];
@@ -196,19 +252,24 @@ final class PdfRenderer implements ExportRenderer
         $sagaHizali = ['No' => 'c', 'Miktar' => 'r', 'Vitrin Fiyatı' => 'r', 'Yaklaşık ürün bedeli (₺)' => 'r',
             'DDP $' => 'r', 'DDP ₺' => 'r', 'Hedef Satış (₺)' => 'r', 'Birim Kâr (₺)' => 'r',
             'Toplam Kâr (₺)' => 'r', 'Görsel' => 'c', 'Kaynak' => 'c', 'Durum' => 'c'];
-        foreach ($sutunlar as [$genislik, $tr]) {
+        // pdf-rev4 + K81: TEK SATIR başlık, SEÇİLEN DİLDE. Hizalama sözlüğü
+        // Türkçe adla kurulur (tek kaynak), yazılan metin dile göre seçilir.
+        $sira = ['tr' => 1, 'zh' => 2, 'en' => 3][$dil] ?? 1;
+        foreach ($sutunlar as $sutun) {
+            $tr = (string) $sutun[1];
+            $metin = (string) $sutun[$sira];
             $sinif = $sagaHizali[$tr] ?? '';
-            $baslik .= '<th class="' . $sinif . '" style="width:' . $genislik . '%">'
-                . $e(mb_strtoupper($tr, 'UTF-8')) . '</th>';
+            $baslik .= '<th class="' . $sinif . '" style="width:' . $sutun[0] . '%">'
+                . $e(mb_strtoupper($metin, 'UTF-8')) . '</th>';
         }
 
         $karToplam = $icKopya
             ? '<td colspan="2"></td><td class="r">₺' . $e($this->karToplami($snapshot)) . '</td>'
             : '';
 
-        $sartlar = 'Sipariş şartları: Teslim DDP · Kur, liste iletildiğinde kilitlenir · Fiyatlar DDP teslim, KDV DAHİLDİR';
+        $sartlar = $this->metin($dil, 'pdf_sartlar');
         if ($revizyon !== 'A') {
-            $sartlar .= ' · Rev ' . $revizyon . ': bu belge aynı listenin önceki çıktılarını GEÇERSİZ KILAR';
+            $sartlar .= ' · ' . $this->metin($dil, 'pdf_revizyon_uyarisi', ['rev' => $revizyon]);
         }
         $hazirlayan = is_string($antet['prepared_by'] ?? null) && $antet['prepared_by'] !== ''
             ? ' · Hazırlayan: ' . (string) $antet['prepared_by']
@@ -280,6 +341,7 @@ final class PdfRenderer implements ExportRenderer
             </style>
             <table class="bant"><tr>
                 <td style="width:58%">
+                    ' . $this->amblemEtiketi() . '
                     <div class="marka">' . $e($this->markaEtiketi($antet)) . '</div>
                     <div class="baslik">' . $e($list['name']) . '</div>
                     <div class="antet">' . $e(TemplateV2::headerLine($antet, $list)) . '</div>
@@ -287,17 +349,20 @@ final class PdfRenderer implements ExportRenderer
                 <td style="width:42%">' . $qr . '
                     <table class="kimlik"><tr>
                         <td>
-                            <div class="k-etiket">BELGE</div>
+                            <div class="k-etiket">' . $e($this->metin($dil, 'pdf_belge')) . '</div>
                             <div class="k-deger">' . $e($kod) . '</div>
-                            <div class="k-alt">Rev ' . $e($revizyon) . '</div>
+                            <div class="k-alt">' . $e($this->metin($dil, 'pdf_rev')) . ' ' . $e($revizyon) . '</div>
                         </td>
                         <td>
-                            <div class="k-etiket">KUR · ' . ($list['rate_locked_at'] === null ? 'GÜNCEL' : 'KİLİTLİ') . '</div>
+                            <div class="k-etiket">' . $e($this->metin(
+            $dil,
+            $list['rate_locked_at'] === null ? 'pdf_kur_guncel' : 'pdf_kur_kilitli',
+        )) . '</div>
                             <div class="k-deger">¥ ' . $e($list['yuan_rate']) . '</div>
                             <div class="k-alt">$ ' . $e($list['usd_rate']) . '</div>
                         </td>
                         <td>
-                            <div class="k-etiket">OLUŞTURULMA</div>
+                            <div class="k-etiket">' . $e($this->metin($dil, 'pdf_olusturulma')) . '</div>
                             <div class="k-deger">' . $e($this->tarih((string) $snapshot['generated_at'], 'd.m.Y')) . '</div>
                             <div class="k-alt">' . $e($this->tarih((string) $snapshot['generated_at'], 'H:i')) . '</div>
                         </td>
@@ -306,19 +371,19 @@ final class PdfRenderer implements ExportRenderer
             </tr></table>
             <div class="altin">&nbsp;</div>
             <table class="kpi"><tr>
-                <td><div class="etiket">TOPLAM ÜRÜN</div><div class="deger">' . count($snapshot['products']) . '</div></td>
-                <td><div class="etiket">TOPLAM MİKTAR</div><div class="deger">' . $e($totals['qty']) . '</div></td>
-                <td><div class="etiket">MAL BEDELİ (¥)</div><div class="deger">¥' . $e($totals['yuan']) . '</div></td>
-                <td><div class="etiket">MAL BEDELİ (₺)</div><div class="deger">₺' . $e($totals['yuan_tl']) . '</div></td>
-                <td><div class="etiket">DDP TOPLAM (₺ · KDV dahil)</div><div class="deger">₺' . $e($totals['ddp_tl']) . '</div></td>
+                <td><div class="etiket">' . $e($this->metin($dil, 'pdf_kpi_urun')) . '</div><div class="deger">' . count($snapshot['products']) . '</div></td>
+                <td><div class="etiket">' . $e($this->metin($dil, 'pdf_kpi_miktar')) . '</div><div class="deger">' . $e($totals['qty']) . '</div></td>
+                <td><div class="etiket">' . $e($this->metin($dil, 'pdf_kpi_bedel_yuan')) . '</div><div class="deger">¥' . $e($totals['yuan']) . '</div></td>
+                <td><div class="etiket">' . $e($this->metin($dil, 'pdf_kpi_bedel_tl')) . '</div><div class="deger">₺' . $e($totals['yuan_tl']) . '</div></td>
+                <td><div class="etiket">' . $e($this->metin($dil, 'pdf_kpi_ddp')) . '</div><div class="deger">₺' . $e($totals['ddp_tl']) . '</div></td>
             </tr></table>
             <table class="veri">
                 <thead><tr>' . $baslik . '</tr></thead>
                 <tbody>' . $rows . '
                 <tr class="toplam">
-                    <td colspan="9">GENEL TOPLAM</td>
+                    <td colspan="9">' . $e($this->metin($dil, 'pdf_genel_toplam')) . '</td>
                     <td class="r">' . $e($totals['qty']) . '</td>
-                    <td class="not" colspan="4">Parasal toplamlar üstteki özet kartlarındadır</td>
+                    <td class="not" colspan="4">' . $e($this->metin($dil, 'pdf_toplam_not')) . '</td>
                     ' . $karToplam . '
                 </tr>
                 </tbody>
@@ -326,7 +391,7 @@ final class PdfRenderer implements ExportRenderer
             <div class="altin">&nbsp;</div>
             <table style="width:100%"><tr>
                 <td class="sart">' . $e($sartlar) . '</td>
-                <td class="sart imza">Firma onayı: ________  Tarih: ____' . $e($hazirlayan) . '</td>
+                <td class="sart imza">' . $e($this->metin($dil, 'pdf_imza')) . $e($hazirlayan) . '</td>
             </tr></table>';
     }
 

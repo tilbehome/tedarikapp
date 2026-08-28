@@ -1,0 +1,268 @@
+{
+  "schema_version": "woo-draft-export/1.0",
+  "generated_from": "demo-urun-seti.json",
+  "contract": {
+    "woo_api_namespace": "wc/v3",
+    "parent_status_required": "draft",
+    "price_fields_policy": "omitted_from_all_request_bodies",
+    "landed_cost_policy": "reference_only_in_internal_meta_note",
+    "stock_policy": "not_exported_or_synchronized",
+    "automatic_publish": false,
+    "canonical_media_base": "https://tedarikapp.tilbehometoptan.com/media/canonical/",
+    "example_media_notice": "Bu dosyadaki medya yolları sözleşme örneğidir; canlı dosya varlığı iddia edilmez.",
+    "prohibited_request_body_keys": [
+      "price",
+      "regular_price",
+      "sale_price",
+      "cost_of_goods_sold",
+      "manage_stock",
+      "stock_quantity",
+      "stock_status"
+    ]
+  },
+  "items": [
+    {
+      "source": {
+        "ref": "demo-urun-seti.json#DM-001",
+        "platform": "1688",
+        "record_kind": "demo_test_only"
+      },
+      "category_mapping": {
+        "source_path": [
+          "Ev ve Yaşam",
+          "Ev Tekstili"
+        ],
+        "recommended_8b_code": "ev_tekstili.havlu",
+        "evidence": "Kaynak ürün adındaki 浴巾, 8B eşlemesinde havlu alt kategorisine karşılık gelir.",
+        "resolved_woo_category_id": null,
+        "resolution": "needs_review",
+        "request_body_behavior": "Woo kategori ID'si doğrulanana kadar categories alanı gönderilmez."
+      },
+      "sku_plan": {
+        "strategy": "21C-alternative-A",
+        "parent_sku": "EVT-HVL-000001",
+        "variant_skus": [
+          "EVT-HVL-000001-KRM",
+          "EVT-HVL-000001-DMV",
+          "EVT-HVL-000001-GRY"
+        ]
+      },
+      "operations": [
+        {
+          "sequence": 1,
+          "operation_id": "DM-001-create-parent",
+          "method": "POST",
+          "path": "/wp-json/wc/v3/products",
+          "body": {
+            "name": "Bambu elyaf banyo havlusu 70×140 cm 400 g",
+            "type": "variable",
+            "status": "draft",
+            "description": "<p>70×140 cm ölçülerinde, 400 g bambu elyaf banyo havlusu.</p><p>Renk seçenekleri: Krem beyaz, Duman mavisi ve Gri-yeşil.</p>",
+            "short_description": "70×140 cm, 400 g bambu elyaf banyo havlusu.",
+            "sku": "EVT-HVL-000001",
+            "images": [
+              {
+                "src": "https://tedarikapp.tilbehometoptan.com/media/canonical/DM-001/main.webp",
+                "name": "Bambu elyaf banyo havlusu — ana görsel",
+                "alt": "Krem beyaz bambu elyaf banyo havlusu"
+              },
+              {
+                "src": "https://tedarikapp.tilbehometoptan.com/media/canonical/DM-001/detail-01.webp",
+                "name": "Bambu elyaf banyo havlusu — detay",
+                "alt": "Bambu elyaf banyo havlusunun doku detayı"
+              }
+            ],
+            "attributes": [
+              {
+                "name": "Renk",
+                "position": 0,
+                "visible": true,
+                "variation": true,
+                "options": [
+                  "Krem beyaz",
+                  "Duman mavisi",
+                  "Gri-yeşil"
+                ]
+              }
+            ],
+            "meta_data": [
+              {
+                "key": "_tedarikapp_source_ref",
+                "value": "demo-urun-seti.json#DM-001"
+              },
+              {
+                "key": "_tedarikapp_export_key",
+                "value": "woo-draft:DM-001:v1"
+              },
+              {
+                "key": "_tedarikapp_category_code",
+                "value": "ev_tekstili.havlu"
+              },
+              {
+                "key": "_tedarikapp_name_zh",
+                "value": "竹纤维浴巾 70×140cm 400g"
+              },
+              {
+                "key": "_tedarikapp_internal_note",
+                "value": "Landed cost kaydı: TedarikApp/DM-001/landed-cost/latest; Woo satış fiyatı Ürün Sahibi kararı bekliyor."
+              }
+            ]
+          }
+        },
+        {
+          "sequence": 2,
+          "operation_id": "DM-001-create-variations",
+          "depends_on": "DM-001-create-parent.response.id",
+          "method": "POST",
+          "path": "/wp-json/wc/v3/products/{parent_product_id}/variations",
+          "repeat_for_each_body": true,
+          "bodies": [
+            {
+              "sku": "EVT-HVL-000001-KRM",
+              "attributes": [
+                {
+                  "name": "Renk",
+                  "option": "Krem beyaz"
+                }
+              ],
+              "image": {
+                "src": "https://tedarikapp.tilbehometoptan.com/media/canonical/DM-001/variant-cream.webp",
+                "name": "Krem beyaz havlu",
+                "alt": "Krem beyaz bambu elyaf banyo havlusu"
+              },
+              "meta_data": [
+                {
+                  "key": "_tedarikapp_variant_ref",
+                  "value": "DM-001#奶油白"
+                }
+              ]
+            },
+            {
+              "sku": "EVT-HVL-000001-DMV",
+              "attributes": [
+                {
+                  "name": "Renk",
+                  "option": "Duman mavisi"
+                }
+              ],
+              "image": {
+                "src": "https://tedarikapp.tilbehometoptan.com/media/canonical/DM-001/variant-haze-blue.webp",
+                "name": "Duman mavisi havlu",
+                "alt": "Duman mavisi bambu elyaf banyo havlusu"
+              },
+              "meta_data": [
+                {
+                  "key": "_tedarikapp_variant_ref",
+                  "value": "DM-001#雾霾蓝"
+                }
+              ]
+            },
+            {
+              "sku": "EVT-HVL-000001-GRY",
+              "attributes": [
+                {
+                  "name": "Renk",
+                  "option": "Gri-yeşil"
+                }
+              ],
+              "image": {
+                "src": "https://tedarikapp.tilbehometoptan.com/media/canonical/DM-001/variant-gray-green.webp",
+                "name": "Gri-yeşil havlu",
+                "alt": "Gri-yeşil bambu elyaf banyo havlusu"
+              },
+              "meta_data": [
+                {
+                  "key": "_tedarikapp_variant_ref",
+                  "value": "DM-001#灰绿色"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "post_create_checks": [
+        "Ana ürün status değeri draft olarak okunmalı.",
+        "Üç varyantın SKU değerleri benzersiz olmalı.",
+        "Fiyat ve stok anahtarları hiçbir istek gövdesinde bulunmamalı.",
+        "Kategori eşlemesi çözülmediyse taslak inceleme kuyruğunda kalmalı."
+      ]
+    },
+    {
+      "source": {
+        "ref": "demo-urun-seti.json#DM-003",
+        "platform": "1688",
+        "record_kind": "demo_test_only"
+      },
+      "category_mapping": {
+        "source_path": [
+          "Ev ve Yaşam",
+          "Ev Tekstili"
+        ],
+        "recommended_8b_code": "ev_tekstili.yatak_tekstili",
+        "evidence": "Kaynak üst yolu ev_tekstili ile eşleşir; fitted sheet anlamındaki alt kategori önerisi insan teyidi ister.",
+        "resolved_woo_category_id": null,
+        "resolution": "needs_review",
+        "request_body_behavior": "Woo kategori ID'si doğrulanana kadar categories alanı gönderilmez."
+      },
+      "sku_plan": {
+        "strategy": "21C-alternative-A",
+        "product_sku": "EVT-YTK-000003"
+      },
+      "operations": [
+        {
+          "sequence": 1,
+          "operation_id": "DM-003-create-product",
+          "method": "POST",
+          "path": "/wp-json/wc/v3/products",
+          "body": {
+            "name": "Flanel lastikli çarşaf 150×200 cm",
+            "type": "simple",
+            "status": "draft",
+            "description": "<p>150×200 cm ölçülerinde flanel lastikli çarşaf.</p>",
+            "short_description": "150×200 cm flanel lastikli çarşaf.",
+            "sku": "EVT-YTK-000003",
+            "images": [
+              {
+                "src": "https://tedarikapp.tilbehometoptan.com/media/canonical/DM-003/main.webp",
+                "name": "Flanel lastikli çarşaf — ana görsel",
+                "alt": "150×200 cm flanel lastikli çarşaf"
+              },
+              {
+                "src": "https://tedarikapp.tilbehometoptan.com/media/canonical/DM-003/detail-01.webp",
+                "name": "Flanel lastikli çarşaf — detay",
+                "alt": "Flanel lastikli çarşafın kumaş ve köşe detayı"
+              }
+            ],
+            "meta_data": [
+              {
+                "key": "_tedarikapp_source_ref",
+                "value": "demo-urun-seti.json#DM-003"
+              },
+              {
+                "key": "_tedarikapp_export_key",
+                "value": "woo-draft:DM-003:v1"
+              },
+              {
+                "key": "_tedarikapp_category_code",
+                "value": "ev_tekstili.yatak_tekstili"
+              },
+              {
+                "key": "_tedarikapp_name_zh",
+                "value": "法兰绒床笠 150×200cm"
+              },
+              {
+                "key": "_tedarikapp_internal_note",
+                "value": "Landed cost kaydı: TedarikApp/DM-003/landed-cost/latest; Woo satış fiyatı Ürün Sahibi kararı bekliyor."
+              }
+            ]
+          }
+        }
+      ],
+      "post_create_checks": [
+        "Ürün status değeri draft olarak okunmalı.",
+        "Fiyat ve stok anahtarları istek gövdesinde bulunmamalı.",
+        "Kategori eşlemesi çözülmediyse taslak inceleme kuyruğunda kalmalı."
+      ]
+    }
+  ]
+}

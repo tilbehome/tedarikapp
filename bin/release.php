@@ -36,7 +36,36 @@ $basePath = dirname(__DIR__);
 require $basePath . '/vendor/autoload.php';
 
 // ── Argümanlar ──
+//
+// D4b (saha bulgusu, 25 Ağu 2026): `getopt` TANIMSIZ bayrağı SESSİZCE yok sayar.
+// `--surum=1.0.0-rc2` yazılınca sürüm bayrağı hiç görülmedi ve paket eski damgayla
+// (rc1) üretildi — yanlış paketin doğru göründüğü bir tuzak. Artık tanınmayan her
+// bayrak HATA verir: sessiz yanlış paket, geç fark edilen en pahalı hatadır.
+$tanimliBayraklar = ['out', 'version', 'allow-dev-vendor', 'panel-dal'];
 $options = getopt('', ['out::', 'version::', 'allow-dev-vendor', 'panel-dal::']);
+
+$bilinmeyenler = [];
+foreach (array_slice($argv, 1) as $arg) {
+    if (!str_starts_with($arg, '--')) {
+        $bilinmeyenler[] = $arg;
+
+        continue;
+    }
+    $ad = ltrim(strtok(substr($arg, 2), '='), '-');
+    if ($ad !== '' && !in_array($ad, $tanimliBayraklar, true)) {
+        $bilinmeyenler[] = '--' . $ad;
+    }
+}
+
+if ($bilinmeyenler !== []) {
+    fwrite(STDERR, "HATA: tanınmayan argüman: " . implode(', ', $bilinmeyenler) . "
+");
+    fwrite(STDERR, "  Geçerli bayraklar: --panel-dal=<dal> --version=<vX.Y.Z> --out=<dizin> --allow-dev-vendor
+");
+    fwrite(STDERR, "  Not: sürüm bayrağı --version'dır (--surum DEĞİL).
+");
+    exit(1);
+}
 $outDir = is_string($options['out'] ?? null) && $options['out'] !== '' ? $options['out'] : $basePath . '/dist';
 $version = is_string($options['version'] ?? null) && $options['version'] !== ''
     ? $options['version']

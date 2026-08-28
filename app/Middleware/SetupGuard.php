@@ -53,6 +53,21 @@ final class SetupGuard implements MiddlewareInterface
         // hiçbir adım yoktur (unlock da, migrate de aynı veritabanına yazar), açık
         // bırakmak yalnız saldırı yüzeyi olurdu.
         if ($status === SetupLock::STATE_UNKNOWN) {
+            // D2-REV DÜZELTMESİ: fail-closed KORUNUR ama TEŞHİS penceresi açılır.
+            //
+            // Eskisi tutarlıydı ama kullanıcıyı çıkmaza sokuyordu: veritabanı düşünce
+            // sihirbaz komple 503 veriyordu ve ekranda "durum doğrulanamadı" dışında
+            // hiçbir bilgi yoktu — oysa D2-REV'in 8. durumu tam da budur ve çözümü
+            // sihirbazın İÇİNDE olmalıdır. Açılan pencere DAR ve zararsızdır:
+            //   • /setup sayfası ve varlıkları (veri döndürmez),
+            //   • GET /api/setup/situation — SALT OKUNUR teşhis, sır içermez,
+            //   • POST /api/setup/config-repair — bağlantı bilgisini düzeltir ve
+            //     SAHİPLİK KANITI ister (diskteki APP_KEY; DB'ye ihtiyaç duymaz).
+            // Yazan/yıkan başka hiçbir uç geçmez.
+            if ($this->diagnosisAllowed($request)) {
+                return $handler->handle($request);
+            }
+
             $this->logger->error('Kurulum kilidi OKUNAMADI — kapı fail-closed 503 verdi', [
                 'ip' => ClientIp::from($request),
                 'yol' => $request->getUri()->getPath(),
@@ -82,10 +97,10 @@ final class SetupGuard implements MiddlewareInterface
         // seçeneğini EKRANDA görür, çıkmaz sokakta kalmaz. Sihirbaz sayfası ve
         // varlıkları veri döndürmez; unlock ucu ise sahiplik kanıtı ister.
         $path = $request->getUri()->getPath();
-        if (str_ends_with($path, '/api/setup/unlock')
-            || str_ends_with($path, '/setup')
-            || str_ends_with($path, '/setup/wizard.js')
-            || str_ends_with($path, '/setup/wizard.css')) {
+        if ($this->diagnosisAllowed($request)
+            || str_ends_with($path, '/api/setup/unlock')
+            || str_ends_with($path, '/api/setup/verify-owner')
+            || str_ends_with($path, '/api/setup/owner-check')) {
             return $handler->handle($request);
         }
 
@@ -103,6 +118,28 @@ final class SetupGuard implements MiddlewareInterface
             . 'adımından config.php içindeki APP_KEY ile bilet alın.',
             403,
         );
+    }
+
+    /**
+     * Kilitli ya da durumu bilinmeyen sistemde bile açık kalan DAR liste:
+     * sihirbaz sayfası, varlıkları, salt-okunur teşhis ve kanıt isteyen config
+     * onarımı. Hiçbiri veri okumaz/yazmaz (config onarımı hariç — o da kanıtlı).
+     */
+    private function diagnosisAllowed(ServerRequestInterface $request): bool
+    {
+        $path = $request->getUri()->getPath();
+        $method = strtoupper($request->getMethod());
+
+        if ($method === 'GET') {
+            return str_ends_with($path, '/setup')
+                || str_ends_with($path, '/setup/wizard.js')
+                || str_ends_with($path, '/setup/wizard.css')
+                || str_ends_with($path, '/api/setup/situation');
+        }
+
+        return $method === 'POST'
+            && (str_ends_with($path, '/api/setup/config-repair')
+                || str_ends_with($path, '/api/setup/config-repair/verify'));
     }
 
     private function ticketValid(ServerRequestInterface $request): bool

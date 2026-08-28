@@ -13,6 +13,7 @@ use App\Models\ListRepository;
 use App\Models\ProductRepository;
 use App\Models\SettingsRepository;
 use App\Services\ActivityLog;
+use App\Services\Inbox\SistemListesi;
 use App\Services\InputValidator;
 use App\Services\ListMutationPolicy;
 use App\Services\ListPresenter;
@@ -49,9 +50,38 @@ final class ListController extends ApiController
     }
 
     /** GET /api/lists */
+    private function sistemListesi(): SistemListesi
+    {
+        return new SistemListesi($this->settings);
+    }
+
+    /**
+     * Sistem listesine yasak eylem denendiyse hazır reddi döner; değilse null.
+     *
+     * Kapı SUNUCUDADIR: arayüz düğmeyi gizlese bile doğrudan API çağrısı aynı
+     * cevabı alır (PM şartı b).
+     */
+    private function sistemKorumasi(ResponseInterface $response, int $listeId, string $eylem): ?ResponseInterface
+    {
+        $sistem = $this->sistemListesi();
+        if (!$sistem->sistemMi($listeId)) {
+            return null;
+        }
+
+        return Response::error($response, 'SYSTEM_LIST', $sistem->redMesaji($eylem), 422);
+    }
+
     public function index(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
         $filters = [];
+
+        // Keşif Havuzu SİSTEM listesidir ve listelemeye girmez (İE#21 B4 · PM şartı a).
+        // Panorama'nın "aktif liste" sayısı da bu ucu kullandığı için sayım kendiliğinden
+        // doğru olur — ayrıca bir yerde daha filtre uygulamak gerekmez.
+        $havuz = $this->sistemListesi()->havuzId();
+        if ($havuz !== null) {
+            $filters['haric_id'] = $havuz;
+        }
 
         $visibility = $this->query($request, 'visibility');
         if ($visibility !== '') {
@@ -214,6 +244,15 @@ final class ListController extends ApiController
             $from = (string) $row['status'];
             $to = is_string($body['status']) ? $body['status'] : '';
 
+            // Havuz asla "iletilmez": iletilseydi bir araştırma havuzu firmaya
+            // sipariş listesi diye giderdi ve kuru kilitlenirdi (PM şartı b).
+            if ($to !== $from) {
+                $engel = $this->sistemKorumasi($response, (int) $row['id'], 'iletilemez veya durumu değiştirilemez');
+                if ($engel !== null) {
+                    return $engel;
+                }
+            }
+
             try {
                 $this->stateMachine->assertListTransition($from, $to, $this->products->statusesForList((int) $row['id']));
             } catch (StateTransitionException $e) {
@@ -270,6 +309,13 @@ final class ListController extends ApiController
             return $this->notFound($response);
         }
 
+        $engel = $this->sistemKorumasi($response, (int) $row['id'], 'silinemez');
+        if ($engel !== null) {
+            // Silinseydi havuzdaki bütün ürünler yetim kalırdı: `products.list_id`
+            // zorunlu ve çöp kutusu listeyi ürünleriyle birlikte taşır.
+            return $engel;
+        }
+
         $this->lists->softDelete((int) $row['id'], $this->clock->now());
         $this->log($request, 'list_deleted', (int) $row['id'], (string) $row['name']);
 
@@ -323,7 +369,24 @@ final class ListController extends ApiController
                 $copy['status'] = StateMachine::PRODUCT_TO_ORDER;
                 $copy['tracking_no'] = null;
 
-                $this->products->create($newId, $copy, $now);
+                $yeniUrunId = $this->products->create($newId, $copy, $now);
+
+                // İE#20 C9: KOPYA EKSİKSİZ OLMALI.
+                //  • Galeri: ek görseller kopyaya gelmiyordu; kullanıcı "fotoğraflar
+                //    gitti" diyordu ve ana görsel durduğu için hata yarım görünüyordu.
+                //  • İlk tarihçe: kopyadaki ürünler TARİHÇESİZ doğuyordu; durum
+                //    grafiği ilk adımı görmüyor, "bu ürün ne zaman açıldı?" sorusu
+                //    yanıtsız kalıyordu.
+                $this->products->copyImages((int) $product['id'], $yeniUrunId);
+                $this->products->recordStatusChange(
+                    $yeniUrunId,
+                    null,
+                    StateMachine::PRODUCT_TO_ORDER,
+                    $now,
+                    ActivityLog::ACTOR_ADMIN,
+                    $this->user($request)->id,
+                    $this->requestId($request),
+                );
             }
 
             $this->log($request, 'list_duplicated', $newId, sprintf('kaynak:%d', (int) $row['id']));

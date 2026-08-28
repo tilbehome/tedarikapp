@@ -67,6 +67,18 @@ export interface ProductImage {
   id: number;
   url: string;
   sort: number;
+  /**
+   * D11a: görsel henüz arşive alınmadı; adres kaynak sitededir. Kaynak site
+   * hotlink'e izin vermeyebilir (alicdn Referer ACL) — arayüz bunu işaretler,
+   * sessiz boş kare bırakmaz.
+   */
+  uzak?: boolean;
+}
+
+/** C8 HAZIR kapısının eksik dökümü — alan kimliktir, etiket görünen yüzdür. */
+export interface UrunEksigi {
+  alan: string;
+  etiket: string;
 }
 
 export interface Product {
@@ -77,6 +89,15 @@ export interface Product {
   platform: string | null;
   external_id: string | null;
   name: string;
+  /**
+   * D11b: EKRANDA gösterilecek ad. `name` saklanan kayıttır; çeviri turu onu
+   * ezmez (K54). Bu alan en güncel kalıcı çeviriyi taşır — eski sürümlerle
+   * uyum için isteğe bağlıdır, yoksa `name` kullanılır.
+   */
+  ad_gosterim?: string;
+  /** 'elle' | 'ceviri' | 'yakalama' — arayüz rozeti bunu okur. */
+  ad_kaynak?: 'elle' | 'ceviri' | 'yakalama';
+  ad_saglayici?: string | null;
   name_original: string | null;
   detail: string | null;
   url: string | null;
@@ -100,11 +121,56 @@ export interface Product {
   units_per_carton: number | null;
   tracking_no: string | null;
   status: ProductStatus;
+  /** C8: ürün "HAZIR" işaretlendi mi? */
+  hazir: boolean;
+  /** C8: HAZIR olmasına engel eksikler (boşsa kapı açıktır). */
+  hazir_eksikleri: UrunEksigi[];
   note: string | null;
   images: ProductImage[];
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
+}
+
+/**
+ * ÜRÜN ÇEKMECESİ VERİSİ (İE#21 B3 · `GET /api/products/{id}/cekmece`).
+ *
+ * Alan yoksa NULL gelir (K67): ilan kaydı olmayan elle girilmiş ürün `ilan: null`
+ * döner, sinyali olmayan alan null kalır. Arayüz bunları "—" basar, uydurmaz.
+ */
+export interface IlanGorunumu {
+  platform: string | null;
+  external_id: string | null;
+  url: string | null;
+  baslik_orijinal: string | null;
+  satici_ad: string | null;
+  satici_url: string | null;
+  satici_yil: number | null;
+  satici_puan: string | null;
+  yanit_orani: string | null;
+  satis_adedi: number | null;
+  satis_toplam: number | null;
+  moq: number | null;
+  birim_fiyat: string | null;
+  para_birimi: string | null;
+  skor: number | null;
+  bant: string;
+  skor_bilesenleri: Record<string, number> | null;
+}
+
+export interface FiyatKademesi {
+  min_adet: number;
+  /** Para: string taşınır (K14). */
+  birim_fiyat: string;
+}
+
+export interface UrunCekmecesiVerisi {
+  urun: Product;
+  ilan: IlanGorunumu | null;
+  kademeler: FiyatKademesi[];
+  yorum_ozeti: { adet: number | null; puan: string | null } | null;
+  /** Yurt içi kıyas: bugün veri kaynağı YOK — daima null (V3-C kapsamı). */
+  yurtici_kiyas: null;
 }
 
 export interface Category {
@@ -121,6 +187,15 @@ export interface Settings {
   extension_token_preview: string | null;
   media_mode: 'download' | 'hotlink' | null;
   media_writable: boolean | null;
+  /** İE#21 EK-4: kilit ekranındaki anahtar talebi köprüsünün numarası (boş olabilir). */
+  share_contact_phone: string | null;
+  /**
+   * rc8/K4 (F-08): paylaşım bağlantısının ve QR'ın tabanı — `settings.APP_URL`.
+   * `app_url_kanonik` false ise uygulama link üretmeyi reddeder; ekran kırmızı
+   * şerit basar.
+   */
+  app_url: string | null;
+  app_url_kanonik: boolean;
   /** İE#13 F1: çıktı ve paylaşım sayfası üst bandındaki firma kimliği. */
   document_header: {
     company: string | null;

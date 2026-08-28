@@ -28,6 +28,11 @@ final class ListPresenter
         private readonly MoneyService $money,
         private readonly DateTimeZone $timezone,
         private readonly ?SettingsRepository $settings = null,
+        /**
+         * D11b: ekranda görünecek adı çözer (elle > çeviri > yakalama).
+         * Verilmezse davranış eskisi gibi kalır — `name` neyse o basılır.
+         */
+        private readonly ?\App\Services\Translation\AdCozumleyici $adCozumleyici = null,
     ) {
     }
 
@@ -129,6 +134,12 @@ final class ListPresenter
             $qty,
         );
 
+        $ad = $this->adCozumleyici?->coz($row) ?? [
+            'ad' => (string) $row['name'],
+            'kaynak' => \App\Services\Translation\AdCozumleyici::KAYNAK_YAKALAMA,
+            'saglayici' => null,
+        ];
+
         return [
             'id' => (int) $row['id'],
             'list_id' => (int) $row['list_id'],
@@ -137,6 +148,13 @@ final class ListPresenter
             'platform' => $this->nullableString($row['platform']),
             'external_id' => $this->nullableString($row['external_id']),
             'name' => (string) $row['name'],
+            // D11b: SAKLANAN ad ile GÖSTERİLEN ad ayrı alanlardır. `name` kayıttır
+            // ve çeviri turu onu ezmez (K54); `ad_gosterim` ise en güncel kalıcı
+            // çeviridir. İkisini tek alanda birleştirmek, "sınav yeni çeviriyi
+            // görüyor ama ekran eskisini basıyor" hatasının kaynağıydı.
+            'ad_gosterim' => $ad['ad'],
+            'ad_kaynak' => $ad['kaynak'],
+            'ad_saglayici' => $ad['saglayici'],
             'name_original' => $this->nullableString($row['name_original']),
             'detail' => $this->nullableString($row['detail']),
             'url' => $this->nullableString($row['url']),
@@ -164,6 +182,10 @@ final class ListPresenter
             'units_per_carton' => $this->nullableInt($row['units_per_carton']),
             'tracking_no' => $this->nullableString($row['tracking_no']),
             'status' => (string) $row['status'],
+            // İE#20 C8 / İE#21 B2: HAZIR kapısı panele de görünür — hangi ürünün
+            // nesi eksik olduğunu kullanıcı satırda okur, tahmin etmez.
+            'hazir' => (bool) ($row['hazir'] ?? false),
+            'hazir_eksikleri' => \App\Services\Ilan\HazirlikKapisi::eksikDokumu($row),
             'note' => $this->nullableString($row['note']),
             'images' => $this->products->images((int) $row['id']),
             'created_at' => Dates::toIso((string) $row['created_at'], $this->timezone),

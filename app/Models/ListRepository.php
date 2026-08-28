@@ -41,7 +41,7 @@ final class ListRepository
     }
 
     /**
-     * @param array{visibility?: string, status?: string, q?: string} $filters
+     * @param array{visibility?: string, status?: string, q?: string, haric_id?: int} $filters
      *
      * @return list<array<string, mixed>>
      */
@@ -67,6 +67,15 @@ final class ListRepository
             $sql .= ' AND (name LIKE :q_ad OR supplier_name LIKE :q_tedarikci)';
             $params['q_ad'] = '%' . $filters['q'] . '%';
             $params['q_tedarikci'] = '%' . $filters['q'] . '%';
+        }
+
+        // İE#21 B4 (PM şartı): SİSTEM listesi hiçbir listelemede görünmez — liste
+        // ekranı, liste seçicileri ve Panorama'daki "aktif liste" sayısı dahil.
+        // Hariç tutmayı SORGUYA koymak, her çağıranın hatırlamasına bırakmaktan
+        // güvenlidir: tek bir yer unutulursa havuz oradan sızar.
+        if (isset($filters['haric_id']) && (int) $filters['haric_id'] > 0) {
+            $sql .= ' AND id <> :haric_id';
+            $params['haric_id'] = (int) $filters['haric_id'];
         }
 
         $sql .= ' ORDER BY created_at DESC, id DESC';
@@ -105,6 +114,44 @@ final class ListRepository
         ]);
 
         return (int) $pdo->lastInsertId();
+    }
+
+    /**
+     * KİLİTLENMEMİŞ listelerin kurunu güncel ayara TAZELER (İE#21 B5).
+     *
+     * SAHA BULGUSU VE KÖK NEDEN: `lists.yuan_rate` liste OLUŞTURULURKEN ayardan
+     * kopyalanıyordu ve bir daha okunmuyordu. K4 "kur listeye KİLİTLENİR" der ama
+     * kilit anı listenin İLETİLDİĞİ andır — o ana kadar taslak, güncel kuru İZLEMELİDİR
+     * (aynı dosyada `LIST_DRAFT`e dönüşte kilidin açılması da bu niyeti söyler).
+     * Kopya tazelenmeyince canlıda taslak listeler 7,04/41,50 ile donup kaldı: antette
+     * eski kur, ₺ karşılıklarında eski çarpan.
+     *
+     * NEDEN OKUMA ANINDA DEĞİL DE YAZMA ANINDA: kuru okuyan tek yol yok — panel,
+     * paylaşım sayfası, Excel, PDF ve export snapshot'ı hepsi kolonu okuyor. Okuma
+     * anında çözseydik bu yolların BİRİNİ atlamak sapmayı geri getirirdi. Kolonu
+     * kaynakta doğru tutmak, tek değişiklikle hepsini düzeltir.
+     *
+     * REVİZYON İLERLEMEZ (K71): revizyon, firmaya GİDEN belgenin değiştiğini söyler;
+     * kilitlenmemiş liste henüz gitmemiştir. `updated_at` de dokunulmaz — kur tazeleme
+     * kullanıcı düzenlemesi değildir ve "son güncelleme" damgasını yalanlamamalıdır.
+     *
+     * @return int etkilenen liste sayısı
+     */
+    public function kilitsizKurlariTazele(string $yuanRate, string $usdRate): int
+    {
+        $statement = $this->connection->pdo()->prepare(
+            'UPDATE lists SET yuan_rate = :yuan_rate, usd_rate = :usd_rate
+             WHERE rate_locked_at IS NULL AND deleted_at IS NULL
+               AND (yuan_rate <> :yuan_kiyas OR usd_rate <> :usd_kiyas)',
+        );
+        $statement->execute([
+            'yuan_rate' => $yuanRate,
+            'usd_rate' => $usdRate,
+            'yuan_kiyas' => $yuanRate,
+            'usd_kiyas' => $usdRate,
+        ]);
+
+        return $statement->rowCount();
     }
 
     /**
@@ -179,6 +226,17 @@ final class ListRepository
     }
 
     /** Ürün/fiyat/adet/sıra değişiminde çağrılır — "çıktı güncel değil" rozetinin sayacı (K25). */
+    /** Listedeki (silinmemiş) ürün sayısı — kanal metni "N ürün" der (İE#21 B6). */
+    public function urunSayisi(int $id): int
+    {
+        $statement = $this->connection->pdo()->prepare(
+            'SELECT COUNT(*) FROM products WHERE list_id = :id AND deleted_at IS NULL',
+        );
+        $statement->execute(['id' => $id]);
+
+        return (int) $statement->fetchColumn();
+    }
+
     public function bumpRevision(int $id, DateTimeImmutable $now): void
     {
         $statement = $this->connection->pdo()->prepare(

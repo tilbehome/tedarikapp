@@ -74,7 +74,7 @@ export default function HomeScreen() {
           </div>
 
           <section className="mt-6">
-            <h2 className="mb-2 text-sm font-semibold text-slate-700">Aktif listeler</h2>
+            <h2 className="mb-2 text-sm font-semibold text-ink-2">Aktif listeler</h2>
             {activeLists.length === 0 ? (
               <EmptyState
                 title="Henüz listen yok"
@@ -89,14 +89,14 @@ export default function HomeScreen() {
               <ul className="space-y-2">
                 {activeLists.slice(0, 5).map((list) => (
                   <li key={list.id}>
-                    <Link to={`/listeler/${list.id}`} className="card flex items-center gap-3 p-4 hover:bg-slate-50">
+                    <Link to={`/listeler/${list.id}`} className="card flex items-center gap-3 p-4 hover:bg-g50">
                       <div className="min-w-0 flex-1">
                         <div className="truncate font-semibold">{list.name}</div>
-                        <div className="text-xs text-slate-500">
+                        <div className="text-xs text-ink-3">
                           {list.period ?? 'Dönemsiz'} · {count(list.product_count)} ürün
                         </div>
                       </div>
-                      <ArrowRight className="h-4 w-4 shrink-0 text-slate-400" aria-hidden />
+                      <ArrowRight className="h-4 w-4 shrink-0 text-ink-3" aria-hidden />
                     </Link>
                   </li>
                 ))}
@@ -107,24 +107,24 @@ export default function HomeScreen() {
       )}
 
       <section className="mt-6">
-        <h2 className="mb-2 text-sm font-semibold text-slate-700">Son aktiviteler</h2>
+        <h2 className="mb-2 text-sm font-semibold text-ink-2">Son aktiviteler</h2>
         {activityState.loading ? (
           <Skeleton rows={2} />
         ) : activityState.error ? (
           <ErrorNote message={activityState.error} onRetry={activityState.reload} />
         ) : (activityState.data ?? []).length === 0 ? (
-          <p className="text-sm text-slate-500">Henüz kayıt yok.</p>
+          <p className="text-sm text-ink-3">Henüz kayıt yok.</p>
         ) : (
-          <ul className="card divide-y divide-slate-100">
+          <ul className="card divide-y divide-line-soft">
             {(activityState.data ?? []).slice(0, 6).map((entry) => (
               <li key={entry.id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
                 <span className="min-w-0 flex-1 truncate">{actionLabel(entry.action)}</span>
-                <span className="shrink-0 text-xs text-slate-500">{dateTime(entry.created_at)}</span>
+                <span className="shrink-0 text-xs text-ink-3">{dateTime(entry.created_at)}</span>
               </li>
             ))}
           </ul>
         )}
-        <Link to="/aktivite" className="mt-2 inline-flex text-sm font-medium text-brand-700 hover:underline">
+        <Link to="/aktivite" className="mt-2 inline-flex text-sm font-medium text-navy hover:underline">
           Tüm aktiviteler
         </Link>
       </section>
@@ -144,11 +144,11 @@ function SummaryCard({
   to: string;
 }) {
   return (
-    <Link to={to} className="card flex items-center gap-3 p-4 hover:bg-slate-50">
-      <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-brand-700">{icon}</span>
+    <Link to={to} className="card flex items-center gap-3 p-4 hover:bg-g50">
+      <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-soft text-navy">{icon}</span>
       <span>
         <span className="block text-2xl font-bold leading-tight">{value}</span>
-        <span className="block text-xs text-slate-500">{label}</span>
+        <span className="block text-xs text-ink-3">{label}</span>
       </span>
     </Link>
   );

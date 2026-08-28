@@ -31,6 +31,8 @@ final class ExportSnapshot
     public function __construct(
         private readonly ListPresenter $presenter,
         private readonly ?ValueSet $values = null,
+        /** D11b: gösterilecek ürün adını çözer (elle > kalıcı çeviri > yakalama). */
+        private readonly ?\App\Services\Translation\AdCozumleyici $adlar = null,
     ) {
     }
 
@@ -93,7 +95,7 @@ final class ExportSnapshot
                 // İE#14 A4: kategori panelden ya da yakalamanın kırıntı yolundan gelir;
                 // yoksa null DONAR ve belgede hücre BOŞ basılır — "Kategorisiz" yazılmaz.
                 'category' => ProductDetails::kategori($product, $categoryNames, $this->values),
-                'name' => self::ad($product, self::dil($options)),
+                'name' => $this->ad($product, self::dil($options)),
                 'name_original' => $product['name_original'],
                 // İE#14 A4: detay yoksa en dolu 3-4 öznitelikten türetilir; o da yoksa null.
                 'detail' => ProductDetails::detay($product, $this->values),
@@ -143,16 +145,30 @@ final class ExportSnapshot
      *
      * @param array<string, mixed> $product
      */
-    private static function ad(array $product, string $dil): string
+    private function ad(array $product, string $dil): string
     {
+        $orijinal = is_string($product['name_original'] ?? null) ? trim((string) $product['name_original']) : '';
+
         if ($dil === 'zh') {
-            $orijinal = $product['name_original'] ?? null;
-            if (is_string($orijinal) && trim($orijinal) !== '') {
-                return trim($orijinal);
+            if ($orijinal !== '') {
+                return $orijinal;
             }
+
+            return (string) $product['name'];
         }
 
-        return (string) $product['name'];
+        // D11b: BELGE DE TAZELENEN ÇEVİRİYİ GÖSTERİR.
+        //
+        // `products.name` yakalama anında donar; çeviri turu yalnız belleği
+        // tazeler (K54 — öneri, alana yazılmaz). Belge ham `name`i basarsa,
+        // panelde yeni çeviri görünürken firmaya giden dosyada eski metin kalır.
+        //
+        // Kararı BURASI VERMEZ: `AdCozumleyici` panel, paylaşım sayfası ve belge
+        // için tek kaynaktır (elle > kalıcı çeviri > yakalama). Üç yüzeyin ayrı
+        // kural yazması, D11b'nin ta kendisiydi.
+        $cozum = $this->adlar?->coz($product, $dil);
+
+        return $cozum === null ? (string) $product['name'] : $cozum['ad'];
     }
 
     /**

@@ -1,0 +1,519 @@
+{
+  "dosya_ozeti_5_satir": [
+    "Ne işe yarar: Mal kabul tutanağı ile rücu/tazmin talep PDF'inin alan ve sabit metin sözleşmesini kurar.",
+    "Hangi fazda: V3-D mal kabul, kanıt ve PDF üretimi ile İE#24 belge testlerinde kullanılır.",
+    "Temel ilke: Beklenen/gelen sayım, uygunsuzluk, fotoğraf, parti ve konşimento bağları değişmez kayıtlarla izlenir.",
+    "Çıktı: TR/EN/ZH alan etiketleri, talep cümleleri, imza blokları ve belge şemasıdır.",
+    "Kapsam dışı: Hukuki görüş, mevzuat, GTİP ve gümrük vergisi/oran hesabıdır."
+  ],
+  "schema_version": "1.0",
+  "namespace": "belge.rucu.*",
+  "alan_sozlesmesi": {
+    "ortak": [
+      "document_no",
+      "revision",
+      "order_id",
+      "supplier_id",
+      "buyer_id",
+      "party_id",
+      "bill_of_lading_no",
+      "container_no",
+      "seal_no",
+      "receipt_location",
+      "receipt_date"
+    ],
+    "satir": [
+      "order_line_id",
+      "product_code",
+      "product_name",
+      "expected_variant",
+      "received_variant",
+      "expected_quantity",
+      "received_quantity",
+      "accepted_quantity",
+      "missing_quantity",
+      "damaged_quantity",
+      "wrong_variant_quantity",
+      "discrepancy_types",
+      "discrepancy_description",
+      "package_condition",
+      "photo_refs",
+      "line_note"
+    ],
+    "rucu": [
+      "claim_currency",
+      "claim_amount",
+      "requested_remedy",
+      "response_due_business_days",
+      "supplier_response",
+      "resolution_status"
+    ],
+    "imza": [
+      "prepared_by_name_title",
+      "prepared_by_signature",
+      "received_by_name_title",
+      "received_by_signature",
+      "supplier_representative_name_title",
+      "supplier_representative_signature",
+      "signature_date"
+    ]
+  },
+  "dogrulama_kurallari": [
+    "expected_quantity, received_quantity ve accepted_quantity negatif olamaz.",
+    "missing_quantity = max(expected_quantity - received_quantity, 0).",
+    "accepted_quantity + damaged_quantity + wrong_variant_quantity, received_quantity değerini aşamaz; aynı fiziksel adet iki uygunsuzlukta sayılıyorsa overlap işareti zorunludur.",
+    "Her eksik/hasar/yanlış varyant satırı en az bir açıklama ve mümkünse photo_ref taşır; kanıt yoksa reason_no_photo zorunludur.",
+    "party_id ve bill_of_lading_no belge snapshot'ına bağlıdır; metin olarak sessizce değiştirilemez.",
+    "İmzadan sonra satırlar salt okunur; düzeltme yeni revision üretir."
+  ],
+  "pdf_bolum_sirasi": [
+    "document_header",
+    "shipment_links",
+    "goods_receipt_lines",
+    "discrepancy_summary",
+    "photo_reference_list",
+    "claim_request",
+    "supplier_response",
+    "signatures",
+    "page_footer"
+  ],
+  "sabit_metinler": [
+    {
+      "anahtar": "belge.rucu.goods_receipt_title",
+      "tr": "Mal Kabul Tutanağı",
+      "en": "Goods Receipt Record",
+      "zh": "收货验收记录",
+      "durum": "kesin"
+    },
+    {
+      "anahtar": "belge.rucu.recourse_title",
+      "tr": "Rücu ve Tazmin Talep Raporu",
+      "en": "Recourse and Compensation Claim Report",
+      "zh": "追偿及赔偿请求报告",
+      "durum": "kesin"
+    },
+    {
+      "anahtar": "belge.rucu.document_no",
+      "tr": "Belge numarası",
+      "en": "Document number",
+      "zh": "文件编号",
+      "durum": "kesin"
+    },
+    {
+      "anahtar": "belge.rucu.revision",
+      "tr": "Revizyon",
+      "en": "Revision",
+      "zh": "版本",
+      "durum": "kesin"
+    },
+    {
+      "anahtar": "belge.rucu.order_no",
+      "tr": "Sipariş numarası",
+      "en": "Order number",
+      "zh": "订单编号",
+      "durum": "kesin"
+    },
+    {
+      "anahtar": "belge.rucu.supplier",
+      "tr": "Firma",
+      "en": "Supplier",
+      "zh": "供应商",
+      "durum": "kesin"
+    },
+    {
+      "anahtar": "belge.rucu.buyer",
+      "tr": "Alıcı",
+      "en": "Buyer",
+      "zh": "采购方",
+      "durum": "kesin"
+    },
+    {
+      "anahtar": "belge.rucu.receipt_location",
+      "tr": "Mal kabul yeri",
+      "en": "Receipt location",
+      "zh": "收货地点",
+      "durum": "kesin"
+    },
+    {
+      "anahtar": "belge.rucu.receipt_date",
+      "tr": "Mal kabul tarihi",
+      "en": "Receipt date",
+      "zh": "收货日期",
+      "durum": "kesin"
+    },
+    {
+      "anahtar": "belge.rucu.party_no",
+      "tr": "Parti numarası",
+      "en": "Shipment lot number",
+      "zh": "批次编号",
+      "durum": "kesin"
+    },
+    {
+      "anahtar": "belge.rucu.bill_of_lading",
+      "tr": "Konşimento numarası",
+      "en": "Bill of lading number",
+      "zh": "提单号",
+      "durum": "kesin"
+    },
+    {
+      "anahtar": "belge.rucu.container_no",
+      "tr": "Konteyner numarası",
+      "en": "Container number",
+      "zh": "集装箱号",
+      "durum": "kesin"
+    },
+    {
+      "anahtar": "belge.rucu.seal_no",
+      "tr": "Mühür numarası",
+      "en": "Seal number",
+      "zh": "封条号",
+      "durum": "kesin"
+    },
+    {
+      "anahtar": "belge.rucu.product_code",
+      "tr": "Ürün kodu",
+      "en": "Product code",
+      "zh": "产品编码",
+      "durum": "kesin"
+    },
+    {
+      "anahtar": "belge.rucu.product_name",
+      "tr": "Ürün adı",
+      "en": "Product name",
+      "zh": "产品名称",
+      "durum": "kesin"
+    },
+    {
+      "anahtar": "belge.rucu.expected_variant",
+      "tr": "Beklenen varyant",
+      "en": "Expected variant",
+      "zh": "应到规格/款式",
+      "durum": "kesin"
+    },
+    {
+      "anahtar": "belge.rucu.received_variant",
+      "tr": "Gelen varyant",
+      "en": "Received variant",
+      "zh": "实到规格/款式",
+      "durum": "kesin"
+    },
+    {
+      "anahtar": "belge.rucu.expected_quantity",
+      "tr": "Beklenen adet",
+      "en": "Expected quantity",
+      "zh": "应到数量",
+      "durum": "kesin"
+    },
+    {
+      "anahtar": "belge.rucu.received_quantity",
+      "tr": "Gelen adet",
+      "en": "Received quantity",
+      "zh": "实到数量",
+      "durum": "kesin"
+    },
+    {
+      "anahtar": "belge.rucu.accepted_quantity",
+      "tr": "Kabul edilen adet",
+      "en": "Accepted quantity",
+      "zh": "验收合格数量",
+      "durum": "kesin"
+    },
+    {
+      "anahtar": "belge.rucu.missing_quantity",
+      "tr": "Eksik adet",
+      "en": "Missing quantity",
+      "zh": "短缺数量",
+      "durum": "kesin"
+    },
+    {
+      "anahtar": "belge.rucu.damaged_quantity",
+      "tr": "Hasarlı adet",
+      "en": "Damaged quantity",
+      "zh": "破损数量",
+      "durum": "kesin"
+    },
+    {
+      "anahtar": "belge.rucu.wrong_variant_quantity",
+      "tr": "Yanlış varyant adedi",
+      "en": "Wrong-variant quantity",
+      "zh": "错发规格/款式数量",
+      "durum": "kesin"
+    },
+    {
+      "anahtar": "belge.rucu.discrepancy_type",
+      "tr": "Uygunsuzluk türü",
+      "en": "Discrepancy type",
+      "zh": "差异类型",
+      "durum": "kesin"
+    },
+    {
+      "anahtar": "belge.rucu.discrepancy_missing",
+      "tr": "Eksik",
+      "en": "Missing",
+      "zh": "短缺",
+      "durum": "kesin"
+    },
+    {
+      "anahtar": "belge.rucu.discrepancy_damaged",
+      "tr": "Hasarlı",
+      "en": "Damaged",
+      "zh": "破损",
+      "durum": "kesin"
+    },
+    {
+      "anahtar": "belge.rucu.discrepancy_wrong_variant",
+      "tr": "Yanlış varyant",
+      "en": "Wrong variant",
+      "zh": "错发规格/款式",
+      "durum": "kesin"
+    },
+    {
+      "anahtar": "belge.rucu.discrepancy_description",
+      "tr": "Uygunsuzluk açıklaması",
+      "en": "Discrepancy description",
+      "zh": "差异说明",
+      "durum": "kesin"
+    },
+    {
+      "anahtar": "belge.rucu.package_condition",
+      "tr": "Ambalaj durumu",
+      "en": "Package condition",
+      "zh": "包装状况",
+      "durum": "kesin"
+    },
+    {
+      "anahtar": "belge.rucu.photo_references",
+      "tr": "Fotoğraf referansları",
+      "en": "Photo references",
+      "zh": "照片编号",
+      "durum": "kesin"
+    },
+    {
+      "anahtar": "belge.rucu.photo_reference",
+      "tr": "Fotoğraf {foto_no}",
+      "en": "Photo {foto_no}",
+      "zh": "照片{foto_no}",
+      "durum": "kesin"
+    },
+    {
+      "anahtar": "belge.rucu.evidence_attachment",
+      "tr": "Kanıt eki",
+      "en": "Evidence attachment",
+      "zh": "证据附件",
+      "durum": "kesin"
+    },
+    {
+      "anahtar": "belge.rucu.line_note",
+      "tr": "Satır notu",
+      "en": "Line note",
+      "zh": "明细备注",
+      "durum": "kesin"
+    },
+    {
+      "anahtar": "belge.rucu.summary",
+      "tr": "Özet",
+      "en": "Summary",
+      "zh": "汇总",
+      "durum": "kesin"
+    },
+    {
+      "anahtar": "belge.rucu.total_expected",
+      "tr": "Toplam beklenen",
+      "en": "Total expected",
+      "zh": "应到合计",
+      "durum": "kesin"
+    },
+    {
+      "anahtar": "belge.rucu.total_received",
+      "tr": "Toplam gelen",
+      "en": "Total received",
+      "zh": "实到合计",
+      "durum": "kesin"
+    },
+    {
+      "anahtar": "belge.rucu.total_accepted",
+      "tr": "Toplam kabul edilen",
+      "en": "Total accepted",
+      "zh": "验收合格合计",
+      "durum": "kesin"
+    },
+    {
+      "anahtar": "belge.rucu.total_discrepancy",
+      "tr": "Toplam uygunsuzluk",
+      "en": "Total discrepancy",
+      "zh": "差异合计",
+      "durum": "kesin"
+    },
+    {
+      "anahtar": "belge.rucu.claim_currency",
+      "tr": "Talep para birimi",
+      "en": "Claim currency",
+      "zh": "索赔币种",
+      "durum": "kesin"
+    },
+    {
+      "anahtar": "belge.rucu.claim_amount",
+      "tr": "Talep tutarı",
+      "en": "Claim amount",
+      "zh": "索赔金额",
+      "durum": "kesin"
+    },
+    {
+      "anahtar": "belge.rucu.requested_remedy",
+      "tr": "Talep edilen çözüm",
+      "en": "Requested remedy",
+      "zh": "处理诉求",
+      "durum": "ticari_dil_kontrolu_onerilir"
+    },
+    {
+      "anahtar": "belge.rucu.remedy_refund",
+      "tr": "Bedel iadesi",
+      "en": "Refund",
+      "zh": "退款",
+      "durum": "kesin"
+    },
+    {
+      "anahtar": "belge.rucu.remedy_replacement",
+      "tr": "Ürün tamamlama/değişim",
+      "en": "Replacement or replenishment",
+      "zh": "补发/换货",
+      "durum": "kesin"
+    },
+    {
+      "anahtar": "belge.rucu.remedy_credit_note",
+      "tr": "Alacak dekontu/mahsup",
+      "en": "Credit note or set-off",
+      "zh": "贷项通知/抵扣",
+      "durum": "kesin"
+    },
+    {
+      "anahtar": "belge.rucu.prepared_by",
+      "tr": "Hazırlayan",
+      "en": "Prepared by",
+      "zh": "制表人",
+      "durum": "kesin"
+    },
+    {
+      "anahtar": "belge.rucu.received_by",
+      "tr": "Teslim alan",
+      "en": "Received by",
+      "zh": "收货人",
+      "durum": "kesin"
+    },
+    {
+      "anahtar": "belge.rucu.supplier_representative",
+      "tr": "Firma temsilcisi",
+      "en": "Supplier representative",
+      "zh": "供应商代表",
+      "durum": "kesin"
+    },
+    {
+      "anahtar": "belge.rucu.name_title",
+      "tr": "Ad, soyad ve unvan",
+      "en": "Name and title",
+      "zh": "姓名及职务",
+      "durum": "kesin"
+    },
+    {
+      "anahtar": "belge.rucu.signature",
+      "tr": "İmza",
+      "en": "Signature",
+      "zh": "签字",
+      "durum": "kesin"
+    },
+    {
+      "anahtar": "belge.rucu.signature_date",
+      "tr": "İmza tarihi",
+      "en": "Signature date",
+      "zh": "签署日期",
+      "durum": "kesin"
+    },
+    {
+      "anahtar": "belge.rucu.goods_receipt_statement",
+      "tr": "Bu tutanak, sipariş kayıtları, paketleme belgeleri ve fiilî mal kabul sayımı esas alınarak düzenlenmiştir.",
+      "en": "This record has been prepared based on the order records, packing documents, and the physical receipt count.",
+      "zh": "本验收记录依据订单记录、装箱文件及实际到货清点结果编制。",
+      "durum": "ticari_dil_kontrolu_onerilir"
+    },
+    {
+      "anahtar": "belge.rucu.discrepancy_statement",
+      "tr": "Yukarıdaki eksik, hasarlı veya yanlış varyantlı ürünler kabul sırasında tespit edilmiş ve belirtilen kanıtlarla kayıt altına alınmıştır.",
+      "en": "The shortages, damages, or wrong variants listed above were identified during receipt and recorded with the referenced evidence.",
+      "zh": "上述短缺、破损或错发规格/款式问题已在收货验收时发现，并已通过所列证据予以记录。",
+      "durum": "ticari_dil_kontrolu_onerilir"
+    },
+    {
+      "anahtar": "belge.rucu.formal_claim_statement",
+      "tr": "Yukarıda belirtilen uygunsuzluklara ilişkin resmî itirazımızı ve rücu talebimizi bildiririz.",
+      "en": "We hereby submit our formal objection and recourse claim concerning the discrepancies stated above.",
+      "zh": "我方现就上述差异正式提出异议及追偿请求。",
+      "durum": "ticari_dil_kontrolu_onerilir"
+    },
+    {
+      "anahtar": "belge.rucu.response_request",
+      "tr": "Lütfen bu raporun alınmasından itibaren {yanit_suresi_is_gunu} iş günü içinde çözüm planınızı yazılı olarak teyit edin.",
+      "en": "Please confirm your proposed resolution in writing within {yanit_suresi_is_gunu} business days after receipt of this report.",
+      "zh": "请贵司自收到本报告之日起{yanit_suresi_is_gunu}个工作日内书面确认处理方案。",
+      "durum": "ticari_dil_kontrolu_onerilir"
+    },
+    {
+      "anahtar": "belge.rucu.rights_reservation",
+      "tr": "Bu rapor, tarafların sözleşmeden ve ilgili kayıtlardan doğan haklarına ilişkin nihai mutabakat veya feragat oluşturmaz.",
+      "en": "This report does not constitute a final settlement or waiver of either party's rights arising from the contract and related records.",
+      "zh": "本报告不构成双方对合同及相关记录项下权利的最终结算或放弃。",
+      "durum": "ticari_dil_kontrolu_onerilir"
+    },
+    {
+      "anahtar": "belge.rucu.supplier_response",
+      "tr": "Firma yanıtı",
+      "en": "Supplier response",
+      "zh": "供应商回复",
+      "durum": "kesin"
+    },
+    {
+      "anahtar": "belge.rucu.resolution_status",
+      "tr": "Çözüm durumu",
+      "en": "Resolution status",
+      "zh": "处理状态",
+      "durum": "kesin"
+    },
+    {
+      "anahtar": "belge.rucu.reference_list",
+      "tr": "Ek ve kanıt listesi",
+      "en": "List of attachments and evidence",
+      "zh": "附件及证据清单",
+      "durum": "kesin"
+    },
+    {
+      "anahtar": "belge.rucu.page",
+      "tr": "Sayfa {sayfa_no}/{toplam_sayfa}",
+      "en": "Page {sayfa_no}/{toplam_sayfa}",
+      "zh": "第{sayfa_no}页/共{toplam_sayfa}页",
+      "durum": "kesin"
+    }
+  ],
+  "terim_onerisi": [],
+  "cakisma_kontrolu": {
+    "cikti-terimleri.json": "0 anahtar çakışması",
+    "portal-metinleri.json": "0 anahtar çakışması",
+    "rule": "Çakışma oluşursa yeni anahtar sözlüğe eklenmez; terim_onerisi alanında PM incelemesine alınır."
+  },
+  "kaynaklar": [
+    {
+      "kaynak": "firma-mesaj-kaliplari.md",
+      "kullanim": "TR/EN/ZH ticari yazışma tonu ve firma iletişim disiplini"
+    },
+    {
+      "kaynak": "portal-metinleri.json",
+      "kullanim": "ZH ticari terim tutarlılığı ve yer tutucu eşliği"
+    },
+    {
+      "kaynak": "cikti-terimleri.json",
+      "kullanim": "5B anahtar çakışması kontrolü"
+    },
+    {
+      "kaynak": "Bu görev metni",
+      "kullanim": "mal kabul, rücu, foto, parti/konşimento ve imza alan kapsamı"
+    }
+  ]
+}

@@ -11,12 +11,12 @@ import { ImageOff } from 'lucide-react';
  */
 export default function InboxThumb({ src, className = '' }: { src: string | null; className?: string }) {
   const [bozuk, setBozuk] = useState(false);
-  const kutu = `flex shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-100 ${className}`;
+  const kutu = `flex shrink-0 items-center justify-center rounded-xl border border-line bg-g100 ${className}`;
 
   if (src === null || src === '' || bozuk) {
     return (
       <span className={kutu} title="Görsel gösterilemiyor (kaynak site engeli)">
-        <ImageOff className="h-4 w-4 text-slate-400" aria-hidden />
+        <ImageOff className="h-4 w-4 text-ink-3" aria-hidden />
       </span>
     );
   }
@@ -28,7 +28,7 @@ export default function InboxThumb({ src, className = '' }: { src: string | null
       loading="lazy"
       referrerPolicy="no-referrer"
       onError={() => setBozuk(true)}
-      className={`shrink-0 rounded-xl border border-slate-200 object-cover ${className}`}
+      className={`shrink-0 rounded-xl border border-line object-cover ${className}`}
     />
   );
 }

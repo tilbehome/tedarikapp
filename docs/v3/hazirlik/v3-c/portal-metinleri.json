@@ -1,0 +1,1017 @@
+{
+  "schema_version": "1.0",
+  "table_name": "TedarikApp V3-C Firma Portalı Üç Dilli Metin Çekirdeği",
+  "usage_note": "Firma portalı seçilen dilde bütünüyle TR, EN veya ZH gösterilmelidir. Kaynak ürün, varyant, talep miktarı ve kaynak ticari bilgiler salt okunurdur; firma yanıt alanları yapılandırılmış biçimde doldurulur.",
+  "review_rule": "TR, EN ve ZH metinlerdeki yer tutucular aynı anahtar içinde birebir korunur. durum=gozden_gecir olan bir terim Ürün Sahibi ve Çince ticaret dili uzmanı onayı olmadan kesin terminolojiye alınmaz.",
+  "terms": [
+    {
+      "anahtar": "portal.welcome.title",
+      "tr": "Firma Teklif Portalı",
+      "en": "Supplier Quotation Portal",
+      "zh": "供应商报价门户",
+      "baglam": "Karşılama",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.welcome.subtitle",
+      "tr": "Ürün listesini inceleyin ve teklif bilgilerinizi girin.",
+      "en": "Review the product list and enter your quotation details.",
+      "zh": "请审核产品清单并填写报价信息。",
+      "baglam": "Karşılama",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.welcome.company",
+      "tr": "Alıcı firma: {firma_adi}",
+      "en": "Recipient company: {firma_adi}",
+      "zh": "收件公司：{firma_adi}",
+      "baglam": "Karşılama",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.welcome.list",
+      "tr": "Liste: {liste_adi}",
+      "en": "List: {liste_adi}",
+      "zh": "清单：{liste_adi}",
+      "baglam": "Karşılama",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.instruction.title",
+      "tr": "Doldurma yönergesi",
+      "en": "Completion guide",
+      "zh": "填写说明",
+      "baglam": "Kısa yönerge bandı",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.instruction.summary",
+      "tr": "Her ürün ve varyantı kontrol edin; KDV dâhil DDP birim fiyatı, MOQ, termin ve koli bilgilerini girin.",
+      "en": "Check each product and variant, then enter the DDP unit price including VAT, MOQ, lead time, and carton information.",
+      "zh": "请逐项核对产品及规格，并填写含土耳其增值税的DDP单价、起订量、交期及装箱信息。",
+      "baglam": "Kısa yönerge bandı",
+      "durum": "kesin",
+      "not": "DDP fiyatının Türkiye KDV'sini içerdiği üç dilde açıkça belirtilmiştir."
+    },
+    {
+      "anahtar": "portal.instruction.source_readonly",
+      "tr": "Kaynak ürün, varyant, talep miktarı ve bağlantı bilgileri salt okunurdur; değiştirilemez.",
+      "en": "Source product, variant, requested quantity, and link information are read-only and cannot be changed.",
+      "zh": "原始产品、规格、需求数量及来源链接为只读内容，不可修改。",
+      "baglam": "Kısa yönerge bandı",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.instruction.confidential",
+      "tr": "Bu liste ticari ve gizlidir. Yalnız yetkili kişilerle paylaşınız.",
+      "en": "This list is commercial and confidential. Share it only with authorized persons.",
+      "zh": "本清单属于商业机密，仅限授权人员查阅，请勿转发。",
+      "baglam": "Kısa yönerge bandı",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.instruction.language_help",
+      "tr": "Portal dilini sağ üst köşeden değiştirebilirsiniz.",
+      "en": "You can change the portal language from the upper-right corner.",
+      "zh": "可在页面右上角切换门户语言。",
+      "baglam": "Kısa yönerge bandı",
+      "durum": "kesin",
+      "not": ""
+    },
+
+    {
+      "anahtar": "portal.action.save_draft",
+      "tr": "Taslağı kaydet",
+      "en": "Save draft",
+      "zh": "保存草稿",
+      "baglam": "Eylem",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.action.submit_partial",
+      "tr": "Tamamlananları gönder",
+      "en": "Submit completed rows",
+      "zh": "提交已完成行",
+      "baglam": "Eylem",
+      "durum": "kesin",
+      "not": "Kısmi gönderim, tamamlanmayan satırları taslakta bırakır."
+    },
+    {
+      "anahtar": "portal.action.submit_quote",
+      "tr": "Teklifi gönder",
+      "en": "Submit quotation",
+      "zh": "提交报价",
+      "baglam": "Eylem",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.action.cancel",
+      "tr": "Vazgeç",
+      "en": "Cancel",
+      "zh": "取消",
+      "baglam": "Eylem",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.action.continue",
+      "tr": "Devam et",
+      "en": "Continue",
+      "zh": "继续",
+      "baglam": "Eylem",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.action.back",
+      "tr": "Geri",
+      "en": "Back",
+      "zh": "返回",
+      "baglam": "Eylem",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.action.previous_product",
+      "tr": "Önceki ürün",
+      "en": "Previous product",
+      "zh": "上一个产品",
+      "baglam": "Eylem",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.action.next_product",
+      "tr": "Sonraki ürün",
+      "en": "Next product",
+      "zh": "下一个产品",
+      "baglam": "Eylem",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.action.open_source",
+      "tr": "Kaynak ürünü aç",
+      "en": "Open source product",
+      "zh": "打开原商品链接",
+      "baglam": "Eylem",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.action.add_tier",
+      "tr": "Fiyat kademesi ekle",
+      "en": "Add price tier",
+      "zh": "添加阶梯报价",
+      "baglam": "Eylem",
+      "durum": "kesin",
+      "not": ""
+    },
+
+    {
+      "anahtar": "portal.progress.completed",
+      "tr": "{tamamlanan}/{toplam} ürün tamamlandı",
+      "en": "{tamamlanan}/{toplam} products completed",
+      "zh": "已完成 {tamamlanan}/{toplam} 个产品",
+      "baglam": "İlerleme",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.progress.answered",
+      "tr": "Yanıtlanan",
+      "en": "Answered",
+      "zh": "已回复",
+      "baglam": "İlerleme",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.progress.remaining",
+      "tr": "Kalan",
+      "en": "Remaining",
+      "zh": "待完成",
+      "baglam": "İlerleme",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.progress.current",
+      "tr": "Ürün {current}/{total}",
+      "en": "Product {current}/{total}",
+      "zh": "产品 {current}/{total}",
+      "baglam": "İlerleme",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.progress.required",
+      "tr": "Zorunlu alan",
+      "en": "Required field",
+      "zh": "必填项",
+      "baglam": "İlerleme",
+      "durum": "kesin",
+      "not": ""
+    },
+
+    {
+      "anahtar": "portal.field.source_product",
+      "tr": "Kaynak ürün",
+      "en": "Source product",
+      "zh": "原商品",
+      "baglam": "Alan etiketi",
+      "durum": "kesin",
+      "not": "Salt okunur."
+    },
+    {
+      "anahtar": "portal.field.source_variation",
+      "tr": "Talep edilen varyant",
+      "en": "Requested variant",
+      "zh": "需求规格 / 款式",
+      "baglam": "Alan etiketi",
+      "durum": "kesin",
+      "not": "Salt okunur."
+    },
+    {
+      "anahtar": "portal.field.requested_quantity",
+      "tr": "Talep edilen miktar",
+      "en": "Requested quantity",
+      "zh": "需求数量",
+      "baglam": "Alan etiketi",
+      "durum": "kesin",
+      "not": "Salt okunur."
+    },
+    {
+      "anahtar": "portal.field.response_status",
+      "tr": "Yanıt durumu",
+      "en": "Response status",
+      "zh": "回复状态",
+      "baglam": "Alan etiketi",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.field.ddp_unit_price_vat_included",
+      "tr": "KDV dâhil DDP birim fiyat",
+      "en": "DDP unit price including VAT",
+      "zh": "含土耳其增值税的DDP单价",
+      "baglam": "Alan etiketi",
+      "durum": "kesin",
+      "not": "ZH metin Türkiye ithalat KDV'sinin fiyata dâhil olduğunu açıkça belirtir."
+    },
+    {
+      "anahtar": "portal.field.currency",
+      "tr": "Teklif para birimi",
+      "en": "Quotation currency",
+      "zh": "报价币种",
+      "baglam": "Alan etiketi",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.field.tier_pricing",
+      "tr": "Kademeli fiyat",
+      "en": "Tiered pricing",
+      "zh": "阶梯报价",
+      "baglam": "Alan etiketi",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.field.tier_min_quantity",
+      "tr": "Kademe başlangıç miktarı",
+      "en": "Tier minimum quantity",
+      "zh": "阶梯起订数量",
+      "baglam": "Alan etiketi",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.field.tier_max_quantity",
+      "tr": "Kademe bitiş miktarı",
+      "en": "Tier maximum quantity",
+      "zh": "阶梯最高数量",
+      "baglam": "Alan etiketi",
+      "durum": "kesin",
+      "not": "Son kademe için boş bırakılabilir."
+    },
+    {
+      "anahtar": "portal.field.tier_unit_price",
+      "tr": "Kademe birim fiyatı",
+      "en": "Tier unit price",
+      "zh": "阶梯单价",
+      "baglam": "Alan etiketi",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.field.moq",
+      "tr": "Minimum sipariş (MOQ)",
+      "en": "Minimum order quantity (MOQ)",
+      "zh": "最小起订量（MOQ）",
+      "baglam": "Alan etiketi",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.field.lead_time",
+      "tr": "Termin süresi",
+      "en": "Lead time",
+      "zh": "交期",
+      "baglam": "Alan etiketi",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.field.lead_time_unit",
+      "tr": "Termin birimi",
+      "en": "Lead-time unit",
+      "zh": "交期单位",
+      "baglam": "Alan etiketi",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.field.lead_time_start",
+      "tr": "Termin başlangıcı",
+      "en": "Lead-time starting point",
+      "zh": "交期起算点",
+      "baglam": "Alan etiketi",
+      "durum": "kesin",
+      "not": "Örnek: sipariş onayı, kapora veya numune onayı."
+    },
+    {
+      "anahtar": "portal.field.units_per_carton",
+      "tr": "Koli içi adet",
+      "en": "Units per carton",
+      "zh": "每箱数量",
+      "baglam": "Alan etiketi",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.field.carton_dimensions",
+      "tr": "Koli ölçüsü",
+      "en": "Carton dimensions",
+      "zh": "外箱尺寸",
+      "baglam": "Alan etiketi",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.field.carton_length_cm",
+      "tr": "Koli uzunluğu (cm)",
+      "en": "Carton length (cm)",
+      "zh": "外箱长（cm）",
+      "baglam": "Alan etiketi",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.field.carton_width_cm",
+      "tr": "Koli genişliği (cm)",
+      "en": "Carton width (cm)",
+      "zh": "外箱宽（cm）",
+      "baglam": "Alan etiketi",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.field.carton_height_cm",
+      "tr": "Koli yüksekliği (cm)",
+      "en": "Carton height (cm)",
+      "zh": "外箱高（cm）",
+      "baglam": "Alan etiketi",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.field.carton_cbm",
+      "tr": "Koli hacmi (CBM)",
+      "en": "Carton volume (CBM)",
+      "zh": "单箱体积（CBM）",
+      "baglam": "Alan etiketi",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.field.carton_gross_weight_kg",
+      "tr": "Koli brüt ağırlığı (kg)",
+      "en": "Carton gross weight (kg)",
+      "zh": "单箱毛重（kg）",
+      "baglam": "Alan etiketi",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.field.carton_net_weight_kg",
+      "tr": "Koli net ağırlığı (kg)",
+      "en": "Carton net weight (kg)",
+      "zh": "单箱净重（kg）",
+      "baglam": "Alan etiketi",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.field.packaging",
+      "tr": "Ambalaj şekli",
+      "en": "Packaging",
+      "zh": "包装方式",
+      "baglam": "Alan etiketi",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.field.note",
+      "tr": "Firma notu",
+      "en": "Supplier note",
+      "zh": "供应商备注",
+      "baglam": "Alan etiketi",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.field.alternative_proposal",
+      "tr": "Alternatif öner",
+      "en": "Propose an alternative",
+      "zh": "推荐替代产品",
+      "baglam": "Alan etiketi",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.field.alternative_link",
+      "tr": "Alternatif ürün bağlantısı",
+      "en": "Alternative product link",
+      "zh": "替代产品链接",
+      "baglam": "Alan etiketi",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.field.alternative_details",
+      "tr": "Alternatif açıklaması",
+      "en": "Alternative details",
+      "zh": "替代方案说明",
+      "baglam": "Alan etiketi",
+      "durum": "kesin",
+      "not": "Farklı ölçü, malzeme, varyant veya ticari koşul açıkça belirtilmelidir."
+    },
+
+    {
+      "anahtar": "portal.status.unanswered",
+      "tr": "Yanıtlanmadı",
+      "en": "Not answered",
+      "zh": "未回复",
+      "baglam": "Firma durum seçeneği",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.status.found",
+      "tr": "Bulundu",
+      "en": "Found",
+      "zh": "已找到",
+      "baglam": "Firma durum seçeneği",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.status.not_found",
+      "tr": "Bulunamadı",
+      "en": "Not found",
+      "zh": "未找到",
+      "baglam": "Firma durum seçeneği",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.status.alternative",
+      "tr": "Alternatif var",
+      "en": "Alternative available",
+      "zh": "可提供替代品",
+      "baglam": "Firma durum seçeneği",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.status.needs_information",
+      "tr": "Ek bilgi gerekli",
+      "en": "More information required",
+      "zh": "需补充信息",
+      "baglam": "Firma durum seçeneği",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.status.complete",
+      "tr": "Tamamlandı",
+      "en": "Completed",
+      "zh": "已完成",
+      "baglam": "Firma durum seçeneği",
+      "durum": "kesin",
+      "not": ""
+    },
+
+    {
+      "anahtar": "portal.validation.status_required",
+      "tr": "Lütfen yanıt durumunu seçin.",
+      "en": "Please select a response status.",
+      "zh": "请选择回复状态。",
+      "baglam": "Doğrulama uyarısı",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.validation.found_price_required",
+      "tr": "“Bulundu” seçtiniz; KDV dâhil DDP birim fiyatı girmelisiniz.",
+      "en": "You selected “Found”; enter the DDP unit price including VAT.",
+      "zh": "您选择了“已找到”，请填写含土耳其增值税的DDP单价。",
+      "baglam": "Doğrulama uyarısı",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.validation.found_moq_required",
+      "tr": "“Bulundu” seçtiniz; MOQ girmelisiniz.",
+      "en": "You selected “Found”; enter the MOQ.",
+      "zh": "您选择了“已找到”，请填写最小起订量。",
+      "baglam": "Doğrulama uyarısı",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.validation.found_lead_time_required",
+      "tr": "“Bulundu” seçtiniz; termin süresi girmelisiniz.",
+      "en": "You selected “Found”; enter the lead time.",
+      "zh": "您选择了“已找到”，请填写交期。",
+      "baglam": "Doğrulama uyarısı",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.validation.ddp_vat_confirmation_required",
+      "tr": "DDP birim fiyatının Türkiye KDV'sini içerdiğini onaylayın.",
+      "en": "Confirm that the DDP unit price includes Turkish VAT.",
+      "zh": "请确认DDP单价已包含土耳其增值税。",
+      "baglam": "Doğrulama uyarısı",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.validation.currency_required",
+      "tr": "Lütfen teklif para birimini seçin.",
+      "en": "Please select the quotation currency.",
+      "zh": "请选择报价币种。",
+      "baglam": "Doğrulama uyarısı",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.validation.positive_number",
+      "tr": "Sıfırdan büyük geçerli bir değer girin.",
+      "en": "Enter a valid value greater than zero.",
+      "zh": "请输入大于0的有效数值。",
+      "baglam": "Doğrulama uyarısı",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.validation.tier_incomplete",
+      "tr": "Bu fiyat kademesinin miktar ve birim fiyat alanlarını tamamlayın.",
+      "en": "Complete the quantity and unit-price fields for this price tier.",
+      "zh": "请完整填写该阶梯的数量和单价。",
+      "baglam": "Doğrulama uyarısı",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.validation.tier_order",
+      "tr": "Fiyat kademeleri küçük miktardan büyük miktara sıralanmalıdır.",
+      "en": "Price tiers must be ordered from lower to higher quantity.",
+      "zh": "阶梯数量必须按从小到大排列。",
+      "baglam": "Doğrulama uyarısı",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.validation.tier_overlap",
+      "tr": "Fiyat kademelerinin miktar aralıkları çakışamaz.",
+      "en": "The quantity ranges of price tiers cannot overlap.",
+      "zh": "报价阶梯的数量区间不得重叠。",
+      "baglam": "Doğrulama uyarısı",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.validation.carton_dimensions_together",
+      "tr": "Koli uzunluğu, genişliği ve yüksekliğini birlikte girin.",
+      "en": "Enter carton length, width, and height together.",
+      "zh": "请同时填写外箱长、宽和高。",
+      "baglam": "Doğrulama uyarısı",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.validation.alternative_details_required",
+      "tr": "“Alternatif var” seçtiniz; alternatif ürün bağlantısı veya açıklaması girmelisiniz.",
+      "en": "You selected “Alternative available”; enter an alternative product link or details.",
+      "zh": "您选择了“可提供替代品”，请填写替代产品链接或替代方案说明。",
+      "baglam": "Doğrulama uyarısı",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.validation.not_found_note_required",
+      "tr": "“Bulunamadı” seçtiniz; lütfen kısa bir açıklama girin.",
+      "en": "You selected “Not found”; enter a short explanation.",
+      "zh": "您选择了“未找到”，请填写简要说明。",
+      "baglam": "Doğrulama uyarısı",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.validation.remaining_rows",
+      "tr": "Tamamlanmamış veya hatalı {hata_sayisi} satır var.",
+      "en": "There are {hata_sayisi} incomplete or invalid rows.",
+      "zh": "仍有 {hata_sayisi} 行未完成或填写有误。",
+      "baglam": "Doğrulama uyarısı",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.validation.quantity_below_moq",
+      "tr": "Talep edilen miktar MOQ'nun altında; lütfen kontrol edin.",
+      "en": "The requested quantity is below the MOQ; please review it.",
+      "zh": "需求数量低于最小起订量，请核对。",
+      "baglam": "Doğrulama uyarısı",
+      "durum": "kesin",
+      "not": ""
+    },
+
+    {
+      "anahtar": "portal.system.autosaving",
+      "tr": "Otomatik kaydediliyor…",
+      "en": "Saving automatically…",
+      "zh": "正在自动保存…",
+      "baglam": "Otomatik kayıt / çevrimdışı",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.system.saved_at",
+      "tr": "{kayit_zamani} tarihinde kaydedildi",
+      "en": "Saved at {kayit_zamani}",
+      "zh": "已于 {kayit_zamani} 保存",
+      "baglam": "Otomatik kayıt / çevrimdışı",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.system.save_failed",
+      "tr": "Otomatik kayıt başarısız. Bağlantınızı kontrol edip yeniden deneyin.",
+      "en": "Automatic save failed. Check your connection and try again.",
+      "zh": "自动保存失败，请检查网络连接后重试。",
+      "baglam": "Otomatik kayıt / çevrimdışı",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.system.offline",
+      "tr": "Çevrimdışısınız. Girdiğiniz bilgiler bu cihazda geçici olarak saklanacak.",
+      "en": "You are offline. Your entries will be stored temporarily on this device.",
+      "zh": "当前处于离线状态，您填写的内容将暂存于本设备。",
+      "baglam": "Otomatik kayıt / çevrimdışı",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.system.offline_queued",
+      "tr": "Çevrimdışı değişiklikler eşitleme kuyruğuna alındı.",
+      "en": "Offline changes have been added to the sync queue.",
+      "zh": "离线更改已加入同步队列。",
+      "baglam": "Otomatik kayıt / çevrimdışı",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.system.reconnected",
+      "tr": "Bağlantı yeniden kuruldu.",
+      "en": "Connection restored.",
+      "zh": "网络连接已恢复。",
+      "baglam": "Otomatik kayıt / çevrimdışı",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.system.syncing",
+      "tr": "Bekleyen değişiklikler eşitleniyor…",
+      "en": "Syncing pending changes…",
+      "zh": "正在同步待处理的更改…",
+      "baglam": "Otomatik kayıt / çevrimdışı",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.system.sync_complete",
+      "tr": "Tüm değişiklikler eşitlendi.",
+      "en": "All changes have been synchronized.",
+      "zh": "所有更改已同步。",
+      "baglam": "Otomatik kayıt / çevrimdışı",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.system.conflict",
+      "tr": "Başka bir sürümde değişiklik algılandı. Veri kaybını önlemek için sürümleri karşılaştırın.",
+      "en": "Changes from another version were detected. Compare the versions to prevent data loss.",
+      "zh": "检测到另一版本的更改。为避免数据丢失，请先比较版本。",
+      "baglam": "Otomatik kayıt / çevrimdışı",
+      "durum": "kesin",
+      "not": "Çakışma sessizce son yazan kazanır şeklinde çözülmez."
+    },
+
+    {
+      "anahtar": "portal.partial.title",
+      "tr": "Kısmi yanıt gönder",
+      "en": "Submit a partial response",
+      "zh": "提交部分回复",
+      "baglam": "Kısmi gönderim",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.partial.description",
+      "tr": "Yalnız tamamlanan ürün satırları gönderilir; tamamlanmayan satırlar taslak olarak kalır.",
+      "en": "Only completed product rows will be submitted; incomplete rows will remain as drafts.",
+      "zh": "仅提交已完成的产品行；未完成的行将继续保留为草稿。",
+      "baglam": "Kısmi gönderim",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.partial.ready_count",
+      "tr": "{tamamlanan} tamamlanmış satır gönderilebilir.",
+      "en": "{tamamlanan} completed rows are ready to submit.",
+      "zh": "已有 {tamamlanan} 行完成，可提交。",
+      "baglam": "Kısmi gönderim",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.partial.remaining_count",
+      "tr": "{kalan} satır tamamlanmayı bekliyor.",
+      "en": "{kalan} rows are still incomplete.",
+      "zh": "尚有 {kalan} 行未完成。",
+      "baglam": "Kısmi gönderim",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.partial.button",
+      "tr": "Tamamlanan satırları gönder",
+      "en": "Submit completed rows",
+      "zh": "提交已完成行",
+      "baglam": "Kısmi gönderim",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.partial.confirm",
+      "tr": "{tamamlanan} satır gönderilecek; {kalan} satır taslakta kalacak. Devam edilsin mi?",
+      "en": "{tamamlanan} rows will be submitted and {kalan} rows will remain as drafts. Continue?",
+      "zh": "将提交 {tamamlanan} 行，另有 {kalan} 行继续保留为草稿。是否继续？",
+      "baglam": "Kısmi gönderim",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.partial.success",
+      "tr": "{tamamlanan} tamamlanmış satır başarıyla gönderildi. Kalan satırlara daha sonra devam edebilirsiniz.",
+      "en": "{tamamlanan} completed rows were submitted successfully. You can continue the remaining rows later.",
+      "zh": "已成功提交 {tamamlanan} 个已完成行，其余行可稍后继续填写。",
+      "baglam": "Kısmi gönderim",
+      "durum": "kesin",
+      "not": ""
+    },
+
+    {
+      "anahtar": "portal.submit.title",
+      "tr": "Teklifi gönder",
+      "en": "Submit quotation",
+      "zh": "提交报价",
+      "baglam": "Nihai gönderim",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.submit.confirm_intro",
+      "tr": "“{liste_adi}” için nihai teklifinizi göndermek üzeresiniz. Gönderimden sonra yanıt salt okunur olacaktır.",
+      "en": "You are about to submit the final quotation for “{liste_adi}.” The response will become read-only after submission.",
+      "zh": "您即将提交“{liste_adi}”的最终报价。提交后，回复内容将变为只读。",
+      "baglam": "Nihai gönderim",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.submit.validity_checkbox",
+      "tr": "Bu fiyatların gönderim tarihinden itibaren {gun} gün geçerli olduğunu onaylıyorum.",
+      "en": "I confirm that these prices are valid for {gun} days from the submission date.",
+      "zh": "我确认以上价格自提交之日起 {gun} 天内有效。",
+      "baglam": "Nihai gönderim",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.submit.ddp_checkbox",
+      "tr": "Girdiğim DDP birim fiyatlarının Türkiye KDV'sini içerdiğini onaylıyorum.",
+      "en": "I confirm that the DDP unit prices entered include Turkish VAT.",
+      "zh": "我确认所填DDP单价均已包含土耳其增值税。",
+      "baglam": "Nihai gönderim",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.submit.completeness_checkbox",
+      "tr": "Tüm ürün, varyant, MOQ, termin ve koli bilgilerini kontrol ettim.",
+      "en": "I have reviewed all product, variant, MOQ, lead-time, and carton information.",
+      "zh": "我已核对所有产品、规格、起订量、交期及装箱信息。",
+      "baglam": "Nihai gönderim",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.submit.button",
+      "tr": "Onayla ve teklifi gönder",
+      "en": "Confirm and submit quotation",
+      "zh": "确认并提交报价",
+      "baglam": "Nihai gönderim",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.submit.sending",
+      "tr": "Teklif gönderiliyor…",
+      "en": "Submitting quotation…",
+      "zh": "正在提交报价…",
+      "baglam": "Nihai gönderim",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.submit.blocked_incomplete",
+      "tr": "Nihai teklifi göndermek için tüm zorunlu ürün satırlarını tamamlayın.",
+      "en": "Complete all required product rows before submitting the final quotation.",
+      "zh": "请先完成所有必填产品行，再提交最终报价。",
+      "baglam": "Nihai gönderim",
+      "durum": "kesin",
+      "not": "Kısmi gönderim ayrı akıştır; nihai teklif kapısını açmaz."
+    },
+
+    {
+      "anahtar": "portal.chat.checking_supplier",
+      "tr": "Tedarikçiyle kontrol ediyoruz; kısa süre içinde yanıt vereceğiz.",
+      "en": "We are checking with the supplier and will respond shortly.",
+      "zh": "我们正在向供应商核实，稍后回复。",
+      "baglam": "Satır sohbeti hazır cevabı",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.chat.price_pending",
+      "tr": "Fiyat henüz teyit edilmedi.",
+      "en": "The price is still awaiting confirmation.",
+      "zh": "价格尚待确认。",
+      "baglam": "Satır sohbeti hazır cevabı",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.chat.need_specs",
+      "tr": "Lütfen ürün teknik özelliklerini veya ek görselleri paylaşın.",
+      "en": "Please provide the product specifications or additional images.",
+      "zh": "请补充产品规格或更多图片。",
+      "baglam": "Satır sohbeti hazır cevabı",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.chat.unavailable",
+      "tr": "Bu ürün şu anda tedarik edilemiyor.",
+      "en": "This product is currently unavailable.",
+      "zh": "该产品目前无法供货。",
+      "baglam": "Satır sohbeti hazır cevabı",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.chat.alternative_proposed",
+      "tr": "Alternatif ürün sunabiliriz; lütfen alternatif öneriyi inceleyin.",
+      "en": "We can offer an alternative product; please review the proposal.",
+      "zh": "我们可以提供替代产品，请查看替代方案。",
+      "baglam": "Satır sohbeti hazır cevabı",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.chat.moq_confirmation",
+      "tr": "MOQ bilgisinin yeniden teyit edilmesi gerekiyor.",
+      "en": "The MOQ needs to be reconfirmed.",
+      "zh": "起订量需要重新确认。",
+      "baglam": "Satır sohbeti hazır cevabı",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.chat.lead_time_confirmation",
+      "tr": "Termin süresinin yeniden teyit edilmesi gerekiyor.",
+      "en": "The lead time needs to be reconfirmed.",
+      "zh": "交期需要重新确认。",
+      "baglam": "Satır sohbeti hazır cevabı",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.chat.carton_pending",
+      "tr": "Koli ölçüsü, ağırlık ve CBM bilgileri bekleniyor.",
+      "en": "Carton dimensions, weight, and CBM are pending.",
+      "zh": "装箱尺寸、重量及CBM信息待补充。",
+      "baglam": "Satır sohbeti hazır cevabı",
+      "durum": "kesin",
+      "not": ""
+    },
+
+    {
+      "anahtar": "portal.success.title",
+      "tr": "Teklif başarıyla gönderildi",
+      "en": "Quotation submitted successfully",
+      "zh": "报价提交成功",
+      "baglam": "Gönderim sonrası teşekkür",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.success.body",
+      "tr": "“{liste_adi}” için teklifinizi gönderdiğiniz için teşekkür ederiz. Ekibimiz yanıtınızı değerlendirecektir.",
+      "en": "Thank you for submitting your quotation for “{liste_adi}.” Our team will review your response.",
+      "zh": "感谢贵司提交“{liste_adi}”的报价。我们的团队将对贵司回复进行审核。",
+      "baglam": "Gönderim sonrası teşekkür",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.success.reference",
+      "tr": "Teklif referansı: {referans}",
+      "en": "Quotation reference: {referans}",
+      "zh": "报价编号：{referans}",
+      "baglam": "Gönderim sonrası teşekkür",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.success.sent_at",
+      "tr": "Gönderim zamanı: {gonderim_zamani}",
+      "en": "Submitted at: {gonderim_zamani}",
+      "zh": "提交时间：{gonderim_zamani}",
+      "baglam": "Gönderim sonrası teşekkür",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.success.read_only",
+      "tr": "Gönderilen teklif salt okunurdur. Değişiklik için revizyon talebi gerekir.",
+      "en": "The submitted quotation is read-only. A revision request is required for changes.",
+      "zh": "已提交的报价为只读状态；如需修改，须发起修订申请。",
+      "baglam": "Gönderim sonrası teşekkür",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.success.revision_notice",
+      "tr": "Revizyon istenirse kayıtlı yanıtınız korunur ve yeni bir teklif turu açılır.",
+      "en": "If a revision is requested, your submitted response will be preserved and a new quotation round will open.",
+      "zh": "如需修订，系统将保留已提交的回复，并开启新一轮报价。",
+      "baglam": "Gönderim sonrası teşekkür",
+      "durum": "kesin",
+      "not": ""
+    },
+    {
+      "anahtar": "portal.success.close",
+      "tr": "Bu sayfayı güvenle kapatabilirsiniz.",
+      "en": "You may now close this page safely.",
+      "zh": "您现在可以安全关闭本页面。",
+      "baglam": "Gönderim sonrası teşekkür",
+      "durum": "kesin",
+      "not": ""
+    }
+  ]
+}

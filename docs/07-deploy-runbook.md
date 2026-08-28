@@ -146,7 +146,26 @@ Sonraki sürümler: sihirbaz YOK — zip yüklenir, admin girişinde "veritaban�
 
 ## 7. Yedekleme
 
-- cPanel cron, her gece: DB dump + `public/media/` → tarihli arşiv → `~/backups/` (son 14 gün tutulur).
+- cPanel cron, her gece: **`bin/backup.php`** — üretilen set şudur:
+  - `yedek-<damga>.sql.enc` → veritabanı dökümü (şifreli),
+  - `yedek-<damga>.files.enc` → `config.php` (ya da eski `.env`) + `storage/sozluk-*.php`.
+  Son 14 gün tutulur; off-site (FTP/SMTP) aktarımına **yalnız `.sql.enc`** gider.
+- ⚠️ **`public/media/` YEDEĞE GİRMEZ** (dış denetim F-03, 26 Ağu 2026). Bu satır
+  önceden "DB dump + `public/media/`" diyordu; kod bunu hiç yapmıyordu ve
+  belge okuyan operatör yanlış güvence alıyordu. **İE#22 E4'te KAPATILDI:**
+  gecelik koşu artık medyayı da alıyor ve iki parça üretiyor —
+  `yedek-<damga>.media-manifest.txt` (her gece; dosya adı + boyut + sha256
+  listesi) ve `yedek-<damga>.media.zip` (yalnız toplam boyut
+  `BACKUP_MEDIA_MAX_MB` sınırının altındaysa; varsayılan 200 MB).
+  **Sınır aşılırsa arşiv atlanır ama manifest yine yazılır ve çıktıda AÇIKÇA
+  "ATLANDI" denir** — paylaşımlı hostingde gigabaytlarca dosya gecelik cron'u
+  boğar ve yedeğin kendisini başarısız kılardı. Arşiv atlanıyorsa medya klasörü
+  ayrıca (haftalık, elle ya da hosting panelinden) alınmalıdır; manifest o
+  zaman bile "hangi görsel vardı, bozuldu mu" sorusunu yanıtlar.
+  **Geri yükleme tatbikatı:** `yedek-*.media.zip` dosyasını açıp
+  `public/media/` altına kopyalayın, sonra manifestteki sha256 değerleriyle
+  karşılaştırın (`sha256sum -c` benzeri bir kontrol). Ayda bir denenmelidir —
+  denenmemiş yedek, yedek değildir.
 - **Çöp kutusu temizliği (K15, İE#6):** `bin/purge-trash.php` saklama süresi (`TRASH_RETENTION_DAYS`, varsayılan 30 gün) dolan soft-delete kayıtlarını kalıcı siler. Cron önerisi — yedekten SONRA koşsun ki silinen kayıt en az bir gece yedeğe girmiş olsun:
   ```
   0 4 * * *  /usr/local/bin/php /home/<kullanıcı>/<alan-adı>/bin/purge-trash.php

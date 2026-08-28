@@ -79,6 +79,39 @@ etmenin **kasıtlı** yoludur — kazayla değiştirilecek bir değer değildir.
 
 Verilecekse **en az 32 karakter** olmalıdır (`Config::assertProductionSecrets`).
 
+## 4b. Çeviri sağlayıcısı ve model kimlikleri (İE#20 D1)
+
+Çeviri ayarları **dosyada değil veritabanındadır** (K44): sağlayıcı, model, hedef
+diller ve API anahtarı `settings` tablosunda tutulur, panelden yönetilir
+(Ayarlar → Çeviri). API anahtarı **APP_KEY ile şifrelenir** ve panele bir daha
+geri verilmez — yalnız maskeli önizleme (`sk-…4f2a`) görünür.
+
+### Varsayılan model kimlikleri
+
+| Sağlayıcı | Varsayılan model | Doğrulama |
+|---|---|---|
+| `deepseek` *(varsayılan sağlayıcı)* | `deepseek-v4-flash` | PM bildirimi, 22 Ağu 2026. `deepseek-chat` Temmuz 2026'da emekli edildi. |
+| `anthropic` | `claude-sonnet-4-6` | PM bildirimi, 22 Ağu 2026. `claude-sonnet-5` geçerli bir kimlik değildi. |
+| `openai` | `gpt-5.6-terra` | OpenAI API model belgeleri (developers.openai.com/api/docs/models), 22 Ağu 2026'da doğrulandı: gpt-5.6 ailesinde "zekâ/maliyet dengesi" seçeneği. Önceki değer `gpt-4.1-mini` bu aileden öncesiydi. |
+
+**Varsayılan sağlayıcı neden DeepSeek:** bu yük yüksek hacimli, düşük yaratıcılık
+gerektiren ticari katalog çevirisidir ve varsayılanın kullanıcının cebini koruması
+gerekir. Kullanıcı panelden istediği sağlayıcıya geçebilir.
+
+### Bayat model kimliği neden tehlikelidir
+
+Geçersiz bir model adı sağlayıcıdan `model_not_found` döndürür; çeviri akışı bunu
+yakalar ve **sessizce** sözlük+makine katmanına düşer. Kullanıcı hata görmez,
+yalnızca "çeviriler zayıf" der ve nedenini hiçbir ekranda bulamaz. İki koruma var:
+
+1. **Bağlantıyı test et** düğmesi (Ayarlar → Çeviri) yedeğe **düşmez**;
+   sağlayıcının hata metnini olduğu gibi gösterir.
+2. `CeviriVarsayilanlariTest` kimlikleri sabitler; bir kimlik emekli olup burada
+   güncellenmezse süit kırılır.
+
+**Model kimliği emekli olursa yapılacak:** `LlmTranslator::varsayilanModel()`
+güncellenir, bu tablo ve testteki beklenen değerler aynı commit'te değiştirilir.
+
 ## 5. Sık sorulanlar
 
 **"config.php'yi güncelleme silecek mi?"** Hayır. Release zip'ine `config.php`

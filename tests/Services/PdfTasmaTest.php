@@ -159,10 +159,13 @@ final class PdfTasmaTest extends TestCase
         // 3) Ürün adı düz koyu metin — köprü mavi/altı çizili DEĞİL.
         self::assertStringContainsString('.ad .adlink { color: #101828; text-decoration: none; }', $kaynak);
 
-        // 4) PDF başlıkları TEK SATIR TÜRKÇE (üç dilli kademe kalktı).
+        // 4) PDF başlıkları TEK SATIR (üç dilli kademe kalktı). İE#21 EK-5 ile
+        //    satırın DİLİ seçime bağlandı: metin `$sutun[$sira]`dan gelir, ama
+        //    kademe hâlâ YOKTUR — kâğıtta tek satır kuralı korunur.
         self::assertStringNotContainsString('<span class="cn">', $kaynak);
         self::assertStringNotContainsString('<span class="en">', $kaynak);
-        self::assertStringContainsString('mb_strtoupper($tr', $kaynak);
+        self::assertStringContainsString('mb_strtoupper($metin', $kaynak);
+        self::assertStringContainsString("\$sira = ['tr' => 1, 'zh' => 2, 'en' => 3]", $kaynak);
     }
 
     /** Şartname örneği ÜRETİM SINIFIYLA üretilir — belge ile kod ayrışamaz. */

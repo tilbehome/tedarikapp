@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="240" viewBox="0 0 1600 240">
+  <rect width="1600" height="240" fill="#FFFDF8"/>
+  <rect y="232" width="1600" height="8" fill="#FF6B00"/>
+  <g transform="translate(48 36) scale(.31)">
+    <rect x="16" y="16" width="480" height="480" rx="112" fill="#FF6B00"/>
+    <path d="M104 240 208 180l48 28-106 62z" fill="#FFB000"/>
+    <path d="m408 240-104-60-48 28 106 62z" fill="#FF4D3D"/>
+    <path d="M150 270 256 328l106-58v98c0 18-10 34-25 43l-57 33c-15 9-33 9-48 0l-57-33c-15-9-25-25-25-43z" fill="#1F2530"/>
+    <path d="M170 78h172v64h-52v66h42l-76 82-76-82h42v-66h-52z" fill="#FFFFFF"/>
+  </g>
+  <text x="230" y="108" font-family="DejaVu Sans, Arial, sans-serif" font-size="58" font-weight="700" fill="#1F2530">Tedarik <tspan fill="#FF6B00">App</tspan></text>
+  <text x="234" y="157" font-family="DejaVu Sans, Arial, sans-serif" font-size="22" font-weight="600" letter-spacing="4" fill="#6B7280">AKILLI TEDARİK YÖNETİMİ</text>
+  <text x="980" y="80" font-family="DejaVu Sans, Arial, sans-serif" font-size="28" font-weight="700" fill="#1F2530">TEDARİK LİSTESİ</text>
+  <text x="980" y="116" font-family="DejaVu Sans, Arial, sans-serif" font-size="19" fill="#6B7280">SOURCING LIST / ZH-CN</text>
+  <rect x="980" y="145" width="108" height="40" rx="20" fill="#FFE4CF"/>
+  <text x="1034" y="171" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="700" fill="#C54E00">TR</text>
+  <rect x="1102" y="145" width="108" height="40" rx="20" fill="#FFF0D2"/>
+  <text x="1156" y="171" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="700" fill="#9A6500">EN</text>
+  <rect x="1224" y="145" width="160" height="40" rx="20" fill="#F2EEE9"/>
+  <text x="1304" y="171" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="700" fill="#1F2530">ZH-CN</text>
+  <text x="1510" y="88" text-anchor="end" font-family="DejaVu Sans Mono, monospace" font-size="18" fill="#6B7280">LISTE: TA-0001</text>
+  <text x="1510" y="120" text-anchor="end" font-family="DejaVu Sans Mono, monospace" font-size="18" fill="#6B7280">2026-08-23</text>
+</svg>

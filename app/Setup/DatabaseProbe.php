@@ -72,6 +72,52 @@ final class DatabaseProbe
         return ['ok' => true, 'version' => $version, 'charset' => $charset];
     }
 
+    /**
+     * Bağlantı hatasını SINIFLANDIRIR (İE#20 D2-REV §8): kod + insan dilinde tek
+     * cümle + hangi form alanına odaklanılacağı.
+     *
+     * `humanize()` yalnız cümleyi verir; teşhis ekranı bir de KOD ister — çünkü
+     * "yanlış şifre" ile "sunucu yok" aynı cümleyle geçiştirilirse kullanıcı hangi
+     * alanı düzelteceğini bilemez. Kod, arayüzün ilgili alana odaklanmasını sağlar.
+     *
+     * @return array{kod: string, mesaj: string, alan: string}
+     */
+    public static function classify(string $message): array
+    {
+        return match (true) {
+            str_contains($message, 'Access denied') => [
+                'kod' => 'KIMLIK',
+                'mesaj' => 'Kullanıcı adı veya şifre hatalı (veritabanı sunucusu erişimi reddetti).',
+                'alan' => 'user',
+            ],
+            str_contains($message, 'Unknown database') => [
+                'kod' => 'DB_YOK',
+                'mesaj' => 'Bu isimde bir veritabanı yok. cPanel > MySQL Veritabanları\'ndan '
+                    . 'oluşturup tekrar deneyin.',
+                'alan' => 'name',
+            ],
+            str_contains($message, 'Connection refused'),
+            str_contains($message, 'No such host'),
+            str_contains($message, 'getaddrinfo'),
+            str_contains($message, 'php_network_getaddresses') => [
+                'kod' => 'SUNUCU_YOK',
+                'mesaj' => 'Veritabanı sunucusuna ulaşılamadı. Sunucu adı ve port doğru mu? '
+                    . '(Paylaşımlı hostingde genelde "localhost".)',
+                'alan' => 'host',
+            ],
+            str_contains($message, 'timed out') => [
+                'kod' => 'ZAMAN_ASIMI',
+                'mesaj' => 'Veritabanı sunucusu zaman aşımına uğradı — sunucu ayakta ama yanıt vermiyor.',
+                'alan' => 'host',
+            ],
+            default => [
+                'kod' => 'BILINMIYOR',
+                'mesaj' => 'Veritabanına bağlanılamadı. Bilgileri kontrol edip tekrar deneyin.',
+                'alan' => 'host',
+            ],
+        };
+    }
+
     /** PDO hatasını kullanıcıya gösterilebilir, sır içermeyen bir cümleye çevirir. */
     private function humanize(Throwable $e): string
     {

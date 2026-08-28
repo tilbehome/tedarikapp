@@ -1,0 +1,3338 @@
+{
+  "dosya_ozeti_5_satir": [
+    "Ne işe yarar: Sekiz platformun ortak 1688 yakalama şemasındaki alan yeteneklerini kanıt ve belirsizlik düzeyiyle karşılaştırır.",
+    "Hangi fazda: V3-E platform adaptörleri, yetenek kapıları, skor normalizasyonu ve karar kartında kullanılır.",
+    "Temel ilke: Platformun sağlamadığı alan sıfır puan değildir; kapsam dışı, vekil sinyal veya GİZLİ davranışı açıkça seçilir.",
+    "Çıktı: 32 alan × 8 platform = 256 hücre, platform rolleri ve birincil kaynak kayıtlarıdır.",
+    "Kapsam dışı: İnce ekran tasarımı, otomatik arka plan tarama, GTİP, mevzuat ve gümrük vergisi/oran hesabıdır."
+  ],
+  "schema_version": "1.0",
+  "durum_enum": [
+    "TAM",
+    "KISMİ",
+    "YOK",
+    "DEĞİŞKEN"
+  ],
+  "durum_tanimlari": {
+    "TAM": "İncelenen birincil kaynakta alan doğrudan ve yapılandırılmış biçimde mevcut.",
+    "KISMİ": "Alan mevcut fakat kapsamı sayfa/ürün/rol bazında eksik veya türetilmesi gerekiyor.",
+    "YOK": "Platform rolü veya doğrulanan ortak yüzey alanı sağlamıyor; sıfır puan yazılamaz.",
+    "DEĞİŞKEN": "Alan sayfadan sayfaya veya oturum/bölgeye göre değişiyor; sayfa bazlı kanıt gerekir."
+  },
+  "platform_ust_verisi": [
+    {
+      "platform": "1688",
+      "priority": "P0",
+      "role": "tedarik_kaynagi",
+      "supply_eligible": true,
+      "currencies": [
+        "CNY"
+      ],
+      "languages": [
+        "zh-CN"
+      ],
+      "price_model": "toptan_kademeli_ve_karma",
+      "source_refs": [
+        "SRC-PLT-001",
+        "SRC-PLT-002"
+      ]
+    },
+    {
+      "platform": "Alibaba.com",
+      "priority": "P1",
+      "role": "tedarik_kaynagi",
+      "supply_eligible": true,
+      "currencies": [
+        "USD",
+        "CNY",
+        "değişken"
+      ],
+      "languages": [
+        "en",
+        "çok_dilli"
+      ],
+      "price_model": "toptan_kademeli_ve_teklif",
+      "source_refs": [
+        "SRC-PLT-003",
+        "SRC-PLT-004",
+        "SRC-PLT-005"
+      ]
+    },
+    {
+      "platform": "Made-in-China",
+      "priority": "P2",
+      "role": "tedarik_kaynagi",
+      "supply_eligible": true,
+      "currencies": [
+        "USD",
+        "değişken"
+      ],
+      "languages": [
+        "en",
+        "çok_dilli"
+      ],
+      "price_model": "toptan_fob_ve_teklif",
+      "source_refs": [
+        "SRC-PLT-006",
+        "SRC-PLT-007",
+        "SRC-PLT-008"
+      ]
+    },
+    {
+      "platform": "Global Sources",
+      "priority": "P2",
+      "role": "tedarik_kaynagi",
+      "supply_eligible": true,
+      "currencies": [
+        "USD",
+        "değişken"
+      ],
+      "languages": [
+        "en",
+        "çok_dilli"
+      ],
+      "price_model": "toptan_kademeli_ve_teklif",
+      "source_refs": [
+        "SRC-PLT-009",
+        "SRC-PLT-010",
+        "SRC-PLT-011"
+      ]
+    },
+    {
+      "platform": "AliExpress",
+      "priority": "P3",
+      "role": "referans",
+      "supply_eligible": false,
+      "currencies": [
+        "USD",
+        "yerel_para"
+      ],
+      "languages": [
+        "çok_dilli"
+      ],
+      "price_model": "perakende_ve_opsiyonel_toplu_indirim",
+      "source_refs": [
+        "SRC-PLT-012",
+        "SRC-PLT-013"
+      ]
+    },
+    {
+      "platform": "Taobao",
+      "priority": "P3",
+      "role": "referans",
+      "supply_eligible": false,
+      "currencies": [
+        "CNY"
+      ],
+      "languages": [
+        "zh-CN"
+      ],
+      "price_model": "perakende_ve_kampanya",
+      "source_refs": [
+        "SRC-PLT-014",
+        "SRC-PLT-015",
+        "SRC-PLT-016"
+      ]
+    },
+    {
+      "platform": "Amazon",
+      "priority": "P4",
+      "role": "hedef_pazar_kiyasi",
+      "supply_eligible": false,
+      "currencies": [
+        "pazar_yerel_para"
+      ],
+      "languages": [
+        "pazar_dili"
+      ],
+      "price_model": "perakende_ve_coklu_teklif",
+      "source_refs": [
+        "SRC-PLT-017",
+        "SRC-PLT-018",
+        "SRC-PLT-019"
+      ]
+    },
+    {
+      "platform": "Temu",
+      "priority": "P4",
+      "role": "hedef_pazar_kiyasi",
+      "supply_eligible": false,
+      "currencies": [
+        "pazar_yerel_para"
+      ],
+      "languages": [
+        "çok_dilli"
+      ],
+      "price_model": "perakende_ve_kampanya",
+      "source_refs": [
+        "SRC-PLT-020",
+        "SRC-PLT-021",
+        "SRC-PLT-022"
+      ]
+    }
+  ],
+  "skor_yok_politikasi": {
+    "KAPSAM_DISI_BIRAK": "Alan ve ağırlığı paydadan çıkar; kalan alanları yeniden ağırlıklandır, veri güveni kartında yokluğu göster.",
+    "VEKIL_SINYAL": "Yalnız matriste adı ve kaynağı tanımlı platform içi vekil sinyal varsa kullan; vekil yoksa kapsam dışı bırak.",
+    "GIZLI": "Alan zorunlu ürün metriği veya satıcı karnesi grubunu boş bırakıyorsa sayı/bant/sıralama üretme."
+  },
+  "alanlar": [
+    {
+      "alan_id": "platform_product_id",
+      "alan_tr": "Platform ürün kimliği",
+      "yok_varsayilan_skor_onerisi": "KAPSAM_DISI_BIRAK",
+      "platformlar": {
+        "1688": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği ürün kimliğini yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-001",
+            "SRC-PLT-002"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Alibaba.com": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği ürün kimliğini yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-003",
+            "SRC-PLT-004",
+            "SRC-PLT-005"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Made-in-China": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği ürün kimliğini yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-006",
+            "SRC-PLT-007",
+            "SRC-PLT-008"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Global Sources": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği ürün kimliğini yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-009",
+            "SRC-PLT-010",
+            "SRC-PLT-011"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "AliExpress": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği ürün kimliğini yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-012",
+            "SRC-PLT-013"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Taobao": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği ürün kimliğini yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-014",
+            "SRC-PLT-015",
+            "SRC-PLT-016"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Amazon": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği ürün kimliğini yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-017",
+            "SRC-PLT-018",
+            "SRC-PLT-019"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Temu": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği ürün kimliğini yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-020",
+            "SRC-PLT-021",
+            "SRC-PLT-022"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        }
+      }
+    },
+    {
+      "alan_id": "canonical_url",
+      "alan_tr": "Kanonik ürün URL’si",
+      "yok_varsayilan_skor_onerisi": "KAPSAM_DISI_BIRAK",
+      "platformlar": {
+        "1688": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği ürün URL’sini yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-001",
+            "SRC-PLT-002"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Alibaba.com": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği ürün URL’sini yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-003",
+            "SRC-PLT-004",
+            "SRC-PLT-005"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Made-in-China": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği ürün URL’sini yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-006",
+            "SRC-PLT-007",
+            "SRC-PLT-008"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Global Sources": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği ürün URL’sini yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-009",
+            "SRC-PLT-010",
+            "SRC-PLT-011"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "AliExpress": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar ürün URL’sini doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-012",
+            "SRC-PLT-013"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Taobao": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği ürün URL’sini yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-014",
+            "SRC-PLT-015",
+            "SRC-PLT-016"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Amazon": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar ürün URL’sini doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-017",
+            "SRC-PLT-018",
+            "SRC-PLT-019"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Temu": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği ürün URL’sini yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-020",
+            "SRC-PLT-021",
+            "SRC-PLT-022"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        }
+      }
+    },
+    {
+      "alan_id": "title",
+      "alan_tr": "Ürün başlığı",
+      "yok_varsayilan_skor_onerisi": "GIZLI",
+      "platformlar": {
+        "1688": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar başlığı doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-001",
+            "SRC-PLT-002"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Alibaba.com": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği başlığı yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-003",
+            "SRC-PLT-004",
+            "SRC-PLT-005"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Made-in-China": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği başlığı yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-006",
+            "SRC-PLT-007",
+            "SRC-PLT-008"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Global Sources": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği başlığı yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-009",
+            "SRC-PLT-010",
+            "SRC-PLT-011"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "AliExpress": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği başlığı yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-012",
+            "SRC-PLT-013"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Taobao": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği başlığı yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-014",
+            "SRC-PLT-015",
+            "SRC-PLT-016"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Amazon": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği başlığı yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-017",
+            "SRC-PLT-018",
+            "SRC-PLT-019"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Temu": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği başlığı yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-020",
+            "SRC-PLT-021",
+            "SRC-PLT-022"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        }
+      }
+    },
+    {
+      "alan_id": "category_path",
+      "alan_tr": "Kategori/kırıntı yolu",
+      "yok_varsayilan_skor_onerisi": "VEKIL_SINYAL",
+      "platformlar": {
+        "1688": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar kategori yolunu doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-001",
+            "SRC-PLT-002"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Alibaba.com": {
+          "durum": "KISMİ",
+          "kanit_notu": "İncelenen kaynak kategori yolunu gösterir; ancak sayfa türü, ürün kategorisi, satıcı veya oturuma göre alanın kapsamı daralır.",
+          "kaynak_ref": [
+            "SRC-PLT-003",
+            "SRC-PLT-004",
+            "SRC-PLT-005"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Made-in-China": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği kategori yolunu yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-006",
+            "SRC-PLT-007",
+            "SRC-PLT-008"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Global Sources": {
+          "durum": "KISMİ",
+          "kanit_notu": "İncelenen kaynak kategori yolunu gösterir; ancak sayfa türü, ürün kategorisi, satıcı veya oturuma göre alanın kapsamı daralır.",
+          "kaynak_ref": [
+            "SRC-PLT-009",
+            "SRC-PLT-010",
+            "SRC-PLT-011"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "AliExpress": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar kategori yolunu doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-012",
+            "SRC-PLT-013"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Taobao": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar kategori yolunu doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-014",
+            "SRC-PLT-015",
+            "SRC-PLT-016"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Amazon": {
+          "durum": "KISMİ",
+          "kanit_notu": "İncelenen kaynak kategori yolunu gösterir; ancak sayfa türü, ürün kategorisi, satıcı veya oturuma göre alanın kapsamı daralır.",
+          "kaynak_ref": [
+            "SRC-PLT-017",
+            "SRC-PLT-018",
+            "SRC-PLT-019"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Temu": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar kategori yolunu doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-020",
+            "SRC-PLT-021",
+            "SRC-PLT-022"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        }
+      }
+    },
+    {
+      "alan_id": "currency",
+      "alan_tr": "Kaynak para birimi",
+      "yok_varsayilan_skor_onerisi": "GIZLI",
+      "platformlar": {
+        "1688": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar para birimini doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-001",
+            "SRC-PLT-002"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Alibaba.com": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği para birimini yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-003",
+            "SRC-PLT-004",
+            "SRC-PLT-005"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Made-in-China": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği para birimini yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-006",
+            "SRC-PLT-007",
+            "SRC-PLT-008"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Global Sources": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği para birimini yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-009",
+            "SRC-PLT-010",
+            "SRC-PLT-011"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "AliExpress": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği para birimini yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-012",
+            "SRC-PLT-013"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Taobao": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği para birimini yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-014",
+            "SRC-PLT-015",
+            "SRC-PLT-016"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Amazon": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği para birimini yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-017",
+            "SRC-PLT-018",
+            "SRC-PLT-019"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Temu": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği para birimini yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-020",
+            "SRC-PLT-021",
+            "SRC-PLT-022"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        }
+      }
+    },
+    {
+      "alan_id": "base_price",
+      "alan_tr": "Temel/görünür fiyat",
+      "yok_varsayilan_skor_onerisi": "GIZLI",
+      "platformlar": {
+        "1688": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar görünür fiyatı doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-001",
+            "SRC-PLT-002"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Alibaba.com": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği görünür fiyatı yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-003",
+            "SRC-PLT-004",
+            "SRC-PLT-005"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Made-in-China": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği görünür fiyatı yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-006",
+            "SRC-PLT-007",
+            "SRC-PLT-008"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Global Sources": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği görünür fiyatı yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-009",
+            "SRC-PLT-010",
+            "SRC-PLT-011"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "AliExpress": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği görünür fiyatı yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-012",
+            "SRC-PLT-013"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Taobao": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği görünür fiyatı yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-014",
+            "SRC-PLT-015",
+            "SRC-PLT-016"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Amazon": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği görünür fiyatı yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-017",
+            "SRC-PLT-018",
+            "SRC-PLT-019"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Temu": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği görünür fiyatı yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-020",
+            "SRC-PLT-021",
+            "SRC-PLT-022"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        }
+      }
+    },
+    {
+      "alan_id": "price_tiers",
+      "alan_tr": "Kademeli fiyat",
+      "yok_varsayilan_skor_onerisi": "KAPSAM_DISI_BIRAK",
+      "platformlar": {
+        "1688": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar miktar kademelerini doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-001",
+            "SRC-PLT-002"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Alibaba.com": {
+          "durum": "KISMİ",
+          "kanit_notu": "İncelenen kaynak miktar kademelerini gösterir; ancak sayfa türü, ürün kategorisi, satıcı veya oturuma göre alanın kapsamı daralır.",
+          "kaynak_ref": [
+            "SRC-PLT-003",
+            "SRC-PLT-004",
+            "SRC-PLT-005"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Made-in-China": {
+          "durum": "KISMİ",
+          "kanit_notu": "İncelenen kaynak miktar kademelerini gösterir; ancak sayfa türü, ürün kategorisi, satıcı veya oturuma göre alanın kapsamı daralır.",
+          "kaynak_ref": [
+            "SRC-PLT-006",
+            "SRC-PLT-007",
+            "SRC-PLT-008"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Global Sources": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği miktar kademelerini yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-009",
+            "SRC-PLT-010",
+            "SRC-PLT-011"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "AliExpress": {
+          "durum": "KISMİ",
+          "kanit_notu": "İncelenen kaynak miktar kademelerini gösterir; ancak sayfa türü, ürün kategorisi, satıcı veya oturuma göre alanın kapsamı daralır.",
+          "kaynak_ref": [
+            "SRC-PLT-012",
+            "SRC-PLT-013"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Taobao": {
+          "durum": "YOK",
+          "kanit_notu": "Taobao rolü ve incelenen birincil kaynaklar miktar kademelerini ortak, güvenilir bir alan olarak sağlamaz; sıfır değer üretilmez.",
+          "kaynak_ref": [
+            "SRC-PLT-014",
+            "SRC-PLT-015",
+            "SRC-PLT-016"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": "KAPSAM_DISI_BIRAK"
+        },
+        "Amazon": {
+          "durum": "YOK",
+          "kanit_notu": "Amazon rolü ve incelenen birincil kaynaklar miktar kademelerini ortak, güvenilir bir alan olarak sağlamaz; sıfır değer üretilmez.",
+          "kaynak_ref": [
+            "SRC-PLT-017",
+            "SRC-PLT-018",
+            "SRC-PLT-019"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": "KAPSAM_DISI_BIRAK"
+        },
+        "Temu": {
+          "durum": "DEĞİŞKEN",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar miktar kademelerini doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-020",
+            "SRC-PLT-021",
+            "SRC-PLT-022"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        }
+      }
+    },
+    {
+      "alan_id": "moq",
+      "alan_tr": "Minimum sipariş miktarı",
+      "yok_varsayilan_skor_onerisi": "KAPSAM_DISI_BIRAK",
+      "platformlar": {
+        "1688": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar MOQ alanını doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-001",
+            "SRC-PLT-002"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Alibaba.com": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği MOQ alanını yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-003",
+            "SRC-PLT-004",
+            "SRC-PLT-005"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Made-in-China": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği MOQ alanını yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-006",
+            "SRC-PLT-007",
+            "SRC-PLT-008"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Global Sources": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği MOQ alanını yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-009",
+            "SRC-PLT-010",
+            "SRC-PLT-011"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "AliExpress": {
+          "durum": "YOK",
+          "kanit_notu": "AliExpress rolü ve incelenen birincil kaynaklar MOQ alanını ortak, güvenilir bir alan olarak sağlamaz; sıfır değer üretilmez.",
+          "kaynak_ref": [
+            "SRC-PLT-012",
+            "SRC-PLT-013"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": "KAPSAM_DISI_BIRAK"
+        },
+        "Taobao": {
+          "durum": "YOK",
+          "kanit_notu": "Taobao rolü ve incelenen birincil kaynaklar MOQ alanını ortak, güvenilir bir alan olarak sağlamaz; sıfır değer üretilmez.",
+          "kaynak_ref": [
+            "SRC-PLT-014",
+            "SRC-PLT-015",
+            "SRC-PLT-016"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": "KAPSAM_DISI_BIRAK"
+        },
+        "Amazon": {
+          "durum": "YOK",
+          "kanit_notu": "Amazon rolü ve incelenen birincil kaynaklar MOQ alanını ortak, güvenilir bir alan olarak sağlamaz; sıfır değer üretilmez.",
+          "kaynak_ref": [
+            "SRC-PLT-017",
+            "SRC-PLT-018",
+            "SRC-PLT-019"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": "KAPSAM_DISI_BIRAK"
+        },
+        "Temu": {
+          "durum": "DEĞİŞKEN",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar MOQ alanını doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-020",
+            "SRC-PLT-021",
+            "SRC-PLT-022"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        }
+      }
+    },
+    {
+      "alan_id": "unit",
+      "alan_tr": "Fiyat/miktar birimi",
+      "yok_varsayilan_skor_onerisi": "GIZLI",
+      "platformlar": {
+        "1688": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar birim alanını doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-001",
+            "SRC-PLT-002"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Alibaba.com": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği birim alanını yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-003",
+            "SRC-PLT-004",
+            "SRC-PLT-005"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Made-in-China": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği birim alanını yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-006",
+            "SRC-PLT-007",
+            "SRC-PLT-008"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Global Sources": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği birim alanını yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-009",
+            "SRC-PLT-010",
+            "SRC-PLT-011"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "AliExpress": {
+          "durum": "KISMİ",
+          "kanit_notu": "İncelenen kaynak birim alanını gösterir; ancak sayfa türü, ürün kategorisi, satıcı veya oturuma göre alanın kapsamı daralır.",
+          "kaynak_ref": [
+            "SRC-PLT-012",
+            "SRC-PLT-013"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Taobao": {
+          "durum": "KISMİ",
+          "kanit_notu": "İncelenen kaynak birim alanını gösterir; ancak sayfa türü, ürün kategorisi, satıcı veya oturuma göre alanın kapsamı daralır.",
+          "kaynak_ref": [
+            "SRC-PLT-014",
+            "SRC-PLT-015",
+            "SRC-PLT-016"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Amazon": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar birim alanını doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-017",
+            "SRC-PLT-018",
+            "SRC-PLT-019"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Temu": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar birim alanını doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-020",
+            "SRC-PLT-021",
+            "SRC-PLT-022"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        }
+      }
+    },
+    {
+      "alan_id": "variant_dimensions",
+      "alan_tr": "Varyant boyutları",
+      "yok_varsayilan_skor_onerisi": "GIZLI",
+      "platformlar": {
+        "1688": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar varyant boyutlarını doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-001",
+            "SRC-PLT-002"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Alibaba.com": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği varyant boyutlarını yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-003",
+            "SRC-PLT-004",
+            "SRC-PLT-005"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Made-in-China": {
+          "durum": "KISMİ",
+          "kanit_notu": "İncelenen kaynak varyant boyutlarını gösterir; ancak sayfa türü, ürün kategorisi, satıcı veya oturuma göre alanın kapsamı daralır.",
+          "kaynak_ref": [
+            "SRC-PLT-006",
+            "SRC-PLT-007",
+            "SRC-PLT-008"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Global Sources": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar varyant boyutlarını doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-009",
+            "SRC-PLT-010",
+            "SRC-PLT-011"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "AliExpress": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği varyant boyutlarını yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-012",
+            "SRC-PLT-013"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Taobao": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği varyant boyutlarını yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-014",
+            "SRC-PLT-015",
+            "SRC-PLT-016"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Amazon": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği varyant boyutlarını yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-017",
+            "SRC-PLT-018",
+            "SRC-PLT-019"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Temu": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar varyant boyutlarını doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-020",
+            "SRC-PLT-021",
+            "SRC-PLT-022"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        }
+      }
+    },
+    {
+      "alan_id": "sku_matrix",
+      "alan_tr": "SKU × fiyat × stok matrisi",
+      "yok_varsayilan_skor_onerisi": "GIZLI",
+      "platformlar": {
+        "1688": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar SKU-fiyat-stok bağını doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-001",
+            "SRC-PLT-002"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Alibaba.com": {
+          "durum": "KISMİ",
+          "kanit_notu": "İncelenen kaynak SKU-fiyat-stok bağını gösterir; ancak sayfa türü, ürün kategorisi, satıcı veya oturuma göre alanın kapsamı daralır.",
+          "kaynak_ref": [
+            "SRC-PLT-003",
+            "SRC-PLT-004",
+            "SRC-PLT-005"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Made-in-China": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar SKU-fiyat-stok bağını doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-006",
+            "SRC-PLT-007",
+            "SRC-PLT-008"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Global Sources": {
+          "durum": "YOK",
+          "kanit_notu": "Global Sources rolü ve incelenen birincil kaynaklar SKU-fiyat-stok bağını ortak, güvenilir bir alan olarak sağlamaz; sıfır değer üretilmez.",
+          "kaynak_ref": [
+            "SRC-PLT-009",
+            "SRC-PLT-010",
+            "SRC-PLT-011"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": "GIZLI"
+        },
+        "AliExpress": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği SKU-fiyat-stok bağını yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-012",
+            "SRC-PLT-013"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Taobao": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği SKU-fiyat-stok bağını yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-014",
+            "SRC-PLT-015",
+            "SRC-PLT-016"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Amazon": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar SKU-fiyat-stok bağını doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-017",
+            "SRC-PLT-018",
+            "SRC-PLT-019"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Temu": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar SKU-fiyat-stok bağını doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-020",
+            "SRC-PLT-021",
+            "SRC-PLT-022"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        }
+      }
+    },
+    {
+      "alan_id": "stock",
+      "alan_tr": "Stok / bulunabilirlik",
+      "yok_varsayilan_skor_onerisi": "KAPSAM_DISI_BIRAK",
+      "platformlar": {
+        "1688": {
+          "durum": "DEĞİŞKEN",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar stok bilgisini doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-001",
+            "SRC-PLT-002"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Alibaba.com": {
+          "durum": "KISMİ",
+          "kanit_notu": "İncelenen kaynak stok bilgisini gösterir; ancak sayfa türü, ürün kategorisi, satıcı veya oturuma göre alanın kapsamı daralır.",
+          "kaynak_ref": [
+            "SRC-PLT-003",
+            "SRC-PLT-004",
+            "SRC-PLT-005"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Made-in-China": {
+          "durum": "YOK",
+          "kanit_notu": "Made-in-China rolü ve incelenen birincil kaynaklar stok bilgisini ortak, güvenilir bir alan olarak sağlamaz; sıfır değer üretilmez.",
+          "kaynak_ref": [
+            "SRC-PLT-006",
+            "SRC-PLT-007",
+            "SRC-PLT-008"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": "KAPSAM_DISI_BIRAK"
+        },
+        "Global Sources": {
+          "durum": "YOK",
+          "kanit_notu": "Global Sources rolü ve incelenen birincil kaynaklar stok bilgisini ortak, güvenilir bir alan olarak sağlamaz; sıfır değer üretilmez.",
+          "kaynak_ref": [
+            "SRC-PLT-009",
+            "SRC-PLT-010",
+            "SRC-PLT-011"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": "KAPSAM_DISI_BIRAK"
+        },
+        "AliExpress": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği stok bilgisini yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-012",
+            "SRC-PLT-013"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Taobao": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği stok bilgisini yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-014",
+            "SRC-PLT-015",
+            "SRC-PLT-016"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Amazon": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar stok bilgisini doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-017",
+            "SRC-PLT-018",
+            "SRC-PLT-019"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Temu": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar stok bilgisini doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-020",
+            "SRC-PLT-021",
+            "SRC-PLT-022"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        }
+      }
+    },
+    {
+      "alan_id": "attributes",
+      "alan_tr": "Teknik özellikler",
+      "yok_varsayilan_skor_onerisi": "GIZLI",
+      "platformlar": {
+        "1688": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar ürün özelliklerini doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-001",
+            "SRC-PLT-002"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Alibaba.com": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği ürün özelliklerini yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-003",
+            "SRC-PLT-004",
+            "SRC-PLT-005"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Made-in-China": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği ürün özelliklerini yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-006",
+            "SRC-PLT-007",
+            "SRC-PLT-008"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Global Sources": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği ürün özelliklerini yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-009",
+            "SRC-PLT-010",
+            "SRC-PLT-011"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "AliExpress": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği ürün özelliklerini yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-012",
+            "SRC-PLT-013"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Taobao": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği ürün özelliklerini yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-014",
+            "SRC-PLT-015",
+            "SRC-PLT-016"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Amazon": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği ürün özelliklerini yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-017",
+            "SRC-PLT-018",
+            "SRC-PLT-019"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Temu": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar ürün özelliklerini doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-020",
+            "SRC-PLT-021",
+            "SRC-PLT-022"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        }
+      }
+    },
+    {
+      "alan_id": "gallery_images",
+      "alan_tr": "Görsel galerisi",
+      "yok_varsayilan_skor_onerisi": "KAPSAM_DISI_BIRAK",
+      "platformlar": {
+        "1688": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar görsel galerisini doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-001",
+            "SRC-PLT-002"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Alibaba.com": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği görsel galerisini yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-003",
+            "SRC-PLT-004",
+            "SRC-PLT-005"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Made-in-China": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği görsel galerisini yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-006",
+            "SRC-PLT-007",
+            "SRC-PLT-008"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Global Sources": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği görsel galerisini yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-009",
+            "SRC-PLT-010",
+            "SRC-PLT-011"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "AliExpress": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği görsel galerisini yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-012",
+            "SRC-PLT-013"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Taobao": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği görsel galerisini yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-014",
+            "SRC-PLT-015",
+            "SRC-PLT-016"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Amazon": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği görsel galerisini yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-017",
+            "SRC-PLT-018",
+            "SRC-PLT-019"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Temu": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği görsel galerisini yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-020",
+            "SRC-PLT-021",
+            "SRC-PLT-022"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        }
+      }
+    },
+    {
+      "alan_id": "video",
+      "alan_tr": "Ürün videosu",
+      "yok_varsayilan_skor_onerisi": "KAPSAM_DISI_BIRAK",
+      "platformlar": {
+        "1688": {
+          "durum": "DEĞİŞKEN",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar video medyasını doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-001",
+            "SRC-PLT-002"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Alibaba.com": {
+          "durum": "KISMİ",
+          "kanit_notu": "İncelenen kaynak video medyasını gösterir; ancak sayfa türü, ürün kategorisi, satıcı veya oturuma göre alanın kapsamı daralır.",
+          "kaynak_ref": [
+            "SRC-PLT-003",
+            "SRC-PLT-004",
+            "SRC-PLT-005"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Made-in-China": {
+          "durum": "KISMİ",
+          "kanit_notu": "İncelenen kaynak video medyasını gösterir; ancak sayfa türü, ürün kategorisi, satıcı veya oturuma göre alanın kapsamı daralır.",
+          "kaynak_ref": [
+            "SRC-PLT-006",
+            "SRC-PLT-007",
+            "SRC-PLT-008"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Global Sources": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar video medyasını doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-009",
+            "SRC-PLT-010",
+            "SRC-PLT-011"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "AliExpress": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar video medyasını doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-012",
+            "SRC-PLT-013"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Taobao": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği video medyasını yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-014",
+            "SRC-PLT-015",
+            "SRC-PLT-016"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Amazon": {
+          "durum": "KISMİ",
+          "kanit_notu": "İncelenen kaynak video medyasını gösterir; ancak sayfa türü, ürün kategorisi, satıcı veya oturuma göre alanın kapsamı daralır.",
+          "kaynak_ref": [
+            "SRC-PLT-017",
+            "SRC-PLT-018",
+            "SRC-PLT-019"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Temu": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar video medyasını doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-020",
+            "SRC-PLT-021",
+            "SRC-PLT-022"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        }
+      }
+    },
+    {
+      "alan_id": "seller_id",
+      "alan_tr": "Satıcı kimliği",
+      "yok_varsayilan_skor_onerisi": "GIZLI",
+      "platformlar": {
+        "1688": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar satıcı kimliğini doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-001",
+            "SRC-PLT-002"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Alibaba.com": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği satıcı kimliğini yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-003",
+            "SRC-PLT-004",
+            "SRC-PLT-005"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Made-in-China": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği satıcı kimliğini yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-006",
+            "SRC-PLT-007",
+            "SRC-PLT-008"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Global Sources": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği satıcı kimliğini yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-009",
+            "SRC-PLT-010",
+            "SRC-PLT-011"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "AliExpress": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği satıcı kimliğini yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-012",
+            "SRC-PLT-013"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Taobao": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği satıcı kimliğini yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-014",
+            "SRC-PLT-015",
+            "SRC-PLT-016"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Amazon": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar satıcı kimliğini doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-017",
+            "SRC-PLT-018",
+            "SRC-PLT-019"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Temu": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar satıcı kimliğini doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-020",
+            "SRC-PLT-021",
+            "SRC-PLT-022"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        }
+      }
+    },
+    {
+      "alan_id": "seller_name",
+      "alan_tr": "Satıcı/firma adı",
+      "yok_varsayilan_skor_onerisi": "GIZLI",
+      "platformlar": {
+        "1688": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar satıcı adını doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-001",
+            "SRC-PLT-002"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Alibaba.com": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği satıcı adını yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-003",
+            "SRC-PLT-004",
+            "SRC-PLT-005"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Made-in-China": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği satıcı adını yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-006",
+            "SRC-PLT-007",
+            "SRC-PLT-008"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Global Sources": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği satıcı adını yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-009",
+            "SRC-PLT-010",
+            "SRC-PLT-011"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "AliExpress": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği satıcı adını yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-012",
+            "SRC-PLT-013"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Taobao": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği satıcı adını yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-014",
+            "SRC-PLT-015",
+            "SRC-PLT-016"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Amazon": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar satıcı adını doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-017",
+            "SRC-PLT-018",
+            "SRC-PLT-019"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Temu": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar satıcı adını doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-020",
+            "SRC-PLT-021",
+            "SRC-PLT-022"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        }
+      }
+    },
+    {
+      "alan_id": "seller_location",
+      "alan_tr": "Satıcı konumu",
+      "yok_varsayilan_skor_onerisi": "KAPSAM_DISI_BIRAK",
+      "platformlar": {
+        "1688": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar satıcı konumunu doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-001",
+            "SRC-PLT-002"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Alibaba.com": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği satıcı konumunu yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-003",
+            "SRC-PLT-004",
+            "SRC-PLT-005"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Made-in-China": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği satıcı konumunu yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-006",
+            "SRC-PLT-007",
+            "SRC-PLT-008"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Global Sources": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği satıcı konumunu yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-009",
+            "SRC-PLT-010",
+            "SRC-PLT-011"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "AliExpress": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar satıcı konumunu doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-012",
+            "SRC-PLT-013"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Taobao": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar satıcı konumunu doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-014",
+            "SRC-PLT-015",
+            "SRC-PLT-016"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Amazon": {
+          "durum": "YOK",
+          "kanit_notu": "Amazon rolü ve incelenen birincil kaynaklar satıcı konumunu ortak, güvenilir bir alan olarak sağlamaz; sıfır değer üretilmez.",
+          "kaynak_ref": [
+            "SRC-PLT-017",
+            "SRC-PLT-018",
+            "SRC-PLT-019"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": "KAPSAM_DISI_BIRAK"
+        },
+        "Temu": {
+          "durum": "DEĞİŞKEN",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar satıcı konumunu doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-020",
+            "SRC-PLT-021",
+            "SRC-PLT-022"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        }
+      }
+    },
+    {
+      "alan_id": "seller_badges",
+      "alan_tr": "Satıcı rozetleri/doğrulama",
+      "yok_varsayilan_skor_onerisi": "VEKIL_SINYAL",
+      "platformlar": {
+        "1688": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar satıcı rozetlerini doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-001",
+            "SRC-PLT-002"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Alibaba.com": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği satıcı rozetlerini yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-003",
+            "SRC-PLT-004",
+            "SRC-PLT-005"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Made-in-China": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği satıcı rozetlerini yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-006",
+            "SRC-PLT-007",
+            "SRC-PLT-008"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Global Sources": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği satıcı rozetlerini yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-009",
+            "SRC-PLT-010",
+            "SRC-PLT-011"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "AliExpress": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar satıcı rozetlerini doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-012",
+            "SRC-PLT-013"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Taobao": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar satıcı rozetlerini doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-014",
+            "SRC-PLT-015",
+            "SRC-PLT-016"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Amazon": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar satıcı rozetlerini doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-017",
+            "SRC-PLT-018",
+            "SRC-PLT-019"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Temu": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar satıcı rozetlerini doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-020",
+            "SRC-PLT-021",
+            "SRC-PLT-022"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        }
+      }
+    },
+    {
+      "alan_id": "seller_scorecard",
+      "alan_tr": "Satıcı karnesi",
+      "yok_varsayilan_skor_onerisi": "GIZLI",
+      "platformlar": {
+        "1688": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar satıcı performans sinyallerini doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-001",
+            "SRC-PLT-002"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Alibaba.com": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği satıcı performans sinyallerini yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-003",
+            "SRC-PLT-004",
+            "SRC-PLT-005"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Made-in-China": {
+          "durum": "KISMİ",
+          "kanit_notu": "İncelenen kaynak satıcı performans sinyallerini gösterir; ancak sayfa türü, ürün kategorisi, satıcı veya oturuma göre alanın kapsamı daralır.",
+          "kaynak_ref": [
+            "SRC-PLT-006",
+            "SRC-PLT-007",
+            "SRC-PLT-008"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Global Sources": {
+          "durum": "KISMİ",
+          "kanit_notu": "İncelenen kaynak satıcı performans sinyallerini gösterir; ancak sayfa türü, ürün kategorisi, satıcı veya oturuma göre alanın kapsamı daralır.",
+          "kaynak_ref": [
+            "SRC-PLT-009",
+            "SRC-PLT-010",
+            "SRC-PLT-011"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "AliExpress": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği satıcı performans sinyallerini yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-012",
+            "SRC-PLT-013"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Taobao": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar satıcı performans sinyallerini doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-014",
+            "SRC-PLT-015",
+            "SRC-PLT-016"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Amazon": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar satıcı performans sinyallerini doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-017",
+            "SRC-PLT-018",
+            "SRC-PLT-019"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Temu": {
+          "durum": "DEĞİŞKEN",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar satıcı performans sinyallerini doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-020",
+            "SRC-PLT-021",
+            "SRC-PLT-022"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        }
+      }
+    },
+    {
+      "alan_id": "sales_30d",
+      "alan_tr": "30 günlük satış metriği",
+      "yok_varsayilan_skor_onerisi": "GIZLI",
+      "platformlar": {
+        "1688": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar 30 günlük satış metriğini doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-001",
+            "SRC-PLT-002"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Alibaba.com": {
+          "durum": "YOK",
+          "kanit_notu": "Alibaba.com rolü ve incelenen birincil kaynaklar 30 günlük satış metriğini ortak, güvenilir bir alan olarak sağlamaz; sıfır değer üretilmez.",
+          "kaynak_ref": [
+            "SRC-PLT-003",
+            "SRC-PLT-004",
+            "SRC-PLT-005"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": "GIZLI"
+        },
+        "Made-in-China": {
+          "durum": "YOK",
+          "kanit_notu": "Made-in-China rolü ve incelenen birincil kaynaklar 30 günlük satış metriğini ortak, güvenilir bir alan olarak sağlamaz; sıfır değer üretilmez.",
+          "kaynak_ref": [
+            "SRC-PLT-006",
+            "SRC-PLT-007",
+            "SRC-PLT-008"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": "GIZLI"
+        },
+        "Global Sources": {
+          "durum": "YOK",
+          "kanit_notu": "Global Sources rolü ve incelenen birincil kaynaklar 30 günlük satış metriğini ortak, güvenilir bir alan olarak sağlamaz; sıfır değer üretilmez.",
+          "kaynak_ref": [
+            "SRC-PLT-009",
+            "SRC-PLT-010",
+            "SRC-PLT-011"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": "GIZLI"
+        },
+        "AliExpress": {
+          "durum": "YOK",
+          "kanit_notu": "AliExpress rolü ve incelenen birincil kaynaklar 30 günlük satış metriğini ortak, güvenilir bir alan olarak sağlamaz; sıfır değer üretilmez.",
+          "kaynak_ref": [
+            "SRC-PLT-012",
+            "SRC-PLT-013"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": "GIZLI"
+        },
+        "Taobao": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar 30 günlük satış metriğini doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-014",
+            "SRC-PLT-015",
+            "SRC-PLT-016"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Amazon": {
+          "durum": "YOK",
+          "kanit_notu": "Amazon rolü ve incelenen birincil kaynaklar 30 günlük satış metriğini ortak, güvenilir bir alan olarak sağlamaz; sıfır değer üretilmez.",
+          "kaynak_ref": [
+            "SRC-PLT-017",
+            "SRC-PLT-018",
+            "SRC-PLT-019"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": "GIZLI"
+        },
+        "Temu": {
+          "durum": "DEĞİŞKEN",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar 30 günlük satış metriğini doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-020",
+            "SRC-PLT-021",
+            "SRC-PLT-022"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        }
+      }
+    },
+    {
+      "alan_id": "sales_total",
+      "alan_tr": "Toplam satış/sipariş metriği",
+      "yok_varsayilan_skor_onerisi": "GIZLI",
+      "platformlar": {
+        "1688": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar toplam sipariş/satış metriğini doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-001",
+            "SRC-PLT-002"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Alibaba.com": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar toplam sipariş/satış metriğini doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-003",
+            "SRC-PLT-004",
+            "SRC-PLT-005"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Made-in-China": {
+          "durum": "YOK",
+          "kanit_notu": "Made-in-China rolü ve incelenen birincil kaynaklar toplam sipariş/satış metriğini ortak, güvenilir bir alan olarak sağlamaz; sıfır değer üretilmez.",
+          "kaynak_ref": [
+            "SRC-PLT-006",
+            "SRC-PLT-007",
+            "SRC-PLT-008"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": "GIZLI"
+        },
+        "Global Sources": {
+          "durum": "YOK",
+          "kanit_notu": "Global Sources rolü ve incelenen birincil kaynaklar toplam sipariş/satış metriğini ortak, güvenilir bir alan olarak sağlamaz; sıfır değer üretilmez.",
+          "kaynak_ref": [
+            "SRC-PLT-009",
+            "SRC-PLT-010",
+            "SRC-PLT-011"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": "GIZLI"
+        },
+        "AliExpress": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği toplam sipariş/satış metriğini yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-012",
+            "SRC-PLT-013"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Taobao": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar toplam sipariş/satış metriğini doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-014",
+            "SRC-PLT-015",
+            "SRC-PLT-016"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Amazon": {
+          "durum": "YOK",
+          "kanit_notu": "Amazon rolü ve incelenen birincil kaynaklar toplam sipariş/satış metriğini ortak, güvenilir bir alan olarak sağlamaz; sıfır değer üretilmez.",
+          "kaynak_ref": [
+            "SRC-PLT-017",
+            "SRC-PLT-018",
+            "SRC-PLT-019"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": "GIZLI"
+        },
+        "Temu": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar toplam sipariş/satış metriğini doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-020",
+            "SRC-PLT-021",
+            "SRC-PLT-022"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        }
+      }
+    },
+    {
+      "alan_id": "rating",
+      "alan_tr": "Ürün değerlendirme puanı",
+      "yok_varsayilan_skor_onerisi": "GIZLI",
+      "platformlar": {
+        "1688": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar puanı doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-001",
+            "SRC-PLT-002"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Alibaba.com": {
+          "durum": "KISMİ",
+          "kanit_notu": "İncelenen kaynak puanı gösterir; ancak sayfa türü, ürün kategorisi, satıcı veya oturuma göre alanın kapsamı daralır.",
+          "kaynak_ref": [
+            "SRC-PLT-003",
+            "SRC-PLT-004",
+            "SRC-PLT-005"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Made-in-China": {
+          "durum": "KISMİ",
+          "kanit_notu": "İncelenen kaynak puanı gösterir; ancak sayfa türü, ürün kategorisi, satıcı veya oturuma göre alanın kapsamı daralır.",
+          "kaynak_ref": [
+            "SRC-PLT-006",
+            "SRC-PLT-007",
+            "SRC-PLT-008"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Global Sources": {
+          "durum": "YOK",
+          "kanit_notu": "Global Sources rolü ve incelenen birincil kaynaklar puanı ortak, güvenilir bir alan olarak sağlamaz; sıfır değer üretilmez.",
+          "kaynak_ref": [
+            "SRC-PLT-009",
+            "SRC-PLT-010",
+            "SRC-PLT-011"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": "GIZLI"
+        },
+        "AliExpress": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği puanı yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-012",
+            "SRC-PLT-013"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Taobao": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar puanı doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-014",
+            "SRC-PLT-015",
+            "SRC-PLT-016"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Amazon": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği puanı yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-017",
+            "SRC-PLT-018",
+            "SRC-PLT-019"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Temu": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar puanı doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-020",
+            "SRC-PLT-021",
+            "SRC-PLT-022"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        }
+      }
+    },
+    {
+      "alan_id": "review_count",
+      "alan_tr": "Değerlendirme sayısı",
+      "yok_varsayilan_skor_onerisi": "GIZLI",
+      "platformlar": {
+        "1688": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar değerlendirme sayısını doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-001",
+            "SRC-PLT-002"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Alibaba.com": {
+          "durum": "KISMİ",
+          "kanit_notu": "İncelenen kaynak değerlendirme sayısını gösterir; ancak sayfa türü, ürün kategorisi, satıcı veya oturuma göre alanın kapsamı daralır.",
+          "kaynak_ref": [
+            "SRC-PLT-003",
+            "SRC-PLT-004",
+            "SRC-PLT-005"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Made-in-China": {
+          "durum": "KISMİ",
+          "kanit_notu": "İncelenen kaynak değerlendirme sayısını gösterir; ancak sayfa türü, ürün kategorisi, satıcı veya oturuma göre alanın kapsamı daralır.",
+          "kaynak_ref": [
+            "SRC-PLT-006",
+            "SRC-PLT-007",
+            "SRC-PLT-008"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Global Sources": {
+          "durum": "YOK",
+          "kanit_notu": "Global Sources rolü ve incelenen birincil kaynaklar değerlendirme sayısını ortak, güvenilir bir alan olarak sağlamaz; sıfır değer üretilmez.",
+          "kaynak_ref": [
+            "SRC-PLT-009",
+            "SRC-PLT-010",
+            "SRC-PLT-011"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": "GIZLI"
+        },
+        "AliExpress": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği değerlendirme sayısını yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-012",
+            "SRC-PLT-013"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Taobao": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar değerlendirme sayısını doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-014",
+            "SRC-PLT-015",
+            "SRC-PLT-016"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Amazon": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği değerlendirme sayısını yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-017",
+            "SRC-PLT-018",
+            "SRC-PLT-019"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Temu": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar değerlendirme sayısını doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-020",
+            "SRC-PLT-021",
+            "SRC-PLT-022"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        }
+      }
+    },
+    {
+      "alan_id": "listed_at",
+      "alan_tr": "Yayın/listelenme tarihi",
+      "yok_varsayilan_skor_onerisi": "VEKIL_SINYAL",
+      "platformlar": {
+        "1688": {
+          "durum": "DEĞİŞKEN",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar yayın tarihini doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-001",
+            "SRC-PLT-002"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Alibaba.com": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar yayın tarihini doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-003",
+            "SRC-PLT-004",
+            "SRC-PLT-005"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Made-in-China": {
+          "durum": "KISMİ",
+          "kanit_notu": "İncelenen kaynak yayın tarihini gösterir; ancak sayfa türü, ürün kategorisi, satıcı veya oturuma göre alanın kapsamı daralır.",
+          "kaynak_ref": [
+            "SRC-PLT-006",
+            "SRC-PLT-007",
+            "SRC-PLT-008"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Global Sources": {
+          "durum": "YOK",
+          "kanit_notu": "Global Sources rolü ve incelenen birincil kaynaklar yayın tarihini ortak, güvenilir bir alan olarak sağlamaz; sıfır değer üretilmez.",
+          "kaynak_ref": [
+            "SRC-PLT-009",
+            "SRC-PLT-010",
+            "SRC-PLT-011"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": "VEKIL_SINYAL"
+        },
+        "AliExpress": {
+          "durum": "YOK",
+          "kanit_notu": "AliExpress rolü ve incelenen birincil kaynaklar yayın tarihini ortak, güvenilir bir alan olarak sağlamaz; sıfır değer üretilmez.",
+          "kaynak_ref": [
+            "SRC-PLT-012",
+            "SRC-PLT-013"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": "VEKIL_SINYAL"
+        },
+        "Taobao": {
+          "durum": "KISMİ",
+          "kanit_notu": "İncelenen kaynak yayın tarihini gösterir; ancak sayfa türü, ürün kategorisi, satıcı veya oturuma göre alanın kapsamı daralır.",
+          "kaynak_ref": [
+            "SRC-PLT-014",
+            "SRC-PLT-015",
+            "SRC-PLT-016"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Amazon": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar yayın tarihini doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-017",
+            "SRC-PLT-018",
+            "SRC-PLT-019"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Temu": {
+          "durum": "DEĞİŞKEN",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar yayın tarihini doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-020",
+            "SRC-PLT-021",
+            "SRC-PLT-022"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        }
+      }
+    },
+    {
+      "alan_id": "packaging_text",
+      "alan_tr": "Paketleme açıklaması",
+      "yok_varsayilan_skor_onerisi": "KAPSAM_DISI_BIRAK",
+      "platformlar": {
+        "1688": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar paketleme açıklamasını doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-001",
+            "SRC-PLT-002"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Alibaba.com": {
+          "durum": "KISMİ",
+          "kanit_notu": "İncelenen kaynak paketleme açıklamasını gösterir; ancak sayfa türü, ürün kategorisi, satıcı veya oturuma göre alanın kapsamı daralır.",
+          "kaynak_ref": [
+            "SRC-PLT-003",
+            "SRC-PLT-004",
+            "SRC-PLT-005"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Made-in-China": {
+          "durum": "KISMİ",
+          "kanit_notu": "İncelenen kaynak paketleme açıklamasını gösterir; ancak sayfa türü, ürün kategorisi, satıcı veya oturuma göre alanın kapsamı daralır.",
+          "kaynak_ref": [
+            "SRC-PLT-006",
+            "SRC-PLT-007",
+            "SRC-PLT-008"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Global Sources": {
+          "durum": "KISMİ",
+          "kanit_notu": "İncelenen kaynak paketleme açıklamasını gösterir; ancak sayfa türü, ürün kategorisi, satıcı veya oturuma göre alanın kapsamı daralır.",
+          "kaynak_ref": [
+            "SRC-PLT-009",
+            "SRC-PLT-010",
+            "SRC-PLT-011"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "AliExpress": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar paketleme açıklamasını doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-012",
+            "SRC-PLT-013"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Taobao": {
+          "durum": "YOK",
+          "kanit_notu": "Taobao rolü ve incelenen birincil kaynaklar paketleme açıklamasını ortak, güvenilir bir alan olarak sağlamaz; sıfır değer üretilmez.",
+          "kaynak_ref": [
+            "SRC-PLT-014",
+            "SRC-PLT-015",
+            "SRC-PLT-016"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": "KAPSAM_DISI_BIRAK"
+        },
+        "Amazon": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar paketleme açıklamasını doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-017",
+            "SRC-PLT-018",
+            "SRC-PLT-019"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Temu": {
+          "durum": "DEĞİŞKEN",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar paketleme açıklamasını doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-020",
+            "SRC-PLT-021",
+            "SRC-PLT-022"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        }
+      }
+    },
+    {
+      "alan_id": "units_per_carton",
+      "alan_tr": "Koli içi adet",
+      "yok_varsayilan_skor_onerisi": "KAPSAM_DISI_BIRAK",
+      "platformlar": {
+        "1688": {
+          "durum": "DEĞİŞKEN",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar koli içi adedi doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-001",
+            "SRC-PLT-002"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Alibaba.com": {
+          "durum": "KISMİ",
+          "kanit_notu": "İncelenen kaynak koli içi adedi gösterir; ancak sayfa türü, ürün kategorisi, satıcı veya oturuma göre alanın kapsamı daralır.",
+          "kaynak_ref": [
+            "SRC-PLT-003",
+            "SRC-PLT-004",
+            "SRC-PLT-005"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Made-in-China": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar koli içi adedi doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-006",
+            "SRC-PLT-007",
+            "SRC-PLT-008"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Global Sources": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar koli içi adedi doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-009",
+            "SRC-PLT-010",
+            "SRC-PLT-011"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "AliExpress": {
+          "durum": "YOK",
+          "kanit_notu": "AliExpress rolü ve incelenen birincil kaynaklar koli içi adedi ortak, güvenilir bir alan olarak sağlamaz; sıfır değer üretilmez.",
+          "kaynak_ref": [
+            "SRC-PLT-012",
+            "SRC-PLT-013"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": "KAPSAM_DISI_BIRAK"
+        },
+        "Taobao": {
+          "durum": "YOK",
+          "kanit_notu": "Taobao rolü ve incelenen birincil kaynaklar koli içi adedi ortak, güvenilir bir alan olarak sağlamaz; sıfır değer üretilmez.",
+          "kaynak_ref": [
+            "SRC-PLT-014",
+            "SRC-PLT-015",
+            "SRC-PLT-016"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": "KAPSAM_DISI_BIRAK"
+        },
+        "Amazon": {
+          "durum": "YOK",
+          "kanit_notu": "Amazon rolü ve incelenen birincil kaynaklar koli içi adedi ortak, güvenilir bir alan olarak sağlamaz; sıfır değer üretilmez.",
+          "kaynak_ref": [
+            "SRC-PLT-017",
+            "SRC-PLT-018",
+            "SRC-PLT-019"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": "KAPSAM_DISI_BIRAK"
+        },
+        "Temu": {
+          "durum": "DEĞİŞKEN",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar koli içi adedi doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-020",
+            "SRC-PLT-021",
+            "SRC-PLT-022"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        }
+      }
+    },
+    {
+      "alan_id": "gross_weight",
+      "alan_tr": "Brüt ağırlık",
+      "yok_varsayilan_skor_onerisi": "KAPSAM_DISI_BIRAK",
+      "platformlar": {
+        "1688": {
+          "durum": "DEĞİŞKEN",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar brüt ağırlığı doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-001",
+            "SRC-PLT-002"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Alibaba.com": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar brüt ağırlığı doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-003",
+            "SRC-PLT-004",
+            "SRC-PLT-005"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Made-in-China": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar brüt ağırlığı doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-006",
+            "SRC-PLT-007",
+            "SRC-PLT-008"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Global Sources": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar brüt ağırlığı doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-009",
+            "SRC-PLT-010",
+            "SRC-PLT-011"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "AliExpress": {
+          "durum": "KISMİ",
+          "kanit_notu": "İncelenen kaynak brüt ağırlığı gösterir; ancak sayfa türü, ürün kategorisi, satıcı veya oturuma göre alanın kapsamı daralır.",
+          "kaynak_ref": [
+            "SRC-PLT-012",
+            "SRC-PLT-013"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Taobao": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar brüt ağırlığı doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-014",
+            "SRC-PLT-015",
+            "SRC-PLT-016"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Amazon": {
+          "durum": "KISMİ",
+          "kanit_notu": "İncelenen kaynak brüt ağırlığı gösterir; ancak sayfa türü, ürün kategorisi, satıcı veya oturuma göre alanın kapsamı daralır.",
+          "kaynak_ref": [
+            "SRC-PLT-017",
+            "SRC-PLT-018",
+            "SRC-PLT-019"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Temu": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar brüt ağırlığı doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-020",
+            "SRC-PLT-021",
+            "SRC-PLT-022"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        }
+      }
+    },
+    {
+      "alan_id": "carton_dimensions",
+      "alan_tr": "Koli ölçüleri",
+      "yok_varsayilan_skor_onerisi": "KAPSAM_DISI_BIRAK",
+      "platformlar": {
+        "1688": {
+          "durum": "DEĞİŞKEN",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar koli ölçülerini doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-001",
+            "SRC-PLT-002"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Alibaba.com": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar koli ölçülerini doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-003",
+            "SRC-PLT-004",
+            "SRC-PLT-005"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Made-in-China": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar koli ölçülerini doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-006",
+            "SRC-PLT-007",
+            "SRC-PLT-008"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Global Sources": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar koli ölçülerini doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-009",
+            "SRC-PLT-010",
+            "SRC-PLT-011"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "AliExpress": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar koli ölçülerini doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-012",
+            "SRC-PLT-013"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Taobao": {
+          "durum": "YOK",
+          "kanit_notu": "Taobao rolü ve incelenen birincil kaynaklar koli ölçülerini ortak, güvenilir bir alan olarak sağlamaz; sıfır değer üretilmez.",
+          "kaynak_ref": [
+            "SRC-PLT-014",
+            "SRC-PLT-015",
+            "SRC-PLT-016"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": "KAPSAM_DISI_BIRAK"
+        },
+        "Amazon": {
+          "durum": "KISMİ",
+          "kanit_notu": "İncelenen kaynak koli ölçülerini gösterir; ancak sayfa türü, ürün kategorisi, satıcı veya oturuma göre alanın kapsamı daralır.",
+          "kaynak_ref": [
+            "SRC-PLT-017",
+            "SRC-PLT-018",
+            "SRC-PLT-019"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Temu": {
+          "durum": "DEĞİŞKEN",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar koli ölçülerini doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-020",
+            "SRC-PLT-021",
+            "SRC-PLT-022"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        }
+      }
+    },
+    {
+      "alan_id": "carton_cbm",
+      "alan_tr": "Koli CBM",
+      "yok_varsayilan_skor_onerisi": "KAPSAM_DISI_BIRAK",
+      "platformlar": {
+        "1688": {
+          "durum": "DEĞİŞKEN",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar hazır koli CBM değerini doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-001",
+            "SRC-PLT-002"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Alibaba.com": {
+          "durum": "YOK",
+          "kanit_notu": "Alibaba.com rolü ve incelenen birincil kaynaklar hazır koli CBM değerini ortak, güvenilir bir alan olarak sağlamaz; sıfır değer üretilmez.",
+          "kaynak_ref": [
+            "SRC-PLT-003",
+            "SRC-PLT-004",
+            "SRC-PLT-005"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": "KAPSAM_DISI_BIRAK"
+        },
+        "Made-in-China": {
+          "durum": "YOK",
+          "kanit_notu": "Made-in-China rolü ve incelenen birincil kaynaklar hazır koli CBM değerini ortak, güvenilir bir alan olarak sağlamaz; sıfır değer üretilmez.",
+          "kaynak_ref": [
+            "SRC-PLT-006",
+            "SRC-PLT-007",
+            "SRC-PLT-008"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": "KAPSAM_DISI_BIRAK"
+        },
+        "Global Sources": {
+          "durum": "YOK",
+          "kanit_notu": "Global Sources rolü ve incelenen birincil kaynaklar hazır koli CBM değerini ortak, güvenilir bir alan olarak sağlamaz; sıfır değer üretilmez.",
+          "kaynak_ref": [
+            "SRC-PLT-009",
+            "SRC-PLT-010",
+            "SRC-PLT-011"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": "KAPSAM_DISI_BIRAK"
+        },
+        "AliExpress": {
+          "durum": "YOK",
+          "kanit_notu": "AliExpress rolü ve incelenen birincil kaynaklar hazır koli CBM değerini ortak, güvenilir bir alan olarak sağlamaz; sıfır değer üretilmez.",
+          "kaynak_ref": [
+            "SRC-PLT-012",
+            "SRC-PLT-013"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": "KAPSAM_DISI_BIRAK"
+        },
+        "Taobao": {
+          "durum": "YOK",
+          "kanit_notu": "Taobao rolü ve incelenen birincil kaynaklar hazır koli CBM değerini ortak, güvenilir bir alan olarak sağlamaz; sıfır değer üretilmez.",
+          "kaynak_ref": [
+            "SRC-PLT-014",
+            "SRC-PLT-015",
+            "SRC-PLT-016"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": "KAPSAM_DISI_BIRAK"
+        },
+        "Amazon": {
+          "durum": "YOK",
+          "kanit_notu": "Amazon rolü ve incelenen birincil kaynaklar hazır koli CBM değerini ortak, güvenilir bir alan olarak sağlamaz; sıfır değer üretilmez.",
+          "kaynak_ref": [
+            "SRC-PLT-017",
+            "SRC-PLT-018",
+            "SRC-PLT-019"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": "KAPSAM_DISI_BIRAK"
+        },
+        "Temu": {
+          "durum": "DEĞİŞKEN",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar hazır koli CBM değerini doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-020",
+            "SRC-PLT-021",
+            "SRC-PLT-022"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        }
+      }
+    },
+    {
+      "alan_id": "custom_order",
+      "alan_tr": "Özel üretim/özelleştirme",
+      "yok_varsayilan_skor_onerisi": "KAPSAM_DISI_BIRAK",
+      "platformlar": {
+        "1688": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar özelleştirme işaretini doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-001",
+            "SRC-PLT-002"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Alibaba.com": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği özelleştirme işaretini yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-003",
+            "SRC-PLT-004",
+            "SRC-PLT-005"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Made-in-China": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği özelleştirme işaretini yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-006",
+            "SRC-PLT-007",
+            "SRC-PLT-008"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Global Sources": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar özelleştirme işaretini doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-009",
+            "SRC-PLT-010",
+            "SRC-PLT-011"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "AliExpress": {
+          "durum": "YOK",
+          "kanit_notu": "AliExpress rolü ve incelenen birincil kaynaklar özelleştirme işaretini ortak, güvenilir bir alan olarak sağlamaz; sıfır değer üretilmez.",
+          "kaynak_ref": [
+            "SRC-PLT-012",
+            "SRC-PLT-013"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": "KAPSAM_DISI_BIRAK"
+        },
+        "Taobao": {
+          "durum": "YOK",
+          "kanit_notu": "Taobao rolü ve incelenen birincil kaynaklar özelleştirme işaretini ortak, güvenilir bir alan olarak sağlamaz; sıfır değer üretilmez.",
+          "kaynak_ref": [
+            "SRC-PLT-014",
+            "SRC-PLT-015",
+            "SRC-PLT-016"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": "KAPSAM_DISI_BIRAK"
+        },
+        "Amazon": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar özelleştirme işaretini doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-017",
+            "SRC-PLT-018",
+            "SRC-PLT-019"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Temu": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar özelleştirme işaretini doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-020",
+            "SRC-PLT-021",
+            "SRC-PLT-022"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        }
+      }
+    },
+    {
+      "alan_id": "lead_time",
+      "alan_tr": "Termin/teslim hazırlık süresi",
+      "yok_varsayilan_skor_onerisi": "KAPSAM_DISI_BIRAK",
+      "platformlar": {
+        "1688": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar termin bilgisini doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-001",
+            "SRC-PLT-002"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Alibaba.com": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği termin bilgisini yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-003",
+            "SRC-PLT-004",
+            "SRC-PLT-005"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Made-in-China": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği termin bilgisini yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-006",
+            "SRC-PLT-007",
+            "SRC-PLT-008"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "Global Sources": {
+          "durum": "TAM",
+          "kanit_notu": "İncelenen resmî belge veya ürün örneği termin bilgisini yapılandırılmış ve doğrudan erişilebilir biçimde gösterir.",
+          "kaynak_ref": [
+            "SRC-PLT-009",
+            "SRC-PLT-010",
+            "SRC-PLT-011"
+          ],
+          "kanit_durumu": "doğrulandı",
+          "yok_skor_davranisi": null
+        },
+        "AliExpress": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar termin bilgisini doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-012",
+            "SRC-PLT-013"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Taobao": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar termin bilgisini doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-014",
+            "SRC-PLT-015",
+            "SRC-PLT-016"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Amazon": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar termin bilgisini doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-017",
+            "SRC-PLT-018",
+            "SRC-PLT-019"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        },
+        "Temu": {
+          "durum": "KISMİ",
+          "kanit_notu": "Kanıtlanmadı: Erişilebilen kaynaklar termin bilgisini doğrudan doğrulamaya yetmedi; gerçek temizlenmiş fikstür gelene kadar bu durum kesin yetenek sayılmaz.",
+          "kaynak_ref": [
+            "SRC-PLT-020",
+            "SRC-PLT-021",
+            "SRC-PLT-022"
+          ],
+          "kanit_durumu": "kanıtlanmadı",
+          "yok_skor_davranisi": null
+        }
+      }
+    }
+  ],
+  "kaynaklar": [
+    {
+      "id": "SRC-PLT-001",
+      "platform": "1688",
+      "type": "product_page",
+      "title": "1688 gerçek ürün sayfası örneği",
+      "url": "https://detail.1688.com/offer/867966081795.html",
+      "accessed_at": "2026-08-24",
+      "note": "Dinamik/oturumlu alanların tümü bu görev ortamında yeniden doğrulanamadı; ilgili hücreler kanıtlanmadı."
+    },
+    {
+      "id": "SRC-PLT-002",
+      "platform": "1688",
+      "type": "internal_schema",
+      "title": "TedarikApp demo-urun-seti.json v2",
+      "url": "library:demo-urun-seti.json",
+      "accessed_at": "2026-08-24",
+      "note": "1688 yakalama ortak alan adları için kabul edilmiş kurgusal test şeması; canlı sayfa kanıtı değildir."
+    },
+    {
+      "id": "SRC-PLT-003",
+      "platform": "Alibaba.com",
+      "type": "official_api",
+      "title": "Alibaba ICBU product API response fields",
+      "url": "https://developer.alibaba.com/docs/api.htm?apiId=25439",
+      "accessed_at": "2026-08-24"
+    },
+    {
+      "id": "SRC-PLT-004",
+      "platform": "Alibaba.com",
+      "type": "official_program",
+      "title": "Alibaba.com Verified Suppliers",
+      "url": "https://activity.alibaba.com/page/verifiedsuppliers.html",
+      "accessed_at": "2026-08-24"
+    },
+    {
+      "id": "SRC-PLT-005",
+      "platform": "Alibaba.com",
+      "type": "product_page",
+      "title": "Alibaba.com ürün listeleme örneği",
+      "url": "https://www.alibaba.com/showroom/standalone-video-recorder.html",
+      "accessed_at": "2026-08-24"
+    },
+    {
+      "id": "SRC-PLT-006",
+      "platform": "Made-in-China",
+      "type": "product_page",
+      "title": "Made-in-China ürün sayfası örneği",
+      "url": "https://leaderindustry.en.made-in-china.com/product/OFItsyCuEAfn/China-Hand-Painted-Puppy-Flower-Pot-Hugger-Figurines.html",
+      "accessed_at": "2026-08-24"
+    },
+    {
+      "id": "SRC-PLT-007",
+      "platform": "Made-in-China",
+      "type": "product_page",
+      "title": "Made-in-China fiyat/MOQ/özelleştirme örneği",
+      "url": "https://www.made-in-china.com/price/prodetail_Plastic-Mould_mQLUgMyuHwVW.html",
+      "accessed_at": "2026-08-24"
+    },
+    {
+      "id": "SRC-PLT-008",
+      "platform": "Made-in-China",
+      "type": "supplier_page",
+      "title": "Made-in-China denetlenmiş tedarikçi örneği",
+      "url": "https://dasmic.en.made-in-china.com/product/ZFuaOyAdeXcB/China-Fob-Price-High-Precision-and-High-Precision-Swiss-CNC-Lathes.html",
+      "accessed_at": "2026-08-24"
+    },
+    {
+      "id": "SRC-PLT-009",
+      "platform": "Global Sources",
+      "type": "product_page",
+      "title": "Global Sources kademeli fiyat ürün örneği",
+      "url": "https://www.globalsources.com/Stainless-steel/SG700-1226547675p.htm",
+      "accessed_at": "2026-08-24"
+    },
+    {
+      "id": "SRC-PLT-010",
+      "platform": "Global Sources",
+      "type": "product_page",
+      "title": "Global Sources ürün/MOQ/tedarikçi örneği",
+      "url": "https://m.globalsources.com/Raschel-blanket/Raschel-Blankets-1234287301p.htm",
+      "accessed_at": "2026-08-24"
+    },
+    {
+      "id": "SRC-PLT-011",
+      "platform": "Global Sources",
+      "type": "product_page",
+      "title": "Global Sources varyant/specifikasyon örneği",
+      "url": "https://www.globalsources.com/Gaming-monitor/Gaming-Monitor-1217220304p.htm",
+      "accessed_at": "2026-08-24"
+    },
+    {
+      "id": "SRC-PLT-012",
+      "platform": "AliExpress",
+      "type": "official_api",
+      "title": "AliExpress dropshipper product detail API response",
+      "url": "https://developer.alibaba.com/docs/api.htm?apiId=35321",
+      "accessed_at": "2026-08-24"
+    },
+    {
+      "id": "SRC-PLT-013",
+      "platform": "AliExpress",
+      "type": "official_api",
+      "title": "AliExpress package/weight/SKU fields",
+      "url": "https://developer.alibaba.com/docs/api.htm?apiId=30172&scopeId=12784",
+      "accessed_at": "2026-08-24"
+    },
+    {
+      "id": "SRC-PLT-014",
+      "platform": "Taobao",
+      "type": "official_api",
+      "title": "Taobao item detail fields",
+      "url": "https://developer.alibaba.com/docs/api.htm?apiId=315",
+      "accessed_at": "2026-08-24"
+    },
+    {
+      "id": "SRC-PLT-015",
+      "platform": "Taobao",
+      "type": "official_api",
+      "title": "Taobao detail SKU/stock/rate response",
+      "url": "https://developer.alibaba.com/docs/doc.htm?articleId=23559&docType=2&treeId=34",
+      "accessed_at": "2026-08-24"
+    },
+    {
+      "id": "SRC-PLT-016",
+      "platform": "Taobao",
+      "type": "official_api",
+      "title": "Taobao affiliate item detail fields",
+      "url": "https://developer.alibaba.com/docs/api.htm?apiId=46283",
+      "accessed_at": "2026-08-24"
+    },
+    {
+      "id": "SRC-PLT-017",
+      "platform": "Amazon",
+      "type": "official_api",
+      "title": "Amazon Catalog Items API use cases",
+      "url": "https://developer-docs.amazon.com/sp-api/docs/catalog-items-api-v2022-04-01-use-case-guide",
+      "accessed_at": "2026-08-24"
+    },
+    {
+      "id": "SRC-PLT-018",
+      "platform": "Amazon",
+      "type": "official_api",
+      "title": "Amazon product listing management",
+      "url": "https://developer-docs.amazon.com/sp-api/lang-en_EN/docs/manage-product-listings-guide",
+      "accessed_at": "2026-08-24"
+    },
+    {
+      "id": "SRC-PLT-019",
+      "platform": "Amazon",
+      "type": "product_page",
+      "title": "Amazon Home & Kitchen product example",
+      "url": "https://us.amazon.com/LG-NeoChef-Inverter-Microwave-Black/dp/B0754F4WVX",
+      "accessed_at": "2026-08-24"
+    },
+    {
+      "id": "SRC-PLT-020",
+      "platform": "Temu",
+      "type": "official_support",
+      "title": "Temu Support Center",
+      "url": "https://www.temu.com/rs-en/support-center.html",
+      "accessed_at": "2026-08-24"
+    },
+    {
+      "id": "SRC-PLT-021",
+      "platform": "Temu",
+      "type": "official_seller",
+      "title": "Temu Seller Center",
+      "url": "https://seller.temu.com/login.html",
+      "accessed_at": "2026-08-24"
+    },
+    {
+      "id": "SRC-PLT-022",
+      "platform": "Temu",
+      "type": "product_page",
+      "title": "Temu product page example",
+      "url": "https://www.temu.com/hu/1-db-sziv%C3%A1rg%C3%A1smentes-5-cs%C3%A9sze-bento-doboz-4-rekesszel-%C3%A9s-vill%C3%A1val-feln%C5%91tteknek-%C3%A9s-tizen%C3%A9veseknek-t%C3%B6k%C3%A9letes-eb%C3%A9dre-%C3%BAtk%C3%B6zben-g-601099514779665.html",
+      "accessed_at": "2026-08-24",
+      "note": "Ürün gövdesi bölge/oturum nedeniyle araçta tam render edilmedi; görünür olmayan alanlar kanıtlanmadı."
+    }
+  ]
+}

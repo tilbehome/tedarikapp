@@ -3,21 +3,36 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="color-scheme" content="light" />
-    <meta name="theme-color" content="#1d4ed8" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#0F2557" />
     <!-- Panel oturum arkasındadır; arama motorlarına açılmaz. -->
     <meta name="robots" content="noindex, nofollow" />
 
     <!-- Kimlik (İE#10.5 ek — Ürün Sahibi talebi): profesyonel başlık/açıklama/ikon seti. -->
-    <title>Tedarikapp — Ürün Tedarik Asistanı</title>
-    <meta name="description" content="Ürün Tedarik Asistanı (Tedarikapp): 1688 kaynaklı ürün araştırma ve sipariş listesi yönetimi — liste takibi, kur hesapları, Excel/PDF çıktı ve firma paylaşımı tek panelde." />
-    <meta name="application-name" content="Tedarikapp" />
-    <meta name="apple-mobile-web-app-title" content="Tedarikapp" />
+    <title>TedarikApp — Ürün Tedarik Asistanı</title>
+    <meta name="description" content="Ürün Tedarik Asistanı (TedarikApp): tedarik sitelerinden ürün araştırma ve sipariş listesi yönetimi — liste takibi, kur hesapları, Excel/PDF çıktı ve firma paylaşımı tek panelde." />
+    <meta name="application-name" content="TedarikApp" />
+    <meta name="apple-mobile-web-app-title" content="TedarikApp" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 
+    <!-- İE#16 D1.2 — FONTLAR SELF-HOST: Inter (Latin) + Noto Sans SC (CJK dilimli).
+         Google'a DIŞ İSTEK YOK (K45). Dosyalar /public/fonts altındadır ve
+         paylaşım sayfasıyla AYNI kaynağı kullanır — tek font seti, tek indirme. -->
+    <link rel="stylesheet" href="/fonts/inter.css" />
+    <link rel="stylesheet" href="/fonts/noto-sans-sc.css" />
+    <link rel="preload" as="font" type="font/woff2" href="/fonts/inter-400-latin-ext.woff2" crossorigin />
+
+    <!-- İE#21 B13 — MARKA FAVICON SETİ (docs/marka/favicon).
+         .ico ÖNCE gelir: eski tarayıcılar ve bazı masaüstü kısayolları SVG
+         okumaz; sıralama bir zevk değil, uyumluluk sırasıdır. -->
+    <link rel="icon" href="/panel/favicon.ico" sizes="any" />
     <link rel="icon" type="image/svg+xml" href="/panel/favicon.svg" />
     <link rel="apple-touch-icon" sizes="180x180" href="/panel/apple-touch-icon.png" />
+    <link rel="manifest" href="/panel/site.webmanifest" />
+    <!-- Tema rengi LACİVERTTİR: marka amblemi turuncu ama arayüzün kimliği
+         lacivert kalır (B13 — hibrit entegrasyon). -->
+    <meta name="theme-color" content="#0F2557" />
 
     <!-- Sosyal önizleme (panel linki mesajla paylaşılırsa düzgün görünür; sayfa yine noindex). -->
     <meta property="og:type" content="website" />
@@ -26,9 +41,9 @@
     <meta property="og:image" content="https://tedarikapp.tilbehometoptan.com/panel/og-image.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:site_name" content="Tedarikapp" />
-    <meta property="og:title" content="Tedarikapp — Ürün Tedarik Asistanı" />
-    <meta property="og:description" content="Ürün Tedarik Asistanı — 1688 kaynaklı ürün araştırma ve sipariş listesi yönetimi." />
+    <meta property="og:site_name" content="TedarikApp" />
+    <meta property="og:title" content="TedarikApp — Ürün Tedarik Asistanı" />
+    <meta property="og:description" content="Ürün Tedarik Asistanı — tedarik sitelerinden ürün araştırma ve sipariş listesi yönetimi." />
 
     <!-- K45 canlı vaka: /public/panel gibi yanlış adres statik açılınca SPA rotası
          tutmuyor ve sayfa BOŞ kalıyordu. Yönlendirme HARİCİ dosyada (İE#10.5 PM rötuşu):

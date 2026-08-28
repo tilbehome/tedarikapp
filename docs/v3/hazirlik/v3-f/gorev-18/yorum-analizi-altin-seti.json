@@ -1,0 +1,1642 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "schema_version": "1.0.0",
+  "dataset_name": "TedarikApp V3-F Çince Yorum Analizi Altın Seti",
+  "generated_at": "2026-08-26",
+  "record_schema": {
+    "case_id_pattern": "^YRM-[0-9]{3}$",
+    "required_case_fields": [
+      "id",
+      "demo_id",
+      "raw_comments_zh",
+      "expected",
+      "trap_types"
+    ],
+    "required_comment_fields": [
+      "comment_id",
+      "author_role",
+      "text"
+    ],
+    "required_expected_fields": [
+      "labels",
+      "tr_summary",
+      "confidence",
+      "assign_to_demo_id",
+      "input_comment_count",
+      "excluded_comment_ids",
+      "evidence_zh"
+    ],
+    "author_role_enum": [
+      "buyer",
+      "seller"
+    ]
+  },
+  "language_policy": "Ham yorum ZH korunur; beklenen özet TR'dir. Karışık dilli vaka ayrıca işaretlenir.",
+  "source_policy": "Vakalardaki yorumlar kurgusaldır; canlı platformdan veya gerçek kişiden alınmamıştır. Ürün bağları demo-urun-seti.json DM-001..DM-100 referansıdır.",
+  "use_boundary": "Bu çıktı sipariş öncesi tek bir kalite sinyalidir. Numune, AQL, uygunluk belgesi, sipariş veya nihai ticari karar yerine geçmez.",
+  "closed_label_set": [
+    "kalite",
+    "ölçü",
+    "renk",
+    "paket",
+    "kargo",
+    "koku",
+    "dayanıklılık",
+    "hizmet",
+    "olumlu",
+    "belirsiz"
+  ],
+  "confidence_classes": [
+    "yüksek",
+    "orta",
+    "düşük"
+  ],
+  "assignment_rule": "Yorum yalnız açık ürün/demonstrasyon bağlamına atanır; başka üründen söz edilmesi yeni ürün eşleşmesi oluşturmaz.",
+  "aggregation_rule": "Özet, girişteki yorum sayısını ve kanıtlanan tekrar sayılarını korur; dışlanan spam/satıcı cevabı paydadan ayrıca açıklanır.",
+  "acceptance_gate": {
+    "label_accuracy_min_pct": 90,
+    "wrong_product_assignment_pct": 0,
+    "closed_set_violation_count": 0,
+    "seller_reply_counted_as_buyer_review": 0,
+    "numeric_fact_preservation_pct": 100
+  },
+  "cases": [
+    {
+      "id": "YRM-001",
+      "demo_id": "DM-001",
+      "product_name_zh": "竹纤维浴巾 70×140cm 400g",
+      "product_name_tr": "Bambu elyaf banyo havlusu 70×140cm 400g",
+      "raw_comments_zh": [
+        {
+          "comment_id": "a1",
+          "author_role": "buyer",
+          "text": "吸水性很好，洗了三次也没有掉色。"
+        },
+        {
+          "comment_id": "a2",
+          "author_role": "buyer",
+          "text": "毛巾很柔软，尺寸也够大。"
+        },
+        {
+          "comment_id": "a3",
+          "author_role": "buyer",
+          "text": "用了一个月还是很蓬松。"
+        }
+      ],
+      "expected": {
+        "labels": [
+          "olumlu",
+          "dayanıklılık"
+        ],
+        "tr_summary": "3 yorumun 3'ü ürünü olumlu değerlendiriyor; 2 yorum kullanım/yıkama sonrasında performansın korunduğunu belirtiyor.",
+        "confidence": "yüksek",
+        "assign_to_demo_id": "DM-001",
+        "input_comment_count": 3,
+        "excluded_comment_ids": [],
+        "evidence_zh": {
+          "olumlu": [
+            "吸水性很好",
+            "很柔软"
+          ],
+          "dayanıklılık": [
+            "用了一个月还是很蓬松"
+          ]
+        }
+      },
+      "trap_types": [],
+      "review_note": ""
+    },
+    {
+      "id": "YRM-002",
+      "demo_id": "DM-003",
+      "product_name_zh": "法兰绒床笠 150×200cm",
+      "product_name_tr": "Flanel lastikli çarşaf 150×200cm",
+      "raw_comments_zh": [
+        {
+          "comment_id": "b1",
+          "author_role": "buyer",
+          "text": "标的是150×200cm，实测只有145×195cm。"
+        },
+        {
+          "comment_id": "b2",
+          "author_role": "buyer",
+          "text": "四个角套不上床垫。"
+        },
+        {
+          "comment_id": "b3",
+          "author_role": "buyer",
+          "text": "尺寸偏小。"
+        },
+        {
+          "comment_id": "b4",
+          "author_role": "buyer",
+          "text": "面料手感还可以。"
+        }
+      ],
+      "expected": {
+        "labels": [
+          "ölçü",
+          "olumlu"
+        ],
+        "tr_summary": "4 yorumun 3'ü ürünün ölçüsünün küçük olduğunu, 1'i kumaş hissinin kabul edilebilir olduğunu söylüyor.",
+        "confidence": "yüksek",
+        "assign_to_demo_id": "DM-003",
+        "input_comment_count": 4,
+        "excluded_comment_ids": [],
+        "evidence_zh": {
+          "ölçü": [
+            "实测只有145×195cm",
+            "尺寸偏小"
+          ],
+          "olumlu": [
+            "手感还可以"
+          ]
+        }
+      },
+      "trap_types": [],
+      "review_note": ""
+    },
+    {
+      "id": "YRM-003",
+      "demo_id": "DM-005",
+      "product_name_zh": "加厚遮光窗帘 140×260cm",
+      "product_name_tr": "Kalınlaştırılmış karartma perdesi 140×260cm",
+      "raw_comments_zh": [
+        {
+          "comment_id": "c1",
+          "author_role": "buyer",
+          "text": "米白色实物偏黄。"
+        },
+        {
+          "comment_id": "c2",
+          "author_role": "buyer",
+          "text": "颜色和详情页差别很大。"
+        },
+        {
+          "comment_id": "c3",
+          "author_role": "buyer",
+          "text": "遮光效果不错。"
+        }
+      ],
+      "expected": {
+        "labels": [
+          "renk",
+          "olumlu"
+        ],
+        "tr_summary": "3 yorumun 2'si renk farkı bulunduğunu, 1'i karartma performansını olumlu değerlendiriyor.",
+        "confidence": "yüksek",
+        "assign_to_demo_id": "DM-005",
+        "input_comment_count": 3,
+        "excluded_comment_ids": [],
+        "evidence_zh": {
+          "renk": [
+            "实物偏黄",
+            "颜色和详情页差别很大"
+          ],
+          "olumlu": [
+            "遮光效果不错"
+          ]
+        }
+      },
+      "trap_types": [],
+      "review_note": ""
+    },
+    {
+      "id": "YRM-004",
+      "demo_id": "DM-034",
+      "product_name_zh": "琥珀色玻璃高脚杯 350ml 6只装",
+      "product_name_tr": "Kehribar renkli cam kadeh 350ml, 6'lı paket",
+      "raw_comments_zh": [
+        {
+          "comment_id": "d1",
+          "author_role": "buyer",
+          "text": "六只杯子有两只杯口缺口。"
+        },
+        {
+          "comment_id": "d2",
+          "author_role": "buyer",
+          "text": "外箱没有泡沫，收到时碎了一只。"
+        },
+        {
+          "comment_id": "d3",
+          "author_role": "buyer",
+          "text": "包装太薄。"
+        },
+        {
+          "comment_id": "d4",
+          "author_role": "buyer",
+          "text": "剩下的杯子很好看。"
+        }
+      ],
+      "expected": {
+        "labels": [
+          "paket",
+          "kalite",
+          "olumlu"
+        ],
+        "tr_summary": "4 yorumun 3'ü paketleme veya kırık/çentik kusuru bildiriyor; 1 yorum sağlam ürünlerin görünümünü beğeniyor.",
+        "confidence": "yüksek",
+        "assign_to_demo_id": "DM-034",
+        "input_comment_count": 4,
+        "excluded_comment_ids": [],
+        "evidence_zh": {
+          "paket": [
+            "外箱没有泡沫",
+            "包装太薄"
+          ],
+          "kalite": [
+            "杯口缺口",
+            "碎了一只"
+          ],
+          "olumlu": [
+            "很好看"
+          ]
+        }
+      },
+      "trap_types": [],
+      "review_note": ""
+    },
+    {
+      "id": "YRM-005",
+      "demo_id": "DM-016",
+      "product_name_zh": "高硼硅玻璃油壶 550ml",
+      "product_name_tr": "Yüksek borosilikat cam yağlık 550ml",
+      "raw_comments_zh": [
+        {
+          "comment_id": "e1",
+          "author_role": "buyer",
+          "text": "物流比承诺晚了四天。"
+        },
+        {
+          "comment_id": "e2",
+          "author_role": "buyer",
+          "text": "快递一直没有更新。"
+        },
+        {
+          "comment_id": "e3",
+          "author_role": "buyer",
+          "text": "油壶本身没有问题。"
+        }
+      ],
+      "expected": {
+        "labels": [
+          "kargo",
+          "olumlu"
+        ],
+        "tr_summary": "3 yorumun 2'si kargo gecikmesi/takip sorunu bildiriyor; 1'i ürünün kendisinde sorun olmadığını söylüyor.",
+        "confidence": "yüksek",
+        "assign_to_demo_id": "DM-016",
+        "input_comment_count": 3,
+        "excluded_comment_ids": [],
+        "evidence_zh": {
+          "kargo": [
+            "晚了四天",
+            "快递一直没有更新"
+          ],
+          "olumlu": [
+            "油壶本身没有问题"
+          ]
+        }
+      },
+      "trap_types": [],
+      "review_note": ""
+    },
+    {
+      "id": "YRM-006",
+      "demo_id": "DM-018",
+      "product_name_zh": "硅胶刮刀 27.5cm",
+      "product_name_tr": "Silikon spatula 27.5cm",
+      "raw_comments_zh": [
+        {
+          "comment_id": "f1",
+          "author_role": "buyer",
+          "text": "硅胶味道很大。"
+        },
+        {
+          "comment_id": "f2",
+          "author_role": "buyer",
+          "text": "洗了五次还有刺鼻气味。"
+        },
+        {
+          "comment_id": "f3",
+          "author_role": "buyer",
+          "text": "晾两天后味道淡了。"
+        },
+        {
+          "comment_id": "f4",
+          "author_role": "buyer",
+          "text": "没有异味。"
+        }
+      ],
+      "expected": {
+        "labels": [
+          "koku"
+        ],
+        "tr_summary": "4 yorumun 2'si belirgin koku, 1'i kokunun havalandırmayla azaldığını, 1'i koku olmadığını bildiriyor.",
+        "confidence": "yüksek",
+        "assign_to_demo_id": "DM-018",
+        "input_comment_count": 4,
+        "excluded_comment_ids": [],
+        "evidence_zh": {
+          "koku": [
+            "味道很大",
+            "刺鼻气味",
+            "味道淡了",
+            "没有异味"
+          ]
+        }
+      },
+      "trap_types": [],
+      "review_note": ""
+    },
+    {
+      "id": "YRM-007",
+      "demo_id": "DM-069",
+      "product_name_zh": "真空压缩袋 8件套",
+      "product_name_tr": "Vakumlu saklama poşeti, 8 parçalı set",
+      "raw_comments_zh": [
+        {
+          "comment_id": "g1",
+          "author_role": "buyer",
+          "text": "一周后就漏气。"
+        },
+        {
+          "comment_id": "g2",
+          "author_role": "buyer",
+          "text": "八个里面有三个失效。"
+        },
+        {
+          "comment_id": "g3",
+          "author_role": "buyer",
+          "text": "第一次用密封很好。"
+        },
+        {
+          "comment_id": "g4",
+          "author_role": "buyer",
+          "text": "用了两个月没有漏。"
+        }
+      ],
+      "expected": {
+        "labels": [
+          "dayanıklılık",
+          "olumlu"
+        ],
+        "tr_summary": "4 yorumun 2'si zaman içinde kaçak/işlev kaybı, 2'si ilk kullanım veya iki aylık kullanımda olumlu dayanıklılık bildiriyor.",
+        "confidence": "yüksek",
+        "assign_to_demo_id": "DM-069",
+        "input_comment_count": 4,
+        "excluded_comment_ids": [],
+        "evidence_zh": {
+          "dayanıklılık": [
+            "一周后就漏气",
+            "有三个失效",
+            "用了两个月没有漏"
+          ],
+          "olumlu": [
+            "密封很好"
+          ]
+        }
+      },
+      "trap_types": [],
+      "review_note": ""
+    },
+    {
+      "id": "YRM-008",
+      "demo_id": "DM-049",
+      "product_name_zh": "吸盘式浴室置物架 40cm",
+      "product_name_tr": "Vantuzlu banyo rafı 40cm",
+      "raw_comments_zh": [
+        {
+          "comment_id": "h1",
+          "author_role": "buyer",
+          "text": "客服回复很快。"
+        },
+        {
+          "comment_id": "h2",
+          "author_role": "buyer",
+          "text": "补发配件当天就安排了。"
+        },
+        {
+          "comment_id": "h3",
+          "author_role": "buyer",
+          "text": "产品还没安装。"
+        }
+      ],
+      "expected": {
+        "labels": [
+          "hizmet",
+          "belirsiz"
+        ],
+        "tr_summary": "3 yorumun 2'si satıcı hizmetini olumlu değerlendiriyor; ürün henüz kurulmadığı için ürün kalitesi hakkında sonuç çıkarılamıyor.",
+        "confidence": "yüksek",
+        "assign_to_demo_id": "DM-049",
+        "input_comment_count": 3,
+        "excluded_comment_ids": [],
+        "evidence_zh": {
+          "hizmet": [
+            "客服回复很快",
+            "补发配件当天就安排了"
+          ],
+          "belirsiz": [
+            "产品还没安装"
+          ]
+        }
+      },
+      "trap_types": [],
+      "review_note": ""
+    },
+    {
+      "id": "YRM-009",
+      "demo_id": "DM-021",
+      "product_name_zh": "304不锈钢复底汤锅 24cm",
+      "product_name_tr": "304 paslanmaz çelik kompozit tabanlı tencere 24cm",
+      "raw_comments_zh": [
+        {
+          "comment_id": "i1",
+          "author_role": "buyer",
+          "text": "锅底受热均匀。"
+        },
+        {
+          "comment_id": "i2",
+          "author_role": "buyer",
+          "text": "把手很稳。"
+        },
+        {
+          "comment_id": "i3",
+          "author_role": "buyer",
+          "text": "清洗方便。"
+        },
+        {
+          "comment_id": "i4",
+          "author_role": "buyer",
+          "text": "用了三个月没有生锈。"
+        },
+        {
+          "comment_id": "i5",
+          "author_role": "buyer",
+          "text": "会再买。"
+        }
+      ],
+      "expected": {
+        "labels": [
+          "olumlu",
+          "dayanıklılık"
+        ],
+        "tr_summary": "5 yorumun 5'i olumlu; 1 yorum üç aylık kullanımda paslanma olmadığını belirtiyor.",
+        "confidence": "yüksek",
+        "assign_to_demo_id": "DM-021",
+        "input_comment_count": 5,
+        "excluded_comment_ids": [],
+        "evidence_zh": {
+          "olumlu": [
+            "受热均匀",
+            "把手很稳",
+            "清洗方便",
+            "会再买"
+          ],
+          "dayanıklılık": [
+            "三个月没有生锈"
+          ]
+        }
+      },
+      "trap_types": [],
+      "review_note": ""
+    },
+    {
+      "id": "YRM-010",
+      "demo_id": "DM-060",
+      "product_name_zh": "抽屉式透明鞋盒 33×23×14cm",
+      "product_name_tr": "Şeffaf çekmeceli ayakkabı kutusu 33×23×14cm",
+      "raw_comments_zh": [
+        {
+          "comment_id": "j1",
+          "author_role": "buyer",
+          "text": "一般般。"
+        },
+        {
+          "comment_id": "j2",
+          "author_role": "buyer",
+          "text": "还没打开。"
+        },
+        {
+          "comment_id": "j3",
+          "author_role": "buyer",
+          "text": "看起来可以。"
+        }
+      ],
+      "expected": {
+        "labels": [
+          "belirsiz"
+        ],
+        "tr_summary": "3 yorum da ürünün somut kalite, ölçü veya kullanım performansı hakkında doğrulanabilir bilgi vermiyor.",
+        "confidence": "yüksek",
+        "assign_to_demo_id": "DM-060",
+        "input_comment_count": 3,
+        "excluded_comment_ids": [],
+        "evidence_zh": {
+          "belirsiz": [
+            "一般般",
+            "还没打开",
+            "看起来可以"
+          ]
+        }
+      },
+      "trap_types": [],
+      "review_note": ""
+    },
+    {
+      "id": "YRM-011",
+      "demo_id": "DM-023",
+      "product_name_zh": "高硼硅玻璃油壶 550ml",
+      "product_name_tr": "Yüksek borosilikat cam yağlık 550ml",
+      "raw_comments_zh": [
+        {
+          "comment_id": "k1",
+          "author_role": "buyer",
+          "text": "盖子会漏油。"
+        },
+        {
+          "comment_id": "k2",
+          "author_role": "buyer",
+          "text": "倒油很顺。"
+        },
+        {
+          "comment_id": "k3",
+          "author_role": "buyer",
+          "text": "壶嘴挂油。"
+        },
+        {
+          "comment_id": "k4",
+          "author_role": "buyer",
+          "text": "包装完整。"
+        },
+        {
+          "comment_id": "k5",
+          "author_role": "buyer",
+          "text": "密封圈太松会漏。"
+        },
+        {
+          "comment_id": "k6",
+          "author_role": "buyer",
+          "text": "玻璃很厚。"
+        },
+        {
+          "comment_id": "k7",
+          "author_role": "buyer",
+          "text": "放倒后漏油。"
+        },
+        {
+          "comment_id": "k8",
+          "author_role": "buyer",
+          "text": "颜色好看。"
+        },
+        {
+          "comment_id": "k9",
+          "author_role": "buyer",
+          "text": "用了两周盖子开始漏。"
+        },
+        {
+          "comment_id": "k10",
+          "author_role": "buyer",
+          "text": "物流很快。"
+        }
+      ],
+      "expected": {
+        "labels": [
+          "kalite",
+          "dayanıklılık",
+          "olumlu",
+          "paket",
+          "kargo"
+        ],
+        "tr_summary": "10 yorumun 4'ü kapak veya ağız bölümünde yağ sızıntısı bildiriyor; 3'ü ürün özelliklerini olumlu, 1'i paketi ve 1'i kargoyu olumlu değerlendiriyor.",
+        "confidence": "yüksek",
+        "assign_to_demo_id": "DM-023",
+        "input_comment_count": 10,
+        "excluded_comment_ids": [],
+        "evidence_zh": {
+          "kalite": [
+            "盖子会漏油",
+            "壶嘴挂油",
+            "密封圈太松会漏",
+            "放倒后漏油"
+          ],
+          "dayanıklılık": [
+            "用了两周盖子开始漏"
+          ],
+          "paket": [
+            "包装完整"
+          ],
+          "kargo": [
+            "物流很快"
+          ]
+        }
+      },
+      "trap_types": [],
+      "review_note": ""
+    },
+    {
+      "id": "YRM-012",
+      "demo_id": "DM-008",
+      "product_name_zh": "超细纤维清洁布 30×30cm 10片装",
+      "product_name_tr": "Mikrofiber temizlik bezi 30×30cm, 10'lu paket",
+      "raw_comments_zh": [
+        {
+          "comment_id": "l1",
+          "author_role": "buyer",
+          "text": "标30×30，实际28×29。"
+        },
+        {
+          "comment_id": "l2",
+          "author_role": "buyer",
+          "text": "尺寸足。"
+        },
+        {
+          "comment_id": "l3",
+          "author_role": "buyer",
+          "text": "比页面小。"
+        },
+        {
+          "comment_id": "l4",
+          "author_role": "buyer",
+          "text": "十片都有。"
+        },
+        {
+          "comment_id": "l5",
+          "author_role": "buyer",
+          "text": "有两片只有27cm。"
+        },
+        {
+          "comment_id": "l6",
+          "author_role": "buyer",
+          "text": "大小不一致。"
+        },
+        {
+          "comment_id": "l7",
+          "author_role": "buyer",
+          "text": "颜色正常。"
+        },
+        {
+          "comment_id": "l8",
+          "author_role": "buyer",
+          "text": "擦玻璃很好用。"
+        },
+        {
+          "comment_id": "l9",
+          "author_role": "buyer",
+          "text": "没量过。"
+        },
+        {
+          "comment_id": "l10",
+          "author_role": "buyer",
+          "text": "包装完整。"
+        }
+      ],
+      "expected": {
+        "labels": [
+          "ölçü",
+          "olumlu",
+          "paket"
+        ],
+        "tr_summary": "10 yorumun 4'ü ölçü eksikliği veya parçalar arasında ölçü tutarsızlığı bildiriyor; 3'ü ürün/paket için olumlu bilgi veriyor, 1 yorum ölçüm yapmadığını söylüyor.",
+        "confidence": "yüksek",
+        "assign_to_demo_id": "DM-008",
+        "input_comment_count": 10,
+        "excluded_comment_ids": [],
+        "evidence_zh": {
+          "ölçü": [
+            "实际28×29",
+            "比页面小",
+            "只有27cm",
+            "大小不一致"
+          ],
+          "paket": [
+            "包装完整"
+          ],
+          "olumlu": [
+            "擦玻璃很好用"
+          ]
+        }
+      },
+      "trap_types": [],
+      "review_note": ""
+    },
+    {
+      "id": "YRM-013",
+      "demo_id": "DM-006",
+      "product_name_zh": "雪尼尔抱枕套 45×45cm",
+      "product_name_tr": "Şönil kırlent kılıfı 45×45cm",
+      "raw_comments_zh": [
+        {
+          "comment_id": "m1",
+          "author_role": "buyer",
+          "text": "灰绿色偏蓝。"
+        },
+        {
+          "comment_id": "m2",
+          "author_role": "buyer",
+          "text": "颜色准确。"
+        },
+        {
+          "comment_id": "m3",
+          "author_role": "buyer",
+          "text": "照片更亮。"
+        },
+        {
+          "comment_id": "m4",
+          "author_role": "buyer",
+          "text": "奶油白没有色差。"
+        },
+        {
+          "comment_id": "m5",
+          "author_role": "buyer",
+          "text": "实物偏暗。"
+        },
+        {
+          "comment_id": "m6",
+          "author_role": "buyer",
+          "text": "面料不错。"
+        },
+        {
+          "comment_id": "m7",
+          "author_role": "buyer",
+          "text": "拉链顺滑。"
+        },
+        {
+          "comment_id": "m8",
+          "author_role": "buyer",
+          "text": "包装一般。"
+        }
+      ],
+      "expected": {
+        "labels": [
+          "renk",
+          "olumlu",
+          "paket"
+        ],
+        "tr_summary": "8 yorumun 3'ü renk tonu/parlaklık farkı, 3'ü renk veya ürün niteliği için olumlu görüş, 1'i paket için nötr değerlendirme bildiriyor.",
+        "confidence": "yüksek",
+        "assign_to_demo_id": "DM-006",
+        "input_comment_count": 8,
+        "excluded_comment_ids": [],
+        "evidence_zh": {
+          "renk": [
+            "偏蓝",
+            "照片更亮",
+            "实物偏暗"
+          ],
+          "olumlu": [
+            "颜色准确",
+            "没有色差",
+            "面料不错",
+            "拉链顺滑"
+          ],
+          "paket": [
+            "包装一般"
+          ]
+        }
+      },
+      "trap_types": [],
+      "review_note": ""
+    },
+    {
+      "id": "YRM-014",
+      "demo_id": "DM-040",
+      "product_name_zh": "骨瓷咖啡杯碟 200ml",
+      "product_name_tr": "Bone china porselen kahve fincanı ve tabağı 200ml",
+      "raw_comments_zh": [
+        {
+          "comment_id": "n1",
+          "author_role": "buyer",
+          "text": "礼盒压扁了。"
+        },
+        {
+          "comment_id": "n2",
+          "author_role": "buyer",
+          "text": "杯子没坏。"
+        },
+        {
+          "comment_id": "n3",
+          "author_role": "buyer",
+          "text": "送人不合适。"
+        },
+        {
+          "comment_id": "n4",
+          "author_role": "buyer",
+          "text": "泡沫保护很好。"
+        },
+        {
+          "comment_id": "n5",
+          "author_role": "buyer",
+          "text": "外箱有洞。"
+        },
+        {
+          "comment_id": "n6",
+          "author_role": "buyer",
+          "text": "产品漂亮。"
+        }
+      ],
+      "expected": {
+        "labels": [
+          "paket",
+          "olumlu"
+        ],
+        "tr_summary": "6 yorumun 2'si dış ambalaj hasarı, 1'i hediye uygunluğunun bozulduğunu, 3'ü ürünün sağlamlığı/görünümü veya korumayı olumlu bildiriyor.",
+        "confidence": "yüksek",
+        "assign_to_demo_id": "DM-040",
+        "input_comment_count": 6,
+        "excluded_comment_ids": [],
+        "evidence_zh": {
+          "paket": [
+            "礼盒压扁了",
+            "送人不合适",
+            "外箱有洞",
+            "泡沫保护很好"
+          ],
+          "olumlu": [
+            "杯子没坏",
+            "产品漂亮"
+          ]
+        }
+      },
+      "trap_types": [],
+      "review_note": ""
+    },
+    {
+      "id": "YRM-015",
+      "demo_id": "DM-073",
+      "product_name_zh": "透明带盖食品收纳盒 5L",
+      "product_name_tr": "Şeffaf kapaklı gıda saklama kutusu 5L",
+      "raw_comments_zh": [
+        {
+          "comment_id": "o1",
+          "author_role": "buyer",
+          "text": "晚了两天。"
+        },
+        {
+          "comment_id": "o2",
+          "author_role": "buyer",
+          "text": "按时到货。"
+        },
+        {
+          "comment_id": "o3",
+          "author_role": "buyer",
+          "text": "物流停在中转站三天。"
+        },
+        {
+          "comment_id": "o4",
+          "author_role": "buyer",
+          "text": "第二天就到了。"
+        },
+        {
+          "comment_id": "o5",
+          "author_role": "buyer",
+          "text": "包装没问题。"
+        },
+        {
+          "comment_id": "o6",
+          "author_role": "buyer",
+          "text": "晚了一周。"
+        },
+        {
+          "comment_id": "o7",
+          "author_role": "buyer",
+          "text": "盒子质量不错。"
+        }
+      ],
+      "expected": {
+        "labels": [
+          "kargo",
+          "paket",
+          "olumlu"
+        ],
+        "tr_summary": "7 yorumun 3'ü gecikme/takip durması, 2'si hızlı veya zamanında teslim, 2'si paket/ürün niteliği için olumlu görüş bildiriyor.",
+        "confidence": "yüksek",
+        "assign_to_demo_id": "DM-073",
+        "input_comment_count": 7,
+        "excluded_comment_ids": [],
+        "evidence_zh": {
+          "kargo": [
+            "晚了两天",
+            "按时到货",
+            "中转站三天",
+            "第二天就到了",
+            "晚了一周"
+          ],
+          "paket": [
+            "包装没问题"
+          ]
+        }
+      },
+      "trap_types": [],
+      "review_note": ""
+    },
+    {
+      "id": "YRM-016",
+      "demo_id": "DM-051",
+      "product_name_zh": "免打孔毛巾杆 50cm",
+      "product_name_tr": "Delme gerektirmeyen havluluk 50cm",
+      "raw_comments_zh": [
+        {
+          "comment_id": "p1",
+          "author_role": "buyer",
+          "text": "客服十分钟内回复。"
+        },
+        {
+          "comment_id": "p2",
+          "author_role": "buyer",
+          "text": "少件后马上补发。"
+        },
+        {
+          "comment_id": "p3",
+          "author_role": "buyer",
+          "text": "安装视频讲得清楚。"
+        },
+        {
+          "comment_id": "p4",
+          "author_role": "buyer",
+          "text": "售后没有回复。"
+        },
+        {
+          "comment_id": "p5",
+          "author_role": "buyer",
+          "text": "产品还没装。"
+        }
+      ],
+      "expected": {
+        "labels": [
+          "hizmet",
+          "belirsiz"
+        ],
+        "tr_summary": "5 yorumun 3'ü hizmeti olumlu, 1'i yanıtsız satış sonrası hizmeti olumsuz değerlendiriyor; ürün kurulmadığı için ürün kalitesi belirsiz.",
+        "confidence": "yüksek",
+        "assign_to_demo_id": "DM-051",
+        "input_comment_count": 5,
+        "excluded_comment_ids": [],
+        "evidence_zh": {
+          "hizmet": [
+            "十分钟内回复",
+            "马上补发",
+            "安装视频讲得清楚",
+            "售后没有回复"
+          ],
+          "belirsiz": [
+            "产品还没装"
+          ]
+        }
+      },
+      "trap_types": [],
+      "review_note": ""
+    },
+    {
+      "id": "YRM-017",
+      "demo_id": "DM-061",
+      "product_name_zh": "折叠衣物收纳箱 66L",
+      "product_name_tr": "Katlanabilir giysi saklama kutusu 66L",
+      "raw_comments_zh": [
+        {
+          "comment_id": "q1",
+          "author_role": "buyer",
+          "text": "味道刺鼻。"
+        },
+        {
+          "comment_id": "q2",
+          "author_role": "buyer",
+          "text": "没有味道。"
+        },
+        {
+          "comment_id": "q3",
+          "author_role": "buyer",
+          "text": "晾一天就散了。"
+        },
+        {
+          "comment_id": "q4",
+          "author_role": "buyer",
+          "text": "三天后还有塑料味。"
+        },
+        {
+          "comment_id": "q5",
+          "author_role": "buyer",
+          "text": "靠近才能闻到。"
+        },
+        {
+          "comment_id": "q6",
+          "author_role": "buyer",
+          "text": "孩子房间不敢用。"
+        },
+        {
+          "comment_id": "q7",
+          "author_role": "buyer",
+          "text": "洗过后没味道。"
+        },
+        {
+          "comment_id": "q8",
+          "author_role": "buyer",
+          "text": "开箱气味很重。"
+        },
+        {
+          "comment_id": "q9",
+          "author_role": "buyer",
+          "text": "正常布料味。"
+        }
+      ],
+      "expected": {
+        "labels": [
+          "koku",
+          "belirsiz"
+        ],
+        "tr_summary": "9 yorumun 5'i farklı şiddette koku bildiriyor; 3'ü kokunun olmadığını veya kısa sürede dağıldığını söylüyor, 1'i kokuyu normal kumaş kokusu olarak yorumluyor.",
+        "confidence": "yüksek",
+        "assign_to_demo_id": "DM-061",
+        "input_comment_count": 9,
+        "excluded_comment_ids": [],
+        "evidence_zh": {
+          "koku": [
+            "味道刺鼻",
+            "没有味道",
+            "一天就散了",
+            "塑料味",
+            "开箱气味很重",
+            "布料味"
+          ],
+          "belirsiz": [
+            "靠近才能闻到"
+          ]
+        }
+      },
+      "trap_types": [],
+      "review_note": ""
+    },
+    {
+      "id": "YRM-018",
+      "demo_id": "DM-048",
+      "product_name_zh": "ABS按压皂液器 450ml",
+      "product_name_tr": "ABS basmalı sıvı sabunluk 450ml",
+      "raw_comments_zh": [
+        {
+          "comment_id": "r1",
+          "author_role": "buyer",
+          "text": "第三天按压头就坏了。"
+        },
+        {
+          "comment_id": "r2",
+          "author_role": "buyer",
+          "text": "用了半年还正常。"
+        },
+        {
+          "comment_id": "r3",
+          "author_role": "buyer",
+          "text": "弹簧一个月后不回弹。"
+        },
+        {
+          "comment_id": "r4",
+          "author_role": "buyer",
+          "text": "目前用了两天没问题。"
+        },
+        {
+          "comment_id": "r5",
+          "author_role": "buyer",
+          "text": "泵头裂了。"
+        },
+        {
+          "comment_id": "r6",
+          "author_role": "buyer",
+          "text": "外观好看。"
+        }
+      ],
+      "expected": {
+        "labels": [
+          "dayanıklılık",
+          "kalite",
+          "olumlu"
+        ],
+        "tr_summary": "6 yorumun 3'ü zaman içinde pompa/başlık arızası, 2'si kısa veya uzun kullanımda sorun olmadığını, 1'i görünümü olumlu değerlendiriyor.",
+        "confidence": "yüksek",
+        "assign_to_demo_id": "DM-048",
+        "input_comment_count": 6,
+        "excluded_comment_ids": [],
+        "evidence_zh": {
+          "dayanıklılık": [
+            "第三天",
+            "用了半年",
+            "一个月后"
+          ],
+          "kalite": [
+            "按压头就坏了",
+            "不回弹",
+            "泵头裂了"
+          ],
+          "olumlu": [
+            "外观好看"
+          ]
+        }
+      },
+      "trap_types": [],
+      "review_note": ""
+    },
+    {
+      "id": "YRM-019",
+      "demo_id": "DM-024",
+      "product_name_zh": "分格保温饭盒 1200ml",
+      "product_name_tr": "Bölmeli yalıtımlı yemek kabı 1200ml",
+      "raw_comments_zh": [
+        {
+          "comment_id": "s1",
+          "author_role": "buyer",
+          "text": "保温不错，但是盖子边缘有毛刺。"
+        },
+        {
+          "comment_id": "s2",
+          "author_role": "buyer",
+          "text": "容量够用。"
+        }
+      ],
+      "expected": {
+        "labels": [
+          "kalite",
+          "olumlu"
+        ],
+        "tr_summary": "2 yorumun 1'i yalıtımı olumlu bulurken kapak kenarında çapak bildiriyor; 1'i kapasiteyi yeterli buluyor.",
+        "confidence": "yüksek",
+        "assign_to_demo_id": "DM-024",
+        "input_comment_count": 2,
+        "excluded_comment_ids": [],
+        "evidence_zh": {
+          "kalite": [
+            "盖子边缘有毛刺"
+          ],
+          "olumlu": [
+            "保温不错",
+            "容量够用"
+          ]
+        }
+      },
+      "trap_types": [],
+      "review_note": ""
+    },
+    {
+      "id": "YRM-020",
+      "demo_id": "DM-052",
+      "product_name_zh": "防滑浴室拖鞋 EVA",
+      "product_name_tr": "Kaymaz EVA banyo terliği",
+      "raw_comments_zh": [
+        {
+          "comment_id": "t1",
+          "author_role": "buyer",
+          "text": "颜色很准，尺码偏小，湿地上也不防滑。"
+        },
+        {
+          "comment_id": "t2",
+          "author_role": "buyer",
+          "text": "包装完好。"
+        }
+      ],
+      "expected": {
+        "labels": [
+          "renk",
+          "ölçü",
+          "kalite",
+          "paket"
+        ],
+        "tr_summary": "2 yorumun 1'i renk doğruluğunu olumlu bulurken bedenin küçük ve ıslak zeminde kaygan olduğunu; 1'i paketin sağlam geldiğini belirtiyor.",
+        "confidence": "yüksek",
+        "assign_to_demo_id": "DM-052",
+        "input_comment_count": 2,
+        "excluded_comment_ids": [],
+        "evidence_zh": {
+          "renk": [
+            "颜色很准"
+          ],
+          "ölçü": [
+            "尺码偏小"
+          ],
+          "kalite": [
+            "不防滑"
+          ],
+          "paket": [
+            "包装完好"
+          ]
+        }
+      },
+      "trap_types": [],
+      "review_note": ""
+    },
+    {
+      "id": "YRM-021",
+      "demo_id": "DM-027",
+      "product_name_zh": "带盖硅胶冰格 24格",
+      "product_name_tr": "Kapaklı silikon buz kalıbı 24 gözlü",
+      "raw_comments_zh": [
+        {
+          "comment_id": "u1",
+          "author_role": "buyer",
+          "text": "质量真‘好’，第一次装水盖子就掉了。"
+        }
+      ],
+      "expected": {
+        "labels": [
+          "kalite"
+        ],
+        "tr_summary": "1 yorum ironik biçimde kaliteyi eleştiriyor ve kapağın ilk kullanımda düştüğünü bildiriyor.",
+        "confidence": "yüksek",
+        "assign_to_demo_id": "DM-027",
+        "input_comment_count": 1,
+        "excluded_comment_ids": [],
+        "evidence_zh": {
+          "kalite": [
+            "第一次装水盖子就掉了"
+          ]
+        }
+      },
+      "trap_types": [
+        "ironi"
+      ],
+      "review_note": "‘好’ sözcüğü yüzeyde olumlu olsa da devamındaki arıza ifadeyi tersine çevirir."
+    },
+    {
+      "id": "YRM-022",
+      "demo_id": "DM-019",
+      "product_name_zh": "SUS304真空保温杯 500ml",
+      "product_name_tr": "SUS304 vakum yalıtımlı termos bardak 500ml",
+      "raw_comments_zh": [
+        {
+          "comment_id": "v1",
+          "author_role": "buyer",
+          "text": "保温 is good，但lid会漏水。"
+        },
+        {
+          "comment_id": "v2",
+          "author_role": "buyer",
+          "text": "500ml size doğru。"
+        }
+      ],
+      "expected": {
+        "labels": [
+          "kalite",
+          "olumlu",
+          "ölçü"
+        ],
+        "tr_summary": "2 karışık dilli yorum yalıtımı ve 500 ml ölçüyü olumlu, kapağın sızdırmasını olumsuz bildiriyor.",
+        "confidence": "orta",
+        "assign_to_demo_id": "DM-019",
+        "input_comment_count": 2,
+        "excluded_comment_ids": [],
+        "evidence_zh": {
+          "kalite": [
+            "lid会漏水"
+          ],
+          "olumlu": [
+            "保温 is good"
+          ],
+          "ölçü": [
+            "500ml size doğru"
+          ]
+        }
+      },
+      "trap_types": [
+        "karışık_dil"
+      ],
+      "review_note": ""
+    },
+    {
+      "id": "YRM-023",
+      "demo_id": "DM-030",
+      "product_name_zh": "四面不锈钢刨丝器 23cm",
+      "product_name_tr": "Dört yüzeyli paslanmaz çelik rende 23cm",
+      "raw_comments_zh": [
+        {
+          "comment_id": "w1",
+          "author_role": "buyer",
+          "text": "好评返现，加微信领取红包。"
+        },
+        {
+          "comment_id": "w2",
+          "author_role": "buyer",
+          "text": "五星五星五星，复制这段就行。"
+        },
+        {
+          "comment_id": "w3",
+          "author_role": "buyer",
+          "text": "刨丝器刀面锋利。"
+        }
+      ],
+      "expected": {
+        "labels": [
+          "olumlu"
+        ],
+        "tr_summary": "3 kaydın 2'si teşvik/spam olduğu için dışlanıyor; kalan 1 yorum rende yüzeyini olumlu değerlendiriyor.",
+        "confidence": "yüksek",
+        "assign_to_demo_id": "DM-030",
+        "input_comment_count": 3,
+        "excluded_comment_ids": [
+          "w1",
+          "w2"
+        ],
+        "evidence_zh": {
+          "olumlu": [
+            "刀面锋利"
+          ]
+        }
+      },
+      "trap_types": [
+        "spam",
+        "teşvikli_yorum"
+      ],
+      "review_note": ""
+    },
+    {
+      "id": "YRM-024",
+      "demo_id": "DM-028",
+      "product_name_zh": "壁挂式厨房纸巾架 28cm",
+      "product_name_tr": "Duvara monte mutfak kâğıt havluluk 28cm",
+      "raw_comments_zh": [
+        {
+          "comment_id": "x1",
+          "author_role": "buyer",
+          "text": "粘胶第二天掉了。"
+        },
+        {
+          "comment_id": "x2",
+          "author_role": "seller",
+          "text": "亲，墙面有水会影响粘性，请先擦干再安装。"
+        }
+      ],
+      "expected": {
+        "labels": [
+          "kalite"
+        ],
+        "tr_summary": "1 alıcı yorumu yapışkanın ikinci gün düştüğünü bildiriyor; satıcı cevabı ürün yorumu sayısına veya etikete eklenmiyor.",
+        "confidence": "yüksek",
+        "assign_to_demo_id": "DM-028",
+        "input_comment_count": 2,
+        "excluded_comment_ids": [
+          "x2"
+        ],
+        "evidence_zh": {
+          "kalite": [
+            "粘胶第二天掉了"
+          ]
+        }
+      },
+      "trap_types": [
+        "satıcı_cevabı_yorum_sanılır"
+      ],
+      "review_note": ""
+    },
+    {
+      "id": "YRM-025",
+      "demo_id": "DM-003",
+      "product_name_zh": "法兰绒床笠 150×200cm",
+      "product_name_tr": "Flanel lastikli çarşaf 150×200cm",
+      "raw_comments_zh": [
+        {
+          "comment_id": "y1",
+          "author_role": "buyer",
+          "text": "颜色没有问题，但是150×200的床笠短了5厘米。"
+        },
+        {
+          "comment_id": "y2",
+          "author_role": "buyer",
+          "text": "灰色和照片一致。"
+        }
+      ],
+      "expected": {
+        "labels": [
+          "ölçü",
+          "renk",
+          "olumlu"
+        ],
+        "tr_summary": "2 yorumda renk doğruluğu olumlu; 1 yorum 150×200 varyantın 5 cm kısa olduğunu bildiriyor.",
+        "confidence": "yüksek",
+        "assign_to_demo_id": "DM-003",
+        "input_comment_count": 2,
+        "excluded_comment_ids": [],
+        "evidence_zh": {
+          "ölçü": [
+            "短了5厘米"
+          ],
+          "renk": [
+            "颜色没有问题",
+            "灰色和照片一致"
+          ]
+        }
+      },
+      "trap_types": [
+        "ölçü_renk_ayrımı"
+      ],
+      "review_note": ""
+    },
+    {
+      "id": "YRM-026",
+      "demo_id": "DM-005",
+      "product_name_zh": "加厚遮光窗帘 140×260cm",
+      "product_name_tr": "Kalınlaştırılmış karartma perdesi 140×260cm",
+      "raw_comments_zh": [
+        {
+          "comment_id": "z1",
+          "author_role": "buyer",
+          "text": "色差不大，但宽度少了8厘米。"
+        },
+        {
+          "comment_id": "z2",
+          "author_role": "buyer",
+          "text": "深灰色偏蓝。"
+        }
+      ],
+      "expected": {
+        "labels": [
+          "ölçü",
+          "renk"
+        ],
+        "tr_summary": "2 yorumun 1'i genişliğin 8 cm eksik olduğunu, 1'i koyu gri rengin maviye kaydığını; ilk yorum ise renk farkının küçük olduğunu belirtiyor.",
+        "confidence": "yüksek",
+        "assign_to_demo_id": "DM-005",
+        "input_comment_count": 2,
+        "excluded_comment_ids": [],
+        "evidence_zh": {
+          "ölçü": [
+            "宽度少了8厘米"
+          ],
+          "renk": [
+            "色差不大",
+            "深灰色偏蓝"
+          ]
+        }
+      },
+      "trap_types": [
+        "ölçü_renk_ayrımı"
+      ],
+      "review_note": ""
+    },
+    {
+      "id": "YRM-027",
+      "demo_id": "DM-016",
+      "product_name_zh": "高硼硅玻璃油壶 550ml",
+      "product_name_tr": "Yüksek borosilikat cam yağlık 550ml",
+      "raw_comments_zh": [
+        {
+          "comment_id": "aa1",
+          "author_role": "buyer",
+          "text": "这款油壶不漏。有人问按摩器，我没买过那个。"
+        },
+        {
+          "comment_id": "aa2",
+          "author_role": "buyer",
+          "text": "倒油很顺。"
+        }
+      ],
+      "expected": {
+        "labels": [
+          "olumlu"
+        ],
+        "tr_summary": "2 yorum yağlığın sızdırmadığını ve döküşünün düzgün olduğunu söylüyor; yorum içindeki satın alınmamış masaj aleti başka ürüne atanmaz.",
+        "confidence": "yüksek",
+        "assign_to_demo_id": "DM-016",
+        "input_comment_count": 2,
+        "excluded_comment_ids": [],
+        "evidence_zh": {
+          "olumlu": [
+            "油壶不漏",
+            "倒油很顺"
+          ]
+        }
+      },
+      "trap_types": [
+        "yanlış_ürüne_atama"
+      ],
+      "review_note": "按摩器 ifadesi başka ürüne veri üretmemelidir."
+    },
+    {
+      "id": "YRM-028",
+      "demo_id": "DM-057",
+      "product_name_zh": "ABS按压皂液器 450ml",
+      "product_name_tr": "ABS basmalı sıvı sabunluk 450ml",
+      "raw_comments_zh": [
+        {
+          "comment_id": "ab1",
+          "author_role": "buyer",
+          "text": "此用户没有填写评价。"
+        },
+        {
+          "comment_id": "ab2",
+          "author_role": "buyer",
+          "text": "默认好评。"
+        }
+      ],
+      "expected": {
+        "labels": [
+          "belirsiz"
+        ],
+        "tr_summary": "2 platform yer tutucu kaydı somut ürün sinyali içermediği için belirsizdir ve kalite oranlarına katılmaz.",
+        "confidence": "yüksek",
+        "assign_to_demo_id": "DM-057",
+        "input_comment_count": 2,
+        "excluded_comment_ids": [
+          "ab1",
+          "ab2"
+        ],
+        "evidence_zh": {
+          "belirsiz": [
+            "没有填写评价",
+            "默认好评"
+          ]
+        }
+      },
+      "trap_types": [
+        "platform_yer_tutucusu"
+      ],
+      "review_note": ""
+    },
+    {
+      "id": "YRM-029",
+      "demo_id": "DM-020",
+      "product_name_zh": "硅胶折叠沥水篮 24cm",
+      "product_name_tr": "Silikon katlanabilir süzgeç 24cm",
+      "raw_comments_zh": [
+        {
+          "comment_id": "ac1",
+          "author_role": "buyer",
+          "text": "五星。篮子折叠一次边缘就裂了。"
+        },
+        {
+          "comment_id": "ac2",
+          "author_role": "buyer",
+          "text": "页面给了差评但文字说很好用。"
+        }
+      ],
+      "expected": {
+        "labels": [
+          "kalite",
+          "olumlu"
+        ],
+        "tr_summary": "2 yorumun yıldız/ifade yönü metinle çelişiyor; metne göre 1'i ilk katlamada çatlak, 1'i kullanım kolaylığı bildiriyor.",
+        "confidence": "orta",
+        "assign_to_demo_id": "DM-020",
+        "input_comment_count": 2,
+        "excluded_comment_ids": [],
+        "evidence_zh": {
+          "kalite": [
+            "边缘就裂了"
+          ],
+          "olumlu": [
+            "很好用"
+          ]
+        }
+      },
+      "trap_types": [
+        "puan_metin_çelişkisi"
+      ],
+      "review_note": ""
+    },
+    {
+      "id": "YRM-030",
+      "demo_id": "DM-048",
+      "product_name_zh": "ABS按压皂液器 450ml",
+      "product_name_tr": "ABS basmalı sıvı sabunluk 450ml",
+      "raw_comments_zh": [
+        {
+          "comment_id": "ad1",
+          "author_role": "buyer",
+          "text": "黑色款按压顺畅，白色款边缘发黄。"
+        },
+        {
+          "comment_id": "ad2",
+          "author_role": "buyer",
+          "text": "黑色用了两个月没漏，白色第三天就漏液。"
+        }
+      ],
+      "expected": {
+        "labels": [
+          "renk",
+          "kalite",
+          "dayanıklılık",
+          "olumlu"
+        ],
+        "tr_summary": "2 yorumda siyah varyant olumlu ve iki ay sızdırmaz; beyaz varyantta sararma ve üçüncü gün sızıntı bildiriliyor.",
+        "confidence": "yüksek",
+        "assign_to_demo_id": "DM-048",
+        "input_comment_count": 2,
+        "excluded_comment_ids": [],
+        "evidence_zh": {
+          "renk": [
+            "白色款边缘发黄"
+          ],
+          "kalite": [
+            "白色第三天就漏液"
+          ],
+          "dayanıklılık": [
+            "用了两个月没漏",
+            "第三天"
+          ],
+          "olumlu": [
+            "黑色款按压顺畅"
+          ]
+        }
+      },
+      "trap_types": [
+        "varyant_karışması"
+      ],
+      "review_note": ""
+    }
+  ]
+}

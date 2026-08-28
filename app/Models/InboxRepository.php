@@ -7,6 +7,7 @@ namespace App\Models;
 use App\Core\Connection;
 use App\Core\Dates;
 use DateTimeImmutable;
+use PDOException;
 
 /**
  * inbox_items erişimi (İE#11 Faz 3 — docs/04 §2c v2).
@@ -38,6 +39,40 @@ final class InboxRepository
         $row = $statement->fetch();
 
         return is_array($row) ? $row : null;
+    }
+
+    /**
+     * REZERVE ET YA DA MEVCUDU DÖNDÜR — idempotansın TEK ilkeli (rc8-03 / F-07).
+     *
+     * SAHA SÖZLEŞMESİ (K25): "aynı `capture_id` ikinci kez gelirse İLK sonucun
+     * aynısı döner". Eskiden bu söz yalnız hedef-listeli yolda tutuluyordu;
+     * varsayılan Gelen Kutusu ve doğrulama-hatası yolları doğrudan `create()`
+     * çağırıyordu. Controller'daki ön kontrol bir OKUMADIR: iki eşzamanlı tekrar
+     * isteği de onu geçebilir, UNIQUE yarışını kaybeden ham `PDOException` alır
+     * ve eklentiye 500 döner. Eklenti kuyruğu (A5) tekrar denediği için bu yarış
+     * teorik değildir.
+     *
+     * Burada yazma DENENİR; UNIQUE ihlali bir HATA DEĞİL, "zaten var" cevabıdır.
+     *
+     * @param array<string, mixed> $fields
+     *
+     * @return array{id: int, yeni: bool} `yeni=false` ise satır zaten vardı
+     */
+    public function rezerveEtVeyaBul(array $fields, DateTimeImmutable $now): array
+    {
+        $captureId = is_string($fields['capture_id'] ?? null) ? (string) $fields['capture_id'] : '';
+
+        try {
+            return ['id' => $this->create($fields, $now), 'yeni' => true];
+        } catch (PDOException $exception) {
+            // Yarışı kaybettik: satır BAŞKASI tarafından yazılmış olmalı.
+            $mevcut = $captureId === '' ? null : $this->findByCaptureId($captureId);
+            if ($mevcut === null) {
+                throw $exception; // UNIQUE dışı gerçek bir hata — yutulmaz.
+            }
+
+            return ['id' => (int) $mevcut['id'], 'yeni' => false];
+        }
     }
 
     /**
@@ -195,6 +230,23 @@ final class InboxRepository
             "UPDATE inbox_items SET status = 'assigned', assigned_product_id = :product_id, assigned_at = :at WHERE id = :id",
         );
         $statement->execute(['product_id' => $productId, 'at' => Dates::toStorage($now), 'id' => $id]);
+    }
+
+    /**
+     * GERİ ALMA (İE#21 B4 · E2E-PNL-19): atanmış kaydı yeniden BEKLEYENE çevirir.
+     *
+     * Ürün bağı da kopar — kayıt geri geldiğinde artık var olmayan bir ürüne
+     * işaret ediyorsa, panel "atandı ama ürünü yok" gibi tutarsız bir hâl gösterir.
+     */
+    public function markPending(int $id): void
+    {
+        $statement = $this->connection->pdo()->prepare(
+            // `inbox_items`te `updated_at` YOKTUR (0019); zaman damgası
+            // `assigned_at` alanındadır ve geri almada temizlenir.
+            "UPDATE inbox_items SET status = 'pending', assigned_product_id = NULL, assigned_at = NULL
+             WHERE id = :id AND status = 'assigned'",
+        );
+        $statement->execute(['id' => $id]);
     }
 
     public function delete(int $id): void

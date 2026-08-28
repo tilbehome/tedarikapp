@@ -1,0 +1,77 @@
+{
+  "_aciklama": "TEK KAYNAK — durum kodları ve etiketleri (İE#21 B13). PHP ve panel bu dosyayı okur; hiçbir yerde ikinci bir liste tutulmaz. Kod adları docs/04 §5B durum makinesindendir ve DEĞİŞTİRİLEMEZ (K22: DB ve API yalnız İngilizce makine kodu taşır). Marka kitindeki status-map.json bu dosyaya eşitlenmiştir; çeliştiğinde 5B kazanır.",
+  "urun": {
+    "to_order": {
+      "tr": "Verilecek",
+      "en": "To Order",
+      "zh": "待下单",
+      "fg": "#4B5563",
+      "bg": "#F3F4F6"
+    },
+    "ordered": {
+      "tr": "Verildi",
+      "en": "Ordered",
+      "zh": "已下单",
+      "fg": "#92400E",
+      "bg": "#FEF3C7"
+    },
+    "in_transit": {
+      "tr": "Yolda",
+      "en": "In Transit",
+      "zh": "运输中",
+      "fg": "#3730A3",
+      "bg": "#E0E7FF"
+    },
+    "received": {
+      "tr": "Geldi",
+      "en": "Received",
+      "zh": "已收货",
+      "fg": "#1E40AF",
+      "bg": "#DBEAFE"
+    },
+    "cancelled": {
+      "tr": "İptal",
+      "en": "Cancelled",
+      "zh": "已取消",
+      "fg": "#B91C1C",
+      "bg": "#FEE2E2"
+    }
+  },
+  "liste": {
+    "draft": {
+      "tr": "Taslak",
+      "en": "Draft",
+      "zh": "草稿",
+      "fg": "#4B5563",
+      "bg": "#F3F4F6"
+    },
+    "sent": {
+      "tr": "İletildi",
+      "en": "Sent",
+      "zh": "已发送",
+      "fg": "#0E7490",
+      "bg": "#CFFAFE"
+    },
+    "ordered": {
+      "tr": "Sipariş Verildi",
+      "en": "Ordered",
+      "zh": "已下单",
+      "fg": "#92400E",
+      "bg": "#FEF3C7"
+    },
+    "completed": {
+      "tr": "Tamamlandı",
+      "en": "Completed",
+      "zh": "已完成",
+      "fg": "#166534",
+      "bg": "#DCFCE7"
+    },
+    "cancelled": {
+      "tr": "İptal",
+      "en": "Cancelled",
+      "zh": "已取消",
+      "fg": "#B91C1C",
+      "bg": "#FEE2E2"
+    }
+  }
+}

@@ -29,7 +29,11 @@ export async function girisYap(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Panele gir' }).click();
 
   // 2FA kapalı kullanıcıda giriş TEK adımdır (K45) — doğrudan panele düşer.
-  await expect(page.getByRole('navigation')).toBeVisible({ timeout: 15_000 });
+  //
+  // F43: KALICI TEST KİMLİĞİ kullanılır. Eskiden `getByRole('navigation')`
+  // bekleniyordu; V3 kabuğunda birden çok <nav> var (yan menü · kırıntı yolu ·
+  // alt sekme çubuğu) ve seçici "strict mode" ihlaliyle patlıyordu.
+  await expect(page.getByTestId('kabuk')).toBeVisible({ timeout: 15_000 });
 }
 
 /** Oturum çerezini paylaşan API bağlamı için CSRF token'ı. */

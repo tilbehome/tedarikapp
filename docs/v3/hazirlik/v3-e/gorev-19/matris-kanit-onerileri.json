@@ -1,0 +1,665 @@
+{
+  "dosya_ozeti_5_satir": [
+    "Ne işe yarar: PARTİ 1 HAR kanıtlarından Görev #17 platform-yetenek-matrisi hücreleri için değişiklik veya doğrulama önerileri üretir.",
+    "Hangi fazda kullanılır: V3-E matris kanıt bakımında PM tarafından gözden geçirilip uygulanır.",
+    "Kapsam: Yalnız mevcut 17A satırlarından Alibaba.com ve Amazon; Tmall ve Yiwugo için sahte matris hücresi açılmaz.",
+    "Kanıt ilkesi: HAR’da pozitif olarak görülmeyen alan için öneri yoktur; tek fixture yokluk kanıtı sayılmaz.",
+    "Kapsam dışı: Matris dosyasını doğrudan değiştirmek, PARTİ 2 platformları, GTİP, mevzuat ve gümrük oranlarıdır."
+  ],
+  "schema_version": "1.0.0",
+  "kaynak_matris": "outputs/gorev-17/platform-yetenek-matrisi.json",
+  "matris_kapsami_notu": "Kaynak matrisin sekiz platformu arasında Alibaba.com, Amazon ve Taobao yer alır. PARTİ 1'deki Tmall, Taobao sayılmaz; Yiwugo da matriste yoktur. Bu iki HAR için mevcut_durum uydurulmadı ve oneriler listesine sahte hücre eklenmedi.",
+  "durum_enum": ["TAM", "KISMİ", "YOK", "DEĞİŞKEN"],
+  "oneriler": [
+    {
+      "oneri_id": "MK-001",
+      "alan_id": "platform_product_id",
+      "platform": "Alibaba.com",
+      "mevcut_durum": "TAM",
+      "onerilen_durum": "TAM",
+      "kanit": {
+        "har_dosyasi": "alibaba.har",
+        "istek_veya_nesne": "window.detailData",
+        "json_yolu_veya_secici": "globalData.product.productId",
+        "deger_ornegi": "sayısal ürün kimliği dolu"
+      },
+      "not": "Doğrudan ve yapılandırılmış ürün kimliği mevcut; kimlik değeri rapora alınmadı."
+    },
+    {
+      "oneri_id": "MK-002",
+      "alan_id": "canonical_url",
+      "platform": "Alibaba.com",
+      "mevcut_durum": "TAM",
+      "onerilen_durum": "TAM",
+      "kanit": {
+        "har_dosyasi": "alibaba.har",
+        "istek_veya_nesne": "Ürün detay isteği ve window.detailData",
+        "json_yolu_veya_secici": "globalData.seo.globalSeoUrl",
+        "deger_ornegi": "query'siz ürün detay URL'i"
+      },
+      "not": "Sayfa URL'i ile gömülü SEO URL'i birlikte doğrulanabilir."
+    },
+    {
+      "oneri_id": "MK-003",
+      "alan_id": "title",
+      "platform": "Alibaba.com",
+      "mevcut_durum": "TAM",
+      "onerilen_durum": "TAM",
+      "kanit": {
+        "har_dosyasi": "alibaba.har",
+        "istek_veya_nesne": "window.detailData",
+        "json_yolu_veya_secici": "globalData.product.subject",
+        "deger_ornegi": "yerelleştirilmiş şişe ürün başlığı"
+      },
+      "not": "Başlık doğrudan yapılandırılmış alandır."
+    },
+    {
+      "oneri_id": "MK-004",
+      "alan_id": "category_path",
+      "platform": "Alibaba.com",
+      "mevcut_durum": "KISMİ",
+      "onerilen_durum": "TAM",
+      "kanit": {
+        "har_dosyasi": "alibaba.har",
+        "istek_veya_nesne": "window.detailData",
+        "json_yolu_veya_secici": "globalData.seo.breadCrumb.pathList[].hrefObject.name",
+        "deger_ornegi": "Ev & Bahçe > Bardak Takımı ve Aksesuarları"
+      },
+      "not": "İncelenen ürün sayfasında kırıntı doğrudan dizi olarak verilmiştir."
+    },
+    {
+      "oneri_id": "MK-005",
+      "alan_id": "currency",
+      "platform": "Alibaba.com",
+      "mevcut_durum": "TAM",
+      "onerilen_durum": "TAM",
+      "kanit": {
+        "har_dosyasi": "alibaba.har",
+        "istek_veya_nesne": "window.detailData",
+        "json_yolu_veya_secici": "globalData.global.productPriceCurrencySimpleName",
+        "deger_ornegi": "US $"
+      },
+      "not": "Para birimi bağlamı fiyatla aynı gömülü snapshot'ta bulunur."
+    },
+    {
+      "oneri_id": "MK-006",
+      "alan_id": "base_price",
+      "platform": "Alibaba.com",
+      "mevcut_durum": "TAM",
+      "onerilen_durum": "TAM",
+      "kanit": {
+        "har_dosyasi": "alibaba.har",
+        "istek_veya_nesne": "window.detailData",
+        "json_yolu_veya_secici": "globalData.product.price.formatLadderPrice",
+        "deger_ornegi": "$0,98-1,98"
+      },
+      "not": "Görünür fiyat aralığı ile sayısal kademeler aynı nesnededir."
+    },
+    {
+      "oneri_id": "MK-007",
+      "alan_id": "price_tiers",
+      "platform": "Alibaba.com",
+      "mevcut_durum": "KISMİ",
+      "onerilen_durum": "TAM",
+      "kanit": {
+        "har_dosyasi": "alibaba.har",
+        "istek_veya_nesne": "window.detailData",
+        "json_yolu_veya_secici": "globalData.product.price.productLadderPrices[].{min,max,price}",
+        "deger_ornegi": "ilk eşik 2, fiyat 1.98"
+      },
+      "not": "Eşik alt/üst sınırı ve sayısal fiyat doğrudan yapılandırılmıştır."
+    },
+    {
+      "oneri_id": "MK-008",
+      "alan_id": "moq",
+      "platform": "Alibaba.com",
+      "mevcut_durum": "TAM",
+      "onerilen_durum": "TAM",
+      "kanit": {
+        "har_dosyasi": "alibaba.har",
+        "istek_veya_nesne": "window.detailData",
+        "json_yolu_veya_secici": "globalData.product.moq",
+        "deger_ornegi": "2"
+      },
+      "not": "MOQ doğrudan sayısal alandır."
+    },
+    {
+      "oneri_id": "MK-009",
+      "alan_id": "unit",
+      "platform": "Alibaba.com",
+      "mevcut_durum": "TAM",
+      "onerilen_durum": "TAM",
+      "kanit": {
+        "har_dosyasi": "alibaba.har",
+        "istek_veya_nesne": "window.detailData",
+        "json_yolu_veya_secici": "globalData.product.price.unit",
+        "deger_ornegi": "Adet"
+      },
+      "not": "Sayısal quantityUnit kodu yerine insan okunur fiyat birimi kullanılmalıdır."
+    },
+    {
+      "oneri_id": "MK-010",
+      "alan_id": "variant_dimensions",
+      "platform": "Alibaba.com",
+      "mevcut_durum": "TAM",
+      "onerilen_durum": "TAM",
+      "kanit": {
+        "har_dosyasi": "alibaba.har",
+        "istek_veya_nesne": "window.detailData",
+        "json_yolu_veya_secici": "globalData.product.sku.skuAttrs[].name; .values[].name",
+        "deger_ornegi": "Renk; Kapasite"
+      },
+      "not": "Boyut ve değerler ayrı, yapılandırılmış listelerdir."
+    },
+    {
+      "oneri_id": "MK-011",
+      "alan_id": "sku_matrix",
+      "platform": "Alibaba.com",
+      "mevcut_durum": "KISMİ",
+      "onerilen_durum": "TAM",
+      "kanit": {
+        "har_dosyasi": "alibaba.har",
+        "istek_veya_nesne": "window.detailData",
+        "json_yolu_veya_secici": "globalData.product.sku.skuInfoMap; globalData.product.sku.skuSample[]; globalData.inventory.skuInventory",
+        "deger_ornegi": "varyant bileşimi → SKU → stok"
+      },
+      "not": "Aynı SKU kimliği üzerinden varyant ve stok bağlanabiliyor; numune fiyatı ana kademe fiyatıyla karıştırılmamalıdır."
+    },
+    {
+      "oneri_id": "MK-012",
+      "alan_id": "stock",
+      "platform": "Alibaba.com",
+      "mevcut_durum": "KISMİ",
+      "onerilen_durum": "TAM",
+      "kanit": {
+        "har_dosyasi": "alibaba.har",
+        "istek_veya_nesne": "window.detailData",
+        "json_yolu_veya_secici": "globalData.inventory.skuInventory.{sku_id}.warehouseInventoryList[].inventoryCount",
+        "deger_ornegi": "SKU ve depo bazlı sayı"
+      },
+      "not": "Stok doğrudan sayısal ve SKU bazlıdır; aşırı büyük sentinel değer için ayrıca iş kuralı gerekir."
+    },
+    {
+      "oneri_id": "MK-013",
+      "alan_id": "attributes",
+      "platform": "Alibaba.com",
+      "mevcut_durum": "TAM",
+      "onerilen_durum": "TAM",
+      "kanit": {
+        "har_dosyasi": "alibaba.har",
+        "istek_veya_nesne": "window.detailData",
+        "json_yolu_veya_secici": "globalData.product.productBasicProperties[].{attrName,attrValue}",
+        "deger_ornegi": "Hedef Kitle → Yetişkinler"
+      },
+      "not": "Teknik özellikler ad/değer çiftidir."
+    },
+    {
+      "oneri_id": "MK-014",
+      "alan_id": "gallery_images",
+      "platform": "Alibaba.com",
+      "mevcut_durum": "TAM",
+      "onerilen_durum": "TAM",
+      "kanit": {
+        "har_dosyasi": "alibaba.har",
+        "istek_veya_nesne": "window.detailData",
+        "json_yolu_veya_secici": "globalData.product.mediaItems[?type=='image'].imageUrl.big",
+        "deger_ornegi": "6 görsel öğesi"
+      },
+      "not": "Görsel ve video aynı listede type ile ayrılır."
+    },
+    {
+      "oneri_id": "MK-015",
+      "alan_id": "video",
+      "platform": "Alibaba.com",
+      "mevcut_durum": "KISMİ",
+      "onerilen_durum": "TAM",
+      "kanit": {
+        "har_dosyasi": "alibaba.har",
+        "istek_veya_nesne": "window.detailData",
+        "json_yolu_veya_secici": "globalData.product.mediaItems[?type=='video'].videoUrl.{quality}.videoUrl",
+        "deger_ornegi": "1 video; çoklu kalite"
+      },
+      "not": "Video URL'leri ürünün gömülü durumunda doğrudan bulunur; ayrı API zorunlu değildir."
+    },
+    {
+      "oneri_id": "MK-016",
+      "alan_id": "seller_id",
+      "platform": "Alibaba.com",
+      "mevcut_durum": "TAM",
+      "onerilen_durum": "TAM",
+      "kanit": {
+        "har_dosyasi": "alibaba.har",
+        "istek_veya_nesne": "window.detailData",
+        "json_yolu_veya_secici": "globalData.seller.companyId",
+        "deger_ornegi": "değer gizlendi"
+      },
+      "not": "Yol doğrulandı; kimlik değeri çıktıya kopyalanmadı."
+    },
+    {
+      "oneri_id": "MK-017",
+      "alan_id": "seller_name",
+      "platform": "Alibaba.com",
+      "mevcut_durum": "TAM",
+      "onerilen_durum": "TAM",
+      "kanit": {
+        "har_dosyasi": "alibaba.har",
+        "istek_veya_nesne": "window.detailData",
+        "json_yolu_veya_secici": "globalData.seller.companyName",
+        "deger_ornegi": "firma adı metni dolu"
+      },
+      "not": "Firma adı doğrudan yapılandırılmıştır."
+    },
+    {
+      "oneri_id": "MK-018",
+      "alan_id": "seller_location",
+      "platform": "Alibaba.com",
+      "mevcut_durum": "TAM",
+      "onerilen_durum": "TAM",
+      "kanit": {
+        "har_dosyasi": "alibaba.har",
+        "istek_veya_nesne": "window.detailData",
+        "json_yolu_veya_secici": "globalData.seller.companyRegisterCountry",
+        "deger_ornegi": "CN"
+      },
+      "not": "Bu kanıt ülke düzeyindedir; şehir/fabrika konumu uydurulmamalıdır."
+    },
+    {
+      "oneri_id": "MK-019",
+      "alan_id": "seller_badges",
+      "platform": "Alibaba.com",
+      "mevcut_durum": "TAM",
+      "onerilen_durum": "TAM",
+      "kanit": {
+        "har_dosyasi": "alibaba.har",
+        "istek_veya_nesne": "window.detailData",
+        "json_yolu_veya_secici": "globalData.seller.verifiedManufactruers; globalData.seller.authCards.value.authGroupInfoList[].authInfoList[]",
+        "deger_ornegi": "doğrulanmış üretici ve yetenek etiketleri"
+      },
+      "not": "Rozet adı, açıklama ve seçilme durumu yapılandırılmıştır."
+    },
+    {
+      "oneri_id": "MK-020",
+      "alan_id": "seller_scorecard",
+      "platform": "Alibaba.com",
+      "mevcut_durum": "TAM",
+      "onerilen_durum": "TAM",
+      "kanit": {
+        "har_dosyasi": "alibaba.har",
+        "istek_veya_nesne": "window.detailData",
+        "json_yolu_veya_secici": "globalData.seller.supplierRatingReviews; .responseTimeText; .supplierOnTimeDeliveryRate",
+        "deger_ornegi": "4.9; ≤3h; %93.3"
+      },
+      "not": "Puan, yanıt süresi ve zamanında teslim oranı aynı snapshot'tadır."
+    },
+    {
+      "oneri_id": "MK-021",
+      "alan_id": "sales_total",
+      "platform": "Alibaba.com",
+      "mevcut_durum": "KISMİ",
+      "onerilen_durum": "TAM",
+      "kanit": {
+        "har_dosyasi": "alibaba.har",
+        "istek_veya_nesne": "window.detailData",
+        "json_yolu_veya_secici": "globalData.trade.salesVolume",
+        "deger_ornegi": "3555 satıldı"
+      },
+      "not": "Alan açıkça satılmış toplamını etiketliyor; 30 günlük metrik değildir."
+    },
+    {
+      "oneri_id": "MK-022",
+      "alan_id": "rating",
+      "platform": "Alibaba.com",
+      "mevcut_durum": "KISMİ",
+      "onerilen_durum": "TAM",
+      "kanit": {
+        "har_dosyasi": "alibaba.har",
+        "istek_veya_nesne": "window.detailData",
+        "json_yolu_veya_secici": "globalData.review.productReview.averageStar",
+        "deger_ornegi": "4.7"
+      },
+      "not": "Ürün puanı gömülü durumda doğrudan sayısaldır."
+    },
+    {
+      "oneri_id": "MK-023",
+      "alan_id": "review_count",
+      "platform": "Alibaba.com",
+      "mevcut_durum": "KISMİ",
+      "onerilen_durum": "TAM",
+      "kanit": {
+        "har_dosyasi": "alibaba.har",
+        "istek_veya_nesne": "window.detailData",
+        "json_yolu_veya_secici": "globalData.review.productReview.totalReviewCount",
+        "deger_ornegi": "4"
+      },
+      "not": "Ayrı imzalı değerlendirme API'si olmadan toplam sayı mevcut."
+    },
+    {
+      "oneri_id": "MK-024",
+      "alan_id": "packaging_text",
+      "platform": "Alibaba.com",
+      "mevcut_durum": "KISMİ",
+      "onerilen_durum": "KISMİ",
+      "kanit": {
+        "har_dosyasi": "alibaba.har",
+        "istek_veya_nesne": "window.detailData",
+        "json_yolu_veya_secici": "globalData.trade.logisticInfo.{unitSize,unitWeight,productPackagingProperties}",
+        "deger_ornegi": "ölçü/ağırlık dolu; paket özellikleri boş"
+      },
+      "not": "Paketleme için bazı yapılandırılmış vekiller var; tam paket açıklaması yok."
+    },
+    {
+      "oneri_id": "MK-025",
+      "alan_id": "gross_weight",
+      "platform": "Alibaba.com",
+      "mevcut_durum": "KISMİ",
+      "onerilen_durum": "KISMİ",
+      "kanit": {
+        "har_dosyasi": "alibaba.har",
+        "istek_veya_nesne": "window.detailData",
+        "json_yolu_veya_secici": "globalData.trade.logisticInfo.unitWeight",
+        "deger_ornegi": "2.0"
+      },
+      "not": "Değer dolu fakat açıkça brüt koli ağırlığı diye etiketlenmedi; yükseltme yapılmaz."
+    },
+    {
+      "oneri_id": "MK-026",
+      "alan_id": "carton_dimensions",
+      "platform": "Alibaba.com",
+      "mevcut_durum": "KISMİ",
+      "onerilen_durum": "KISMİ",
+      "kanit": {
+        "har_dosyasi": "alibaba.har",
+        "istek_veya_nesne": "window.detailData",
+        "json_yolu_veya_secici": "globalData.trade.logisticInfo.unitSize",
+        "deger_ornegi": "12X15X30"
+      },
+      "not": "Birim ölçüsü dolu; koli ölçüsü semantiği kanıtlanmadı."
+    },
+    {
+      "oneri_id": "MK-027",
+      "alan_id": "custom_order",
+      "platform": "Alibaba.com",
+      "mevcut_durum": "TAM",
+      "onerilen_durum": "TAM",
+      "kanit": {
+        "har_dosyasi": "alibaba.har",
+        "istek_veya_nesne": "window.detailData",
+        "json_yolu_veya_secici": "globalData.product.supportFastCustomization; .supportLightCustomization; .productLightCustomizationList[]",
+        "deger_ornegi": "özelleştirme açık; MOQ 1000 örneği"
+      },
+      "not": "Bayrak, özelleştirme türü ve özel MOQ aynı nesnededir."
+    },
+    {
+      "oneri_id": "MK-028",
+      "alan_id": "lead_time",
+      "platform": "Alibaba.com",
+      "mevcut_durum": "TAM",
+      "onerilen_durum": "TAM",
+      "kanit": {
+        "har_dosyasi": "alibaba.har",
+        "istek_veya_nesne": "window.detailData",
+        "json_yolu_veya_secici": "globalData.trade.leadTimeInfo.ladderPeriodList[].{minQuantity,maxQuantity,processPeriod}",
+        "deger_ornegi": "1–1000 adet → 65 gün"
+      },
+      "not": "Termin miktar kademesine bağlı yapılandırılmıştır."
+    },
+    {
+      "oneri_id": "MK-029",
+      "alan_id": "platform_product_id",
+      "platform": "Amazon",
+      "mevcut_durum": "TAM",
+      "onerilen_durum": "TAM",
+      "kanit": {
+        "har_dosyasi": "amazon-tr-us.har",
+        "istek_veya_nesne": "Amazon US /dp/ detay HTML'i",
+        "json_yolu_veya_secici": "URL /dp/{ASIN}; [data-asin]; ürün ayrıntısı ASIN satırı",
+        "deger_ornegi": "B0764HS4SL"
+      },
+      "not": "Üç bağımsız sayfa içi işaret aynı ASIN'i doğrular."
+    },
+    {
+      "oneri_id": "MK-030",
+      "alan_id": "canonical_url",
+      "platform": "Amazon",
+      "mevcut_durum": "KISMİ",
+      "onerilen_durum": "TAM",
+      "kanit": {
+        "har_dosyasi": "amazon-tr-us.har",
+        "istek_veya_nesne": "Amazon US /dp/ detay HTML'i",
+        "json_yolu_veya_secici": "link[rel='canonical']@href",
+        "deger_ornegi": "query'siz /dp/B0764HS4SL URL'i"
+      },
+      "not": "Kanonik link doğrudan HTML head içinde mevcuttur."
+    },
+    {
+      "oneri_id": "MK-031",
+      "alan_id": "title",
+      "platform": "Amazon",
+      "mevcut_durum": "TAM",
+      "onerilen_durum": "TAM",
+      "kanit": {
+        "har_dosyasi": "amazon-tr-us.har",
+        "istek_veya_nesne": "Amazon US /dp/ detay HTML'i",
+        "json_yolu_veya_secici": "#productTitle",
+        "deger_ornegi": "Fullstar Pro Original Vegetable Chopper…"
+      },
+      "not": "Başlık doğrudan SSR DOM'dadır."
+    },
+    {
+      "oneri_id": "MK-032",
+      "alan_id": "category_path",
+      "platform": "Amazon",
+      "mevcut_durum": "KISMİ",
+      "onerilen_durum": "KISMİ",
+      "kanit": {
+        "har_dosyasi": "amazon-tr-us.har",
+        "istek_veya_nesne": "Amazon US /dp/ detay HTML'i",
+        "json_yolu_veya_secici": "#wayfinding-breadcrumbs_feature_div",
+        "deger_ornegi": "Home & Kitchen > … > Choppers"
+      },
+      "not": "Kırıntı DOM metnidir; ayrı yapılandırılmış kategori kimliği bu fixture'da yoktur."
+    },
+    {
+      "oneri_id": "MK-033",
+      "alan_id": "currency",
+      "platform": "Amazon",
+      "mevcut_durum": "TAM",
+      "onerilen_durum": "KISMİ",
+      "kanit": {
+        "har_dosyasi": "amazon-tr-us.har",
+        "istek_veya_nesne": "Amazon US /dp/ detay HTML'indeki yardımcı encoded bileşen",
+        "json_yolu_veya_secici": "productDetails.currencySymbol",
+        "deger_ornegi": "$"
+      },
+      "not": "Ana fiyat DOM'u boştu ve yalnız sembol yardımcı içerikteydi; ISO para kodu ana kanaldan kanıtlanmadı."
+    },
+    {
+      "oneri_id": "MK-034",
+      "alan_id": "base_price",
+      "platform": "Amazon",
+      "mevcut_durum": "TAM",
+      "onerilen_durum": "DEĞİŞKEN",
+      "kanit": {
+        "har_dosyasi": "amazon-tr-us.har",
+        "istek_veya_nesne": "Amazon US /dp/ detay HTML'i",
+        "json_yolu_veya_secici": "#corePrice_desktop / #desktop_unifiedPrice boş; yardımcı encoded içerikte productDetails.fullPrice",
+        "deger_ornegi": "yardımcı içerikte 49.99"
+      },
+      "not": "Bu bölge/oturum snapshot'ında standart fiyat kapsayıcıları boş, fiyat yalnız kararsız yardımcı bileşende bulundu."
+    },
+    {
+      "oneri_id": "MK-035",
+      "alan_id": "unit",
+      "platform": "Amazon",
+      "mevcut_durum": "KISMİ",
+      "onerilen_durum": "KISMİ",
+      "kanit": {
+        "har_dosyasi": "amazon-tr-us.har",
+        "istek_veya_nesne": "Amazon US /dp/ detay HTML'indeki yardımcı encoded bileşen",
+        "json_yolu_veya_secici": "productDetails.buyBoxPricePerUnit.displayUnitValueDescription",
+        "deger_ornegi": "Item"
+      },
+      "not": "Birim doğrudan ana DOM yerine yardımcı içerikte olduğundan KISMİ kalmalıdır."
+    },
+    {
+      "oneri_id": "MK-036",
+      "alan_id": "variant_dimensions",
+      "platform": "Amazon",
+      "mevcut_durum": "TAM",
+      "onerilen_durum": "TAM",
+      "kanit": {
+        "har_dosyasi": "amazon-tr-us.har",
+        "istek_veya_nesne": "Amazon US /dp/ detay HTML'i",
+        "json_yolu_veya_secici": "[id^='inline-twister-row-']; [id^='inline-twister-expanded-dimension-text-']",
+        "deger_ornegi": "Color; Size"
+      },
+      "not": "Varyant boyutları ve seçili değerler doğrudan DOM'dadır."
+    },
+    {
+      "oneri_id": "MK-037",
+      "alan_id": "sku_matrix",
+      "platform": "Amazon",
+      "mevcut_durum": "KISMİ",
+      "onerilen_durum": "KISMİ",
+      "kanit": {
+        "har_dosyasi": "amazon-tr-us.har",
+        "istek_veya_nesne": "Amazon US /dp/ detay HTML'i",
+        "json_yolu_veya_secici": "varyant swatch [data-asin] + görünen seçenek metni",
+        "deger_ornegi": "4 in 1 → seçili ASIN"
+      },
+      "not": "Seçenek-ASIN bağı var; bütün seçeneklerin fiyat ve stok sayıları aynı matriste yoktur."
+    },
+    {
+      "oneri_id": "MK-038",
+      "alan_id": "stock",
+      "platform": "Amazon",
+      "mevcut_durum": "KISMİ",
+      "onerilen_durum": "KISMİ",
+      "kanit": {
+        "har_dosyasi": "amazon-tr-us.har",
+        "istek_veya_nesne": "Amazon US /dp/ detay HTML'i",
+        "json_yolu_veya_secici": "varyant swatch data-csa-c-content-id içinde swatchAvailable/swatchUnavailable; #availability",
+        "deger_ornegi": "seçenek bazlı available/unavailable"
+      },
+      "not": "Bulunabilirlik sinyali var fakat sayısal stok yoktur."
+    },
+    {
+      "oneri_id": "MK-039",
+      "alan_id": "attributes",
+      "platform": "Amazon",
+      "mevcut_durum": "TAM",
+      "onerilen_durum": "TAM",
+      "kanit": {
+        "har_dosyasi": "amazon-tr-us.har",
+        "istek_veya_nesne": "Amazon US /dp/ detay HTML'i",
+        "json_yolu_veya_secici": "#productOverview_feature_div table tr; #feature-bullets",
+        "deger_ornegi": "Brand; Product Dimensions; Color"
+      },
+      "not": "Özellik tablosu ve madde işaretleri SSR DOM'dadır."
+    },
+    {
+      "oneri_id": "MK-040",
+      "alan_id": "gallery_images",
+      "platform": "Amazon",
+      "mevcut_durum": "TAM",
+      "onerilen_durum": "TAM",
+      "kanit": {
+        "har_dosyasi": "amazon-tr-us.har",
+        "istek_veya_nesne": "Amazon US /dp/ detay HTML'i",
+        "json_yolu_veya_secici": "#landingImage@data-a-dynamic-image; #altImages",
+        "deger_ornegi": "ana görsel ve alternatif medya"
+      },
+      "not": "Çözünürlük seçenekleri ana görsel özniteliğinde yapılandırılmıştır."
+    },
+    {
+      "oneri_id": "MK-041",
+      "alan_id": "video",
+      "platform": "Amazon",
+      "mevcut_durum": "KISMİ",
+      "onerilen_durum": "KISMİ",
+      "kanit": {
+        "har_dosyasi": "amazon-tr-us.har",
+        "istek_veya_nesne": "Amazon US /dp/ detay HTML'i ve doğal lazy POST yanıtları",
+        "json_yolu_veya_secici": "#videoCount; #video-outer-container; /vap/ew/subcomponent/*",
+        "deger_ornegi": "19 VIDEOS"
+      },
+      "not": "Video varlığı DOM'da; gerçek kaynak lazy bileşen çağrısına bağlı olduğu için KISMİ."
+    },
+    {
+      "oneri_id": "MK-042",
+      "alan_id": "rating",
+      "platform": "Amazon",
+      "mevcut_durum": "TAM",
+      "onerilen_durum": "TAM",
+      "kanit": {
+        "har_dosyasi": "amazon-tr-us.har",
+        "istek_veya_nesne": "Amazon US /dp/ detay HTML'i",
+        "json_yolu_veya_secici": "#averageCustomerReviews",
+        "deger_ornegi": "4.5 out of 5 stars"
+      },
+      "not": "Puan doğrudan detay DOM'undadır."
+    },
+    {
+      "oneri_id": "MK-043",
+      "alan_id": "review_count",
+      "platform": "Amazon",
+      "mevcut_durum": "TAM",
+      "onerilen_durum": "TAM",
+      "kanit": {
+        "har_dosyasi": "amazon-tr-us.har",
+        "istek_veya_nesne": "Amazon US /dp/ detay HTML'i",
+        "json_yolu_veya_secici": "#acrCustomerReviewText",
+        "deger_ornegi": "95,639"
+      },
+      "not": "Değerlendirme sayısı doğrudan detay DOM'undadır."
+    },
+    {
+      "oneri_id": "MK-044",
+      "alan_id": "gross_weight",
+      "platform": "Amazon",
+      "mevcut_durum": "KISMİ",
+      "onerilen_durum": "KISMİ",
+      "kanit": {
+        "har_dosyasi": "amazon-tr-us.har",
+        "istek_veya_nesne": "Amazon US /dp/ detay HTML'i",
+        "json_yolu_veya_secici": "#productOverview_feature_div table tr:has(text 'Item Weight')",
+        "deger_ornegi": "0.99 kg"
+      },
+      "not": "Bu ürün ağırlığıdır; brüt koli ağırlığı değildir ve yalnız vekil sinyal olabilir."
+    },
+    {
+      "oneri_id": "MK-045",
+      "alan_id": "carton_dimensions",
+      "platform": "Amazon",
+      "mevcut_durum": "KISMİ",
+      "onerilen_durum": "KISMİ",
+      "kanit": {
+        "har_dosyasi": "amazon-tr-us.har",
+        "istek_veya_nesne": "Amazon US /dp/ detay HTML'i",
+        "json_yolu_veya_secici": "#productOverview_feature_div table tr:has(text 'Product Dimensions')",
+        "deger_ornegi": "8 in × 3 in × 4.48 in"
+      },
+      "not": "Bu ürün ölçüsüdür; koli ölçüsü değildir ve CBM üretmekte kullanılamaz."
+    }
+  ],
+  "sayim": {
+    "oneri_toplami": 45,
+    "platform_bazinda": {
+      "Alibaba.com": 28,
+      "Amazon": 17
+    },
+    "onerilen_durum_bazinda": {
+      "TAM": 33,
+      "KISMİ": 11,
+      "YOK": 0,
+      "DEĞİŞKEN": 1
+    },
+    "mevcut_hucrede_degisiklik_onerisi": 11,
+    "mevcut_durumu_dogrulayan_oneri": 34
+  },
+  "acik_notlar": [
+    "Tmall kanıtının Taobao satırına taşınması otomatik yapılmadı; PM platform taksonomisi kararı gerekir.",
+    "Yiwugo için mevcut 17A sütunu yoktur; yeni sütun açılması bu görevin kapsamı değildir.",
+    "Amazon fiyatının ana DOM yerine yardımcı encoded içerikte kalması nedeniyle DEĞİŞKEN önerisi en az bir ek /dp/ fikstürüyle sınanmalıdır."
+  ]
+}

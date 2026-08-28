@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Core\Connection;
 use App\Core\Dates;
+use App\Services\Translation\KanonikDiller;
 use DateTimeImmutable;
 
 /**
@@ -17,7 +18,7 @@ use DateTimeImmutable;
 final class ProductRepository
 {
     private const COLUMNS = 'id, list_id, sort_no, category_id, platform, external_id,
-        name, name_original, detail, url, vendor_name, vendor_url, sku_selection, sku_matrix,
+        name, name_original, name_elle, source_lang, detail, url, vendor_name, vendor_url, sku_selection, sku_matrix,
         main_image, main_image_source, video_url, qty, price_yuan, price_ddp_usd, price_target_try,
         units_per_carton, tracking_no,
         raw_attributes, country_of_origin, country_of_dispatch,
@@ -32,10 +33,48 @@ final class ProductRepository
         'price_target_try',
         // İE#11 EK-3 (2): yakalamanın RAW bloğu + menşe (capture ile dolar; panelden de düzenlenebilir).
         'raw_attributes', 'country_of_origin', 'country_of_dispatch',
+        // D12: kaynak dili — yakalama saptar, kullanıcı gerekirse düzeltir.
+        'source_lang',
     ];
 
-    /** Değişince listenin `revision` sayacını artıran alanlar (K25). */
-    public const REVISION_FIELDS = ['qty', 'price_yuan', 'price_ddp_usd', 'name', 'sort_no'];
+    /**
+     * ÇIKTIYI ETKİLEYEN ALANLAR — değişince liste `revision`ı artar (K25 · K57).
+     *
+     * İE#20 C9 DÜZELTMESİ: bu liste beş alandan ibaretti (`qty`, `price_yuan`,
+     * `price_ddp_usd`, `name`, `sort_no`). Oysa belge bunlardan FAZLASINI basıyor:
+     * kategori, detay, ürün linki, görsel, durum, platform/ilan no, varyant, koli
+     * içi adet, not, video ve iç kopyadaki hedef satış. Bu alanlardan birini
+     * değiştirmek belgeyi DEĞİŞTİRİYOR ama revizyon harfi yerinde kalıyordu:
+     *
+     *   • firmaya "Rev C" diye ikinci kez farklı bir belge gidiyor,
+     *   • "çıktı güncel değil" rozeti yanılıyor (K25),
+     *   • K57'nin "harf içerikten türer" sözü kâğıt üstünde kalıyordu.
+     *
+     * Kural artık şudur: SNAPSHOT'A GİREN HER KAYNAK ALAN BU LİSTEDEDİR. Bunu
+     * `RevizyonSozlesmesiTest` denetler — ExportSnapshot'a yeni bir alan eklenir
+     * ve buraya eklenmezse test KIRILIR.
+     *
+     * Listede OLMAYANLAR bilinçlidir: `tracking_no` (kargo takip — belgede yok;
+     * değişince firmaya "yeni revizyon" demek yanlış alarmdır) ve
+     * `vendor_name`/`vendor_url` (şablon v2 satıcıyı BASMAZ).
+     */
+    public const REVISION_FIELDS = [
+        // Sayısal/parasal
+        'qty', 'price_yuan', 'price_ddp_usd', 'price_target_try', 'units_per_carton',
+        // Metin ve kimlik
+        'name', 'name_original', 'detail', 'note', 'category_id',
+        'platform', 'external_id',
+        // Medya ve bağlantı
+        'url', 'main_image', 'video_url',
+        // Varyant seçimi (belgede "Varyant" sütunu)
+        'sku_selection', 'sku_matrix',
+        // Sıra ve durum
+        'sort_no', 'status',
+        // Ham yakalama bloğu: belgeye DOĞRUDAN girmez ama DETAY, MOQ ve VARYANT
+        // sütunları ondan TÜRETİLİR (ProductDetails). Sözleşme testi bunu yakaladı —
+        // "ham veri belgede yok" varsayımı yanlıştı.
+        'raw_attributes',
+    ];
 
     public function __construct(private readonly Connection $connection)
     {
@@ -57,34 +96,21 @@ final class ProductRepository
     }
 
     /**
-     * @param array{status?: string, category_id?: int, q?: string} $filters
+     * @param array{status?: string, category_id?: int, q?: string, hazir?: bool} $filters
      *
      * @return list<array<string, mixed>>
      */
-    public function forList(int $listId, array $filters = []): array
+    public function forList(int $listId, array $filters = [], ?int $limit = null, int $offset = 0): array
     {
-        $sql = 'SELECT ' . self::COLUMNS . ' FROM products WHERE list_id = :list_id AND deleted_at IS NULL';
-        $params = ['list_id' => $listId];
+        [$where, $params] = $this->suzgec($listId, $filters);
 
-        if (isset($filters['status']) && $filters['status'] !== '') {
-            $sql .= ' AND status = :status';
-            $params['status'] = $filters['status'];
+        $sql = 'SELECT ' . self::COLUMNS . " FROM products p WHERE {$where} ORDER BY p.sort_no, p.id";
+        if ($limit !== null) {
+            // İE#20 C7: SAYFALAMA. Sınırsız sorgu, liste büyüdükçe hem sunucuyu
+            // hem tarayıcıyı yorar; 500 ürünlük bir listede tek istek megabaytlarca
+            // JSON taşır. Sınır AÇIKÇA verilir — sessiz kırpma yapılmaz.
+            $sql .= ' LIMIT ' . max(1, min(500, $limit)) . ' OFFSET ' . max(0, $offset);
         }
-        if (isset($filters['category_id'])) {
-            $sql .= ' AND category_id = :category_id';
-            $params['category_id'] = $filters['category_id'];
-        }
-        if (isset($filters['q']) && $filters['q'] !== '') {
-            // Aynı canlı hata (bkz. ListRepository::all): native prepare'de tekrar
-            // eden yer tutucu HY093 verir. Üç sütun, üç ayrı ad.
-            $sql .= ' AND (name LIKE :q_ad OR name_original LIKE :q_orijinal OR detail LIKE :q_detay)';
-            $desen = '%' . $filters['q'] . '%';
-            $params['q_ad'] = $desen;
-            $params['q_orijinal'] = $desen;
-            $params['q_detay'] = $desen;
-        }
-
-        $sql .= ' ORDER BY sort_no, id';
 
         $statement = $this->connection->pdo()->prepare($sql);
         $statement->execute($params);
@@ -93,6 +119,69 @@ final class ProductRepository
         $rows = $statement->fetchAll();
 
         return $rows;
+    }
+
+    /**
+     * Süzgece uyan toplam ürün sayısı — sayfalama üst bilgisi (C7).
+     *
+     * @param array{status?: string, category_id?: int, q?: string, hazir?: bool} $filters
+     */
+    public function countForList(int $listId, array $filters = []): int
+    {
+        [$where, $params] = $this->suzgec($listId, $filters);
+
+        $statement = $this->connection->pdo()->prepare("SELECT COUNT(*) FROM products p WHERE {$where}");
+        $statement->execute($params);
+
+        return (int) $statement->fetchColumn();
+    }
+
+    /**
+     * Ortak süzgeç — liste ve sayım aynı koşulları kullanır.
+     *
+     * İkisi ayrı yazılsaydı zamanla ayrışır ve "37 kayıt" yazan bir sayfa 40 satır
+     * gösterirdi; sayfalamanın en sinsi hatası budur.
+     *
+     * @param array{status?: string, category_id?: int, q?: string, hazir?: bool} $filters
+     *
+     * @return array{0: string, 1: array<string, mixed>}
+     */
+    private function suzgec(int $listId, array $filters): array
+    {
+        $where = 'p.list_id = :list_id AND p.deleted_at IS NULL';
+        $params = ['list_id' => $listId];
+
+        if (isset($filters['status']) && $filters['status'] !== '') {
+            $where .= ' AND p.status = :status';
+            $params['status'] = $filters['status'];
+        }
+        if (isset($filters['category_id'])) {
+            $where .= ' AND p.category_id = :category_id';
+            $params['category_id'] = $filters['category_id'];
+        }
+        if (isset($filters['hazir'])) {
+            $where .= ' AND p.hazir = :hazir';
+            $params['hazir'] = $filters['hazir'] ? 1 : 0;
+        }
+        if (isset($filters['q']) && $filters['q'] !== '') {
+            // İE#20 C7: arama artık TÜRETİLMİŞ `arama_metni` alanına bakar (TR ad +
+            // Çince başlık + çeviriler + ilan no). Alan boşsa (henüz tazelenmemiş
+            // eski kayıt) eski üç sütunlu arama YEDEK olarak çalışır — göç sırasında
+            // arama kesintiye uğramasın.
+            //
+            // Yer tutucular AYRI adlandırılır: native prepare'de tekrar eden ad
+            // HY093 verir (v0.11.3 canlı vakası).
+            $where .= ' AND (p.arama_metni LIKE :q_arama'
+                . ' OR (p.arama_metni IS NULL AND (p.name LIKE :q_ad OR p.name_original LIKE :q_orijinal'
+                . ' OR p.detail LIKE :q_detay)))';
+            $desen = '%' . $filters['q'] . '%';
+            $params['q_arama'] = $desen;
+            $params['q_ad'] = $desen;
+            $params['q_orijinal'] = $desen;
+            $params['q_detay'] = $desen;
+        }
+
+        return [$where, $params];
     }
 
     /** @return list<string> Listedeki silinmemiş ürünlerin durumları. */
@@ -115,24 +204,36 @@ final class ProductRepository
         $pdo = $this->connection->pdo();
         $statement = $pdo->prepare(
             'INSERT INTO products (list_id, sort_no, category_id, platform, external_id, name,
-                name_original, detail, url, vendor_name, vendor_url, sku_selection, sku_matrix,
+                name_original, source_lang, detail, url, vendor_name, vendor_url, sku_selection, sku_matrix,
                 main_image, main_image_source, video_url, qty, price_yuan, price_ddp_usd, price_target_try,
                 units_per_carton, raw_attributes, country_of_origin, country_of_dispatch,
                 tracking_no, status, note, created_at, updated_at)
-             VALUES (:list_id, :sort_no, :category_id, :platform, :external_id, :name,
-                :name_original, :detail, :url, :vendor_name, :vendor_url, :sku_selection, :sku_matrix,
+             VALUES (:list_id,
+                COALESCE(:sort_no, (SELECT sonraki FROM (SELECT COALESCE(MAX(sort_no), 0) + 1 AS sonraki
+                    FROM products WHERE list_id = :list_id_sira) AS s)), :category_id, :platform, :external_id, :name,
+                :name_original, :source_lang, :detail, :url, :vendor_name, :vendor_url, :sku_selection, :sku_matrix,
                 :main_image, :main_image_source, :video_url, :qty, :price_yuan, :price_ddp_usd, :price_target_try,
                 :units_per_carton, :raw_attributes, :country_of_origin, :country_of_dispatch,
                 :tracking_no, :status, :note, :created_at, :updated_at)',
         );
         $statement->execute([
             'list_id' => $listId,
-            'sort_no' => $data['sort_no'] ?? ($this->maxSortNo($listId) + 1),
+            // İE#20 C9 — SORT_NO YARIŞI: sıra ÖNCE okunup sonra yazılıyordu.
+            // İki ürün aynı anda eklendiğinde ikisi de aynı MAX+1 değerini okuyup
+            // AYNI sırayı alıyordu; belge sıralaması rastgeleleşiyor, "yeniden
+            // sırala" ekranı iki ürünü üst üste gösteriyordu. Sıra artık AYNI
+            // DEYİMDE üretilir (okuma ile yazma arasında boşluk kalmaz); açıkça
+            // verilen sort_no (liste kopyalama) yine önceliklidir.
+            'sort_no' => $data['sort_no'] ?? null,
+            'list_id_sira' => $listId,
             'category_id' => $data['category_id'] ?? null,
             'platform' => $data['platform'] ?? null,
             'external_id' => $data['external_id'] ?? null,
             'name' => $data['name'],
             'name_original' => $data['name_original'] ?? null,
+            // D12: kaynak dili yakalamada saptanır; verilmezse NULL kalır ve
+            // çeviri turu üç dili birden ister (bilmediğimizi uydurmayız).
+            'source_lang' => $data['source_lang'] ?? null,
             'detail' => $data['detail'] ?? null,
             'url' => $data['url'] ?? null,
             'vendor_name' => $data['vendor_name'] ?? null,
@@ -173,6 +274,18 @@ final class ProductRepository
             }
             $assignments[] = sprintf('%s = :%s', $column, $column);
             $params[$column] = $value;
+        }
+
+        // D11b: ADI KULLANICI YAZDIYSA İŞARETLENİR. Bu işaret olmadan, çeviri
+        // turu tazelendiğinde sunum katmanı kullanıcının düzelttiği adı da
+        // "eski çeviri" sanıp üzerine yeni öneriyi basardı (K54 ihlali).
+        // `name_elle` UÇTAN YAZILAMAZ (docs/10 §4 sözleşmesi genişletilmedi):
+        // yalnız adın kullanıcı tarafından değiştirilmesiyle 1 olur. Bayrak tek
+        // başına değişmediği için revizyon sözleşmesi de bozulmaz — ad değişimi
+        // zaten revizyonu artırır.
+        if (array_key_exists('name', $fields)) {
+            $assignments[] = 'name_elle = :name_elle';
+            $params['name_elle'] = 1;
         }
         if ($assignments === []) {
             return;
@@ -306,6 +419,106 @@ final class ProductRepository
         }
 
         return $updated;
+    }
+
+    /**
+     * LLM TURU BEKLEYEN ürünler (İE#20 C4 · D6 saha bulgusu, 25 Ağu 2026).
+     *
+     * ESKİ ÖLÇÜT YANLIŞTI: "önbellekte o başlık için HERHANGİ bir satır var mı".
+     * Yakalama anında makine katmanı (MyMemory) TR'yi zaten dolduruyordu; ürün
+     * bu yüzden "çevrilmiş" sayılıyor ve LLM turu ONA HİÇ UĞRAMIYORDU. Saha
+     * kanıtı: TR 4/4 ama sağlayıcı `mymemory` ve kalite düşük ("无脚踏 → Bisiklet
+     * Yok"; doğrusu "pedalsız"), EN 2/4 `llm:deepseek` ve kaliteli. K56'nın
+     * "TR+EN tek LLM isteğinde birlikte" ilkesi fiilen bozuluyordu.
+     *
+     * YENİ ÖLÇÜT: hedef dillerden HERHANGİ BİRİ için LLM'den (ya da onaylı elle
+     * düzeltmeden) gelmiş satır YOKSA ürün LLM turuna girer. Makine çevirisi
+     * artık ne olduğu şeydir: LLM gelene kadarki GEÇİCİ DOLDURMA.
+     *
+     * @return list<int> ürün kimlikleri
+     */
+    public function cevrilmemisler(?int $listeId = null, int $limit = 500): array
+    {
+        // D12 — ADAYLIK ÖLÇÜTÜ ÜRÜNÜN KENDİ KAYNAK DİLİNE GÖREDİR.
+        //
+        // Eski ölçüt ayarlardaki hedef dil listesine bakıyordu ve kaynak dili
+        // hesaba katmıyordu: Türkçe kaynaklı bir ürün "TR çevirisi yok" diye
+        // sonsuza dek aday kalır, motor da kendi diline çeviri üretmeye
+        // çalışırdı. Artık her ürün için ÜRETİLECEK diller kanonik üçlüden
+        // kendi kaynak dili düşülerek bulunur; kaynak dil NULL ise (eski kayıt,
+        // saptanamamış) üçü de istenir.
+        //
+        // "Kalıcı çeviri" = llm:* üretimi ya da `elle` onayı (K54). Makine
+        // çevirisi geçici doldurmadır ve ürünü adaylıktan ÇIKARMAZ.
+        $params = [];
+        $dilKosullari = [];
+        foreach (KanonikDiller::HEPSI as $sira => $dil) {
+            $ad = 'dil' . $sira;
+            $params[$ad] = $dil;
+            $params[$ad . '_kaynak'] = $dil;
+            $dilKosullari[] = "(
+                    (p.source_lang IS NULL OR p.source_lang <> :{$ad}_kaynak)
+                    AND NOT EXISTS (
+                      SELECT 1 FROM translation_cache c
+                      WHERE c.source_text = p.name_original
+                        AND c.target_lang = :{$ad}
+                        AND (c.provider LIKE 'llm:%' OR c.provider = '" . TranslationCacheRepository::ELLE_SAGLAYICI . "')
+                    )
+                  )";
+        }
+
+        $sql = "SELECT p.id FROM products p
+                WHERE p.deleted_at IS NULL
+                  AND p.name_original IS NOT NULL AND TRIM(p.name_original) <> ''
+                  AND (" . implode(' OR ', $dilKosullari) . ')';
+        if ($listeId !== null) {
+            $sql .= ' AND p.list_id = :list_id';
+            $params['list_id'] = $listeId;
+        }
+        $sql .= ' ORDER BY p.id LIMIT ' . max(1, min(2000, $limit));
+
+        $statement = $this->connection->pdo()->prepare($sql);
+        $statement->execute($params);
+
+        /** @var list<int> */
+        return array_map(static fn (mixed $v): int => (int) $v, $statement->fetchAll(\PDO::FETCH_COLUMN) ?: []);
+    }
+
+    /** Kanonik üç dilin tamamlanmadığı ürün sayısı — toplu çeviri ilerlemesi bunu okur. */
+    public function eksikDilliSayisi(?int $listeId = null): int
+    {
+        return count($this->cevrilmemisler($listeId, 2000));
+    }
+
+    /**
+     * ARAMA METNİNİ tazeler (İE#20 C7) — türetilmiş alandır, elle yazılmaz.
+     */
+    public function aramaMetniniTazele(int $urunId, string $metin): void
+    {
+        $statement = $this->connection->pdo()->prepare(
+            'UPDATE products SET arama_metni = :metin WHERE id = :id',
+        );
+        $statement->execute(['metin' => $metin, 'id' => $urunId]);
+    }
+
+    /**
+     * KAYIP YAZMA KORUMASI (İE#20 C9 — iyimser kilit).
+     *
+     * İki kullanıcı aynı ürünü açıp kaydettiğinde ikincisi birincinin
+     * değişikliğini SESSİZCE eziyordu; kimse bir şey kaybettiğini fark etmiyordu.
+     * Artık istemci okuduğu `surum` değerini geri gönderir; uyuşmuyorsa güncelleme
+     * REDDEDİLİR ve kullanıcıya "bu kayıt siz düzenlerken değişti" denir.
+     *
+     * @return bool sürüm tuttuysa true (ve sürüm bir artırıldı)
+     */
+    public function surumuIlerlet(int $urunId, int $beklenenSurum): bool
+    {
+        $statement = $this->connection->pdo()->prepare(
+            'UPDATE products SET surum = surum + 1 WHERE id = :id AND surum = :surum',
+        );
+        $statement->execute(['id' => $urunId, 'surum' => $beklenenSurum]);
+
+        return $statement->rowCount() === 1;
     }
 
     /** Durum geçişini tarihçeye yazar (K25). */
@@ -479,6 +692,46 @@ final class ProductRepository
         }
     }
 
+    /**
+     * GALERİYİ KOPYALAR (İE#20 C9) — liste kopyalamada eksik kalan parça.
+     *
+     * Liste kopyalanırken yalnız `products` satırları çoğaltılıyordu; galeri
+     * görselleri KOPYAYA GELMİYORDU. Kullanıcı için sonuç: "aynı listeyi
+     * kopyaladım ama ürünlerin fotoğrafları gitti". Ana görsel ürün satırında
+     * olduğu için duruyor, ek görseller kayboluyordu — hata yarım görünüyor ve
+     * geç fark ediliyordu.
+     *
+     * Dosya KOPYALANMAZ, KAYIT kopyalanır: iki ürün aynı dosyayı gösterir. Aynı
+     * görselin iki kopyası diski boşuna doldururdu; medya temizliği referans sayar.
+     */
+    public function copyImages(int $kaynakUrunId, int $hedefUrunId): int
+    {
+        $kaynak = $this->connection->pdo()->prepare(
+            'SELECT path, sort, storage_mode, source_url FROM product_images
+             WHERE product_id = :product_id ORDER BY sort, id',
+        );
+        $kaynak->execute(['product_id' => $kaynakUrunId]);
+
+        $ekle = $this->connection->pdo()->prepare(
+            'INSERT INTO product_images (product_id, path, sort, storage_mode, source_url)
+             VALUES (:product_id, :path, :sort, :storage_mode, :source_url)',
+        );
+
+        $adet = 0;
+        foreach ($kaynak->fetchAll() ?: [] as $satir) {
+            $ekle->execute([
+                'product_id' => $hedefUrunId,
+                'path' => $satir['path'],
+                'sort' => $satir['sort'],
+                'storage_mode' => $satir['storage_mode'] ?? 'local',
+                'source_url' => $satir['source_url'] ?? null,
+            ]);
+            $adet++;
+        }
+
+        return $adet;
+    }
+
     /** @return list<array<string, mixed>> */
     public function images(int $productId): array
     {
@@ -492,10 +745,23 @@ final class ProductRepository
 
         $images = [];
         foreach ($rows as $row) {
+            $path = (string) $row['path'];
+            // D11a: UZAK GÖRSEL BOZUK ADRESE ÇEVRİLİYORDU.
+            //
+            // Galeri satırları arşive taşınana kadar `path` bir TAM ADRESTİR
+            // (https://cdn.alicdn.com/...). Buradaki '/' öneki onu
+            // "/https://cdn.alicdn.com/..." hâline getiriyordu: tarayıcı bunu
+            // kendi alanında arıyor, 404 alıyor ve çekmecede BOŞ KARE kalıyordu.
+            // "5 görsel" yazan sayaç doğruydu, adresler bozuktu.
+            $uzak = str_starts_with($path, 'http://') || str_starts_with($path, 'https://');
             $images[] = [
                 'id' => (int) $row['id'],
-                'url' => '/' . ltrim((string) $row['path'], '/'),
+                'url' => $uzak ? $path : '/' . ltrim($path, '/'),
                 'sort' => (int) $row['sort'],
+                // Arayüz uzak görseli İŞARETLER: kaynak site hotlink'e izin
+                // vermeyebilir (alicdn Referer ACL) ve kare boş kalabilir.
+                // Sessiz boş kare yerine "arşive alınıyor" denir.
+                'uzak' => $uzak,
             ];
         }
 

@@ -31,7 +31,49 @@ final class ShareController extends ApiController
         private readonly ?\App\Services\Share\ShareKeyService $anahtar = null,
         // İE#19 E5: dışa verilen adresler settings.APP_URL'den üretilir (Host'tan DEĞİL).
         private readonly ?\App\Core\Config $appConfig = null,
+        // İE#21 B4 (PM şartı b): sistem listesi PAYLAŞILAMAZ.
+        private readonly ?\App\Services\Inbox\SistemListesi $sistem = null,
     ) {
+    }
+
+    /**
+     * GET /api/lists/{id}/share-text?lang=tr|en|zh — KANAL METNİ (İE#21 B6).
+     *
+     * Metin şablonu SUNUCUDAN gelir (`ShareTexts`): WhatsApp/e-posta metninin
+     * Türkçe, İngilizce ve Çince karşılıkları tek yerde durur. Panelde ikinci bir
+     * kopya yazmak, üç dilde iki ayrı gerçek demekti.
+     *
+     * BAĞLANTI SUNUCUYA GÖNDERİLMEZ: yanıt `{link}` yer tutucusunu OLDUĞU GİBİ
+     * döner ve panel onu kendi belleğindeki adresle değiştirir. Tam token'ın
+     * istek satırına (ve olası erişim günlüklerine) düşmemesi K51 disiplinidir.
+     *
+     * @param array<string, string> $args
+     */
+    public function text(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    {
+        $listId = $this->intArg($args, 'id');
+        $row = $listId === null ? null : $this->lists->find($listId);
+        if ($row === null) {
+            return Response::error($response, 'NOT_FOUND', 'Liste bulunamadı.', 404);
+        }
+
+        $dil = \App\Services\Share\ShareTexts::dil($request->getQueryParams()['lang'] ?? null);
+        $adet = $this->lists->urunSayisi((int) $row['id']);
+        $degerler = [
+            'liste' => (string) $row['name'],
+            'adet' => $adet,
+            'link' => '{link}',
+        ];
+        if (is_string($row['share_expires_at'] ?? null) && $row['share_expires_at'] !== '') {
+            $degerler['tarih'] = (new \DateTimeImmutable((string) $row['share_expires_at']))->format('d.m.Y');
+        }
+
+        return Response::success($response, [
+            'dil' => $dil,
+            'dil_adi' => \App\Services\Share\ShareTexts::dilAdi($dil),
+            'mesaj' => \App\Services\Share\ShareTexts::mesaj($dil, $degerler),
+            'konu' => \App\Services\Share\ShareTexts::metin($dil, 'eposta_konu', $degerler),
+        ]);
     }
 
     /**
@@ -158,6 +200,12 @@ final class ShareController extends ApiController
             return Response::error($response, 'NOT_FOUND', 'Liste bulunamadı.', 404);
         }
 
+        // Keşif Havuzu bir araştırma havuzudur; firmaya "sipariş listesi" diye
+        // gitmesi sessiz bir felaket olurdu. Kapı sunucudadır (İE#21 B4).
+        if ($this->sistem !== null && $this->sistem->sistemMi((int) $row['id'])) {
+            return Response::error($response, 'SYSTEM_LIST', $this->sistem->redMesaji('paylaşılamaz'), 422);
+        }
+
         $body = $this->body($request);
         $now = $this->clock->now();
 
@@ -201,7 +249,12 @@ final class ShareController extends ApiController
         // İE#19 E5: adres AYARLARDAKİ APP_URL'den üretilir. Eskiden isteğin Host
         // başlığından türetiliyordu; Host istemcinin yazdığı bir değerdir ve sahte
         // bir Host, firmaya gidecek QR'a yabancı bir alan adı bastırabilirdi.
-        $shareUrl = \App\Core\AppUrl::to($this->appConfig?->get('APP_URL'), $request, '/liste/' . $token);
+        $shareUrl = \App\Core\AppUrl::to(
+            $this->appConfig?->get('APP_URL'),
+            $request,
+            '/liste/' . $token,
+            \App\Core\AppUrl::hostYedegiIzinli($this->appConfig?->get('APP_ENV')),
+        );
 
         return Response::success($response, [
             'share_url' => $shareUrl,

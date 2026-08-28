@@ -31,6 +31,16 @@ final class SettingsRepository
     public const KEY_DOC_PREPARED_BY = 'doc_prepared_by';
 
     /**
+     * İE#21 EK-4 — PAYLAŞIM İLETİŞİM NUMARASI (B7).
+     *
+     * Kilit ekranındaki "yeni anahtar iste" düğmesi bu numaraya WhatsApp
+     * köprüsü açar. BOŞ BIRAKILABİLİR: numara yoksa düğme basılmaz ve ekran
+     * bilgi satırıyla yetinir (zarif bozulma). K44: `config.php`ye girmez,
+     * ayar tablosunda yaşar.
+     */
+    public const KEY_SHARE_CONTACT_PHONE = 'share_contact_phone';
+
+    /**
      * Ayar henüz girilmemişken kullanılan başlangıç değerleri.
      * Gerçek değerler `PUT /api/settings/rates` ile girilir (ayarlar iş emri);
      * o güne kadar liste oluşturulabilsin diye makul bir başlangıç verilir.
@@ -62,6 +72,22 @@ final class SettingsRepository
             'email' => $oku(self::KEY_DOC_EMAIL),
             'prepared_by' => $oku(self::KEY_DOC_PREPARED_BY),
         ];
+    }
+
+    /**
+     * Paylaşım iletişim numarası — YALNIZ RAKAM, boşsa null.
+     *
+     * wa.me yalnız ülke kodlu, işaretsiz rakam dizisi kabul eder ("905321234567").
+     * Kullanıcı "+90 532 123 45 67" yazabilsin diye temizleme OKUMA anında da
+     * yapılır: ayarı elle düzenleyen (ya da eski kayıt taşıyan) kurulumda düğme
+     * bozuk bir bağlantı üretmemelidir.
+     */
+    public function shareContactPhone(): ?string
+    {
+        $ham = $this->get(self::KEY_SHARE_CONTACT_PHONE);
+        $rakam = preg_replace('/\D+/', '', is_string($ham) ? $ham : '') ?? '';
+
+        return $rakam === '' ? null : $rakam;
     }
 
     public function get(string $key, ?string $default = null): ?string
@@ -122,13 +148,35 @@ final class SettingsRepository
         return $overrides;
     }
 
+    /**
+     * GÜNCEL YUAN KURU — İE#22 A2: TEK OKUMA NOKTASI.
+     *
+     * Önce AKTİF SNAPSHOT (`rate_snapshots.superseded_at IS NULL`), yoksa
+     * ayardaki kopya. Sıra bilinçlidir: snapshot tablosu kurun sürümlü
+     * gerçeğidir; `settings.yuan_tl` artık ondan TÜRETİLMİŞ kopyadır ve
+     * yalnız iki durumda okunur — migration henüz koşmadıysa ya da tablo
+     * bir sebeple okunamıyorsa. Böylece yirmiden fazla çağrı yeri
+     * DEĞİŞMEDEN yeni omurgaya bağlanır.
+     */
     public function yuanRate(): string
     {
-        return $this->get(self::KEY_YUAN_RATE, self::DEFAULT_YUAN_RATE) ?? self::DEFAULT_YUAN_RATE;
+        return $this->snapshotDegeri('CNY')
+            ?? $this->get(self::KEY_YUAN_RATE, self::DEFAULT_YUAN_RATE)
+            ?? self::DEFAULT_YUAN_RATE;
     }
 
     public function usdRate(): string
     {
-        return $this->get(self::KEY_USD_RATE, self::DEFAULT_USD_RATE) ?? self::DEFAULT_USD_RATE;
+        return $this->snapshotDegeri('USD')
+            ?? $this->get(self::KEY_USD_RATE, self::DEFAULT_USD_RATE)
+            ?? self::DEFAULT_USD_RATE;
+    }
+
+    /** Aktif snapshot değeri; tablo yoksa/boşsa null (çağıran kopyaya düşer). */
+    private function snapshotDegeri(string $currency): ?string
+    {
+        $deger = (new RateSnapshotRepository($this->connection))->aktifDeger($currency);
+
+        return is_string($deger) && trim($deger) !== '' ? $deger : null;
     }
 }

@@ -89,12 +89,16 @@ final class PublicRoutes
         // geçersiz/iptal/süresi dolmuş token ve hız sınırı aşımı AYNI 404'ü döndürür.
         // İE#14 A3: paylaşım sayfası da sözlükten geçen değerleri gösterir.
         // İE#15 A1: indirme bağlantılarını sayfa üretilirken İMZALAR.
+        // İE#21 B13: durum etiketleri TEK KAYNAKTAN (config/durumlar.json).
+        \App\Services\Export\TemplateV2::sozlukBagla($basePath);
         $shareDownload = new \App\Services\Share\ShareDownload((string) $config->get('APP_KEY', ''));
         $sharePage = new SharePage(
-            new \App\Services\Translation\ValueSet(
-                new \App\Services\Translation\Glossary($basePath . '/config', $basePath . '/storage'),
-            ),
+            \App\Services\Translation\ValueSetFabrikasi::kur($connection, $config, $basePath),
             $shareDownload,
+            // D11b: ürün adı panel ile AYNI kaynaktan çözülür.
+            adlar: new \App\Services\Translation\AdCozumleyici(
+                new \App\Models\TranslationCacheRepository($connection),
+            ),
         );
         $shareGate = new ShareGate($connection);
         // İE#18 G6 (K62): erişim anahtarı kapısı — "linki bilen görür" dönemi bitti.
@@ -144,7 +148,13 @@ final class PublicRoutes
                 $cerez = $request->getCookieParams()[\App\Services\Share\ShareKeyService::CEREZ_ADI] ?? null;
                 if (!$anahtar->cerezGecerli($token, $row, is_string($cerez) ? $cerez : null, $now)) {
                     $response->getBody()->write(
-                        $kilitSayfasi->render($presenter->list($row), $token, $surum, false, $dil),
+                        $kilitSayfasi->render($presenter->list($row), $token, $surum, false, $dil, [
+                            // İE#21 EK-4: "yeni anahtar iste" köprüsü ve art arda
+                            // hatalı deneme uyarısı için bağlam.
+                            'iletisim' => (new \App\Models\SettingsRepository($connection))->shareContactPhone(),
+                            'ardisik_hata' => $shareGate->anahtarDenemeSayisi($token, $ip, $now),
+                            'adres' => \App\Core\AppUrl::to($config->get('APP_URL'), $request, self::KANONIK_ON_EK . '/' . $token, \App\Core\AppUrl::hostYedegiIzinli($config->get('APP_ENV'))),
+                        ]),
                     );
 
                     return $response
@@ -162,13 +172,16 @@ final class PublicRoutes
                 // Kanonik adres (İE#18 G5 · İE#19 E5): sayfanın kendi bağlantısı, QR ve
                 // kanal metinleri /liste/ taşır — /p/ ile açılmış olsa bile — ve taban
                 // adres AYARLARDAN gelir, isteğin Host başlığından DEĞİL.
-                \App\Core\AppUrl::to($config->get('APP_URL'), $request, self::KANONIK_ON_EK . '/' . $token),
+                \App\Core\AppUrl::to($config->get('APP_URL'), $request, self::KANONIK_ON_EK . '/' . $token, \App\Core\AppUrl::hostYedegiIzinli($config->get('APP_ENV'))),
                 // İE#13 F4: paylaşım sayfası da belge antedini taşır (aynı kurumsal dil).
                 (new \App\Models\SettingsRepository($connection))->documentHeader(),
                 false,
                 $token,
                 $dil,
                 $now,
+                // İE#21 B8-4: sahip görünümü = panelde oturumu AÇIK olan kişi.
+                // Aynı adresi firma da açar; ikisini ayıran tek şey oturumdur.
+                $services->session->isLoggedIn(),
             );
             $response->getBody()->write($html);
 
@@ -182,7 +195,8 @@ final class PublicRoutes
         }
 
         // ── İE#18 G6-c: ANAHTAR DOĞRULAMA UCU ────────────────────────────────
-        $anahtarHandler = static function (ServerRequestInterface $request, ResponseInterface $response, array $args) use ($lists, $presenter, $shareGate, $services, $anahtar, $kilitSayfasi, $surum, $logger): ResponseInterface {
+        $settingsRepo = new \App\Models\SettingsRepository($connection);
+        $anahtarHandler = static function (ServerRequestInterface $request, ResponseInterface $response, array $args) use ($lists, $presenter, $shareGate, $services, $anahtar, $kilitSayfasi, $surum, $logger, $settingsRepo, $config): ResponseInterface {
             $now = $services->clock->now();
             $ip = ClientIp::from($request);
             $token = (string) ($args['token'] ?? '');
@@ -239,8 +253,15 @@ final class PublicRoutes
                     'token_onek' => substr($token, 0, 8),
                     'ip' => \App\Services\Share\ShareDownload::kirpilmisIp($ip),
                 ]);
+                // DİL KORUNUR: form gizli `lang` alanını taşır. Eskiden hatalı
+                // denemeden sonra ekran Türkçeye düşüyordu — firma dilini kaybediyordu.
+                $dil = \App\Services\Share\ShareTexts::dil($govde['lang'] ?? null);
                 $response->getBody()->write(
-                    $kilitSayfasi->render($presenter->list($row), $token, $surum, true),
+                    $kilitSayfasi->render($presenter->list($row), $token, $surum, true, $dil, [
+                        'iletisim' => $settingsRepo->shareContactPhone(),
+                        'ardisik_hata' => $shareGate->anahtarDenemeSayisi($token, $ip, $now),
+                        'adres' => \App\Core\AppUrl::to($config->get('APP_URL'), $request, self::KANONIK_ON_EK . '/' . $token, \App\Core\AppUrl::hostYedegiIzinli($config->get('APP_ENV'))),
+                    ]),
                 );
 
                 return $response->withStatus(401)
@@ -319,7 +340,7 @@ final class PublicRoutes
 
             $dil = \App\Services\Share\ShareTexts::dil($request->getQueryParams()['lang'] ?? null);
             // E5: QR'ın taşıdığı adres ayarlardaki APP_URL'den üretilir.
-            $adres = \App\Core\AppUrl::to($config->get('APP_URL'), $request, self::KANONIK_ON_EK . '/' . $token)
+            $adres = \App\Core\AppUrl::to($config->get('APP_URL'), $request, self::KANONIK_ON_EK . '/' . $token, \App\Core\AppUrl::hostYedegiIzinli($config->get('APP_ENV')))
                 . ($dil === 'tr' ? '' : '?lang=' . $dil);
 
             $png = \App\Services\Export\QrImage::png($adres);
