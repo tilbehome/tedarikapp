@@ -66,7 +66,7 @@ export default function SurumBalonu() {
           type="button"
           className="flex size-7 shrink-0 items-center justify-center rounded-lg text-ink-3 hover:bg-g50 hover:text-ink"
           onClick={kapat}
-          aria-label="Yenilikleri kapat"
+          aria-label="Yenilikleri gizle"
           data-testid="surum-balonu-kapat"
         >
           <X size={15} aria-hidden />

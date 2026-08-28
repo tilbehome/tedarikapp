@@ -53,7 +53,11 @@ test.describe('Gelen Kutusu', () => {
     await gorunen(page.getByText('E2E Yakalanan Ürün')).click();
     await expect(page.getByRole('dialog', { name: 'Yakalama detayı' })).toBeVisible();
     await expect(gorunen(page.getByText('便携式榨汁机'))).toBeVisible();
-    await page.getByRole('button', { name: 'Kapat' }).first().click();
+    // F43: KALICI TEST KİMLİĞİ. Eskiden `getByRole('button', { name: 'Kapat' })
+    // .first()` yazıyordu; erişilebilir ad EŞLEŞMESİ ALT DİZEDİR, dolayısıyla
+    // V3-B ile gelen "Yenilikleri kapat" balonu da bu seçiciye takıldı ve
+    // `.first()` yanlış düğmeyi seçti. Kimlik bu tür çakışmaları imkânsız kılar.
+    await page.getByTestId('cekmece-kapat').click();
 
     // ── Listeye taşı (İE#13 B1: seç → hedef → taşı) ──
     await page.getByLabel('Seç').first().check();
