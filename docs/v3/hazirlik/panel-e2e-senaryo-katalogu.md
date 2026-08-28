@@ -1044,6 +1044,194 @@ Bu katalog şu bağlayıcı sözleşmeleri otomasyona indirger:
 
 **Otomasyon notu:** Gerçek ayar API/MySQL ve Playwright; veri kaybı ile UI seçenekleri ayrı assert edilir.
 
+## 10. V3-B: Bildirimler, Panorama, Ayarlar sekmeleri, tema ve PWA — 10 senaryo
+
+### E2E-PNL-53 — Bildirim zili okunmamış rozetini basar
+
+**Amaç:** Bir olay doğduğunda üst çubuktaki zilin rozetlendiğini ve merkezin o satırı gösterdiğini kanıtlamak.
+
+**Sınıf:** B — Otomatik / panel-API
+**Ekran:** Kabuk / Üst çubuk
+
+**Ön koşul / hazırlık:** Bildirim tablosu boş; oturum açık.
+
+**Adımlar:**
+
+1. Bir liste oluştur (NTF-LIST-CREATED doğar).
+2. Paneli yenile; zilin rozetine bak.
+3. Zile bas, merkezdeki satırı oku, "okundu say" düğmesine bas.
+
+**Beklenen sonuç:** Rozet yalnız okunmamış varken basılır; merkez satırı katalogdaki başlık ve gövdeyi gösterir; okundu işaretinden sonra rozet düşer ve sayaç sıfırlanır.
+
+**Otomasyon notu:** Playwright; sayaç ucu ve merkez listesi ayrı assert edilir.
+
+### E2E-PNL-54 — Aynı olay penceresi içinde "×N" olarak birleşir
+
+**Amaç:** Yüksek frekanslı olayın bildirim merkezini boğmadığını kanıtlamak.
+
+**Sınıf:** B — Otomatik / panel-API
+**Ekran:** Kabuk / Bildirim merkezi
+
+**Ön koşul / hazırlık:** Eklenti token'ı üretilmiş; bildirim tablosu boş.
+
+**Adımlar:**
+
+1. Aynı platformdan beş yakalama gönder.
+2. Bildirim merkezini aç.
+
+**Beklenen sonuç:** Tek satır görünür, "×5" rozeti basılır ve gövde katalogdaki toplu cümledir; beş ayrı satır OLUŞMAZ.
+
+**Otomasyon notu:** Playwright + capture ucu; sayaç `birlesen_sayi` ile karşılaştırılır.
+
+### E2E-PNL-55 — Kritik bildirim anlık kart olarak çıkar, modal DEĞİLDİR
+
+**Amaç:** A5 görünüm deseninin uygulandığını kanıtlamak: köşe kartı sayfayı bloklamaz.
+
+**Sınıf:** B — Otomatik / panel-API
+**Ekran:** Kabuk
+
+**Ön koşul / hazırlık:** `onem=kritik` bir bildirim üretilmiş (ölü iş).
+
+**Adımlar:**
+
+1. Paneli aç; sağ üst kartı gör.
+2. Kartın arkasındaki bir düğmeye tıkla.
+3. Kartı X ile kapat, bildirim merkezini aç.
+
+**Beklenen sonuç:** Kart sağ üstte görünür; arkadaki düğme tıklanabilir (odak tuzağı yok); kapatılan kart bildirimi SİLMEZ ve okundu SAYMAZ — merkezde okunmamış durur.
+
+**Otomasyon notu:** Playwright; `data-testid="bildirim-anlik-kart"` ve arka plan tıklaması.
+
+### E2E-PNL-56 — Panorama brifingleri öncelik sırasıyla dizilir
+
+**Amaç:** "Bugün ne var?" bölümünün en acil konuyu başa aldığını kanıtlamak.
+
+**Sınıf:** B — Otomatik / panel-API
+**Ekran:** Panorama
+
+**Ön koşul / hazırlık:** Bir ölü iş ve bir bekleyen gelen kutusu kaydı.
+
+**Adımlar:**
+
+1. Ana ekranı aç.
+2. Brifing satırlarının sırasını oku.
+
+**Beklenen sonuç:** BRF-011 (ölü iş, öncelik 1) BRF-009'un (gelen kutusu, öncelik 3) üstündedir; her cümlede sayı doludur, süslü parantez KALMAZ.
+
+**Otomasyon notu:** Playwright; `data-testid="panorama-brifingler"`.
+
+### E2E-PNL-57 — "Henüz ölçülmüyor" ayrı gösterilir
+
+**Amaç:** Ölçülemeyen brifinglerin "koşul sağlanmadı" ile karıştırılmadığını kanıtlamak.
+
+**Sınıf:** B — Otomatik / panel-API
+**Ekran:** Panorama
+
+**Ön koşul / hazırlık:** Temiz sistem.
+
+**Adımlar:**
+
+1. Ana ekranı aç; boş gün cümlesini oku.
+2. "N konu henüz ölçülmüyor" düğmesine bas.
+
+**Beklenen sonuç:** Boş gün cümlesi katalogdan gelir; ölçülmeyen liste açılır ve her satır bir GEREKÇE taşır; bu satırlar brifing gibi gösterilmez.
+
+**Otomasyon notu:** Playwright; `data-testid="panorama-olculmeyen"`.
+
+### E2E-PNL-58 — Ayarlar 16 sekme ve URL eşliği
+
+**Amaç:** Sekme kodunun adres çubuğunda taşındığını ve yer imine eklenebildiğini kanıtlamak.
+
+**Sınıf:** B — Otomatik / panel-API
+**Ekran:** Ayarlar
+
+**Ön koşul / hazırlık:** Oturum açık.
+
+**Adımlar:**
+
+1. `/ayarlar` aç; sekme sayısını say.
+2. "Kur & Para Birimleri" sekmesine bas; adresi oku.
+3. `/ayarlar?sekme=guvenlik` adresini doğrudan aç.
+4. Tarayıcının geri düğmesine bas.
+
+**Beklenen sonuç:** 16 sekme görünür; adres `?sekme=kur` olur; doğrudan açılan adres Güvenlik sekmesini getirir; geri düğmesi önceki sekmeye döner.
+
+**Otomasyon notu:** Playwright; `data-testid="ayar-sekmeleri"`.
+
+### E2E-PNL-59 — Boş sekme gizlenmez, gerekçesini söyler
+
+**Amaç:** Bilgi mimarisinin yarısının saklanmadığını kanıtlamak.
+
+**Sınıf:** B — Otomatik / panel-API
+**Ekran:** Ayarlar
+
+**Ön koşul / hazırlık:** Oturum açık.
+
+**Adımlar:**
+
+1. "Firma Portalı" sekmesine bas.
+
+**Beklenen sonuç:** Sekme görünür ve açılır; içerik "Bu sekmede henüz ayar yok" der ve ne zaman dolacağını yazar; boş bir beyaz alan GÖSTERİLMEZ.
+
+**Otomasyon notu:** Playwright; `data-testid="ayar-sekme-bos"`.
+
+### E2E-PNL-60 — Üç tema modu ve kalıcılık
+
+**Amaç:** Açık/Koyu/Sistem seçiminin uygulandığını ve yenilemeden sonra korunduğunu kanıtlamak.
+
+**Sınıf:** B — Otomatik / panel-API
+**Ekran:** Ayarlar / Genel
+
+**Ön koşul / hazırlık:** Tarayıcı tercihi açık tema.
+
+**Adımlar:**
+
+1. Ayarlar > Genel'de "Koyu tema"yı seç; kök öğenin `data-theme` değerini oku.
+2. Sayfayı yenile.
+3. "Sistem teması"nı seç.
+
+**Beklenen sonuç:** Koyu seçimde `data-theme="dark"`; yenilemeden sonra da aynı; Sistem seçiminde işaret KALDIRILIR ve tarayıcı tercihi geçerli olur.
+
+**Otomasyon notu:** Playwright; `colorScheme` emülasyonu ile iki yön.
+
+### E2E-PNL-61 — Service worker kapsamı paylaşım sayfasını içermez
+
+**Amaç:** Oturumsuz paylaşım sayfasının önbelleğe alınmadığını kanıtlamak.
+
+**Sınıf:** B — Otomatik / panel-API
+**Ekran:** Kabuk + Paylaşım
+
+**Ön koşul / hazırlık:** Üretim derlemesi; bir paylaşım linki üretilmiş.
+
+**Adımlar:**
+
+1. Paneli aç, service worker kaydını bekle.
+2. Kayıtlı SW'nin kapsamını oku.
+3. Paylaşım sayfasını aç ve önbellek anahtarlarını listele.
+
+**Beklenen sonuç:** Kapsam `/panel/` ile biter; paylaşım sayfası isteği SW'ye düşmez ve hiçbir önbellekte kaydı bulunmaz.
+
+**Otomasyon notu:** Playwright; `navigator.serviceWorker.getRegistrations()` ve `caches.keys()`.
+
+### E2E-PNL-62 — Sözlük CSV turu: indir, düzenle, yükle
+
+**Amaç:** CSV döngüsünün çalıştığını ve kullanıcı teriminin korunduğunu kanıtlamak.
+
+**Sınıf:** B — Otomatik / panel-API
+**Ekran:** Ayarlar / Diller & Sözlük
+
+**Ön koşul / hazırlık:** Sözlükte elle yazılmış bir terim var.
+
+**Adımlar:**
+
+1. CSV'yi indir; başlık satırını ve mevcut terimi gör.
+2. Aynı terime FARKLI karşılık, bir de yeni terim içeren dosya yükle.
+3. Sonuç bildirimini oku.
+
+**Beklenen sonuç:** Yeni terim eklenir; mevcut terim DEĞİŞMEZ; bildirim "N eklendi, M korundu" der ve sözlük içe aktarım olayı bildirim merkezine düşer.
+
+**Otomasyon notu:** Playwright dosya yükleme; sunucu tarafı SozlukCsvTest ile eşleşir.
+
 ## 9. Uygulama notları
 
 - A senaryoları tekil/parametrik Vitest veya yerel Playwright component testlerine; B senaryoları Playwright testlerine ve gerektiğinde API/DB yardımcı assertion'larına çevrilmelidir.

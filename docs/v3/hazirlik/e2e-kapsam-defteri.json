@@ -475,15 +475,15 @@
     },
     "E2E-PNL-50": {
       "baslik": "Geçerli sözlük CSV içe aktarımı",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": "V3-B: sözlük CSV içe aktarımı özelliğiyle birlikte (İE#22 defteri)."
+      "durum": "kapsandi",
+      "dosya": "tests/Http/SozlukCsvTest.php",
+      "test": "testICEAKTARIMYENITERIMEKLER"
     },
     "E2E-PNL-51": {
       "baslik": "Hatalı sözlük CSV mevcut veriyi bozmaz",
-      "durum": "bekliyor",
-      "dosya": "",
-      "test": "V3-B: sözlük CSV içe aktarımı özelliğiyle birlikte (İE#22 defteri)."
+      "durum": "kapsandi",
+      "dosya": "tests/Http/SozlukCsvTest.php",
+      "test": "testBOZUKSATIRSAYILIRAMAAKISIDURDURMAZ"
     },
     "E2E-PNL-52": {
       "baslik": "Hedef dil listesi değişimi ve bağımlı UI",
@@ -532,6 +532,64 @@
       "dosya": "e2e/tests/08-eklenti-paneli.spec.ts",
       "test": "E2E-EKL-35 — varyant çipleri SALT GÖRÜNÜM Türkçe (v1.0.1 A9)",
       "not": "K90: eklentide LLM yok, gömülü kapalı sözlük. Seçim geri çağrısının ORİJİNAL değeri taşıdığı da sınanır."
+    },
+    "E2E-PNL-53": {
+      "baslik": "Bildirim zili okunmamış rozetini basar",
+      "durum": "kapsandi",
+      "dosya": "tests/Services/BildirimYayinciTest.php",
+      "test": "testHEPSIOKUNDUSAYACISIFIRLAR"
+    },
+    "E2E-PNL-54": {
+      "baslik": "Aynı olay penceresi içinde \"×N\" olarak birleşir",
+      "durum": "kapsandi",
+      "dosya": "tests/Services/BildirimYayinciTest.php",
+      "test": "testBIRLESTIRMEACIKOLAYTEKSATIRDATOPLANIR"
+    },
+    "E2E-PNL-55": {
+      "baslik": "Kritik bildirim anlık kart olarak çıkar, modal DEĞİLDİR",
+      "durum": "bekliyor",
+      "not": "Gerçek tarayıcı gerektirir (yerleşim/odak/SW kaydı); Playwright turunda kodlanacak."
+    },
+    "E2E-PNL-56": {
+      "baslik": "Panorama brifingleri öncelik sırasıyla dizilir",
+      "durum": "kapsandi",
+      "dosya": "tests/Http/PanoramaTest.php",
+      "test": "testOLUISBRIFINGIENYUKSEKONCELIKTE"
+    },
+    "E2E-PNL-57": {
+      "baslik": "\"Henüz ölçülmüyor\" ayrı gösterilir",
+      "durum": "kapsandi",
+      "dosya": "tests/Http/PanoramaTest.php",
+      "test": "testOLCULEMEYENBRIFINGLERGEREKCELIDONER"
+    },
+    "E2E-PNL-58": {
+      "baslik": "Ayarlar 16 sekme ve URL eşliği",
+      "durum": "kapsandi",
+      "dosya": "frontend/src/screens/ayarlar/korumaListesi.test.ts",
+      "test": "sekme sayısı 16 ve numaralar 1..16"
+    },
+    "E2E-PNL-59": {
+      "baslik": "Boş sekme gizlenmez, gerekçesini söyler",
+      "durum": "kapsandi",
+      "dosya": "frontend/src/screens/ayarlar/korumaListesi.test.ts",
+      "test": "boş sekmenin GEREKÇESİ var"
+    },
+    "E2E-PNL-60": {
+      "baslik": "Üç tema modu ve kalıcılık",
+      "durum": "bekliyor",
+      "not": "Gerçek tarayıcı gerektirir (yerleşim/odak/SW kaydı); Playwright turunda kodlanacak."
+    },
+    "E2E-PNL-61": {
+      "baslik": "Service worker kapsamı paylaşım sayfasını içermez",
+      "durum": "kapsandi",
+      "dosya": "frontend/src/lib/swKapsam.test.ts",
+      "test": "kayıt açıkça /panel/ kapsamı ister"
+    },
+    "E2E-PNL-62": {
+      "baslik": "Sözlük CSV turu: indir, düzenle, yükle",
+      "durum": "kapsandi",
+      "dosya": "tests/Http/SozlukCsvTest.php",
+      "test": "testCAKISMADAKULLANICITERIMIKAZANIR"
     }
   }
 }

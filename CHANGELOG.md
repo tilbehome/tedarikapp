@@ -5,6 +5,51 @@ Her release'te bu dosya güncellenir (docs/07 bölüm 4). Kategoriler: Eklendi /
 
 ## [Yayınlanmadı]
 
+## [1.2.0] — 29 Ağustos 2026
+
+Profesyonel arayüz fazı (V3-B): panel artık ne olduğunu söylüyor.
+
+### Eklendi
+
+- **Bildirim merkezi.** `notifications` tablosu, `BildirimYayinci` servisi ve üst
+  çubukta zil + okunmamış rozeti. Katalogdaki 37 olayın **27'si** kod tarafında
+  bir tetik noktasına bağlandı; kalan 10'u gerekçesiyle `BagliOlaylar::BEKLEYEN`
+  sicilinde duruyor. Yüksek frekanslı olaylar `UNIQUE(olay_kodu, grup_anahtari,
+  pencere_baslangic)` üçlüsüyle tek satırda birleşiyor ve "×N" rozetiyle sayılıyor.
+- **Anlık kart (A5 deseni).** Yalnız `onem=kritik` olaylarda, sağ üst köşede,
+  modal DEĞİL. Aynı olay oturum başına bir kez; kapatılan kart merkezde kalır.
+- **Panorama — "Bugün ne var?".** Tek uç (`GET /api/panorama`), koşullar
+  SUNUCUDA değerlendiriliyor, tek toplu okuma. 8 brifing gerçek veriye bağlı;
+  ölçülemeyen 10'u "henüz ölçülmüyor" olarak AYRI ve gerekçeli gösteriliyor.
+- **Ayarlar 16 sekmeye bölündü.** 645 satırlık tek sayfa yerine bilgi
+  mimarisine uygun sekmeler; sekme kodu URL'de (`/ayarlar?sekme=kur`).
+- **Sözlük CSV dışa/içe aktarma.** Çakışmada kullanıcı terimi kazanır.
+- **Tema seçici Ayarlar > Genel'e eklendi** (footer menüsündeki hızlı geçişin yanına).
+- **PWA kabuğu.** `/panel/sw.js`, kapsam yalnız `/panel/`; `/api/*` her zaman
+  ağa gider; önbellek adı derleme damgasındaki commit'e bağlı.
+- **Panel içi günlük görüntüleyici** (Ayarlar > Veri & Bakım): sunucuya girmeden
+  hata görme.
+- **"Yenilikler" balonu**: her sürümde kullanıcı diliyle, okundu işareti sunucuda.
+- **Formlarda "kaydedilmedi" uyarısı** (ürün formu).
+
+### Değişti
+
+- Ana ekranın adı **Panorama**; brifingler özet kartlarının üstünde.
+- `ActivityLog::record()` artık yazdığı satırın kimliğini DÖNDÜRÜYOR — birleştirmesi
+  kapalı bildirimlerin zorunlu audit bağlantısı buradan geliyor.
+- Kur geçmişi tablosu İE#22'nin yeni alanlarını gösteriyor: geçerli rozeti,
+  kaynak (elle/TCMB) ve bitiş damgası. `set_at` alan adı korundu.
+- Sabit renk bekçisinin kapsamı `.tsx`ten `.ts` ve `.css`e genişletildi.
+- Tema rengi tek yerde ve tek değer: lacivert (gerekçe `frontend/index.html`de).
+
+### Düzeltildi
+
+- Çeviri önerisi isteği patladığında ekran sessiz kalıyordu; artık hata
+  söyleniyor. "Öneri yok" ile "istek başarısız" ayrıldı (K54 sınırı korunarak).
+- CI'daki `composer audit` adımına 3 denemelik yeniden deneme eklendi:
+  packagist'in geçici 502'si PR'ları kırmızıya boyuyordu. Güvenlik kapısı
+  gevşetilmedi.
+
 ## [1.1.0] — 28 Ağustos 2026
 
 **Altyapı sürümü.** Görünen yüzde iki değişiklik var; gerisi V3-B öncesi zemin
