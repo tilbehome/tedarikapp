@@ -78,7 +78,7 @@ final class PanoramaTest extends AuthTestCase
 
     public function testKATALOGDAKIHERBRIFINGSINIFLANDIRILMIS(): void
     {
-        $ham = (string) file_get_contents(dirname(__DIR__, 2) . '/docs/v3/hazirlik/v3-b/panorama-brifing-katalogu.json');
+        $ham = (string) file_get_contents(dirname(__DIR__, 2) . '/config/panorama-brifing-katalogu.json');
         /** @var array{brifing_sablonlari: list<array{id: string}>} $katalog */
         $katalog = json_decode($ham, true, 512, JSON_THROW_ON_ERROR);
         $kodlar = array_map(static fn (array $b): string => $b['id'], $katalog['brifing_sablonlari']);

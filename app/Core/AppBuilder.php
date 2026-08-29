@@ -114,6 +114,15 @@ final class AppBuilder
             $basePath,
         );
 
+        // K99 — ÇALIŞMA ZAMANI KATALOGLARI AÇILIŞTA BİR KEZ DENETLENİR.
+        //
+        // v1.2.0'ın ilk paketinde kataloglar `docs/` altındaydı ve paket
+        // `docs/`u içermiyordu: uygulama açıldı, çalıştı, hiçbir bildirim
+        // üretmedi ve kimse fark etmedi. Denetim burada yapılır ki sorun
+        // İLK İSTEKTE görünür olsun — kritik log, "Sistem durumu"nda kırmızı
+        // madde ve panorama ucunda anlaşılır hata.
+        $katalogDurumu = new \App\Core\KatalogDurumu($basePath, $logger);
+
         $app->get('/api/health', self::healthAction($config, $connection, $logger));
 
         // K43 + İE#19 G4: kurulum bütünlüğü. Kimliksiz yol yalnız ÖZET döner
@@ -202,7 +211,7 @@ final class AppBuilder
 
         // Güncelleme yolu (İE#5 §12): kurulum kilitlendikten sonra migration koşmanın
         // kimlik doğrulamalı yolu. Yazma ucu ayrıca CSRF ister.
-        $system = new SystemController($basePath, $connection, $setupLock, $services->clock, $mediaService, $stateMachine, $config);
+        $system = new SystemController($basePath, $connection, $setupLock, $services->clock, $mediaService, $stateMachine, $config, $katalogDurumu);
         Routes\SystemRoutes::register($app, $system, $services, $responseFactory);
 
         $listController = new ListController(
@@ -466,6 +475,7 @@ final class AppBuilder
             ),
             new \App\Controllers\PanoramaController(
                 new \App\Services\Panorama\PanoramaServisi($connection, $services->clock, $basePath),
+                $katalogDurumu,
             ),
             new \App\Controllers\SurumNotuController($settingsRepository, $basePath),
             new \App\Controllers\GunlukController($connection, $services->timezone),

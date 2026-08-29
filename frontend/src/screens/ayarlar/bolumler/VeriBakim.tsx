@@ -69,6 +69,35 @@ export default function VeriBakim() {
             <Satir label="Kurulum tarihi" value={dateTime(statusState.data.installed_at)} />
           </dl>
         ) : null}
+        {/* K99: çalışma zamanı katalogları. Eksik bir katalog, bağlı özelliğin
+            SESSİZCE ölü olması demektir — bu yüzden kırmızı ve gerekçeli. */}
+        {(statusState.data?.kataloglar ?? []).length > 0 ? (
+          <div className="mt-3 border-t border-line-soft pt-3" data-testid="katalog-durumu">
+            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-3">
+              Çalışma zamanı katalogları
+            </h3>
+            <ul className="space-y-1.5 text-sm">
+              {(statusState.data?.kataloglar ?? []).map((katalog) => (
+                <li key={katalog.kod} className="flex flex-wrap items-baseline gap-1.5">
+                  <span
+                    className={`rounded px-1.5 py-0.5 text-xs font-semibold ${
+                      katalog.saglikli ? 'bg-ok-bg text-ok' : 'bg-err-bg text-err'
+                    }`}
+                    data-testid={`katalog-${katalog.kod}`}
+                  >
+                    {katalog.saglikli ? 'yüklü' : 'EKSİK'}
+                  </span>
+                  <span className="text-ink-2">{katalog.ad}</span>
+                  <code className="text-xs text-ink-3">{katalog.yol}</code>
+                  {katalog.hata !== null ? (
+                    <span className="w-full text-xs text-err">{katalog.hata}</span>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+
         {statusState.data && statusState.data.migrations.pending_count > 0 ? (
           <MigrationActions onDone={statusState.reload} />
         ) : null}

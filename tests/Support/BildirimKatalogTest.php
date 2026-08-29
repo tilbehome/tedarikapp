@@ -20,7 +20,7 @@ use PHPUnit\Framework\TestCase;
  */
 final class BildirimKatalogTest extends TestCase
 {
-    private const KATALOG = '/docs/v3/hazirlik/v3-b/bildirim-olay-katalogu.json';
+    private const KATALOG = '/config/bildirim-olay-katalogu.json';
 
     /** @return array<string, mixed> */
     private function katalog(): array

@@ -119,7 +119,27 @@ Sonraki sürümler: sihirbaz YOK — zip yüklenir, admin girişinde "veritaban�
 - Sihirbaz adım hatası: dostane Türkçe mesaj + teknik detay bölümü + **"Tanılama raporunu kopyala"** düğmesi (ortam + eklenti VAR/YOK + hata + işlem günlüğü; sır İÇERMEZ).
 - Kurulu (kilitli) sistemde çalışma zamanı hatası: kullanıcıya zarif genel mesaj + Request-ID; tam detay `app_logs`a yazılır ve aynı Request-ID ile bulunur.
 
-### Güncelleme sonrası iki denetim (İE#17 G7)
+### Güncelleme sonrası DÖRT denetim (İE#17 G7 · V3-B EK-1)
+
+0. **cPanel > MultiPHP Manager: alan adı için PHP 8.4'ü YENİDEN UYGULA.**
+   ⚠️ **Bu adım kurulumdan HEMEN SONRA yapılır, gecikmez.**
+
+   Kurulum docroot'taki `.htaccess`i paketten gelen dosyayla ezer ve o dosyada
+   **cPanel'in ürettiği handler bloğu YOKTUR**. Blok silinince alan adı
+   sunucunun varsayılan PHP sürümüne (8.1) düşer, `platform-check` uygulamayı
+   ilk istekte durdurur ve panel hiç açılmaz. 29 Ağustos 2026'da tam olarak bu
+   yaşandı.
+
+   Kontrol: docroot `.htaccess` dosyasında şuna benzer bir blok olmalı —
+
+   ```apache
+   # php -- BEGIN cPanel-generated handler, do not edit
+   AddHandler application/x-httpd-ea-php84 .php .php8 .phtml
+   # php -- END cPanel-generated handler, do not edit
+   ```
+
+   Blok yoksa MultiPHP Manager'dan 8.4 yeniden uygulanır (blok kendiliğinden
+   geri yazılır). Uygulama açılmıyorsa ÖNCE buraya bakılır; kod aranmaz.
 
 1. **Dosya bütünlüğü:** panelde `/api/system/integrity` çağrılır (ya da Ayarlar >
    Sistem durumu). MANIFEST ile diskteki dosyalar karşılaştırılır; eksik/bozuk
@@ -129,6 +149,11 @@ Sonraki sürümler: sihirbaz YOK — zip yüklenir, admin girişinde "veritaban�
    (İE#17 G1/G7), ama kullanıcının tarayıcısındaki ESKİ kopya bir kez daha
    sunulmuş olabilir. Menü akışa dökülmüş, yazdırma penceresi açılmıyorsa
    neredeyse her zaman sebep budur — koda bakmadan önce sert yenileme denenir.
+3. **Çalışma zamanı katalogları (K99):** Ayarlar > Veri & Bakım > Sistem
+   durumu bölümündeki "Çalışma zamanı katalogları" listesinde her satır
+   **yüklü** olmalı. Kırmızı "EKSİK" satırı, bağlı özelliğin (bildirim merkezi
+   ya da Panorama) **sessizce ölü** olduğu anlamına gelir; paket eksik
+   açılmıştır ve zip yeniden açılır.
 
 ## 5. Geri Alma
 

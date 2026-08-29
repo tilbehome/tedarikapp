@@ -40,6 +40,9 @@ final class SystemController
         private readonly ?MediaService $media = null,
         private readonly ?StateMachine $stateMachine = null,
         private readonly ?\App\Core\Config $appConfig = null,
+        // K99: açılışta yapılan katalog denetiminin sonucu — "Sistem durumu"
+        // ekranı bunu kırmızı madde olarak basar.
+        private readonly ?\App\Core\KatalogDurumu $katalogDurumu = null,
     ) {
     }
 
@@ -594,6 +597,10 @@ final class SystemController
         return Response::success($response, [
             'app_version' => AppVersion::VALUE,
             'php_version' => PHP_VERSION,
+            // K99: çalışma zamanı katalogları. SAĞLIKLI olanlar da listelenir —
+            // boş bir liste "denetim yapılmadı" ile "her şey yolunda" arasında
+            // ayırt edilemezdi.
+            'kataloglar' => $this->katalogDurumu?->dokum() ?? [],
             'db_version' => $databaseVersion,
             'installed_at' => is_array($lockDetails) && isset($lockDetails['installed_at'])
                 ? (string) $lockDetails['installed_at']

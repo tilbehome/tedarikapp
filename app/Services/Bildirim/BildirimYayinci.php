@@ -6,8 +6,6 @@ namespace App\Services\Bildirim;
 
 use App\Core\Clock;
 use InvalidArgumentException;
-use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * BİLDİRİM YAYINCISI (V3-B A2) — olayların tek çıkış kapısı.
@@ -42,34 +40,37 @@ final class BildirimYayinci
         private readonly BildirimKatalogu $katalog,
         private readonly GrupAnahtariCozucu $cozucu,
         private readonly Clock $clock,
-        private readonly LoggerInterface $logger,
     ) {
     }
 
     /**
      * Olayı yayımlar.
      *
+     * SESSİZ BAŞARISIZLIK YOK (K99 · V3-B paket düzeltmesi).
+     *
+     * Burada eskiden `catch (Throwable) { log(); return null; }` vardı ve
+     * gerekçesi makul görünüyordu: "bildirim yardımcı bir çıktıdır, liste
+     * kaydını düşürmemeli". Ama o yutma, katalog paketten eksik çıktığında
+     * TÜM BİLDİRİM SİSTEMİNİN ölü olduğunu gizledi — uygulama çalışıyor,
+     * hiçbir bildirim üretilmiyor, kimse fark etmiyordu.
+     *
+     * Yeni sözleşme: yapılandırma/sözleşme hataları YUKARI VERİLİR. Kataloğun
+     * varlığı artık AÇILIŞTA denetleniyor (`KatalogDurumu`), dolayısıyla
+     * buraya gelen bir hata gerçek bir arızadır ve görünmesi gerekir.
+     *
      * @param  array<string, scalar|null> $baglam  hem şablon değerleri hem grup anahtarı atomları
      * @param  int|null $auditId `izinli=false` olaylarda ZORUNLU
-     * @return int|null yazılan/birleşen bildirim id'si; hata hâlinde null
+     * @return int yazılan/birleşen bildirim id'si
+     * @throws InvalidArgumentException sözleşme ihlali (bilinmeyen olay, tanımsız atom, eksik audit)
+     *
+     * Katalog okunamazsa `BildirimKatalogu` bir `RuntimeException` atar ve o da
+     * BURADAN GEÇER — `@throws` etiketi yazılmadı çünkü PHPStan bağımlılık
+     * üzerinden yayılan istisnayı izlemiyor ve "atılmıyor" diye kırmızı veriyor.
+     * Davranış `KatalogDurumuTest::testYAYINCIARTIKYUTMAZ` ile kanıtlı.
      */
-    public function yayimla(string $olayKodu, array $baglam = [], ?int $auditId = null): ?int
+    public function yayimla(string $olayKodu, array $baglam = [], ?int $auditId = null): int
     {
-        try {
-            return $this->yaz($olayKodu, $baglam, $auditId);
-        } catch (InvalidArgumentException $hata) {
-            // Sözleşme ihlali GELİŞTİRİCİ hatasıdır: bilinmeyen olay kodu,
-            // tanımsız atom, eksik audit. Yutulmaz — yukarı verilir ki test
-            // ve geliştirme ortamı görsün.
-            throw $hata;
-        } catch (Throwable $hata) {
-            $this->logger->error('Bildirim yazılamadı', [
-                'olay_kodu' => $olayKodu,
-                'hata' => $hata->getMessage(),
-            ]);
-
-            return null;
-        }
+        return $this->yaz($olayKodu, $baglam, $auditId);
     }
 
     /**

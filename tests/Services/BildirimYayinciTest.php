@@ -12,7 +12,6 @@ use App\Services\Bildirim\GrupAnahtariCozucu;
 use InvalidArgumentException;
 use PDO;
 use PHPUnit\Framework\TestCase;
-use Psr\Log\NullLogger;
 use Tests\Support\FrozenClock;
 
 /**
@@ -56,7 +55,6 @@ final class BildirimYayinciTest extends TestCase
             new BildirimKatalogu(dirname(__DIR__, 2)),
             new GrupAnahtariCozucu(),
             $this->clock,
-            new NullLogger(),
         );
     }
 

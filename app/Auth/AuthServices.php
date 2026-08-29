@@ -65,7 +65,6 @@ final class AuthServices
             new BildirimKatalogu($basePath ?? dirname(__DIR__, 2)),
             new GrupAnahtariCozucu(),
             $clock,
-            $logger,
         );
         $this->throttle = new LoginThrottle(
             $connection,
