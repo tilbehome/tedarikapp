@@ -1232,6 +1232,100 @@ Bu katalog şu bağlayıcı sözleşmeleri otomasyona indirger:
 
 **Otomasyon notu:** Playwright dosya yükleme; sunucu tarafı SozlukCsvTest ile eşleşir.
 
+## 11. V3-B Ayarlar yeniden tasarımı — 5 senaryo
+
+### E2E-PNL-63 — Sol gezinme grupları ve bölüm geçişi
+
+**Amaç:** On altı bölümün beş grupta tek bakışta görünmesini ve bölüm kodunun adres çubuğunda taşınmasını kanıtlamak.
+
+**Sınıf:** B — Otomatik / panel-API
+**Ekran:** Ayarlar
+
+**Ön koşul / hazırlık:** Oturum açık, geniş ekran (≥1024px).
+
+**Adımlar:**
+
+1. `/panel/ayarlar` aç; sol sütundaki grup başlıklarını oku.
+2. "Kur & Para Birimleri" maddesine bas; adresi ve bölüm başlığı kartını oku.
+3. Tarayıcının geri düğmesine bas.
+
+**Beklenen sonuç:** Beş grup başlığı (TEMEL / VERİ VE OPERASYON / FİYAT VE DİL / ÇIKTI VE İLETİŞİM / SİSTEM) görünür; seçimde adres `?sekme=kur` olur ve bölüm başlığı kartı o bölümün adını basar; geri düğmesi önceki bölüme döner.
+
+**Otomasyon notu:** Playwright; `data-testid="ayar-gezinme"` ve `bolum-basligi`.
+
+### E2E-PNL-64 — Arama ad, açıklama ve gizli sözcükleri süzer
+
+**Amaç:** Aramanın yalnız başlığa değil açıklamaya ve eş anlamlılara da bakmasını, sonuç yokken tasarlanmış boş durum çıkmasını kanıtlamak.
+
+**Sınıf:** B — Otomatik / panel-API
+**Ekran:** Ayarlar
+
+**Ön koşul / hazırlık:** Oturum açık.
+
+**Adımlar:**
+
+1. Arama kutusuna "sözlük" yaz.
+2. Eşleşen ve eşleşmeyen maddeleri kontrol et.
+3. "zzzz-olmayan-ayar" yaz.
+
+**Beklenen sonuç:** "Diller & Sözlük" görünür, "Güvenlik" düşer; ikinci aramada boş durum kartı ("Eşleşen ayar yok") çıkar — çıplak boşluk değil.
+
+**Otomasyon notu:** Playwright; `data-testid="ayar-arama"` ve `ayar-arama-bos`.
+
+### E2E-PNL-65 — KPI şeridi yalnız ölçülebilen bölümde
+
+**Amaç:** Ölçülemeyen kartın hiç render edilmediğini ve uydurma sayı basılmadığını kanıtlamak.
+
+**Sınıf:** B — Otomatik / panel-API
+**Ekran:** Ayarlar
+
+**Ön koşul / hazırlık:** Oturum açık; en az bir yedek ya da sistem durumu verisi mevcut.
+
+**Adımlar:**
+
+1. "Sistem & Yedekler" bölümünü aç; KPI şeridini oku.
+2. "Çeviri Sağlayıcısı" bölümünü aç.
+3. "Paylaşım & WhatsApp" bölümünü aç.
+
+**Beklenen sonuç:** İlk iki bölümde şerit görünür ve kartlar gerçek değer taşır; paylaşım bölümünde şerit HİÇ BASILMAZ (ölçülebilir KPI'si yok).
+
+**Otomasyon notu:** Playwright; `data-testid="kpi-serit"` / `kpi-kart`.
+
+### E2E-PNL-66 — Dar ekranda gezinme açılır listeye döner
+
+**Amaç:** 900px altında sol sütunun üstte açılır listeye dönüştüğünü kanıtlamak.
+
+**Sınıf:** B — Otomatik / panel-API
+**Ekran:** Ayarlar
+
+**Ön koşul / hazırlık:** Görünüm 780×900.
+
+**Adımlar:**
+
+1. `/panel/ayarlar` aç.
+
+**Beklenen sonuç:** Sticky dikey sütun gizlenir, gruplanmış açılır liste görünür; bölüm seçimi yine adres çubuğunu günceller.
+
+**Otomasyon notu:** Playwright; `data-testid="ayar-gezinme-mobil"`.
+
+### E2E-PNL-67 — Sürüm rozeti AppVersion değerini basar
+
+**Amaç:** Marka bloğundaki rozetin sabit metin değil, sunucunun bildirdiği sürüm olduğunu kanıtlamak (bulgu #2).
+
+**Sınıf:** B — Otomatik / panel-API
+**Ekran:** Kabuk
+
+**Ön koşul / hazırlık:** Oturum açık.
+
+**Adımlar:**
+
+1. Paneli aç.
+2. `/api/system/status` yanıtındaki `app_version` ile rozetteki metni karşılaştır.
+
+**Beklenen sonuç:** İkisi AYNI; rozet "1.0" basmaz. Sürüm alınamazsa rozet hiç görünmez.
+
+**Otomasyon notu:** Playwright; `data-testid="surum-rozeti"`.
+
 ## 9. Uygulama notları
 
 - A senaryoları tekil/parametrik Vitest veya yerel Playwright component testlerine; B senaryoları Playwright testlerine ve gerektiğinde API/DB yardımcı assertion'larına çevrilmelidir.

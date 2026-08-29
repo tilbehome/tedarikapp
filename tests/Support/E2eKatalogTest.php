@@ -78,15 +78,17 @@ final class E2eKatalogTest extends TestCase
         self::assertCount(35, $this->katalogKimlikleri(self::EKLENTI_KATALOG));
     }
 
-    public function testPANELKATALOGU62SENARYO(): void
+    public function testPANELKATALOGU67SENARYO(): void
     {
+        // 62 → 67 (v1.2.0, Ayarlar yeniden tasarımı): sol dikey gezinme, arama,
+        // KPI şeridi, dar ekran ve sürüm rozeti beş senaryo daha doğurdu.
         // 52 → 62 (v1.2.0, V3-B): bildirim merkezi, panorama, 16 sekmeli
         // ayarlar, tema ve PWA on senaryo doğurdu (PNL-53..62). Bunların
         // sekizinin sunucu/birim karşılığı VAR ve deftere dosya+test adıyla
         // yazıldı; ikisi (anlık kartın modal olmaması, tema kalıcılığı) GERÇEK
         // TARAYICI ister ve "bekliyor" olarak duruyor — jsdom odak tuzağını da
         // `prefers-color-scheme` emülasyonunu da doğru taklit etmez.
-        self::assertCount(62, $this->katalogKimlikleri(self::PANEL_KATALOG));
+        self::assertCount(67, $this->katalogKimlikleri(self::PANEL_KATALOG));
     }
 
     public function testHERSENARYODEFTERDEVAR(): void

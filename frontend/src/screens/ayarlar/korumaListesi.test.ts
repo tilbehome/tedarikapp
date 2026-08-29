@@ -101,19 +101,41 @@ describe('16 sekme sicili', () => {
     expect(sekmeyiCoz(null).kod).toBe('genel');
   });
 
-  test('PM eşlemesinin beş yüzeyi doğru sekmede', () => {
+  test('PM eşlemesinin beş yüzeyi doğru bölümde', () => {
+    // ADRESLER DEĞİŞTİ, KORUMALAR DEĞİŞMEDİ.
+    //
+    // Yeniden tasarım (V3-B madde 2) bölüm yapısını PM kararıyla değiştirdi:
+    // "Veri & Bakım" (kod `veri`) → "Sistem & Yedekler" (kod `sistem`), kuyruk
+    // kartı o bölümün içine girdi, "Sistem Durumu" ayrı bölüm oldu ve
+    // migration eylemleri kendi dosyasına taşındı.
+    //
+    // Bu testin ESKİ hâli `case 'veri'` ve `case 'kuyruk'` dallarını arıyordu.
+    // O dalları yalnız testi yeşil tutmak için bırakmak, ULAŞILAMAYAN ölü kod
+    // yazmak olurdu — yani "yeşil ama yalan". Adresler güncellendi; korunan
+    // BEŞ MADDE (yukarıdaki testler) olduğu gibi duruyor ve hepsi geçiyor.
     const kabuk = oku('src/screens/SettingsScreen.tsx');
 
-    // kuyruk kartı → 15, görsel arşivi + migration + medya yedeği → 16,
-    // uygulama adresi → 1.
-    expect(kabuk).toMatch(/case 'kuyruk':\s*\n\s*return <KuyrukDurumu \/>;/);
-    expect(kabuk).toMatch(/case 'veri':\s*\n\s*return <VeriBakim \/>;/);
+    // kuyruk kartı + görsel arşivi + medya yedeği → Sistem & Yedekler
+    expect(kabuk).toMatch(/case 'sistem':/);
+    expect(kabuk).toContain('<KuyrukDurumu />');
+    expect(kabuk).toContain('<VeriBakim />');
+    // migration eylemleri → Sistem Durumu bölümünde (bekleyen varsa görünür)
+    expect(kabuk).toMatch(/case 'durum':\s*\n\s*return <SistemDurumu \/>;/);
+    expect(oku('src/screens/ayarlar/bolumler/SistemDurumu.tsx')).toContain('MigrationActions');
+    // uygulama adresi → Genel
     expect(kabuk).toMatch(/case 'genel':\s*\n\s*return <GenelAyarlar \/>;/);
 
     const veri = oku('src/screens/ayarlar/bolumler/VeriBakim.tsx');
     expect(veri).toContain('MediaArchiveCard');
-    expect(veri).toContain('MigrationActions');
+    expect(veri).toContain('BackupCard');
 
     expect(oku('src/screens/ayarlar/bolumler/GenelAyarlar.tsx')).toContain('UygulamaAdresi');
+  });
+
+  test('eski bölüm kodları yeni bölüme EŞLENİR (yer imi kırılmaz)', () => {
+    // `?sekme=veri` yer imine eklenmiş olabilir. Sessizce ilk bölüme düşmek,
+    // kullanıcıyı yanlış ekrana götürüp sebebini söylememek olurdu.
+    expect(sekmeyiCoz('veri').kod).toBe('sistem');
+    expect(sekmeyiCoz('panorama').kod).toBe('gorunum');
   });
 });
