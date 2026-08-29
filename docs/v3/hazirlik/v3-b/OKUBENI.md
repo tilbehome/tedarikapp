@@ -28,3 +28,37 @@ isteyen `config/` altındaki dosyayı düzenler; buradaki OKUBENI yalnız işare
 - `ekran-durum-metinleri.json` — ekran durum metinleri kataloğu
 - `TESLIM-RAPORU-gorev13.md` — Görev #13 teslim raporu
 - `tasarim-referans/` — Panorama arayüz tasarımı (SVG)
+
+## Tasarım referansları
+
+`tasarim-referans/` altında iki dosya var ve ikisi de **ŞARTNAME DEĞİL,
+REFERANSTIR**: yerleşim ve dil için bakılır, birebir kopyalanmaz.
+
+| Dosya | Kapsam |
+|---|---|
+| `tedarikapp-panorama-v3b.svg` | Panorama ekranı düzeni |
+| `ayarlar-referans.html` | Ayarlar ekranı: sol dikey gezinme, bölüm başlığı kartı, KPI şeridi, bölüm içi kartlar |
+
+### Ayarlar referansından ÜÇ PM SAPMASI
+
+Referans bir mockup'tır; aşağıdaki üç noktada **uygulanan tasarım referanstan
+bilinçli olarak ayrılır**. Sapmalar PM kararıdır ve gerekçeleri kayıtlıdır.
+
+1. **Turuncu vurgu KULLANILMAZ — lacivert/altın token'lar geçerlidir.**
+   Referansta vurgu rengi turuncudur. Arayüzün kimliği LACİVERTTİR (amblem
+   turuncu olsa da, B13 hibrit entegrasyon kararı); vurgu `--navy`/`--gold`
+   token'larıyla verilir. `tokens.css`e YENİ RENK EKLENMEZ — mevcut palet
+   dışına çıkmak, koyu temayı da ikinci bir bakımı olan yere taşırdı.
+
+2. **"Depolama" kartı ÖLÇÜLEMİYORSA YOKTUR — uydurma sayı yasak.**
+   Referansta disk kullanımı gösteren bir kart var. Paylaşımlı hostingte disk
+   kotası uygulamadan güvenilir okunamaz; tahmini bir yüzde basmak, kullanıcıyı
+   olmayan bir veriye göre karar vermeye iter. Ölçülemeyen KPI kartı hiç
+   render edilmez (Panorama'daki "henüz ölçülmüyor" ayrımının aynı disiplini,
+   K67: bilinmeyen ≠ sıfır).
+
+3. **Marka bloğu ve "Yeni ürün ekle" düğmesi referanstan ALINMAZ.**
+   Sol üstteki marka bloğu ve birincil eylem düğmesi uygulamanın kendi
+   kabuğundadır (`YanMenu`); referanstaki hâlleri o bileşenlerin bugünkü
+   tasarımının yerine geçmez. Ayarlar ekranı yalnız KENDİ gövdesini yeniden
+   düzenler.

@@ -1,12 +1,11 @@
 import { settings as settingsApi, system as systemApi } from '../../../api/endpoints';
 import { useAsync } from '../../../lib/useAsync';
-import { count, dateTime } from '../../../lib/format';
+import { dateTime } from '../../../lib/format';
 import { mediaModeLabels } from '../../../locales/tr';
 import { ErrorNote, Skeleton } from '../../../components/ui';
 import IslemDurumu from '../../../components/IslemDurumu';
 import { useUzunIslem } from '../../../lib/useUzunIslem';
 import Satir from './Satir';
-import Gunluk from './Gunluk';
 
 /**
  * AYARLAR > 16 VERİ & BAKIM (V3-B C1).
@@ -17,7 +16,6 @@ import Gunluk from './Gunluk';
  */
 export default function VeriBakim() {
   const settingsState = useAsync(() => settingsApi.read(), []);
-  const statusState = useAsync(() => systemApi.status(), []);
 
   return (
     <>
@@ -31,99 +29,7 @@ export default function VeriBakim() {
 
       <BackupCard />
 
-      {/* V3-B F2: sunucuya girmeden hata görme. */}
-      <div className="mb-4">
-        <Gunluk />
-      </div>
 
-      <section className="card p-4">
-        <h2 className="mb-3 text-sm font-semibold text-ink-2">Sistem durumu</h2>
-        {statusState.loading ? (
-          <Skeleton rows={2} />
-        ) : statusState.error ? (
-          <ErrorNote message={statusState.error} onRetry={statusState.reload} />
-        ) : statusState.data ? (
-          <dl className="space-y-2 text-sm">
-            <Satir label="Uygulama sürümü" value={statusState.data.app_version} />
-            <Satir label="PHP" value={statusState.data.php_version} />
-            <Satir label="Veritabanı" value={statusState.data.db_version ?? '—'} />
-            <Satir label="Uygulanan migration" value={count(statusState.data.migrations.applied)} />
-            <Satir
-              label="Bekleyen migration"
-              value={
-                statusState.data.migrations.pending_count === 0
-                  ? 'Yok'
-                  : `${count(statusState.data.migrations.pending_count)} adet`
-              }
-            />
-            <Satir
-              label="Görsel arşivi"
-              value={
-                statusState.data.media.mode === 'download'
-                  ? mediaModeLabels.download
-                  : statusState.data.media.mode === 'hotlink'
-                    ? mediaModeLabels.hotlink
-                    : '—'
-              }
-            />
-            <Satir label="Kurulum tarihi" value={dateTime(statusState.data.installed_at)} />
-          </dl>
-        ) : null}
-        {/* K99: çalışma zamanı katalogları. Eksik bir katalog, bağlı özelliğin
-            SESSİZCE ölü olması demektir — bu yüzden kırmızı ve gerekçeli. */}
-        {(statusState.data?.kataloglar ?? []).length > 0 ? (
-          <div className="mt-3 border-t border-line-soft pt-3" data-testid="katalog-durumu">
-            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-3">
-              Çalışma zamanı katalogları
-            </h3>
-            <ul className="space-y-1.5 text-sm">
-              {(statusState.data?.kataloglar ?? []).map((katalog) => (
-                <li key={katalog.kod} className="flex flex-wrap items-baseline gap-1.5">
-                  <span
-                    className={`rounded px-1.5 py-0.5 text-xs font-semibold ${
-                      katalog.saglikli ? 'bg-ok-bg text-ok' : 'bg-err-bg text-err'
-                    }`}
-                    data-testid={`katalog-${katalog.kod}`}
-                  >
-                    {katalog.saglikli ? 'yüklü' : 'EKSİK'}
-                  </span>
-                  <span className="text-ink-2">{katalog.ad}</span>
-                  <code className="text-xs text-ink-3">{katalog.yol}</code>
-                  {katalog.hata !== null ? (
-                    <span className="w-full text-xs text-err">{katalog.hata}</span>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
-          </div>
-        ) : null}
-
-        {/* K102: kayıt sonrası yazılamayan bildirim. Birincil eylem düşmedi
-            ama olay KAYBOLDU — sessiz kalmamalı. */}
-        {(statusState.data?.bildirim_hatalari.sayi ?? 0) > 0 ? (
-          <div
-            className="mt-3 rounded-lg border border-err/40 bg-err-bg p-3 text-sm"
-            data-testid="bildirim-hatasi"
-          >
-            <b className="text-err">
-              {statusState.data?.bildirim_hatalari.sayi} bildirim yazılamadı
-            </b>
-            <p className="mt-0.5 text-xs text-ink-2">
-              İşlemleriniz kaydedildi ama bu olaylar bildirim merkezine düşmedi.
-              Yukarıdaki katalog satırları kırmızıysa sebebi odur.
-            </p>
-            {statusState.data?.bildirim_hatalari.son !== null ? (
-              <code className="mt-1 block break-all text-xs text-ink-3">
-                {statusState.data?.bildirim_hatalari.son}
-              </code>
-            ) : null}
-          </div>
-        ) : null}
-
-        {statusState.data && statusState.data.migrations.pending_count > 0 ? (
-          <MigrationActions onDone={statusState.reload} />
-        ) : null}
-      </section>
     </>
   );
 }
@@ -238,61 +144,6 @@ function MediaArchiveCard({
   );
 }
 
-/**
- * Güncelleme eylemleri — bekleyen migration varken görünür (İE#11 sonrası düzeltme:
- * panelde "migrate" düğmesi YOKTU, kullanıcı yeni sürümü kuramıyordu).
- *
- *  • "Güncellemeyi çalıştır" (migrate): bekleyen migration'ları uygular — ASIL yol.
- *  • "Defteri eşitle" (K49 baseline): tablolar VAR ama defter geride kalmışsa
- *    kayıtları KOŞMADAN işler; DDL çalıştırmaz, idempotenttir.
- */
-function MigrationActions({ onDone }: { onDone: () => void }) {
-  // İE#14 C2: migration TEK ATIMLIK bir iştir — iptal isteği sunucudaki işi
-  // yarıda bırakmaz (yarım migration tehlikelidir), yalnız sonucu işaretler.
-  const guncelleme = useUzunIslem();
-  const defter = useUzunIslem();
-
-  const migrate = () =>
-    void guncelleme.baslat(async () => {
-      const result = await systemApi.migrate();
-      onDone();
-
-      return result.applied_count === 0
-        ? 'Uygulanacak yeni migration yoktu.'
-        : `Güncelleme tamam: ${count(result.applied_count)} migration uygulandı.`;
-    });
-
-  const baseline = () =>
-    void defter.baslat(async () => {
-      const result = await systemApi.migrateBaseline();
-      onDone();
-
-      return result.skipped.length === 0
-        ? `Defter eşitlendi: ${count(result.recorded.length)} kayıt işlendi, bekleyen ${count(result.pending_count)}.`
-        : `${count(result.recorded.length)} kayıt işlendi; ${count(result.skipped.length)} kayıt atlandı (nesnesi yok) — bekleyen ${count(result.pending_count)}.`;
-    });
-
-  const busy = guncelleme.calisiyor || defter.calisiyor;
-
-  return (
-    <div className="mt-3 border-t border-line-soft pt-3">
-      <p className="text-xs text-ink-3">
-        Yeni sürüm veritabanı güncellemesi bekliyor. "Güncellemeyi çalıştır" bekleyen migration'ları uygular.
-        Tablolar zaten varsa (defter geride kalmışsa) "Defteri eşitle" kullanılır — o işlem tablo oluşturmaz.
-      </p>
-      <div className="mt-2 flex flex-wrap gap-2">
-        <button type="button" className="btn-primary" disabled={busy} onClick={migrate}>
-          {guncelleme.calisiyor ? 'Çalışıyor…' : 'Güncellemeyi çalıştır'}
-        </button>
-        <button type="button" className="btn-ghost" disabled={busy} onClick={baseline}>
-          {defter.calisiyor ? 'Eşitleniyor…' : 'Defteri eşitle'}
-        </button>
-      </div>
-      <IslemDurumu islem={guncelleme} fiil="Veritabanı güncelleniyor" onTekrar={migrate} />
-      <IslemDurumu islem={defter} fiil="Migration defteri eşitleniyor" onTekrar={baseline} />
-    </div>
-  );
-}
 
 /**
  * İE#14 D1 — yaşın İNSAN dili: "3 saat önce". Yedek hiç yoksa bunu açıkça söyler;

@@ -67,3 +67,8 @@ frontend/test-results/
 # Tamamı" kaydının `_files` klasörleri megabaytlarca üçüncü parti varlık taşır.
 /docs/1688-*.html
 /docs/1688-*_files/
+
+# V3-B: Playwright'ın ürettiği ayar ekranı görüntüleri. Kanıt olarak PM'e
+# iletilir, repoya girmez — her koşumda yeniden üretilirler ve ikili dosya
+# olarak tarihçeyi şişirirler.
+/e2e/ekranlar/

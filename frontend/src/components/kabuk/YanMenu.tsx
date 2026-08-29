@@ -3,6 +3,7 @@ import { ChevronDown, LogOut, Moon, Plus, Sun, SunMoon } from 'lucide-react';
 import { menuGruplari, type MenuOgesi } from '../../lib/menu';
 import { grubuCevir, useKabukDurumu } from '../../lib/kabukDurumu';
 import { temaDondur, temaEtiketleri, useTema } from '../../lib/tema';
+import { useSurum } from '../../lib/useSurum';
 import { useSession } from '../../store/session';
 import markaAmblem from '../../assets/marka-amblem.svg';
 
@@ -27,6 +28,7 @@ export default function YanMenu({
 }) {
   const { daraltilmis, kapaliGruplar, sonBakilanlar } = useKabukDurumu();
   const tema = useTema();
+  const surum = useSurum();
   const user = useSession((state) => state.user);
   const konum = useLocation();
 
@@ -59,9 +61,16 @@ export default function YanMenu({
             <span className="block text-[10px] font-semibold tracking-[0.14em] text-ink-3">TİLBE HOME</span>
             <span className="flex items-center gap-1.5 text-base font-bold tracking-tight text-ink">
               TedarikApp
-              <i className="not-italic rounded-md bg-g100 px-1.5 py-0.5 text-[10px] font-semibold text-ink-3">
-                {import.meta.env.VITE_SURUM ?? '1.0'}
-              </i>
+              {/* Sürüm SUNUCUDAN gelir (AppVersion). Alınamazsa rozet
+                  BASILMAZ — uydurma sürüm göstermek yanlış bilgi verir. */}
+              {surum !== null ? (
+                <i
+                  className="not-italic rounded-md bg-g100 px-1.5 py-0.5 text-[10px] font-semibold text-ink-3"
+                  data-testid="surum-rozeti"
+                >
+                  {surum}
+                </i>
+              ) : null}
             </span>
           </span>
         )}

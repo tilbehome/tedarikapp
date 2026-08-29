@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="acik">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>tedarikapp — Ayarlar tasarım referansı (V3-B)</title>
+<!--
+  AYARLAR TASARIM REFERANSI — V3-B kabul bulgusu #1
+  Tek dosya, dış istek yok (K51 CSP ile uyumlu), satır içi script yalnız bu
+  referansta (canlı panelde React bileşeni olarak yazılır).
+
+  Kaynak kararlar: tasarım sistemi (lacivert #0F2557 + altın #D4A017 yalnız
+  vurgu; nötr gri 50-900; Inter; 4px ritim; köşe 8/12/16; lucide 18px),
+  K98 (boş sekme gizlenmez, ne zaman dolacağını söyler), K99/K100 (çalışma
+  zamanı katalogları Sistem durumu'nda), K102 (bildirim hata sayacı).
+
+  Referansı canlıya taşırken:
+  - Tüm renkler tokens.css'ten; burada tanımlı --renk-* değişkenleri o
+    dosyadaki karşılıklarıdır, yeni renk EKLENMEZ.
+  - KPI kartları yalnız ölçülebilen değerleri basar; ölçülemeyen kart YOK.
+  - Marka bloğu, "+ Hızlı işlem" ve ana menü onaylı sürümdür, değişmez.
+-->
+<style>
+/* ───────── TOKENS (tokens.css ikizi) ───────── */
+:root{
+  --marka:#0F2557; --marka-koyu:#0A1A3E; --marka-acik:#E8ECF5;
+  --altin:#D4A017; --altin-acik:#FBF3DC;
+  --gri-50:#F7F8FB; --gri-100:#EEF0F5; --gri-200:#E1E4EC; --gri-300:#C9CED9;
+  --gri-400:#A3A9B8; --gri-500:#7A8194; --gri-600:#5B6276; --gri-700:#3F4557;
+  --gri-800:#272C3A; --gri-900:#151925;
+  --ok:#1E7A46; --ok-bg:#E6F4EC; --uyari:#B4530A; --uyari-bg:#FDF1E6;
+  --hata:#B3261E; --hata-bg:#FBEAE9; --bilgi:#1F5FB4; --bilgi-bg:#E8F0FB;
+
+  --zemin:#FFFFFF; --zemin-2:var(--gri-50); --zemin-3:var(--gri-100);
+  --kenar:var(--gri-200); --kenar-yumusak:var(--gri-100);
+  --metin:var(--gri-900); --metin-2:var(--gri-600); --metin-3:var(--gri-500);
+  --menu-zemin:var(--gri-50);
+
+  --golge-kart:0 1px 2px rgba(21,25,37,.05),0 1px 3px rgba(21,25,37,.04);
+  --golge-acilir:0 8px 24px rgba(21,25,37,.12);
+  --r8:8px; --r12:12px; --r16:16px;
+  --font:Inter,"Segoe UI",system-ui,-apple-system,Roboto,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+[data-theme="koyu"]{
+  --zemin:#171B27; --zemin-2:#11141E; --zemin-3:#1E2331;
+  --kenar:#2B3142; --kenar-yumusak:#232838;
+  --metin:#EEF0F5; --metin-2:#A3A9B8; --metin-3:#7A8194;
+  --menu-zemin:#0F1220; --marka-acik:#1A2748;
+  --altin-acik:#2E2711; --ok-bg:#14301F; --uyari-bg:#33220F; --hata-bg:#3A1A18; --bilgi-bg:#15243A;
+  --ok:#5CC98A; --uyari:#F0A05A; --hata:#F28B84; --bilgi:#7FB0F0;
+  --golge-kart:0 1px 2px rgba(0,0,0,.4);
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:var(--font);font-size:14px;line-height:1.45;color:var(--metin);background:var(--zemin);-webkit-font-smoothing:antialiased;font-feature-settings:"tnum" 1,"cv11" 1}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+code{font-family:var(--mono);font-size:12px}
+:focus-visible{outline:2px solid var(--marka);outline-offset:2px;border-radius:4px}
+[data-theme="koyu"] :focus-visible{outline-color:var(--altin)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+.ikon{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.ikon.kucuk{width:14px;height:14px}
+
+/* ───────── UYGULAMA KABUĞU ───────── */
+.kabuk{display:grid;grid-template-columns:248px 1fr;min-height:100vh}
+.menu{background:var(--menu-zemin);border-right:1px solid var(--kenar);display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.marka{display:flex;align-items:center;gap:10px;padding:16px 16px 12px}
+.marka-isaret{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--marka) 0%,var(--marka-koyu) 100%);display:grid;place-items:center;position:relative;flex:none}
+.marka-isaret::after{content:"";position:absolute;width:10px;height:10px;border-radius:2px;background:var(--altin);transform:rotate(45deg)}
+.marka-metin{line-height:1.15;min-width:0}
+.marka-ust{font-size:10px;letter-spacing:.14em;color:var(--metin-3);font-weight:600}
+.marka-ad{font-size:15px;font-weight:600;letter-spacing:-.02em}
+.rozet-surum{margin-left:auto;font-size:10px;font-weight:600;padding:2px 6px;border-radius:999px;background:var(--marka-acik);color:var(--marka)}
+[data-theme="koyu"] .rozet-surum{color:#C9D3F0}
+.hizli{margin:4px 16px 14px;height:38px;border-radius:var(--r8);background:var(--marka);color:#fff;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px;transition:background .15s}
+.hizli:hover{background:var(--marka-koyu)}
+.menu-grup{padding:8px 12px 4px;font-size:10.5px;letter-spacing:.12em;color:var(--metin-3);font-weight:600;display:flex;justify-content:space-between}
+.menu-oge{display:flex;align-items:center;gap:10px;height:36px;padding:0 12px;margin:1px 8px;border-radius:var(--r8);color:var(--metin-2);font-weight:500;position:relative;transition:background .12s,color .12s}
+.menu-oge:hover{background:var(--zemin-3);color:var(--metin)}
+.menu-oge.aktif{background:var(--altin-acik);color:var(--metin);font-weight:600}
+.menu-oge.aktif::before{content:"";position:absolute;left:-8px;top:8px;bottom:8px;width:3px;border-radius:3px;background:var(--altin)}
+.menu-oge .rozet{margin-left:auto;min-width:18px;height:18px;padding:0 6px;border-radius:999px;background:var(--hata);color:#fff;font-size:11px;font-weight:600;display:grid;place-items:center}
+.menu-alt{margin-top:auto;border-top:1px solid var(--kenar);padding:12px 16px;display:flex;align-items:center;gap:10px}
+.avatar{width:32px;height:32px;border-radius:50%;background:var(--marka);color:#fff;display:grid;place-items:center;font-size:12px;font-weight:600}
+.menu-alt .ad{font-weight:600;font-size:13px;line-height:1.2}
+.menu-alt .rol{font-size:11.5px;color:var(--metin-3)}
+.baglanti{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:11px;color:var(--metin-3)}
+.baglanti i{width:7px;height:7px;border-radius:50%;background:var(--ok);display:inline-block}
+
+.icerik{min-width:0;display:flex;flex-direction:column}
+.ustbar{height:56px;border-bottom:1px solid var(--kenar);display:flex;align-items:center;gap:16px;padding:0 24px;position:sticky;top:0;background:var(--zemin);z-index:5}
+.kirinti{display:flex;align-items:center;gap:8px;color:var(--metin-3)}
+.kirinti b{color:var(--metin);font-weight:600}
+.arama-global{margin-left:auto;width:360px;height:36px;border:1px solid var(--kenar);border-radius:var(--r8);background:var(--zemin-2);display:flex;align-items:center;gap:8px;padding:0 10px;color:var(--metin-3)}
+.arama-global kbd{margin-left:auto;font:inherit;font-size:10.5px;border:1px solid var(--kenar);border-radius:4px;padding:1px 5px;background:var(--zemin)}
+.ust-dugme{width:36px;height:36px;border-radius:var(--r8);display:grid;place-items:center;color:var(--metin-2);position:relative}
+.ust-dugme:hover{background:var(--zemin-3)}
+.ust-dugme .nokta{position:absolute;top:8px;right:8px;width:7px;height:7px;border-radius:50%;background:var(--uyari);border:2px solid var(--zemin)}
+
+/* ───────── SAYFA BAŞLIĞI ───────── */
+.sayfa{padding:28px 32px 48px;max-width:1480px;width:100%;margin:0 auto}
+.sayfa-bas{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:20px}
+.gozkasi{font-size:11px;letter-spacing:.12em;font-weight:600;color:var(--altin);display:flex;align-items:center;gap:8px;margin-bottom:6px}
+[data-theme="acik"] .gozkasi{color:#9A7410}
+h1{font-size:26px;font-weight:600;letter-spacing:-.025em;line-height:1.15}
+.sayfa-alt{color:var(--metin-2);margin-top:4px}
+.cipler{display:flex;gap:8px;flex-wrap:wrap}
+.cip{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:999px;border:1px solid var(--kenar);background:var(--zemin);font-size:12px;font-weight:500;color:var(--metin-2);white-space:nowrap}
+.cip.ok{color:var(--ok);background:var(--ok-bg);border-color:transparent}
+.cip.uyari{color:var(--uyari);background:var(--uyari-bg);border-color:transparent}
+.cip.hata{color:var(--hata);background:var(--hata-bg);border-color:transparent}
+.cip.bilgi{color:var(--bilgi);background:var(--bilgi-bg);border-color:transparent}
+
+/* ───────── AYARLAR: İKİ SÜTUN ───────── */
+.ayarlar{display:grid;grid-template-columns:272px minmax(0,1fr);gap:24px;align-items:start}
+.agez{position:sticky;top:80px;border:1px solid var(--kenar);border-radius:var(--r12);background:var(--zemin);box-shadow:var(--golge-kart);padding:12px 8px 8px;max-height:calc(100vh - 100px);overflow:auto}
+.agez-arama{margin:0 4px 8px;height:38px;border:1px solid var(--kenar);border-radius:var(--r8);display:flex;align-items:center;gap:8px;padding:0 10px;background:var(--zemin-2);color:var(--metin-3)}
+.agez-arama input{flex:1;border:0;background:transparent;font:inherit;color:var(--metin);outline:0;min-width:0}
+.agez-arama input::placeholder{color:var(--metin-3)}
+.agez-grup{padding:12px 12px 4px;font-size:10.5px;letter-spacing:.12em;font-weight:600;color:var(--metin-3)}
+.agez-oge{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:7px 10px;border-radius:var(--r8);position:relative;transition:background .12s}
+.agez-oge:hover{background:var(--zemin-3)}
+.agez-oge.aktif{background:var(--altin-acik)}
+.agez-oge.aktif::before{content:"";position:absolute;left:-8px;top:8px;bottom:8px;width:3px;border-radius:3px;background:var(--altin)}
+.agez-oge .kutu{width:30px;height:30px;border-radius:var(--r8);background:var(--zemin-3);display:grid;place-items:center;color:var(--metin-2);flex:none}
+.agez-oge.aktif .kutu{background:var(--zemin);color:var(--marka)}
+[data-theme="koyu"] .agez-oge.aktif .kutu{color:var(--altin)}
+.agez-oge>span:not(.kutu){flex:1;min-width:0}
+.agez-oge .ad{display:block;font-weight:600;font-size:13px;line-height:1.2}
+.agez-oge .acik{display:block;font-size:11.5px;color:var(--metin-3);line-height:1.2;margin-top:1px}
+.agez-oge .dikkat{margin-left:auto;width:8px;height:8px;border-radius:50%;background:var(--uyari);flex:none}
+.agez-oge[hidden]{display:none}
+.agez-grup[hidden]{display:none}
+.agez-bos{display:none;padding:20px 12px;text-align:center;color:var(--metin-3);font-size:13px}
+.agez.bos .agez-bos{display:block}
+.agez-secici{display:none}
+
+/* ───────── BÖLÜM ───────── */
+.bolum{display:none;gap:16px;flex-direction:column}
+.bolum.aktif{display:flex}
+.bolum-bas{display:flex;align-items:center;gap:14px}
+.bolum-bas .kutu{width:44px;height:44px;border-radius:var(--r12);background:var(--marka-acik);color:var(--marka);display:grid;place-items:center;flex:none}
+[data-theme="koyu"] .bolum-bas .kutu{color:#C9D3F0}
+.bolum-bas h2{font-size:18px;font-weight:600;letter-spacing:-.02em}
+.bolum-bas p{color:var(--metin-2);font-size:13px}
+.bolum-bas .sag{margin-left:auto;display:flex;align-items:center;gap:8px;color:var(--metin-3);font-size:12px}
+
+.kpi{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.kpi-kart{border:1px solid var(--kenar);border-radius:var(--r12);background:var(--zemin);box-shadow:var(--golge-kart);padding:14px 16px 12px;position:relative}
+.kpi-kart .etiket{font-size:10.5px;letter-spacing:.1em;font-weight:600;color:var(--metin-3);display:flex;align-items:center;justify-content:space-between}
+.kpi-kart .deger{font-size:22px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600;letter-spacing:-.02em;margin-top:6px;line-height:1.1}
+.kpi-kart .alt{font-size:12px;color:var(--metin-3);margin-top:3px}
+.kpi-kart.uyari{background:var(--uyari-bg);border-color:transparent}
+.kpi-kart.uyari .deger{color:var(--uyari)}
+.kpi-kart.hata{background:var(--hata-bg);border-color:transparent}
+.kpi-kart.hata .deger{color:var(--hata)}
+.kpi-kart.ok .deger{color:var(--ok)}
+
+.kart{border:1px solid var(--kenar);border-radius:var(--r12);background:var(--zemin);box-shadow:var(--golge-kart)}
+.kart-bas{display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid var(--kenar-yumusak)}
+.kart-bas .kutu{width:36px;height:36px;border-radius:var(--r8);border:1px solid var(--kenar);display:grid;place-items:center;color:var(--metin-2);flex:none}
+.kart-bas h3{font-size:15px;font-weight:600}
+.kart-bas p{font-size:12.5px;color:var(--metin-2)}
+.kart-bas .sag{margin-left:auto;display:flex;gap:8px;align-items:center}
+.kart-govde{padding:16px 20px}
+.alanlar{display:flex;flex-wrap:wrap;gap:28px;align-items:flex-end}
+.alan .e{font-size:10.5px;letter-spacing:.1em;font-weight:600;color:var(--metin-3)}
+.alan .d{margin-top:4px;font-weight:500;display:flex;align-items:center;gap:6px}
+.alan .d .nokta{width:8px;height:8px;border-radius:50%;background:var(--ok);display:inline-block}
+.alanlar .eylem{margin-left:auto;display:flex;gap:8px}
+.aciklama{font-size:12.5px;color:var(--metin-2);margin-top:14px}
+.dugme{height:36px;padding:0 14px;border-radius:var(--r8);font-weight:600;display:inline-flex;align-items:center;gap:8px;border:1px solid var(--kenar);background:var(--zemin);transition:background .12s,border-color .12s}
+.dugme:hover{background:var(--zemin-3)}
+.dugme.birincil{background:var(--marka);color:#fff;border-color:var(--marka)}
+.dugme.birincil:hover{background:var(--marka-koyu)}
+.dugme.tehlike{color:var(--hata);border-color:var(--hata)}
+.dugme.ghost{border-color:transparent;color:var(--metin-2)}
+.bant{display:flex;align-items:flex-start;gap:12px;padding:12px 14px;border-radius:var(--r8);border:1px solid transparent}
+.bant.uyari{background:var(--uyari-bg);color:var(--uyari)}
+.bant.hata{background:var(--hata-bg);color:var(--hata)}
+.bant.bilgi{background:var(--bilgi-bg);color:var(--bilgi)}
+.bant b{display:block;font-weight:600}
+.bant span{display:block;font-size:12.5px;color:var(--metin-2);margin-top:2px}
+.bant .ikon{margin-top:2px}
+table{width:100%;border-collapse:collapse}
+th{font-size:10.5px;letter-spacing:.1em;font-weight:600;color:var(--metin-3);text-align:left;padding:10px 20px;border-bottom:1px solid var(--kenar-yumusak)}
+td{padding:12px 20px;border-bottom:1px solid var(--kenar-yumusak);vertical-align:middle}
+tr:last-child td{border-bottom:0}
+tr:hover td{background:var(--zemin-2)}
+td.sayi,th.sayi{text-align:right;font-variant-numeric:tabular-nums}
+.durum{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:999px}
+.durum.ok{background:var(--ok-bg);color:var(--ok)}
+.durum.hata{background:var(--hata-bg);color:var(--hata)}
+.durum.uyari{background:var(--uyari-bg);color:var(--uyari)}
+.durum.bilgi{background:var(--bilgi-bg);color:var(--bilgi)}
+.liste{list-style:none}
+.liste li{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--kenar-yumusak)}
+.liste li:last-child{border-bottom:0}
+.liste .yol{color:var(--metin-3);margin-left:auto}
+.form{display:grid;grid-template-columns:1fr 1fr;gap:16px 24px}
+.form label{display:block;font-size:12px;font-weight:600;color:var(--metin-2);margin-bottom:6px}
+.form input,.form select{width:100%;height:38px;border:1px solid var(--kenar);border-radius:var(--r8);padding:0 12px;font:inherit;color:var(--metin);background:var(--zemin)}
+.form input:focus,.form select:focus{border-color:var(--marka);box-shadow:0 0 0 3px var(--marka-acik);outline:0}
+.form .tam{grid-column:1/-1}
+.ipucu{font-size:12px;color:var(--metin-3);margin-top:6px}
+.kart-alt{padding:12px 20px;border-top:1px solid var(--kenar-yumusak);display:flex;justify-content:flex-end;gap:8px;background:var(--zemin-2);border-radius:0 0 var(--r12) var(--r12)}
+.anahtar-kutu{display:flex;align-items:center;gap:8px}
+.anahtar-kutu code{padding:6px 10px;border:1px solid var(--kenar);border-radius:6px;background:var(--zemin-2)}
+.bos-durum{border:1px dashed var(--kenar);border-radius:var(--r12);padding:40px 24px;text-align:center;color:var(--metin-2)}
+.bos-durum .kutu{width:44px;height:44px;border-radius:var(--r12);background:var(--zemin-3);display:grid;place-items:center;margin:0 auto 12px;color:var(--metin-3)}
+.bos-durum b{display:block;color:var(--metin);font-size:15px;margin-bottom:4px}
+.bos-durum .ne-zaman{display:inline-flex;margin-top:12px}
+.secenek{display:flex;gap:8px}
+.secenek button{height:34px;padding:0 12px;border:1px solid var(--kenar);border-radius:var(--r8);font-weight:500;color:var(--metin-2)}
+.secenek button.aktif{background:var(--marka-acik);color:var(--marka);border-color:transparent;font-weight:600}
+[data-theme="koyu"] .secenek button.aktif{color:#C9D3F0}
+
+/* ───────── DAR EKRAN ───────── */
+@media (max-width:1180px){.kpi{grid-template-columns:repeat(2,minmax(0,1fr))}.arama-global{width:240px}}
+@media (max-width:900px){
+  .kabuk{grid-template-columns:1fr}
+  .menu{display:none}
+  .sayfa{padding:20px 16px 40px}
+  .ayarlar{grid-template-columns:1fr;gap:16px}
+  .agez{position:static;max-height:none;padding:8px}
+  .agez-grup,.agez-oge,.agez-bos{display:none!important}
+  .agez-secici{display:block;width:100%;height:40px;border:1px solid var(--kenar);border-radius:var(--r8);padding:0 12px;font:inherit;font-weight:600;background:var(--zemin);color:var(--metin)}
+  .agez-arama{margin:0 0 8px}
+  .sayfa-bas{flex-direction:column;align-items:flex-start;gap:12px}
+  .alanlar .eylem{margin-left:0;width:100%}
+  .form{grid-template-columns:1fr}
+  .kpi{grid-template-columns:1fr 1fr}
+}
+@media (max-width:560px){.kpi{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- İKON TANIMLARI (lucide çizgi dili, 24 ızgara) -->
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="i-zap" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></symbol>
+  <symbol id="i-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m16.2 7.8-2.1 6.3-6.3 2.1 2.1-6.3z"/></symbol>
+  <symbol id="i-inbox" viewBox="0 0 24 24"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 5.1 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.5-6.9A2 2 0 0 0 16.7 4H7.3a2 2 0 0 0-1.8 1.1z"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11"/><path d="m3 6 1 1 2-2M3 12l1 1 2-2M3 18l1 1 2-2"/></symbol>
+  <symbol id="i-settings" viewBox="0 0 24 24"><path d="M12.2 2h-.4a2 2 0 0 0-2 2v.2a2 2 0 0 1-1 1.7l-.4.3a2 2 0 0 1-2 0l-.2-.1a2 2 0 0 0-2.7.7l-.2.4a2 2 0 0 0 .7 2.7l.2.1a2 2 0 0 1 1 1.7v.6a2 2 0 0 1-1 1.7l-.2.1a2 2 0 0 0-.7 2.7l.2.4a2 2 0 0 0 2.7.7l.2-.1a2 2 0 0 1 2 0l.4.3a2 2 0 0 1 1 1.7V20a2 2 0 0 0 2 2h.4a2 2 0 0 0 2-2v-.2a2 2 0 0 1 1-1.7l.4-.3a2 2 0 0 1 2 0l.2.1a2 2 0 0 0 2.7-.7l.2-.4a2 2 0 0 0-.7-2.7l-.2-.1a2 2 0 0 1-1-1.7v-.6a2 2 0 0 1 1-1.7l.2-.1a2 2 0 0 0 .7-2.7l-.2-.4a2 2 0 0 0-2.7-.7l-.2.1a2 2 0 0 1-2 0l-.4-.3a2 2 0 0 1-1-1.7V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-archive" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="5" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8M10 12h4"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.9 1.9 0 0 0 3.4 0"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M6.3 17.7l-1.4 1.4M19.1 4.9l-1.4 1.4"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></symbol>
+  <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></symbol>
+  <symbol id="i-layout" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></symbol>
+  <symbol id="i-bell2" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></symbol>
+  <symbol id="i-puzzle" viewBox="0 0 24 24"><path d="M19.4 15.4 21 13.8a2 2 0 0 0 0-2.8l-1.6-1.6a1 1 0 0 1 0-1.4L21 6.4a2 2 0 0 0 0-2.8L19.4 2a2 2 0 0 0-2.8 0L15 3.6a1 1 0 0 1-1.4 0L12 2a2 2 0 0 0-2.8 0L7.6 3.6a2 2 0 0 0 0 2.8L9.2 8a1 1 0 0 1 0 1.4L7.6 11a2 2 0 0 0 0 2.8"/><path d="M2 12.8 3.6 11a2 2 0 0 1 2.8 0L8 12.6a1 1 0 0 0 1.4 0l1.6-1.6a2 2 0 0 1 2.8 0l1.6 1.6a2 2 0 0 1 0 2.8L13.8 17a1 1 0 0 0 0 1.4l1.6 1.6a2 2 0 0 1 0 2.8L13.8 22"/></symbol>
+  <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></symbol>
+  <symbol id="i-flow" viewBox="0 0 24 24"><rect x="3" y="3" width="6" height="6" rx="1"/><rect x="15" y="15" width="6" height="6" rx="1"/><path d="M9 6h4a2 2 0 0 1 2 2v7"/></symbol>
+  <symbol id="i-coins" viewBox="0 0 24 24"><circle cx="8" cy="8" r="6"/><path d="M18.1 10.4a6 6 0 1 1-7.7 7.7M7 6h1v4M16.7 13.8l.7.7-2.8 2.8"/></symbol>
+  <symbol id="i-languages" viewBox="0 0 24 24"><path d="m5 8 6 6M4 14l6-6 2-3M2 5h12M7 2h1M22 22l-5-10-5 10M14 18h6"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.7 9a.5.5 0 0 1-.6 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.2-2.7a1 1 0 0 1 1.6 0C14.5 3.8 17 5 19 5a1 1 0 0 1 1 1z"/></symbol>
+  <symbol id="i-server" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><path d="M6 6h.01M6 18h.01"/></symbol>
+  <symbol id="i-scroll" viewBox="0 0 24 24"><path d="M8 21h12a2 2 0 0 0 2-2v-2H10v2a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v3h4"/><path d="M19 17V5a2 2 0 0 0-2-2H4M15 8h-5M15 12h-5"/></symbol>
+  <symbol id="i-activity" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+  <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></symbol>
+  <symbol id="i-db" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5M3 12a9 3 0 0 0 18 0"/></symbol>
+  <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M17.5 19H9a7 7 0 1 1 6.7-9h1.8a4.5 4.5 0 1 1 0 9z"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="m21.7 18-8-14a2 2 0 0 0-3.5 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3z"/><path d="M12 9v4M12 17h.01"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.8 9.8 0 0 1 6.7 2.8L21 8M21 3v5h-5M21 12a9 9 0 0 1-9 9 9.8 9.8 0 0 1-6.7-2.8L3 16M8 16H3v5"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="m6 3 14 9-14 9z"/></symbol>
+  <symbol id="i-wifi" viewBox="0 0 24 24"><path d="M12 20h.01M2 8.8a15.9 15.9 0 0 1 20 0M5 12.9a11 11 0 0 1 14 0M8.5 16.4a6 6 0 0 1 7 0"/></symbol>
+  <symbol id="i-key" viewBox="0 0 24 24"><path d="m21 2-2 2m-7.6 7.6a5.5 5.5 0 1 1-7.8 7.8 5.5 5.5 0 0 1 7.8-7.8zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+  <symbol id="i-history" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.8 9.8 0 0 0-6.7 2.8L3 8"/><path d="M3 3v5h5M12 7v5l4 2"/></symbol>
+</svg>
+
+<div class="kabuk">
+  <!-- ───────── SOL MENÜ (onaylı marka bloğu — değişmez) ───────── -->
+  <aside class="menu">
+    <div class="marka">
+      <div class="marka-isaret"></div>
+      <div class="marka-metin">
+        <div class="marka-ust">TİLBE HOME</div>
+        <div class="marka-ad">tedarikapp</div>
+      </div>
+      <span class="rozet-surum" title="AppVersion::VALUE — sabit metin değil">v1.2.0</span>
+    </div>
+    <button class="hizli"><svg class="ikon"><use href="#i-plus"/></svg>Hızlı işlem</button>
+
+    <div class="menu-grup"><span>ÇALIŞMA</span></div>
+    <a class="menu-oge" href="#"><svg class="ikon"><use href="#i-grid"/></svg>Panorama</a>
+    <a class="menu-oge" href="#"><svg class="ikon"><use href="#i-compass"/></svg>Keşif</a>
+    <a class="menu-oge" href="#"><svg class="ikon"><use href="#i-inbox"/></svg>Gelen Kutusu<span class="rozet">8</span></a>
+    <a class="menu-oge" href="#"><svg class="ikon"><use href="#i-list"/></svg>Listeler</a>
+
+    <div class="menu-grup"><span>SİSTEM</span></div>
+    <a class="menu-oge aktif" href="#"><svg class="ikon"><use href="#i-settings"/></svg>Ayarlar</a>
+    <a class="menu-oge" href="#"><svg class="ikon"><use href="#i-archive"/></svg>Arşiv</a>
+
+    <div class="menu-alt">
+      <div class="avatar">TH</div>
+      <div><div class="ad">Tilbe Home</div><div class="rol">Ürün sahibi</div></div>
+      <div class="baglanti" title="Bağlantı · son senkron 11:42"><i></i>11:42</div>
+    </div>
+  </aside>
+
+  <!-- ───────── İÇERİK ───────── -->
+  <main class="icerik">
+    <header class="ustbar">
+      <div class="kirinti">Sistem <span>›</span> <b>Ayarlar</b></div>
+      <div class="arama-global"><svg class="ikon"><use href="#i-search"/></svg><span>Ara veya komut çalıştır</span><kbd>Ctrl K</kbd></div>
+      <button class="ust-dugme" title="Bildirimler"><svg class="ikon"><use href="#i-bell"/></svg><i class="nokta"></i></button>
+      <button class="ust-dugme" id="tema" title="Tema: Açık / Koyu"><svg class="ikon" id="tema-ikon"><use href="#i-moon"/></svg></button>
+    </header>
+
+    <div class="sayfa">
+      <div class="sayfa-bas">
+        <div>
+          <div class="gozkasi"><svg class="ikon kucuk"><use href="#i-sliders"/></svg>SİSTEM</div>
+          <h1>Ayarlar</h1>
+          <p class="sayfa-alt">Tedarik akışını, dili, çıktıları ve sistem bakımını görevlerine göre yönet.</p>
+        </div>
+        <div class="cipler">
+          <span class="cip ok"><svg class="ikon kucuk"><use href="#i-check"/></svg>Sistem çalışıyor</span>
+          <span class="cip"><svg class="ikon kucuk"><use href="#i-clock"/></svg>Son kontrol 10:40</span>
+        </div>
+      </div>
+
+      <div class="ayarlar">
+        <!-- ───── SOL GEZİNME ───── -->
+        <nav class="agez" id="agez" aria-label="Ayar bölümleri">
+          <label class="agez-arama"><svg class="ikon"><use href="#i-search"/></svg><input id="agez-ara" type="search" placeholder="Ayarlarda ara..." autocomplete="off"></label>
+          <select class="agez-secici" id="agez-secici" aria-label="Bölüm seç"></select>
+          <div class="agez-bos">Eşleşen ayar yok.<br>Farklı bir kelime deneyin.</div>
+
+          <div class="agez-grup" data-grup>TEMEL</div>
+          <button class="agez-oge" data-bolum="genel" data-ara="genel çalışma tercihleri saat dilimi para birimi"><span class="kutu"><svg class="ikon"><use href="#i-sliders"/></svg></span><span><span class="ad">Genel</span><span class="acik">Temel çalışma tercihleri</span></span></button>
+          <button class="agez-oge" data-bolum="gorunum" data-ara="görünüm panorama panel özet ekranı tema"><span class="kutu"><svg class="ikon"><use href="#i-layout"/></svg></span><span><span class="ad">Görünüm &amp; Panorama</span><span class="acik">Panel ve özet ekranı</span></span></button>
+          <button class="agez-oge" data-bolum="bildirimler" data-ara="bildirim merkezi olay rozet"><span class="kutu"><svg class="ikon"><use href="#i-bell2"/></svg></span><span><span class="ad">Bildirimler</span><span class="acik">Hangi olaylar zile düşer</span></span></button>
+
+          <div class="agez-grup" data-grup>VERİ VE OPERASYON</div>
+          <button class="agez-oge" data-bolum="yakalama" data-ara="yakalama eklenti tarayıcı 1688 token"><span class="kutu"><svg class="ikon"><use href="#i-puzzle"/></svg></span><span><span class="ad">Yakalama &amp; Eklenti</span><span class="acik">Tarayıcıdan ürün alma</span></span></button>
+          <button class="agez-oge" data-bolum="gelen" data-ara="gelen kutusu kurallar otomasyon yönlendirme"><span class="kutu"><svg class="ikon"><use href="#i-inbox"/></svg></span><span><span class="ad">Gelen Kutusu &amp; Kurallar</span><span class="acik">Otomasyon ve yönlendirme</span></span></button>
+          <button class="agez-oge" data-bolum="kesif" data-ara="keşif skor sinyal puanlama"><span class="kutu"><svg class="ikon"><use href="#i-target"/></svg></span><span><span class="ad">Keşif &amp; Skor</span><span class="acik">Sinyal ve puanlama modeli</span></span></button>
+          <button class="agez-oge" data-bolum="listeler" data-ara="listeler iş akışı durumlar sorumlular"><span class="kutu"><svg class="ikon"><use href="#i-flow"/></svg></span><span><span class="ad">Listeler &amp; İş Akışı</span><span class="acik">Durumlar ve sorumlular</span></span></button>
+
+          <div class="agez-grup" data-grup>FİYAT VE DİL</div>
+          <button class="agez-oge" data-bolum="kur" data-ara="kur para birimi tcmb yuvarlama yuan dolar"><span class="kutu"><svg class="ikon"><use href="#i-coins"/></svg></span><span><span class="ad">Kur &amp; Para Birimleri</span><span class="acik">Kur kaynağı ve yuvarlama</span></span></button>
+          <button class="agez-oge" data-bolum="ceviri" data-ara="çeviri sağlayıcısı deepseek anahtar bütçe motor"><span class="kutu"><svg class="ikon"><use href="#i-languages"/></svg></span><span><span class="ad">Çeviri Sağlayıcısı</span><span class="acik">Motor ve kullanım sınırları</span></span><i class="dikkat" title="Aylık bütçe %80 dolu"></i></button>
+          <button class="agez-oge" data-bolum="sozluk" data-ara="diller sözlük terim türkçe çince ingilizce"><span class="kutu"><svg class="ikon"><use href="#i-book"/></svg></span><span><span class="ad">Diller &amp; Sözlük</span><span class="acik">TR, EN ve ZH terimleri</span></span></button>
+
+          <div class="agez-grup" data-grup>ÇIKTI VE İLETİŞİM</div>
+          <button class="agez-oge" data-bolum="ciktilar" data-ara="çıktılar antet excel pdf belge firma adı"><span class="kutu"><svg class="ikon"><use href="#i-file"/></svg></span><span><span class="ad">Çıktılar &amp; Antet</span><span class="acik">Excel, PDF ve belge antedi</span></span></button>
+          <button class="agez-oge" data-bolum="paylasim" data-ara="paylaşım whatsapp link anahtar kanal"><span class="kutu"><svg class="ikon"><use href="#i-share"/></svg></span><span><span class="ad">Paylaşım &amp; WhatsApp</span><span class="acik">Bağlantılar ve kanallar</span></span></button>
+
+          <div class="agez-grup" data-grup>SİSTEM</div>
+          <button class="agez-oge" data-bolum="guvenlik" data-ara="güvenlik oturum şifre iki adımlı token"><span class="kutu"><svg class="ikon"><use href="#i-shield"/></svg></span><span><span class="ad">Güvenlik</span><span class="acik">Oturum, şifre ve eklenti anahtarı</span></span></button>
+          <button class="agez-oge" data-bolum="sistem" data-ara="sistem yedekler medya arşivi bakım migration katalog"><span class="kutu"><svg class="ikon"><use href="#i-server"/></svg></span><span><span class="ad">Sistem &amp; Yedekler</span><span class="acik">Medya, yedek ve bakım</span></span><i class="dikkat" title="Gece yedeği kurulu değil"></i></button>
+          <button class="agez-oge" data-bolum="gunluk" data-ara="günlük log hata uyarı"><span class="kutu"><svg class="ikon"><use href="#i-scroll"/></svg></span><span><span class="ad">Günlük</span><span class="acik">Hata ve uyarı kayıtları</span></span></button>
+          <button class="agez-oge" data-bolum="durum" data-ara="sistem durumu php sürüm migration bütünlük"><span class="kutu"><svg class="ikon"><use href="#i-activity"/></svg></span><span><span class="ad">Sistem Durumu</span><span class="acik">Sürüm, PHP ve bütünlük</span></span></button>
+        </nav>
+
+        <!-- ───── BÖLÜMLER ───── -->
+        <div id="bolumler">
+
+          <!-- SİSTEM & YEDEKLER (tam örnek) -->
+          <section class="bolum" data-bolum="sistem">
+            <div class="bolum-bas">
+              <div class="kutu"><svg class="ikon" style="width:22px;height:22px"><use href="#i-server"/></svg></div>
+              <div><h2>Sistem &amp; Yedekler</h2><p>Medya, günlük ve bakım</p></div>
+              <div class="sag"><svg class="ikon kucuk"><use href="#i-clock"/></svg>Son düzenleme: bugün, 09:18</div>
+            </div>
+
+            <div class="kpi">
+              <div class="kpi-kart uyari"><div class="etiket">SON YEDEK<svg class="ikon kucuk"><use href="#i-clock"/></svg></div><div class="deger">14 saat önce</div><div class="alt">28 Ağu, 20:34</div></div>
+              <div class="kpi-kart"><div class="etiket">MEDYA ARŞİVİ<svg class="ikon kucuk"><use href="#i-image"/></svg></div><div class="deger">1.688 görsel</div><div class="alt">412 MB · public/media</div></div>
+              <div class="kpi-kart"><div class="etiket">VERİTABANI<svg class="ikon kucuk"><use href="#i-db"/></svg></div><div class="deger">35 / 35</div><div class="alt">Migration uygulandı · bekleyen yok</div></div>
+              <div class="kpi-kart hata"><div class="etiket">SON 24 SAAT<svg class="ikon kucuk"><use href="#i-activity"/></svg></div><div class="deger">1 hata</div><div class="alt">İnceleme bekliyor · Günlük'te</div></div>
+            </div>
+
+            <div class="kart">
+              <div class="kart-bas">
+                <div class="kutu"><svg class="ikon"><use href="#i-cloud"/></svg></div>
+                <div><h3>Medya arşivi</h3><p>Uzak ürün görsellerini güvenli biçimde sunucuya alır; kırık bağlantıları ayrı izler.</p></div>
+                <div class="sag"><span class="cip ok"><svg class="ikon kucuk"><use href="#i-check"/></svg>Çalışıyor</span></div>
+              </div>
+              <div class="kart-govde">
+                <div class="alanlar">
+                  <div class="alan"><div class="e">ARŞİV MODU</div><div class="d"><i class="nokta"></i>Sunucuda arşivle</div></div>
+                  <div class="alan"><div class="e">KLASÖR</div><div class="d"><code>public/media</code></div></div>
+                  <div class="alan"><div class="e">SON DENETİM</div><div class="d">Bugün, 10:40</div></div>
+                  <div class="alan"><div class="e">KIRIK BAĞLANTI</div><div class="d">3 <span class="durum uyari">yeniden denenecek</span></div></div>
+                  <div class="eylem">
+                    <button class="dugme"><svg class="ikon"><use href="#i-refresh"/></svg>Eksikleri denetle</button>
+                    <button class="dugme birincil"><svg class="ikon"><use href="#i-download"/></svg>Arşive taşı</button>
+                  </div>
+                </div>
+                <p class="aciklama">1688 görselleri kaynak adresinden gösterilemiyor (Referer koruması). Uzak görseller ilk gösterimde arşivlenir; başarısız olanlar ürün kaydını bozmaz ve sonraki denetimde yeniden denenir.</p>
+              </div>
+            </div>
+
+            <div class="kart">
+              <div class="kart-bas">
+                <div class="kutu"><svg class="ikon"><use href="#i-db"/></svg></div>
+                <div><h3>Yedekleme</h3><p>Şifreli veritabanı yedeklerini ve saklama politikasını tek yerde yönet.</p></div>
+                <div class="sag"><span class="cip uyari"><svg class="ikon kucuk"><use href="#i-clock"/></svg>Zamanlama kapalı</span></div>
+              </div>
+              <div class="kart-govde">
+                <div class="alanlar" style="align-items:center">
+                  <div class="bant uyari" style="flex:1"><svg class="ikon"><use href="#i-alert"/></svg><div><b>Gece yedeği henüz kurulu değil</b><span>cPanel cron satırı eklendiğinde bu uyarı kaybolur. En yeni 5 yedek her koşulda korunur; 14 günden eskiler silinir.</span></div></div>
+                  <button class="dugme birincil"><svg class="ikon"><use href="#i-db"/></svg>Şimdi yedek al</button>
+                </div>
+              </div>
+              <table>
+                <thead><tr><th>DOSYA</th><th class="sayi">BOYUT</th><th>OLUŞTURULMA</th><th style="text-align:right">İŞLEM</th></tr></thead>
+                <tbody>
+                  <tr><td><code>yedek-20260828-203413.sql.enc</code></td><td class="sayi">335 KB</td><td>28 Ağu 2026 · 20:34</td><td style="text-align:right"><button class="dugme ghost"><svg class="ikon"><use href="#i-download"/></svg>İndir</button></td></tr>
+                  <tr><td><code>yedek-20260828-171317.sql.enc</code></td><td class="sayi">303 KB</td><td>28 Ağu 2026 · 17:13</td><td style="text-align:right"><button class="dugme ghost"><svg class="ikon"><use href="#i-download"/></svg>İndir</button></td></tr>
+                </tbody>
+              </table>
+              <div class="kart-alt"><span style="font-size:12px;color:var(--metin-3);margin-right:auto;align-self:center">Yedek AES-256-GCM ile şifrelidir; çözmek için APP_KEY gerekir. Uzak hedef yapılandırılmadı — yedeği indirip kendi bulutunuzda saklayın.</span><button class="dugme"><svg class="ikon"><use href="#i-play"/></svg>Geri dönüş provası</button></div>
+            </div>
+
+            <div class="kart">
+              <div class="kart-bas">
+                <div class="kutu"><svg class="ikon"><use href="#i-check"/></svg></div>
+                <div><h3>Çalışma zamanı katalogları</h3><p>Eksik bir katalog, bağlı özelliğin sessizce ölü olması demektir — bu yüzden burada.</p></div>
+                <div class="sag"><span class="cip ok"><svg class="ikon kucuk"><use href="#i-check"/></svg>2 / 2 yüklü</span></div>
+              </div>
+              <div class="kart-govde">
+                <ul class="liste">
+                  <li><span class="durum ok">yüklü</span>Bildirim olay kataloğu<code class="yol">config/bildirim-olay-katalogu.json</code></li>
+                  <li><span class="durum ok">yüklü</span>Panorama brifing kataloğu<code class="yol">config/panorama-brifing-katalogu.json</code></li>
+                  <li><span class="durum ok">yüklü</span>Yerel sözlükler (ZH 113 · EN 159 terim)<code class="yol">config/sozluk-*.php</code></li>
+                </ul>
+              </div>
+            </div>
+          </section>
+
+          <!-- ÇEVİRİ SAĞLAYICISI -->
+          <section class="bolum" data-bolum="ceviri">
+            <div class="bolum-bas">
+              <div class="kutu"><svg class="ikon" style="width:22px;height:22px"><use href="#i-languages"/></svg></div>
+              <div><h2>Çeviri Sağlayıcısı</h2><p>Motor ve kullanım sınırları</p></div>
+              <div class="sag"><svg class="ikon kucuk"><use href="#i-clock"/></svg>Son düzenleme: 28 Ağu, 18:02</div>
+            </div>
+            <div class="kpi" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+              <div class="kpi-kart ok"><div class="etiket">BAĞLANTI TESTİ<svg class="ikon kucuk"><use href="#i-wifi"/></svg></div><div class="deger">Geçti</div><div class="alt">4.979 ms · bugün 10:41</div></div>
+              <div class="kpi-kart"><div class="etiket">ÖNBELLEK<svg class="ikon kucuk"><use href="#i-db"/></svg></div><div class="deger">1.204 satır</div><div class="alt">Çevrilen ürün: 96 / 114</div></div>
+              <div class="kpi-kart uyari"><div class="etiket">AYLIK BÜTÇE<svg class="ikon kucuk"><use href="#i-coins"/></svg></div><div class="deger">%80</div><div class="alt">1,62 / 2,00 USD · 4 gün kaldı</div></div>
+            </div>
+            <div class="kart">
+              <div class="kart-bas">
+                <div class="kutu"><svg class="ikon"><use href="#i-key"/></svg></div>
+                <div><h3>Ana motor (Katman 2)</h3><p>Ürünün tamamı tek istekte çevrilir; sözlük prompt'a gömülüdür. Çeviri daima öneridir.</p></div>
+                <div class="sag"><span class="cip ok"><svg class="ikon kucuk"><use href="#i-check"/></svg>DeepSeek V4 Flash</span></div>
+              </div>
+              <div class="kart-govde">
+                <div class="form">
+                  <div><label>Sağlayıcı</label><select><option>DeepSeek</option><option>Qwen</option><option>OpenAI uyumlu uç</option></select></div>
+                  <div><label>Model</label><input value="deepseek-v4-flash"></div>
+                  <div class="tam"><label>API anahtarı</label><div class="anahtar-kutu"><code>sk-••••••••••••••••••••••••f06d</code><button class="dugme">Değiştir</button><button class="dugme ghost"><svg class="ikon"><use href="#i-wifi"/></svg>Bağlantıyı test et</button></div><p class="ipucu">Anahtar bu ekranda bir daha gösterilmez; yalnız son 4 hanesi tutulur.</p></div>
+                  <div><label>Tekil "Çevir" zaman bütçesi</label><input value="12 sn"></div>
+                  <div><label>Aylık üst sınır</label><input value="2,00 USD"></div>
+                </div>
+              </div>
+              <div class="kart-alt"><button class="dugme">Vazgeç</button><button class="dugme birincil">Değişiklikleri kaydet</button></div>
+            </div>
+            <div class="kart">
+              <div class="kart-bas">
+                <div class="kutu"><svg class="ikon"><use href="#i-history"/></svg></div>
+                <div><h3>Yedek motor (Katman 3)</h3><p>Ana motor erişilemezse devreye girer; sonuç "makine çevirisi" etiketiyle işaretlenir.</p></div>
+                <div class="sag"><span class="cip"><svg class="ikon kucuk"><use href="#i-lock"/></svg>Kapalı</span></div>
+              </div>
+              <div class="kart-govde"><div class="alanlar"><div class="alan"><div class="e">SAĞLAYICI</div><div class="d">DeepL API Free</div></div><div class="alan"><div class="e">KOTA</div><div class="d">— <span class="durum bilgi">anahtar girilmedi</span></div></div><div class="eylem"><button class="dugme">Anahtar gir</button></div></div></div>
+            </div>
+          </section>
+
+          <!-- KUR & PARA BİRİMLERİ -->
+          <section class="bolum" data-bolum="kur">
+            <div class="bolum-bas">
+              <div class="kutu"><svg class="ikon" style="width:22px;height:22px"><use href="#i-coins"/></svg></div>
+              <div><h2>Kur &amp; Para Birimleri</h2><p>Kur kaynağı ve yuvarlama</p></div>
+              <div class="sag"><svg class="ikon kucuk"><use href="#i-clock"/></svg>Son düzenleme: 28 Ağu, 20:31</div>
+            </div>
+            <div class="kpi" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+              <div class="kpi-kart"><div class="etiket">AKTİF KUR YAŞI<svg class="ikon kucuk"><use href="#i-clock"/></svg></div><div class="deger">1 gün</div><div class="alt">Elle · 28 Ağu 20:31</div></div>
+              <div class="kpi-kart"><div class="etiket">KİLİTLİ LİSTE<svg class="ikon kucuk"><use href="#i-lock"/></svg></div><div class="deger">1</div><div class="alt">Belge kuru listeden okunur</div></div>
+              <div class="kpi-kart bilgi"><div class="etiket">TCMB ÖNERİSİ<svg class="ikon kucuk"><use href="#i-refresh"/></svg></div><div class="deger">USD +0,4%</div><div class="alt">Onayınız olmadan uygulanmaz</div></div>
+            </div>
+            <div class="kart">
+              <div class="kart-bas"><div class="kutu"><svg class="ikon"><use href="#i-coins"/></svg></div><div><h3>Aktif kurlar</h3><p>Her değişiklik tarihçeye yazılır; kilitli listeler etkilenmez.</p></div><div class="sag"><button class="dugme"><svg class="ikon"><use href="#i-history"/></svg>Kur tarihçesi</button><button class="dugme birincil">Kurları güncelle</button></div></div>
+              <table>
+                <thead><tr><th>PARA BİRİMİ</th><th class="sayi">KUR (₺)</th><th>KAYNAK</th><th>GEÇERLİLİK</th><th>DURUM</th></tr></thead>
+                <tbody>
+                  <tr><td><b>CNY</b> · Çin yuanı</td><td class="sayi">5,7420</td><td>Elle</td><td>28 Ağu 2026 20:31 →</td><td><span class="durum ok">aktif</span></td></tr>
+                  <tr><td><b>USD</b> · ABD doları</td><td class="sayi">41,1800</td><td>Elle</td><td>28 Ağu 2026 20:31 →</td><td><span class="durum ok">aktif</span></td></tr>
+                  <tr><td><b>EUR</b> · Euro</td><td class="sayi">—</td><td>—</td><td>—</td><td><span class="durum bilgi">tanımlı değil</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- GENEL (form örneği) -->
+          <section class="bolum" data-bolum="genel">
+            <div class="bolum-bas"><div class="kutu"><svg class="ikon" style="width:22px;height:22px"><use href="#i-sliders"/></svg></div><div><h2>Genel</h2><p>Temel çalışma tercihleri</p></div></div>
+            <div class="kart">
+              <div class="kart-bas"><div class="kutu"><svg class="ikon"><use href="#i-layout"/></svg></div><div><h3>Çalışma alanı</h3><p>Panelde görünen ad ve temel bölge ayarları.</p></div></div>
+              <div class="kart-govde"><div class="form">
+                <div><label>Çalışma alanı adı</label><input value="Tilbe Home"></div>
+                <div><label>Uygulama adresi</label><input value="https://tedarikapp.tilbehometoptan.com"></div>
+                <div><label>Saat dilimi</label><select><option>Europe/Istanbul (UTC+3)</option></select></div>
+                <div><label>Varsayılan para birimi</label><select><option>₺ Türk lirası</option><option>$ ABD doları</option></select></div>
+                <div class="tam"><label>Tema</label><div class="secenek"><button class="aktif">Açık</button><button>Koyu</button><button>Sistem</button></div><p class="ipucu">Sağ üstteki düğme bu tercihi geçici olarak değiştirir; kalıcı seçim burada.</p></div>
+              </div></div>
+              <div class="kart-alt"><button class="dugme">Vazgeç</button><button class="dugme birincil">Değişiklikleri kaydet</button></div>
+            </div>
+          </section>
+
+          <!-- K98: BOŞ BÖLÜMLER GİZLENMEZ, GEREKÇESİNİ SÖYLER -->
+          <section class="bolum" data-bolum="gorunum"><div class="bolum-bas"><div class="kutu"><svg class="ikon" style="width:22px;height:22px"><use href="#i-layout"/></svg></div><div><h2>Görünüm &amp; Panorama</h2><p>Panel ve özet ekranı</p></div></div><div class="kart"><div class="kart-bas"><div class="kutu"><svg class="ikon"><use href="#i-grid"/></svg></div><div><h3>Panorama brifingleri</h3><p>Hangi brifinglerin ekranda görüneceği.</p></div><div class="sag"><span class="cip bilgi">8 ölçülüyor · 10 bekliyor</span></div></div><div class="kart-govde"><ul class="liste"><li><span class="durum ok">ölçülüyor</span>Fiyat bekleyen listeler<code class="yol">BRF-001</code></li><li><span class="durum ok">ölçülüyor</span>Kur yaşı<code class="yol">BRF-013</code></li><li><span class="durum ok">ölçülüyor</span>Çeviri kotası<code class="yol">BRF-016</code></li><li><span class="durum bilgi">V3-C'de</span>Firma cevap süresi<code class="yol">BRF-020</code></li></ul></div></div></section>
+          <section class="bolum" data-bolum="bildirimler"><div class="bolum-bas"><div class="kutu"><svg class="ikon" style="width:22px;height:22px"><use href="#i-bell2"/></svg></div><div><h2>Bildirimler</h2><p>Hangi olaylar zile düşer</p></div></div><div class="kart"><div class="kart-bas"><div class="kutu"><svg class="ikon"><use href="#i-bell2"/></svg></div><div><h3>Olay kataloğu</h3><p>27 olay bağlı, 10 olay bekliyor.</p></div><div class="sag"><span class="cip ok">27 bağlı</span><span class="cip">10 bekliyor</span></div></div><div class="kart-govde"><ul class="liste"><li><span class="durum ok">bağlı</span>Liste oluşturuldu<code class="yol">NTF-LIST-CREATED</code></li><li><span class="durum ok">bağlı</span>Paylaşım anahtarı yenilendi<code class="yol">NTF-SHARE-KEY-RENEWED</code></li><li><span class="durum ok">bağlı</span>Kur güncellendi<code class="yol">NTF-FX-UPDATED</code></li><li><span class="durum bilgi">V3-E'de</span>Toplu yakalama kabul edildi<code class="yol">NTF-CAPTURE-BATCH-ACCEPTED</code></li></ul></div></div></section>
+
+          <section class="bolum" data-bolum="yakalama"><div class="bolum-bas"><div class="kutu"><svg class="ikon" style="width:22px;height:22px"><use href="#i-puzzle"/></svg></div><div><h2>Yakalama &amp; Eklenti</h2><p>Tarayıcıdan ürün alma</p></div></div><div class="kart"><div class="kart-bas"><div class="kutu"><svg class="ikon"><use href="#i-puzzle"/></svg></div><div><h3>Chrome eklentisi</h3><p>Bağlantı durumu ve izinli kaynaklar.</p></div><div class="sag"><span class="cip ok"><svg class="ikon kucuk"><use href="#i-check"/></svg>Bağlı · 2.0.3</span></div></div><div class="kart-govde"><div class="alanlar"><div class="alan"><div class="e">SON YAKALAMA</div><div class="d">Bugün, 09:52</div></div><div class="alan"><div class="e">BU HAFTA</div><div class="d">41 ürün</div></div><div class="alan"><div class="e">İZİNLİ KAYNAK</div><div class="d">1688.com</div></div><div class="eylem"><button class="dugme">Eklentiyi indir</button></div></div></div></div></section>
+          <section class="bolum" data-bolum="gelen"><div class="bolum-bas"><div class="kutu"><svg class="ikon" style="width:22px;height:22px"><use href="#i-inbox"/></svg></div><div><h2>Gelen Kutusu &amp; Kurallar</h2><p>Otomasyon ve yönlendirme</p></div></div><div class="bos-durum"><div class="kutu"><svg class="ikon"><use href="#i-inbox"/></svg></div><b>Kurallar V3-C'de geliyor</b>Yakalanan ürünü kategoriye göre listeye yönlendirme burada tanımlanacak. Bugün tüm yakalamalar Gelen Kutusu'na düşer.<div class="cip bilgi ne-zaman">Firma döngüsü fazı</div></div></section>
+          <section class="bolum" data-bolum="kesif"><div class="bolum-bas"><div class="kutu"><svg class="ikon" style="width:22px;height:22px"><use href="#i-target"/></svg></div><div><h2>Keşif &amp; Skor</h2><p>Sinyal ve puanlama modeli</p></div></div><div class="kart"><div class="kart-bas"><div class="kutu"><svg class="ikon"><use href="#i-target"/></svg></div><div><h3>Tedarikapp Skoru ağırlıkları</h3><p>Toplam %100. Değişiklik yeni yakalamalardan itibaren geçerli.</p></div></div><table><thead><tr><th>BİLEŞEN</th><th class="sayi">AĞIRLIK</th><th>KAYNAK</th></tr></thead><tbody><tr><td>Satış</td><td class="sayi">%35</td><td>Platform metrikleri</td></tr><tr><td>Değerlendirme</td><td class="sayi">%25</td><td>Platform metrikleri</td></tr><tr><td>Satıcı karnesi</td><td class="sayi">%20</td><td>Rozet katmanları</td></tr><tr><td>Tazelik</td><td class="sayi">%10</td><td>Yakalama tarihi</td></tr><tr><td>Veri tamlığı</td><td class="sayi">%10</td><td>Dolu alan oranı</td></tr></tbody></table></div></section>
+          <section class="bolum" data-bolum="listeler"><div class="bolum-bas"><div class="kutu"><svg class="ikon" style="width:22px;height:22px"><use href="#i-flow"/></svg></div><div><h2>Listeler &amp; İş Akışı</h2><p>Durumlar ve sorumlular</p></div></div><div class="bos-durum"><div class="kutu"><svg class="ikon"><use href="#i-flow"/></svg></div><b>10 durumlu yaşam döngüsü V3-C'de</b>Bugün listeler Taslak → Fiyat bekleniyor → Onaylı üçlüsüyle çalışır. Sorumlu ataması ikinci hesapla birlikte gelir.<div class="cip bilgi ne-zaman">Firma döngüsü fazı</div></div></section>
+          <section class="bolum" data-bolum="sozluk"><div class="bolum-bas"><div class="kutu"><svg class="ikon" style="width:22px;height:22px"><use href="#i-book"/></svg></div><div><h2>Diller &amp; Sözlük</h2><p>TR, EN ve ZH terimleri</p></div></div><div class="kpi" style="grid-template-columns:repeat(3,minmax(0,1fr))"><div class="kpi-kart"><div class="etiket">ZH → TR</div><div class="deger">113 terim</div><div class="alt">Kapalı kümeler: malzeme, renk, birim</div></div><div class="kpi-kart"><div class="etiket">EN → TR</div><div class="deger">159 terim</div><div class="alt">Sistem sözlüğü</div></div><div class="kpi-kart"><div class="etiket">KULLANICI TERİMİ</div><div class="deger">12</div><div class="alt">storage/ altında · güncelleme ezmez</div></div></div><div class="kart"><div class="kart-bas"><div class="kutu"><svg class="ikon"><use href="#i-book"/></svg></div><div><h3>Terim aday kuyruğu</h3><p>Düzelttiğiniz çeviriler sözlüğe aday düşer; onaylananlar bir daha sorulmaz.</p></div><div class="sag"><span class="cip uyari">4 aday</span><button class="dugme">CSV içe aktar</button></div></div><div class="kart-govde"><ul class="liste"><li><code>亚克力</code><span style="color:var(--metin-3)">→</span><b>akrilik</b><span class="yol">3 kez düzeltildi</span></li><li><code>麻布</code><span style="color:var(--metin-3)">→</span><b>keten kumaş</b><span class="yol">2 kez düzeltildi</span></li></ul></div></div></section>
+          <section class="bolum" data-bolum="ciktilar"><div class="bolum-bas"><div class="kutu"><svg class="ikon" style="width:22px;height:22px"><use href="#i-file"/></svg></div><div><h2>Çıktılar &amp; Antet</h2><p>Excel, PDF ve belge antedi</p></div></div><div class="kart"><div class="kart-bas"><div class="kutu"><svg class="ikon"><use href="#i-file"/></svg></div><div><h3>Belge antedi</h3><p>Boş alan basılmaz. Excel ve PDF aynı Rev numarasını taşır.</p></div></div><div class="kart-govde"><div class="form"><div><label>Firma adı</label><input value="Tilbe Home"></div><div><label>Web</label><input value="tilbehome.com"></div><div><label>E-posta</label><input value="info@tilbehome.com"></div><div><label>Hazırlayan</label><input placeholder="Boş bırakılırsa basılmaz"></div></div></div><div class="kart-alt"><button class="dugme">Örnek PDF üret</button><button class="dugme birincil">Değişiklikleri kaydet</button></div></div></section>
+          <section class="bolum" data-bolum="paylasim"><div class="bolum-bas"><div class="kutu"><svg class="ikon" style="width:22px;height:22px"><use href="#i-share"/></svg></div><div><h2>Paylaşım &amp; WhatsApp</h2><p>Bağlantılar ve kanallar</p></div></div><div class="kart"><div class="kart-bas"><div class="kutu"><svg class="ikon"><use href="#i-lock"/></svg></div><div><h3>Erişim anahtarı kapısı</h3><p>"Linki bilen görür" yoktur: her liste 6 haneli anahtar ister.</p></div><div class="sag"><span class="cip ok"><svg class="ikon kucuk"><use href="#i-check"/></svg>Açık · varsayılan</span></div></div><div class="kart-govde"><div class="alanlar"><div class="alan"><div class="e">ADRES ÖN EKİ</div><div class="d"><code>/liste/{token}</code></div></div><div class="alan"><div class="e">GEÇERSİZ DENEME SINIRI</div><div class="d">5 / dakika</div></div><div class="alan"><div class="e">KANALLAR</div><div class="d">WhatsApp · WeChat · e-posta</div></div><div class="eylem"><button class="dugme">Kanal metinlerini düzenle</button></div></div><p class="aciklama">Link ve anahtar ayrı kanaldan gönderilir; kanal metinlerine anahtar otomatik yazılmaz.</p></div></div></section>
+          <section class="bolum" data-bolum="guvenlik"><div class="bolum-bas"><div class="kutu"><svg class="ikon" style="width:22px;height:22px"><use href="#i-shield"/></svg></div><div><h2>Güvenlik</h2><p>Oturum, şifre ve eklenti anahtarı</p></div></div><div class="kart"><div class="kart-bas"><div class="kutu"><svg class="ikon"><use href="#i-key"/></svg></div><div><h3>Eklenti anahtarı</h3><p>Yenilemek eskisini anında geçersiz kılar; eklentide de değiştirilmelidir.</p></div><div class="sag"><span class="cip ok">Tanımlı · …f06d</span></div></div><div class="kart-govde"><div class="alanlar"><div class="alan"><div class="e">OLUŞTURULMA</div><div class="d">19 Ağu 2026</div></div><div class="alan"><div class="e">SON KULLANIM</div><div class="d">Bugün, 09:52</div></div><div class="eylem"><button class="dugme tehlike">Anahtarı yenile</button></div></div></div></div><div class="kart"><div class="kart-bas"><div class="kutu"><svg class="ikon"><use href="#i-shield"/></svg></div><div><h3>Oturum</h3><p>Aktif oturum 12 saat; "beni hatırla" 30 gün. Hassas işlemlerde şifre yeniden sorulur.</p></div><div class="sag"><span class="cip ok">İki adımlı doğrulama açık</span></div></div></div></section>
+          <section class="bolum" data-bolum="gunluk"><div class="bolum-bas"><div class="kutu"><svg class="ikon" style="width:22px;height:22px"><use href="#i-scroll"/></svg></div><div><h2>Günlük</h2><p>Hata ve uyarı kayıtları</p></div></div><div class="kart"><div class="kart-bas"><div class="kutu"><svg class="ikon"><use href="#i-scroll"/></svg></div><div><h3>Uygulama günlüğü</h3><p>Bir şey beklediğiniz gibi çalışmadıysa buraya bakın; destek isterken buradaki satırı paylaşmak en hızlı yoldur.</p></div><div class="sag"><select class="dugme" style="padding-right:28px"><option>Uyarı ve üstü</option><option>Yalnız hata</option><option>Tümü</option></select><button class="dugme"><svg class="ikon"><use href="#i-refresh"/></svg>Yenile</button></div></div><table><thead><tr><th>SEVİYE</th><th>ZAMAN</th><th>MESAJ</th><th>KİMLİK</th></tr></thead><tbody><tr><td><span class="durum hata">ERROR</span></td><td>29 Ağu 10:59</td><td>Panorama kataloğu okunamadı — paket eksik kurulmuş olabilir</td><td><code>01M168D2</code></td></tr><tr><td><span class="durum uyari">WARN</span></td><td>29 Ağu 10:57</td><td>Migration baseline yeniden yazıldı</td><td><code>01M167KQ</code></td></tr></tbody></table></div></section>
+          <section class="bolum" data-bolum="durum"><div class="bolum-bas"><div class="kutu"><svg class="ikon" style="width:22px;height:22px"><use href="#i-activity"/></svg></div><div><h2>Sistem Durumu</h2><p>Sürüm, PHP ve bütünlük</p></div></div><div class="kpi"><div class="kpi-kart"><div class="etiket">UYGULAMA</div><div class="deger">v1.2.0</div><div class="alt">v3-faz1 @ e0d4be6</div></div><div class="kpi-kart"><div class="etiket">PHP</div><div class="deger">8.4.24</div><div class="alt">cgi-fcgi · MariaDB 11.4.12</div></div><div class="kpi-kart ok"><div class="etiket">DOSYA BÜTÜNLÜĞÜ</div><div class="deger">Geçti</div><div class="alt">2.225 dosya · MANIFEST eşleşti</div></div><div class="kpi-kart"><div class="etiket">KURULUM</div><div class="deger">29 Ağu</div><div class="alt">10:57 · yedek alındı</div></div></div><div class="kart"><div class="kart-bas"><div class="kutu"><svg class="ikon"><use href="#i-check"/></svg></div><div><h3>Bildirim yazım sağlığı</h3><p>Kayıt sonrası yazılamayan bildirimler burada görünür; işlemler kaydedilmiştir, olay kaybolmuştur.</p></div><div class="sag"><span class="cip ok"><svg class="ikon kucuk"><use href="#i-check"/></svg>0 hata</span></div></div></div></section>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+(function(){
+  const ogeler=[...document.querySelectorAll('.agez-oge')];
+  const bolumler=[...document.querySelectorAll('.bolum')];
+  const gruplar=[...document.querySelectorAll('.agez-grup')];
+  const secici=document.getElementById('agez-secici');
+  const ara=document.getElementById('agez-ara');
+  const agez=document.getElementById('agez');
+
+  // Dar ekran seçicisini gezinmeden türet
+  let grupAdi='';
+  [...agez.children].forEach(el=>{
+    if(el.classList.contains('agez-grup')){grupAdi=el.textContent.trim();secici.appendChild(Object.assign(document.createElement('optgroup'),{label:grupAdi}));}
+    if(el.classList.contains('agez-oge')){const o=document.createElement('option');o.value=el.dataset.bolum;o.textContent=el.querySelector('.ad').textContent;secici.lastElementChild.appendChild(o);}
+  });
+
+  function ac(kod,push=true){
+    ogeler.forEach(o=>o.classList.toggle('aktif',o.dataset.bolum===kod));
+    bolumler.forEach(b=>b.classList.toggle('aktif',b.dataset.bolum===kod));
+    secici.value=kod;
+    if(push&&history.replaceState){history.replaceState(null,'','?sekme='+kod);}
+    window.scrollTo({top:0});
+  }
+  ogeler.forEach(o=>o.addEventListener('click',()=>ac(o.dataset.bolum)));
+  secici.addEventListener('change',()=>ac(secici.value));
+
+  // Arama: madde adı + açıklama + anahtar kelimeler
+  ara.addEventListener('input',()=>{
+    const q=ara.value.trim().toLocaleLowerCase('tr');
+    let gorunen=0;
+    ogeler.forEach(o=>{
+      const metin=(o.textContent+' '+(o.dataset.ara||'')).toLocaleLowerCase('tr');
+      const es=!q||metin.includes(q);o.hidden=!es;if(es)gorunen++;
+    });
+    gruplar.forEach(g=>{let el=g.nextElementSibling,var_=false;while(el&&!el.classList.contains('agez-grup')){if(el.classList.contains('agez-oge')&&!el.hidden)var_=true;el=el.nextElementSibling;}g.hidden=!var_;});
+    agez.classList.toggle('bos',gorunen===0);
+  });
+
+  // Tema (token bazlı — CSS iki kez yazılmaz)
+  const tema=document.getElementById('tema'),temaIkon=document.getElementById('tema-ikon').querySelector('use');
+  tema.addEventListener('click',()=>{
+    const koyu=document.documentElement.dataset.theme!=='koyu';
+    document.documentElement.dataset.theme=koyu?'koyu':'acik';
+    temaIkon.setAttribute('href',koyu?'#i-sun':'#i-moon');
+  });
+
+  const ilk=new URLSearchParams(location.search).get('sekme');
+  ac(ilk&&bolumler.some(b=>b.dataset.bolum===ilk)?ilk:'sistem',false);
+})();
+</script>
+</body>
+</html>

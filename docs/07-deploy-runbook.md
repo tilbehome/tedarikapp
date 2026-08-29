@@ -149,8 +149,8 @@ Sonraki sürümler: sihirbaz YOK — zip yüklenir, admin girişinde "veritaban�
    (İE#17 G1/G7), ama kullanıcının tarayıcısındaki ESKİ kopya bir kez daha
    sunulmuş olabilir. Menü akışa dökülmüş, yazdırma penceresi açılmıyorsa
    neredeyse her zaman sebep budur — koda bakmadan önce sert yenileme denenir.
-3. **Çalışma zamanı katalogları (K99):** Ayarlar > Veri & Bakım > Sistem
-   durumu bölümündeki "Çalışma zamanı katalogları" listesinde her satır
+3. **Çalışma zamanı katalogları (K99):** Ayarlar > **Sistem & Yedekler**
+   bölümündeki "Çalışma zamanı katalogları" listesinde her satır
    **yüklü** olmalı. Kırmızı "EKSİK" satırı, bağlı özelliğin (bildirim merkezi
    ya da Panorama) **sessizce ölü** olduğu anlamına gelir; paket eksik
    açılmıştır ve zip yeniden açılır.

@@ -590,6 +590,36 @@
       "durum": "kapsandi",
       "dosya": "tests/Http/SozlukCsvTest.php",
       "test": "testCAKISMADAKULLANICITERIMIKAZANIR"
+    },
+    "E2E-PNL-63": {
+      "baslik": "Sol gezinme grupları ve bölüm geçişi",
+      "durum": "kapsandi",
+      "dosya": "e2e/tests/09-ayarlar-gorunum.spec.ts",
+      "test": "E2E-PNL-63"
+    },
+    "E2E-PNL-64": {
+      "baslik": "Arama ad, açıklama ve gizli sözcükleri süzer",
+      "durum": "kapsandi",
+      "dosya": "e2e/tests/09-ayarlar-gorunum.spec.ts",
+      "test": "E2E-PNL-64"
+    },
+    "E2E-PNL-65": {
+      "baslik": "KPI şeridi yalnız ölçülebilen bölümde",
+      "durum": "kapsandi",
+      "dosya": "e2e/tests/09-ayarlar-gorunum.spec.ts",
+      "test": "E2E-PNL-65"
+    },
+    "E2E-PNL-66": {
+      "baslik": "Dar ekranda gezinme açılır listeye döner",
+      "durum": "kapsandi",
+      "dosya": "e2e/tests/09-ayarlar-gorunum.spec.ts",
+      "test": "E2E-PNL-66"
+    },
+    "E2E-PNL-67": {
+      "baslik": "Sürüm rozeti AppVersion değerini basar",
+      "durum": "kapsandi",
+      "dosya": "e2e/tests/09-ayarlar-gorunum.spec.ts",
+      "test": "E2E-PNL-67"
     }
   }
 }
