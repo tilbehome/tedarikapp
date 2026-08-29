@@ -11,6 +11,7 @@ use App\Core\Response;
 use App\Models\ListRepository;
 use App\Models\ProductRepository;
 use App\Services\ActivityLog;
+use App\Services\Bildirim\BildirimYayinci;
 use App\Services\InputValidator;
 use App\Services\ListMutationPolicy;
 use App\Services\ListPresenter;
@@ -44,6 +45,7 @@ final class ProductController extends ApiController
         private readonly ActivityLog $activity,
         private readonly Clock $clock,
         private readonly ?MediaService $media = null,
+        private readonly ?BildirimYayinci $bildirim = null,
     ) {
     }
 
@@ -490,7 +492,14 @@ final class ProductController extends ApiController
                 $this->requestId($request),
             );
             $this->lists->bumpRevision((int) $list['id'], $now);
-            $this->log($request, 'product_created', $productId, $this->str($body, 'name'));
+            $this->log(
+                $request,
+                'product_created',
+                $productId,
+                $this->str($body, 'name'),
+                ['NTF-LIST-PRODUCTS-ADDED'],
+                ['liste_id' => (int) $list['id'], 'urun_adi' => $this->str($body, 'name'), 'urun_id' => $productId],
+            );
 
             return $productId;
         });
@@ -665,7 +674,14 @@ final class ProductController extends ApiController
         $this->connection->transaction(function () use ($request, $product, $now): void {
             $this->products->softDelete((int) $product['id'], $now);
             $this->lists->bumpRevision((int) $product['list_id'], $now);
-            $this->log($request, 'product_deleted', (int) $product['id'], (string) $product['name']);
+            $this->log(
+                $request,
+                'product_deleted',
+                (int) $product['id'],
+                (string) $product['name'],
+                ['NTF-LIST-PRODUCTS-REMOVED'],
+                ['liste_id' => (int) $product['list_id'], 'urun_adi' => (string) $product['name']],
+            );
         });
 
         return $response->withStatus(204);
@@ -995,9 +1011,22 @@ final class ProductController extends ApiController
         return $id === null ? null : $this->products->find($id);
     }
 
-    private function log(ServerRequestInterface $request, string $action, ?int $entityId, string $detail): void
-    {
-        $this->activity->record(
+    /**
+     * Denetim izi + bildirim (V3-B A3) — ListController'daki tek dikişin eşi.
+     *
+     * @param list<string>               $olaylar
+     * @param array<string, scalar|null> $baglam
+     */
+    private function log(
+        ServerRequestInterface $request,
+        string $action,
+        ?int $entityId,
+        string $detail,
+        array $olaylar = [],
+        array $baglam = [],
+    ): void {
+        $kullaniciId = $this->user($request)->id;
+        $auditId = $this->activity->record(
             'product',
             $entityId,
             $action,
@@ -1005,7 +1034,11 @@ final class ProductController extends ApiController
             ClientIp::from($request),
             $this->clock->now(),
             ActivityLog::ACTOR_ADMIN,
-            $this->user($request)->id,
+            $kullaniciId,
         );
+
+        foreach ($olaylar as $olayKodu) {
+            $this->bildirim?->yayimla($olayKodu, $baglam + ['kullanici_id' => $kullaniciId], $auditId);
+        }
     }
 }

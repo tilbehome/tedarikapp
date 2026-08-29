@@ -99,6 +99,11 @@ final class Migrator
         '0034_kur_snapshot_gocu' => [
             ['table' => 'rate_snapshots'],
         ],
+        // V3-B A1: bildirim merkezi. Tek tablo, veri göçü YOK — bildirim
+        // "şu an ne oluyor" demektir, geçmiş audit satırları buraya taşınmaz.
+        '0035_bildirimler' => [
+            ['table' => 'notifications'],
+        ],
         // İE#21 B1: Keşif havuzu — küme anahtarı ve normalize arama alanı.
         '0030_kesif_havuzu' => [
             ['column' => ['listings', 'kume_anahtari']],

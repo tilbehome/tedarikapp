@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { Bell, ChevronRight, PanelLeft, Search } from 'lucide-react';
 import { menuyuCevir } from '../../lib/kabukDurumu';
+import BildirimMerkezi from '../bildirim/BildirimMerkezi';
 
 /**
  * ÜST ÇUBUK (İE#16 D1.6): kırıntı yolu (Bölüm › Ekran) + komut kutusu + zil.
@@ -13,12 +15,17 @@ export default function UstCubuk({
   ekran,
   onKomut,
   bildirimSayisi = 0,
+  onBildirimSayaci,
 }: {
   bolum: string;
   ekran: string;
   onKomut: () => void;
   bildirimSayisi?: number;
+  /** Merkez kapanınca ya da okundu işaretlenince rozeti tazeler. */
+  onBildirimSayaci?: (n: number) => void;
 }) {
+  const [merkezAcik, setMerkezAcik] = useState(false);
+
   return (
     <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b border-line bg-surface px-3 md:px-4">
       <button
@@ -47,18 +54,33 @@ export default function UstCubuk({
         <kbd className="hidden rounded-md border border-line bg-surface px-1.5 py-0.5 text-xs sm:block">Ctrl K</kbd>
       </button>
 
-      <button
-        type="button"
-        className="relative flex size-9 shrink-0 items-center justify-center rounded-lg text-ink-3 hover:bg-g50 hover:text-ink"
-        title="Bildirimler"
-        aria-label="Bildirimler"
-      >
-        <Bell size={17} aria-hidden />
-        {/* Rozet: sıfırsa basılmaz (kanon §3). */}
-        {bildirimSayisi > 0 && (
-          <span className="absolute right-1 top-1 size-2 rounded-full bg-gold" aria-hidden />
-        )}
-      </button>
+      <div className="relative shrink-0">
+        <button
+          type="button"
+          className="relative flex size-9 items-center justify-center rounded-lg text-ink-3 hover:bg-g50 hover:text-ink"
+          title="Bildirimler"
+          aria-label={bildirimSayisi > 0 ? `Bildirimler (${bildirimSayisi} okunmamış)` : 'Bildirimler'}
+          aria-expanded={merkezAcik}
+          onClick={() => setMerkezAcik((acik) => !acik)}
+          data-testid="bildirim-zili"
+        >
+          <Bell size={17} aria-hidden />
+          {/* Rozet: sıfırsa basılmaz (kanon §3). */}
+          {bildirimSayisi > 0 && (
+            <span
+              className="absolute right-1 top-1 size-2 rounded-full bg-gold"
+              aria-hidden
+              data-testid="bildirim-rozeti"
+            />
+          )}
+        </button>
+        {merkezAcik ? (
+          <BildirimMerkezi
+            onKapat={() => setMerkezAcik(false)}
+            onSayac={(n) => onBildirimSayaci?.(n)}
+          />
+        ) : null}
+      </div>
     </header>
   );
 }

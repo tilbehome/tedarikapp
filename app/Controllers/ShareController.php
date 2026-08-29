@@ -33,6 +33,8 @@ final class ShareController extends ApiController
         private readonly ?\App\Core\Config $appConfig = null,
         // İE#21 B4 (PM şartı b): sistem listesi PAYLAŞILAMAZ.
         private readonly ?\App\Services\Inbox\SistemListesi $sistem = null,
+        // V3-B A3: paylaşım olayları (oluşturma, yenileme, iptal) bildirim doğurur.
+        private readonly ?\App\Services\Bildirim\BildirimYayinci $bildirim = null,
     ) {
     }
 
@@ -119,7 +121,7 @@ final class ShareController extends ApiController
         $now = $this->clock->now();
         $yeni = $this->anahtar?->yenile((int) $row['id'], $now) ?? '';
 
-        $this->activity->record(
+        $auditId = $this->activity->record(
             'list',
             (int) $row['id'],
             'share_key_rotated',
@@ -128,6 +130,11 @@ final class ShareController extends ApiController
             $now,
             ActivityLog::ACTOR_ADMIN,
             $this->user($request)->id,
+        );
+        $this->bildirim?->yayimla(
+            'NTF-SHARE-KEY-RENEWED',
+            ['liste_id' => (int) $row['id'], 'liste_adi' => (string) $row['name']],
+            $auditId,
         );
 
         return Response::success($response, ['key' => $yeni, 'enabled' => true]);
@@ -235,7 +242,7 @@ final class ShareController extends ApiController
         ], $now);
 
         $isRenewal = $row['share_token_hash'] !== null;
-        $this->activity->record(
+        $auditId = $this->activity->record(
             'list',
             (int) $row['id'],
             $isRenewal ? 'share_renewed' : 'share_created',
@@ -244,6 +251,11 @@ final class ShareController extends ApiController
             $now,
             ActivityLog::ACTOR_ADMIN,
             $this->user($request)->id,
+        );
+        $this->bildirim?->yayimla(
+            'NTF-SHARE-CREATED',
+            ['liste_id' => (int) $row['id'], 'liste_adi' => (string) $row['name']],
+            $auditId,
         );
 
         // İE#19 E5: adres AYARLARDAKİ APP_URL'den üretilir. Eskiden isteğin Host
@@ -283,7 +295,7 @@ final class ShareController extends ApiController
             'share_expires_at' => null,
         ], $now);
 
-        $this->activity->record(
+        $auditId = $this->activity->record(
             'list',
             (int) $row['id'],
             'share_revoked',
@@ -292,6 +304,11 @@ final class ShareController extends ApiController
             $now,
             ActivityLog::ACTOR_ADMIN,
             $this->user($request)->id,
+        );
+        $this->bildirim?->yayimla(
+            'NTF-SHARE-REVOKED',
+            ['liste_id' => (int) $row['id'], 'liste_adi' => (string) $row['name']],
+            $auditId,
         );
 
         return $response->withStatus(204);

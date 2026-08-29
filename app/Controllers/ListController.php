@@ -13,6 +13,7 @@ use App\Models\ListRepository;
 use App\Models\ProductRepository;
 use App\Models\SettingsRepository;
 use App\Services\ActivityLog;
+use App\Services\Bildirim\BildirimYayinci;
 use App\Services\Inbox\SistemListesi;
 use App\Services\InputValidator;
 use App\Services\ListMutationPolicy;
@@ -46,6 +47,10 @@ final class ListController extends ApiController
         private readonly ListMutationPolicy $mutationPolicy,
         private readonly ActivityLog $activity,
         private readonly Clock $clock,
+        // V3-B A3: bildirim yayıncısı OPSİYONELDİR — kurulum/onarım akışlarında
+        // denetleyici kataloğa erişemeden kurulabilir. Null ise olay üretilmez;
+        // liste işleminin kendisi asla bildirime bağlı olmaz.
+        private readonly ?BildirimYayinci $bildirim = null,
     ) {
     }
 
@@ -152,7 +157,14 @@ final class ListController extends ApiController
             'usd_rate' => $this->settings->usdRate(),
         ], $now);
 
-        $this->log($request, 'list_created', $listId, (string) $body['name']);
+        $this->log(
+            $request,
+            'list_created',
+            $listId,
+            (string) $body['name'],
+            ['NTF-LIST-CREATED'],
+            ['liste_adi' => trim((string) $body['name'])],
+        );
 
         $created = $this->lists->find($listId);
 
@@ -290,7 +302,18 @@ final class ListController extends ApiController
             || array_key_exists('yuan_rate', $updates) || array_key_exists('usd_rate', $updates)) {
             $this->lists->bumpRevision((int) $row['id'], $now);
         }
-        $this->log($request, 'list_updated', (int) $row['id'], implode(',', array_keys($updates)));
+        $this->log(
+            $request,
+            'list_updated',
+            (int) $row['id'],
+            implode(',', array_keys($updates)),
+            $this->guncellemeOlaylari($row, $updates),
+            [
+                'liste_adi' => (string) $row['name'],
+                'eski_durum' => (string) $row['status'],
+                'yeni_durum' => (string) ($updates['status'] ?? $row['status']),
+            ],
+        );
 
         $fresh = $this->lists->find((int) $row['id']);
 
@@ -389,7 +412,14 @@ final class ListController extends ApiController
                 );
             }
 
-            $this->log($request, 'list_duplicated', $newId, sprintf('kaynak:%d', (int) $row['id']));
+            $this->log(
+                $request,
+                'list_duplicated',
+                $newId,
+                sprintf('kaynak:%d', (int) $row['id']),
+                ['NTF-LIST-CREATED'],
+                ['liste_adi' => (string) $row['name']],
+            );
 
             return $newId;
         });
@@ -462,10 +492,74 @@ final class ListController extends ApiController
         return new \DateTimeZone(date_default_timezone_get());
     }
 
-    private function log(ServerRequestInterface $request, string $action, int $listId, string $detail): void
+    /**
+     * Bir güncellemeden HANGİ olayların doğduğunu söyler.
+     *
+     * Tek bir PATCH birden çok olay doğurabilir: `sent`e geçen liste hem durum
+     * değiştirir hem kuru kilitlenir hem iletilir. Üçünü tek bildirimde
+     * ezmek, kullanıcıya olan bitenin bir kısmını gizlemek olurdu.
+     *
+     * @param  array<string, mixed> $row     güncelleme ÖNCESİ satır
+     * @param  array<string, mixed> $updates uygulanan alanlar
+     * @return list<string>
+     */
+    private function guncellemeOlaylari(array $row, array $updates): array
     {
+        $olaylar = [];
+
+        if (array_key_exists('status', $updates) && $updates['status'] !== $row['status']) {
+            $olaylar[] = 'NTF-LIST-STATUS-CHANGED';
+            if ($updates['status'] === StateMachine::LIST_SENT) {
+                $olaylar[] = 'NTF-LIST-SENT';
+            }
+        }
+
+        // Kilit YALNIZ null'dan değere geçtiğinde doğar; kilidi açan geri
+        // dönüşte (K45) bu olay üretilmez — kilitlenme ile açılma aynı şey değil.
+        if (array_key_exists('rate_locked_at', $updates)
+            && $updates['rate_locked_at'] !== null
+            && $row['rate_locked_at'] === null) {
+            $olaylar[] = 'NTF-LIST-RATE-LOCKED';
+        }
+
+        if (array_key_exists('visibility', $updates) && $updates['visibility'] === 'archived'
+            && $row['visibility'] !== 'archived') {
+            $olaylar[] = 'NTF-LIST-ARCHIVED';
+        }
+
+        // Revizyon, belgeye basılan alanlar değiştiğinde ilerler (İE#14 B1) —
+        // aynı koşul burada TEKRARLANMAZ, çağıran zaten bumpRevision yapmıştır.
+        if (array_key_exists('rate_locked_at', $updates) || array_key_exists('status', $updates)
+            || array_key_exists('yuan_rate', $updates) || array_key_exists('usd_rate', $updates)) {
+            $olaylar[] = 'NTF-LIST-REVISION-CREATED';
+        }
+
+        return $olaylar;
+    }
+
+    /**
+     * Denetim izi + bildirim — TEK DİKİŞ.
+     *
+     * V3-B A3: liste olaylarının hepsi bu yardımcıdan geçiyordu; bildirim de
+     * buraya bağlandı. İki ayrı çağrı yapılsaydı, yeni bir eylem eklenirken
+     * biri unutulur ve "bazı işlemler bildirim üretiyor, bazıları üretmiyor"
+     * durumu doğardı — sessiz çalışma yasağının en sinsi biçimi.
+     *
+     * Dönen audit kimliği, birleştirmesi kapalı olayların ZORUNLU bağlantısıdır.
+     *
+     * @param list<string>               $olaylar tek denetim satırına bağlanan olay kodları
+     * @param array<string, scalar|null> $baglam
+     */
+    private function log(
+        ServerRequestInterface $request,
+        string $action,
+        int $listId,
+        string $detail,
+        array $olaylar = [],
+        array $baglam = [],
+    ): void {
         $user = $this->user($request);
-        $this->activity->record(
+        $auditId = $this->activity->record(
             'list',
             $listId,
             $action,
@@ -475,5 +569,13 @@ final class ListController extends ApiController
             ActivityLog::ACTOR_ADMIN,
             $user->id,
         );
+
+        foreach ($olaylar as $olayKodu) {
+            $this->bildirim?->yayimla(
+                $olayKodu,
+                $baglam + ['liste_id' => $listId, 'kullanici_id' => $user->id],
+                $auditId,
+            );
+        }
     }
 }

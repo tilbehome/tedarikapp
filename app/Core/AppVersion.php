@@ -11,5 +11,5 @@ namespace App\Core;
  */
 final class AppVersion
 {
-    public const VALUE = '1.1.0';
+    public const VALUE = '1.2.0';
 }

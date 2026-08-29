@@ -5,6 +5,7 @@ import { products as productsApi, translate as translateApi } from '../api/endpo
 import { ApiError } from '../api/client';
 import type { Product } from '../api/types';
 import { useAsync, messageOf } from '../lib/useAsync';
+import { useKaydedilmemis } from '../lib/useKaydedilmemis';
 import DilSecici, { dildekiMetin, dilSecenekleri, type UrunDili } from '../components/DilSecici';
 import { Field, PageHeader, Skeleton, ErrorNote } from '../components/ui';
 import { useReference } from '../store/reference';
@@ -93,7 +94,20 @@ export default function ProductFormScreen() {
     });
   }, [existing.data]);
 
-  const set = (key: keyof typeof form, value: string) => setForm((current) => ({ ...current, [key]: value }));
+  /**
+   * V3-B F1: kaydedilmemiş değişiklik izlenir. Karşılaştırma DERİN DEĞİL,
+   * bir bayrak: her `set()` çağrısı formu "kirli" yapar ve kaydetme temizler.
+   * Alan alan karşılaştırma yapsaydık, kullanıcının yazıp geri sildiği bir
+   * harf de "değişiklik yok" sayılırdı — ama asıl önemli olan, kullanıcının
+   * forma DOKUNMUŞ olması.
+   */
+  const [kirli, setKirli] = useState(false);
+  useKaydedilmemis(kirli);
+
+  const set = (key: keyof typeof form, value: string) => {
+    setKirli(true);
+    setForm((current) => ({ ...current, [key]: value }));
+  };
 
   const payload = (force: boolean) => ({
     name: form.name.trim(),
@@ -129,6 +143,8 @@ export default function ProductFormScreen() {
         await productsApi.create(listId, payload(force));
         push('Ürün eklendi.');
       }
+      // Kayıt başarılı: uyarı bayrağı düşer, ayrılış engellenmez.
+      setKirli(false);
       navigate(`/listeler/${listId}`);
     } catch (caught) {
       if (caught instanceof ApiError && caught.code === 'DUPLICATE_WARNING') {
@@ -180,8 +196,15 @@ export default function ProductFormScreen() {
       } else {
         setOneri('');
       }
-    } catch {
+    } catch (hata) {
+      // V3-B F1 — "ÖNERİ YOK" ile "İSTEK PATLADI" AYNI ŞEY DEĞİL.
+      //
+      // Eskiden ikisi de sessizce `setOneri('')` yapıyordu: kullanıcı düğmeye
+      // basıyor, hiçbir şey olmuyor ve sebebini öğrenemiyordu. K54 "çeviri
+      // zorunlu değildir" der — bu, ÖNERİ BULUNAMAMASININ sessiz geçilmesini
+      // haklı kılar, sağlayıcının çökmesinin gizlenmesini değil.
       setOneri('');
+      push(messageOf(hata), 'error');
     } finally {
       setOneriYukleniyor(false);
     }

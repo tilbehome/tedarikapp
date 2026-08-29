@@ -62,6 +62,8 @@ final class TranslationController extends ApiController
         private readonly ?\App\Services\Translation\CeviriYurutucu $yurutucu = null,
         // D12: yanıt gönderildikten sonra kuyruk turu tetikleyen yardımcı.
         private readonly ?\App\Services\Kuyruk\KuyrukTetikleyici $tetikleyici = null,
+        // V3-B C3: sözlük içe aktarımı NTF-GLOSSARY-IMPORTED doğurur.
+        private readonly ?\App\Services\Bildirim\BildirimYayinci $bildirim = null,
     ) {
     }
 
@@ -475,6 +477,187 @@ final class TranslationController extends ApiController
         }
 
         return Response::success($response, ['lang' => $dil, 'terms' => $this->glossary->all($dil)]);
+    }
+
+    /**
+     * GET /api/settings/glossary/disa-aktar?lang=zh — sözlüğü CSV olarak indirir
+     * (V3-B C3 · PNL-50).
+     *
+     * CSV seçildi çünkü kullanıcının elindeki araç Excel'dir; JSON indirmek
+     * "bunu neyle açacağım?" sorusunu doğururdu. BOM yazılır: Excel BOM'suz
+     * UTF-8 CSV'yi Windows'ta bozuk gösterir ve Çince terimler soru işaretine
+     * döner — sözlük tam olarak o karakterler için var.
+     */
+    public function glossaryDisaAktar(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        $dil = $this->dil(is_string($request->getQueryParams()['lang'] ?? null)
+            ? (string) $request->getQueryParams()['lang']
+            : '');
+
+        $satirlar = "\xEF\xBB\xBFkaynak;turkce\r\n";
+        foreach ($this->glossary->all($dil) as $kaynak => $karsilik) {
+            $satirlar .= $this->csvHucre($kaynak) . ';' . $this->csvHucre($karsilik) . "\r\n";
+        }
+
+        $response->getBody()->write($satirlar);
+
+        return $response
+            ->withHeader('Content-Type', 'text/csv; charset=utf-8')
+            ->withHeader('Content-Disposition', sprintf('attachment; filename="sozluk-%s-tr.csv"', $dil));
+    }
+
+    /**
+     * POST /api/settings/glossary/ice-aktar — CSV içeriğini sözlüğe katar
+     * (V3-B C3 · PNL-51).
+     *
+     * ÇAKIŞMADA KULLANICI TERİMİ KAZANIR ve bu emrin şartıdır: kullanıcı bir
+     * terimi elle düzelttiyse, sonradan içe aktarılan bir dosya onu EZMEMELİDİR.
+     * Dosyadan gelen satır YALNIZ o terim sözlükte yoksa yazılır.
+     *
+     * `storage/` üstyazımı korunur: `Glossary::save()` zaten oraya yazar,
+     * `config/` altındaki temel sözlüğe DOKUNULMAZ.
+     */
+    public function glossaryIceAktar(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        $body = $this->body($request);
+        $dil = $this->dil(is_string($body['lang'] ?? null) ? (string) $body['lang'] : '');
+        $icerik = is_string($body['csv'] ?? null) ? (string) $body['csv'] : '';
+
+        if (trim($icerik) === '') {
+            return Response::error($response, 'VALIDATION', 'Doğrulama hatası', 422, ['csv' => 'Dosya boş.']);
+        }
+        if (!$this->glossary->writable($dil)) {
+            return Response::error($response, 'SERVER_ERROR', 'Sözlük dosyası yazılabilir değil (storage/ izinleri).', 500);
+        }
+
+        $mevcut = $this->glossary->all($dil);
+        $eklenen = 0;
+        $atlanan = 0;
+        $bozuk = 0;
+
+        foreach ($this->csvSatirlari($icerik) as $sira => $satir) {
+            if (count($satir) < 2) {
+                $bozuk++;
+
+                continue;
+            }
+            $kaynak = trim($satir[0]);
+            $karsilik = trim($satir[1]);
+            if ($kaynak === '' || $karsilik === '') {
+                continue;
+            }
+            // BAŞLIK SATIRI TERİM DEĞİLDİR. Yalnız İLK satırda ve yalnız bilinen
+            // başlık sözcükleriyle atlanır: "kaynak" sözcüğü bir terim olarak da
+            // geçebilir, onu her yerde atlamak gerçek bir satırı yutardı.
+            if ($sira === 0 && $this->baslikSatiriMi($kaynak, $karsilik)) {
+                continue;
+            }
+            // ÇAKIŞMA: kullanıcının mevcut terimi KAZANIR.
+            if (isset($mevcut[$kaynak])) {
+                $atlanan++;
+
+                continue;
+            }
+            $mevcut[$kaynak] = $karsilik;
+            $eklenen++;
+        }
+
+        if (count($mevcut) > 5000) {
+            return Response::error($response, 'VALIDATION', 'Doğrulama hatası', 422, ['csv' => 'Sözlük en fazla 5000 terim taşıyabilir.']);
+        }
+
+        try {
+            $this->glossary->save($mevcut, $dil);
+        } catch (\Throwable $exception) {
+            return Response::error($response, 'SERVER_ERROR', $exception->getMessage(), 500);
+        }
+
+        $auditId = null;
+        if ($this->activity !== null && $this->clock !== null) {
+            $auditId = $this->activity->record(
+                'settings',
+                null,
+                'glossary_imported',
+                sprintf('%s · %d eklendi, %d atlandı, %d bozuk satır', $dil, $eklenen, $atlanan, $bozuk),
+                \App\Core\ClientIp::from($request),
+                $this->clock->now(),
+                \App\Services\ActivityLog::ACTOR_ADMIN,
+                $this->user($request)->id,
+            );
+        }
+
+        // V3-B A3/C3: sözlük içe aktarımı bildirim doğurur (NTF-GLOSSARY-IMPORTED).
+        if ($auditId !== null) {
+            $this->bildirim?->yayimla('NTF-GLOSSARY-IMPORTED', [
+                'dil' => $dil,
+                'terim_sayisi' => $eklenen,
+                'surum' => $this->glossary->surum(),
+            ], $auditId);
+        }
+
+        return Response::success($response, [
+            'lang' => $dil,
+            'eklenen' => $eklenen,
+            'atlanan' => $atlanan,
+            'bozuk' => $bozuk,
+            'toplam' => count($mevcut),
+        ]);
+    }
+
+    /**
+     * İlk satır bir başlık satırı mı?
+     *
+     * Kendi dışa aktarımımız `kaynak;turkce` yazar ama kullanıcının dosyası
+     * başka bir araçtan gelmiş olabilir. Bilinen sözcük çiftleriyle sınırlı
+     * tutuluyor: "her ilk satırı atla" demek, başlıksız bir dosyanın ilk
+     * terimini sessizce yutardı.
+     */
+    private function baslikSatiriMi(string $kaynak, string $karsilik): bool
+    {
+        $kaynakBasliklari = ['kaynak', 'source', 'terim', 'term', 'orijinal', 'original'];
+        $hedefBasliklari = ['turkce', 'türkçe', 'turkish', 'karsilik', 'karşılık', 'ceviri', 'çeviri'];
+
+        return in_array(mb_strtolower($kaynak), $kaynakBasliklari, true)
+            && in_array(mb_strtolower($karsilik), $hedefBasliklari, true);
+    }
+
+    /** CSV hücresi — ayraç, tırnak ya da satır sonu varsa tırnaklanır. */
+    private function csvHucre(string $deger): string
+    {
+        if (preg_match('/[";\r\n]/', $deger) !== 1) {
+            return $deger;
+        }
+
+        return '"' . str_replace('"', '""', $deger) . '"';
+    }
+
+    /**
+     * CSV'yi satırlara ayırır. Ayraç `;` VEYA `,` olabilir — Excel'in Türkçe
+     * yereli noktalı virgül yazar, başka araçlar virgül. Kullanıcıya "hangi
+     * ayracı kullanmalıyım?" diye sormak yerine ikisini de kabul ediyoruz.
+     *
+     * @return list<list<string>>
+     */
+    private function csvSatirlari(string $icerik): array
+    {
+        // Excel'in yazdığı BOM temizlenir; kalırsa ilk sütun adı görünmez bir
+        // karakterle başlar ve başlık satırı tanınmaz.
+        $icerik = preg_replace("/^\xEF\xBB\xBF/", '', $icerik) ?? $icerik;
+        $ayrac = substr_count($icerik, ';') >= substr_count($icerik, ',') ? ';' : ',';
+
+        $satirlar = [];
+        foreach (preg_split('/\r\n|\r|\n/', $icerik) ?: [] as $ham) {
+            if (trim($ham) === '') {
+                continue;
+            }
+            // Kaçış karakteri BOŞ verilir: CSV standardında kaçış yoktur,
+            // tırnak ikilenerek gösterilir. Ters bölü bırakmak, metindeki ters
+            // bölüyü sessizce yutardı.
+            $hucreler = str_getcsv($ham, $ayrac, '"', '');
+            $satirlar[] = array_map(static fn (?string $h): string => (string) $h, $hucreler);
+        }
+
+        return $satirlar;
     }
 
     /**

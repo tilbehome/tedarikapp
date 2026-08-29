@@ -110,6 +110,8 @@ final class AppBuilder
             $clock ?? SystemClock::fromConfig($config),
             $logger,
             $requestContext,
+            // Bildirim kataloğu docs/ altındadır; yayıncı onu kök dizinden okur.
+            $basePath,
         );
 
         $app->get('/api/health', self::healthAction($config, $connection, $logger));
@@ -145,7 +147,7 @@ final class AppBuilder
         // kayıtlı olmalı — kayıtlı olmasa tur "tanınmayan iş türü" der ve işleri
         // ölü rafına atardı.
         $kuyrukKosucusu = new \App\Services\Kuyruk\JobRunner(
-            new \App\Services\Kuyruk\JobQueue($connection),
+            new \App\Services\Kuyruk\JobQueue($connection, $services->bildirim),
             $logger,
         );
         \App\Services\Kuyruk\KuyrukIsleyicileri::kaydet(
@@ -155,12 +157,19 @@ final class AppBuilder
             $logger,
             $basePath,
             $services->clock,
+            $services->bildirim,
         );
         $kuyrukTetikleyici = new \App\Services\Kuyruk\KuyrukTetikleyici(
             $kuyrukKosucusu,
             $settingsRepository,
             $services->clock,
             $logger,
+            new \App\Services\Bildirim\EsikSupurmesi(
+                $connection,
+                $services->bildirim,
+                $settingsRepository,
+                $services->clock,
+            ),
         );
 
         // K4 düzeltmesi: taslak listeler GÜNCEL ayar kurunu gösterir — presenter ayarları bilir.
@@ -207,6 +216,7 @@ final class AppBuilder
             $mutationPolicy,
             $services->activity,
             $services->clock,
+            $services->bildirim,
         );
         $productController = new ProductController(
             $connection,
@@ -219,6 +229,7 @@ final class AppBuilder
             $services->activity,
             $services->clock,
             $mediaService,
+            $services->bildirim,
         );
         $trashController = new TrashController(
             $connection,
@@ -242,6 +253,7 @@ final class AppBuilder
             $services->clock,
             $services->timezone,
             $services->passwords,
+            $services->bildirim,
         );
         $categoryController = new CategoryController(
             new CategoryRepository($connection),
@@ -285,6 +297,7 @@ final class AppBuilder
             new \App\Services\Share\ShareKeyService($lists, (string) $config->get('APP_KEY', '')),
             $config,
             new \App\Services\Inbox\SistemListesi($settingsRepository),
+            $services->bildirim,
         );
 
         // İE#11 Faz 3: eklenti uçları — Bearer + CORS allowlist + hız sınırı (ExtensionAuth).
@@ -309,13 +322,14 @@ final class AppBuilder
             // D11a: galeri görselleri arka planda indirilsin (yakalama beklemez).
             kuyruk: new \App\Services\Kuyruk\JobQueue($connection),
         );
-        $extensionController = new \App\Controllers\ExtensionController($captureService, $inboxRepository, $lists, $services->clock, $basePath, $captureApplier, $kuyrukTetikleyici);
+        $extensionController = new \App\Controllers\ExtensionController($captureService, $inboxRepository, $lists, $services->clock, $basePath, $captureApplier, $kuyrukTetikleyici, $services->bildirim);
         $extensionAuth = new \App\Middleware\ExtensionAuth(
             $connection,
             $responseFactory,
             $config->get('EXTENSION_ALLOWED_ORIGINS', ''),
             $config->getPositiveInt('CAPTURE_RATE_PER_MIN', 30),
             $services->timezone,
+            $services->bildirim,
         );
         // İE#13 Blok C: çeviri ÖNERİSİ (K54) — kendi SSRF beyaz listesi vardır;
         // medya allowlist'i (alicdn/1688) GENİŞLETİLMEZ.
@@ -374,10 +388,11 @@ final class AppBuilder
             $services->activity,
             $services->clock,
             $ceviriAyarlari,
-            new \App\Services\Kuyruk\JobQueue($connection),
+            new \App\Services\Kuyruk\JobQueue($connection, $services->bildirim),
             $products,
             $ceviriYurutucu,
             $kuyrukTetikleyici,
+            $services->bildirim,
         );
 
         $app->group('', static function (\Slim\Routing\RouteCollectorProxy $group) use ($extensionController, $translationController): void {
@@ -445,6 +460,15 @@ final class AppBuilder
             $connection,
             $basePath . '/migrations',
             $kuyrukTetikleyici,
+            new \App\Controllers\BildirimController(
+                new \App\Services\Bildirim\BildirimRepository($connection),
+                $services->clock,
+            ),
+            new \App\Controllers\PanoramaController(
+                new \App\Services\Panorama\PanoramaServisi($connection, $services->clock, $basePath),
+            ),
+            new \App\Controllers\SurumNotuController($settingsRepository, $basePath),
+            new \App\Controllers\GunlukController($connection, $services->timezone),
         );
 
         // Panel (İE#8 §5): Vite çıktısı public/panel/ altındadır. Var olan dosyaları

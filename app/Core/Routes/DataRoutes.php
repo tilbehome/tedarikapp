@@ -55,6 +55,14 @@ final class DataRoutes
         string $migrationsDir,
         // D12: panel ziyaretinde kuyruk turu tetikler (cron'suz çalışma emniyeti).
         \App\Services\Kuyruk\KuyrukTetikleyici $kuyrukTetikleyici,
+        // V3-B A4: bildirim merkezi uçları.
+        \App\Controllers\BildirimController $bildirimController,
+        // V3-B B1: panorama TEK uç.
+        \App\Controllers\PanoramaController $panoramaController,
+        // V3-B B4: "Yenilikler" balonu ve sürüm notları geçmişi.
+        \App\Controllers\SurumNotuController $surumNotuController,
+        // V3-B F2: panel içi günlük görüntüleyici (Ayarlar > 16).
+        \App\Controllers\GunlukController $gunlukController,
     ): void {
         // İE#19 G7 — AKTİVİTE DEFTERİ BİLEREK KAPI DIŞINDA.
         //
@@ -64,8 +72,24 @@ final class DataRoutes
         // zaman?" sorusunun cevabı burada. Onu da 503'e kapatmak, kullanıcıyı
         // arızayı teşhis edecek tek ekrandan mahrum bırakırdı. Uç yalnız
         // `activity_log` tablosunu okur; şema kaymasından etkilenen kolonları yoktur.
-        $app->group('/api', static function (RouteCollectorProxy $group) use ($activityController): void {
+        $app->group('/api', static function (RouteCollectorProxy $group) use ($activityController, $bildirimController, $panoramaController, $surumNotuController, $gunlukController): void {
             $group->get('/activity', [$activityController, 'index']);
+            // BİLDİRİMLER DE KAPI DIŞINDA (aynı gerekçe): sistem bozukken
+            // kullanıcının "ne oldu?" sorusuna cevap veren yüzey odur. Uç yalnız
+            // `notifications` tablosunu okur; şema kaymasından etkilenmez.
+            $group->get('/bildirimler', [$bildirimController, 'index']);
+            $group->get('/bildirimler/sayac', [$bildirimController, 'sayac']);
+            $group->post('/bildirimler/hepsi-okundu', [$bildirimController, 'hepsiOkundu']);
+            $group->post('/bildirimler/{id}/okundu', [$bildirimController, 'okundu']);
+            // Panorama da kapı dışında: "bugün ne var?" sorusu sistem yarım
+            // kurulmuşken de sorulabilmeli; uç yalnız sayar, şema yazmaz.
+            $group->get('/panorama', [$panoramaController, 'index']);
+            $group->get('/surum-notu', [$surumNotuController, 'guncel']);
+            $group->get('/surum-notu/gecmis', [$surumNotuController, 'gecmis']);
+            $group->post('/surum-notu/goruldu', [$surumNotuController, 'gorulduIsaretle']);
+            // Günlük de kapı dışında: tam olarak sistem BOZUKKEN gereklidir
+            // (aktivite defteriyle aynı gerekçe, İE#19 G7).
+            $group->get('/gunluk', [$gunlukController, 'index']);
         })
             ->add(new Csrf($services->session, $responseFactory))
             ->add(new Auth($services, $responseFactory));
@@ -85,6 +109,9 @@ final class DataRoutes
             $group->put('/settings/app-url', [$settingsController, 'updateAppUrl']);
             $group->get('/settings/glossary', [$translationController, 'glossaryIndex']);
             $group->put('/settings/glossary', [$translationController, 'glossarySave']);
+            // V3-B C3 (PNL-50/51): sözlük CSV dışa/içe aktarma.
+            $group->get('/settings/glossary/disa-aktar', [$translationController, 'glossaryDisaAktar']);
+            $group->post('/settings/glossary/ice-aktar', [$translationController, 'glossaryIceAktar']);
             // İE#20 C4: Ayarlar > Çeviri (sağlayıcı, anahtar, model, hedef diller).
             $group->get('/settings/translation', [$translationController, 'translationSettings']);
             $group->put('/settings/translation', [$translationController, 'translationSettingsSave']);

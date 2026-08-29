@@ -42,6 +42,8 @@ final class SettingsController extends ApiController
         // rc8/K4: APP_URL değişikliği parola tekrarı ister — yapıcının SONUNA
         // eklenir, konumsal çağrılar bozulmaz.
         private readonly PasswordHasher $passwords,
+        // V3-B A3: kur onayı ve ayar kaydı bildirim doğurur.
+        private readonly ?\App\Services\Bildirim\BildirimYayinci $bildirim = null,
     ) {
     }
 
@@ -122,6 +124,11 @@ final class SettingsController extends ApiController
             ActivityLog::ACTOR_ADMIN,
             $kullanici->id,
         );
+        $this->bildirim?->yayimla('NTF-SETTINGS-CHANGED', [
+            'kullanici_id' => $this->user($request)->id,
+            'sekme_kodu' => 'genel',
+            'ayar_grubu' => 'genel',
+        ]);
 
         return Response::success($response, [
             'app_url' => $kanonik,
@@ -170,6 +177,11 @@ final class SettingsController extends ApiController
             \App\Services\ActivityLog::ACTOR_ADMIN,
             $this->user($request)->id,
         );
+        $this->bildirim?->yayimla('NTF-SETTINGS-CHANGED', [
+            'kullanici_id' => $this->user($request)->id,
+            'sekme_kodu' => 'paylasim',
+            'ayar_grubu' => 'paylasim',
+        ]);
 
         return Response::success($response, [
             'share_contact_phone' => $this->settings->get(SettingsRepository::KEY_SHARE_CONTACT_PHONE),
@@ -225,6 +237,11 @@ final class SettingsController extends ApiController
             \App\Services\ActivityLog::ACTOR_ADMIN,
             $this->user($request)->id,
         );
+        $this->bildirim?->yayimla('NTF-SETTINGS-CHANGED', [
+            'kullanici_id' => $this->user($request)->id,
+            'sekme_kodu' => 'ciktilar',
+            'ayar_grubu' => 'ciktilar',
+        ]);
 
         return Response::success($response, $this->settings->documentHeader());
     }
@@ -252,6 +269,11 @@ final class SettingsController extends ApiController
             ActivityLog::ACTOR_ADMIN,
             $this->user($request)->id,
         );
+        $this->bildirim?->yayimla('NTF-SETTINGS-CHANGED', [
+            'kullanici_id' => $this->user($request)->id,
+            'sekme_kodu' => 'guvenlik',
+            'ayar_grubu' => 'guvenlik',
+        ]);
 
         return Response::success($response, [
             'token' => $token,
@@ -276,6 +298,11 @@ final class SettingsController extends ApiController
             ActivityLog::ACTOR_ADMIN,
             $this->user($request)->id,
         );
+        $this->bildirim?->yayimla('NTF-SETTINGS-CHANGED', [
+            'kullanici_id' => $this->user($request)->id,
+            'sekme_kodu' => 'guvenlik',
+            'ayar_grubu' => 'guvenlik',
+        ]);
 
         return $response->withStatus(204);
     }
@@ -360,7 +387,7 @@ final class SettingsController extends ApiController
                     $this->settings->usdRate(),
                 );
 
-                $this->activity->record(
+                $auditId = $this->activity->record(
                     'settings',
                     null,
                     'rates_updated',
@@ -373,6 +400,14 @@ final class SettingsController extends ApiController
                     ActivityLog::ACTOR_ADMIN,
                     $this->user($request)->id,
                 );
+                $this->bildirim?->yayimla('NTF-FX-UPDATED', [
+                    'kullanici_id' => $this->user($request)->id,
+                    'kur_ozeti' => implode(', ', array_map(
+                        static fn (array $c): string => $c['currency'] . ' ' . $c['value'],
+                        $changes,
+                    )),
+                    'liste_sayisi' => $tazelenen,
+                ], $auditId);
             });
         }
 

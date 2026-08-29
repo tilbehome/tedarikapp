@@ -36,7 +36,13 @@ export default function InboxDetailDrawer({ id, onClose }: { id: number; onClose
             <p className="text-xs uppercase tracking-wide text-ink-3">Yakalama detayı</p>
             <h2 className="truncate text-base font-semibold">{detail?.name ?? '…'}</h2>
           </div>
-          <button type="button" className="btn-ghost" onClick={onClose} aria-label="Kapat">
+          <button
+            type="button"
+            className="btn-ghost"
+            onClick={onClose}
+            aria-label="Kapat"
+            data-testid="cekmece-kapat"
+          >
             <X className="h-4 w-4" aria-hidden />
           </button>
         </header>

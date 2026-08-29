@@ -471,3 +471,127 @@ export const activity = {
     return api.get<ActivityEntry[]>(`/api/activity${suffix ? `?${suffix}` : ''}`);
   },
 };
+
+/**
+ * BİLDİRİM MERKEZİ (V3-B A4).
+ *
+ * `anlik` alanı SUNUCUDAN gelir: hangi bildirimin anlık kart olarak
+ * gösterileceğine panel karar VERMEZ. Aynı gerçeği iki yoldan okumak (biri
+ * sunucuda önem eşiği, biri panelde) bu projede tekrar eden hatadır.
+ */
+export interface Bildirim {
+  id: number;
+  olay_kodu: string;
+  onem: 'bilgi' | 'uyari' | 'kritik';
+  grup: 'kuyruk' | 'liste' | 'paylasim' | 'sistem' | 'ceviri';
+  baslik: string;
+  govde: string;
+  eylem_linki: string | null;
+  /** Birleştirilmiş olay sayısı; 1 ise rozet BASILMAZ. */
+  birlesen_sayi: number;
+  audit_id: number | null;
+  okundu: boolean;
+  okundu_at: string | null;
+  created_at: string;
+}
+
+export const bildirimler = {
+  read: (yalnizOkunmamis = false) =>
+    api.get<{ bildirimler: Bildirim[]; okunmamis: number; anlik: Bildirim | null }>(
+      `/api/bildirimler${yalnizOkunmamis ? '?yalniz_okunmamis=1' : ''}`,
+    ),
+  sayac: () => api.get<{ okunmamis: number }>('/api/bildirimler/sayac'),
+  okundu: (id: number) =>
+    api.post<{ degisti: boolean; okunmamis: number }>(`/api/bildirimler/${id}/okundu`),
+  hepsiOkundu: () =>
+    api.post<{ isaretlenen: number; okunmamis: number }>('/api/bildirimler/hepsi-okundu'),
+};
+
+/**
+ * PANORAMA (V3-B B1) — "Bugün ne var?".
+ *
+ * Yanıt HAZIR CÜMLE taşır. Ham metrik ve koşul ifadesi GELMEZ: koşulları
+ * sunucu değerlendirir, panel yalnız gösterir. İki taraf da yorum yaparsa
+ * aynı gerçeğin iki yolu doğar — bu projenin tekrar eden hatası.
+ */
+export interface PanoramaBrifing {
+  id: string;
+  /** 1 en acil. */
+  oncelik: number;
+  cumle: string;
+  eylem: string;
+  eylem_linki: string | null;
+}
+
+export interface PanoramaYaniti {
+  brifingler: PanoramaBrifing[];
+  /** Bugün ÖLÇÜLEMEYEN brifingler — "koşul sağlanmadı" DEĞİL. */
+  olculmeyen: { id: string; sebep: string }[];
+  /** Hiç brifing yoksa gösterilecek cümle; varsa null. */
+  bos_gun: string | null;
+  olcum_zamani: string;
+}
+
+export const panorama = {
+  read: () => api.get<PanoramaYaniti>('/api/panorama'),
+};
+
+/**
+ * SÜRÜM NOTLARI — "Yenilikler" balonu (V3-B B4).
+ *
+ * Okundu işareti SUNUCUDA tutulur: kullanıcı paneli başka bir cihazdan
+ * açtığında aynı balonu yeniden görmemeli.
+ */
+export const surumNotu = {
+  guncel: () =>
+    api.get<{ surum: string; maddeler: string[]; gorulmedi: boolean }>('/api/surum-notu'),
+  gecmis: () =>
+    api.get<{ surumler: { surum: string; maddeler: string[] }[] }>('/api/surum-notu/gecmis'),
+  goruldu: () => api.post<{ surum: string }>('/api/surum-notu/goruldu'),
+};
+
+/**
+ * SÖZLÜK CSV (V3-B C3 · PNL-50/51).
+ *
+ * İçe aktarımda ÇAKIŞMADA KULLANICI TERİMİ KAZANIR: dosyadan gelen satır
+ * yalnız o terim sözlükte yoksa yazılır. Elle düzeltilmiş bir karşılığın
+ * dosyayla ezilmesi, kullanıcının emeğini sessizce silmek olurdu.
+ */
+export const sozluk = {
+  disaAktarUrl: (lang: string) => `/api/settings/glossary/disa-aktar?lang=${encodeURIComponent(lang)}`,
+  iceAktar: (lang: string, csv: string) =>
+    api.post<{ lang: string; eklenen: number; atlanan: number; bozuk: number; toplam: number }>(
+      '/api/settings/glossary/ice-aktar',
+      { lang, csv },
+    ),
+};
+
+/**
+ * PANEL İÇİ GÜNLÜK (V3-B F2).
+ *
+ * `kaynak_var: false` — günlük veritabanına yazılmıyor demektir (geliştirme
+ * ortamı). Boş liste ile bu durumu ayırt etmek şart: "hiç hata yok" ile
+ * "hiç bakılmadı" aynı şey değildir.
+ */
+export const gunluk = {
+  read: (params: { seviye?: string; ara?: string; limit?: number } = {}) => {
+    const sorgu = new URLSearchParams();
+    if (params.seviye) sorgu.set('seviye', params.seviye);
+    if (params.ara) sorgu.set('ara', params.ara);
+    if (params.limit) sorgu.set('limit', String(params.limit));
+    const ek = sorgu.toString();
+
+    return api.get<{
+      kayitlar: {
+        id: number;
+        seviye: string;
+        mesaj: string;
+        baglam: string | null;
+        istek_id: string | null;
+        zaman: string;
+      }[];
+      kaynak_var: boolean;
+      not: string | null;
+    }>(`/api/gunluk${ek ? `?${ek}` : ''}`);
+  },
+};

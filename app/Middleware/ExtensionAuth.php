@@ -35,6 +35,9 @@ final class ExtensionAuth implements MiddlewareInterface
         private readonly string $allowedOrigins,
         private readonly int $ratePerMinute,
         private readonly \DateTimeZone $timezone,
+        // V3-B A3: geçersiz token bildirim doğurur — kullanıcı "eklenti neden
+        // çalışmıyor?" sorusunun cevabını panelde görür, sunucu logunda değil.
+        private readonly ?\App\Services\Bildirim\BildirimYayinci $bildirim = null,
     ) {
     }
 
@@ -54,6 +57,14 @@ final class ExtensionAuth implements MiddlewareInterface
 
         $storedHash = (new SettingsRepository($this->connection))->get(SettingsRepository::KEY_EXTENSION_TOKEN_HASH, '');
         if ($token === '' || $storedHash === null || $storedHash === '' || !hash_equals($storedHash, hash('sha256', $token))) {
+            // Token DEĞERİ bildirime GİRMEZ (K34/K51): yalnız istemci kimliği
+            // olarak Origin ve hata kodu taşınır. Birleştirme sayesinde ard arda
+            // gelen yüzlerce geçersiz istek tek satırda sayılır.
+            $this->bildirim?->yayimla('NTF-TOKEN-INVALID', [
+                'istemci_id' => $origin === '' ? 'bilinmiyor' : $origin,
+                'hata_kodu' => $token === '' ? 'eksik' : 'gecersiz',
+            ]);
+
             return $this->withCors(
                 Response::error($this->responseFactory->createResponse(), 'UNAUTHENTICATED', 'Eklenti token\'ı geçersiz veya iptal edilmiş. Panel > Ayarlar > Güvenlik\'ten yeni token üretin.', 401),
                 $origin,

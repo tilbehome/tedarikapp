@@ -52,7 +52,7 @@ final class ActivityLog
         DateTimeImmutable $now,
         string $actorType = self::ACTOR_ADMIN,
         ?int $actorId = null,
-    ): void {
+    ): int {
         $statement = $this->connection->pdo()->prepare(
             'INSERT INTO activity_log
                 (entity_type, entity_id, action, detail, ip, actor_type, actor_id, request_id, user_agent, created_at)
@@ -71,6 +71,12 @@ final class ActivityLog
             'user_agent' => $this->requestContext?->userAgent(),
             'created_at' => Dates::toStorage($now),
         ]);
+
+        // V3-B A1: yazılan satırın kimliği DÖNER. Birleştirmesi kapalı
+        // bildirimler "değiştirilemez audit bağlantısı" ister (katalog
+        // sözleşmesi); bağlantı ancak buradan alınabilir. Dönüş değerini
+        // kullanmayan eski çağrılar etkilenmez.
+        return (int) $this->connection->pdo()->lastInsertId();
     }
 
     /** Kimlik doğrulama olayları için kısayol — `detail` her zaman e-postadır (docs İE#4 §5). */

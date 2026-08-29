@@ -62,9 +62,22 @@ describe('tasarım tokenları', () => {
 });
 
 describe('bileşenlerde sabit renk yasağı', () => {
-  it('src altındaki .tsx dosyalarında ham hex renk YOKTUR', async () => {
+  /**
+   * V3-B D2 — KAPSAM `.tsx`TEN `.ts` VE `.css`E GENİŞLETİLDİ.
+   *
+   * Nöbet Raporu 5'in bulgusu: bekçi yalnız `.tsx` tarıyordu. O gün `.ts` ve
+   * `.css` dosyaları temizdi ama KORUMASIZDI — bir yardımcı dosyaya yazılan
+   * hex, koyu temada sessizce yanlış renk verirdi ve test bunu hiç görmezdi.
+   *
+   * `tokens.css` KENDİSİ hariçtir: paletin tanımlandığı yer orasıdır.
+   */
+  it('src altındaki .tsx/.ts/.css dosyalarında ham hex renk YOKTUR', async () => {
     const { globSync } = await import('node:fs');
-    const dosyalar = globSync('src/**/*.tsx', { cwd: resolve(kok, 'frontend') });
+    const dosyalar = [
+      ...globSync('src/**/*.tsx', { cwd: resolve(kok, 'frontend') }),
+      ...globSync('src/**/*.ts', { cwd: resolve(kok, 'frontend') }),
+      ...globSync('src/**/*.css', { cwd: resolve(kok, 'frontend') }),
+    ].filter((dosya) => !dosya.replace(/\\/g, '/').endsWith('styles/tokens.css'));
 
     const ihlaller: string[] = [];
     for (const dosya of dosyalar) {
@@ -80,5 +93,15 @@ describe('bileşenlerde sabit renk yasağı', () => {
     }
 
     expect(ihlaller, 'Sabit renk koyu temada kırılır — token kullanın').toEqual([]);
+  });
+
+  it('taranan dosya kümesi BOŞ DEĞİL — bekçi gerçekten bakıyor', async () => {
+    // Bir glob deseni bozulursa test "0 ihlal" der ve YEŞİL kalır. Hiçbir şeye
+    // bakmayan bir bekçi, olmayan bekçiden daha tehlikelidir.
+    const { globSync } = await import('node:fs');
+
+    expect(globSync('src/**/*.tsx', { cwd: resolve(kok, 'frontend') }).length).toBeGreaterThan(20);
+    expect(globSync('src/**/*.ts', { cwd: resolve(kok, 'frontend') }).length).toBeGreaterThan(10);
+    expect(globSync('src/**/*.css', { cwd: resolve(kok, 'frontend') }).length).toBeGreaterThan(0);
   });
 });
