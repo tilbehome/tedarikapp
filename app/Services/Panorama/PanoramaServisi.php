@@ -37,7 +37,7 @@ use Throwable;
  */
 final class PanoramaServisi
 {
-    private const KATALOG = '/docs/v3/hazirlik/v3-b/panorama-brifing-katalogu.json';
+    private const KATALOG = '/config/panorama-brifing-katalogu.json';
 
     /**
      * Bugün ÖLÇÜLEBİLEN brifingler. Her biri bir kapatma (closure) ile

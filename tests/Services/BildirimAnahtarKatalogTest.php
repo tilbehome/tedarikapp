@@ -23,7 +23,7 @@ use PHPUnit\Framework\TestCase;
  */
 final class BildirimAnahtarKatalogTest extends TestCase
 {
-    private const KATALOG = '/docs/v3/hazirlik/v3-b/bildirim-olay-katalogu.json';
+    private const KATALOG = '/config/bildirim-olay-katalogu.json';
 
     /** @return list<array<string, mixed>> */
     private function olaylar(): array

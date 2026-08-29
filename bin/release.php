@@ -293,6 +293,24 @@ if (is_file($basePath . '/storage/.htaccess')) {
     $files[] = 'storage/.htaccess';
 }
 
+// V3-B B4 (K99 EK): SÜRÜM NOTLARI PAKETE GİRER.
+//
+// `docs/` genel olarak pakete GİRMEZ ve girmemeli — şartname ve tarihçedir.
+// Ama `docs/surum-notlari/*.md` KULLANICIYA DÖNÜK içeriktir: panelin
+// "Yenilikler" balonu ve Ayarlar > Sürüm notları ekranı doğrudan bu dosyaları
+// okur. Pakette olmazsa balon sessizce BOŞ çıkar — kullanıcı yeni sürümde ne
+// değiştiğini hiç öğrenemez.
+//
+// Kataloglar (bildirim/panorama) buraya EKLENMEDİ; onlar `config/` altına
+// taşındı (K99): çalışma zamanı verisi `docs/` altından okunmaz.
+$surumNotlari = glob($basePath . '/docs/surum-notlari/*.md') ?: [];
+if ($surumNotlari === []) {
+    $fail('docs/surum-notlari/ altında sürüm notu yok — "Yenilikler" balonu boş çıkar.');
+}
+foreach ($surumNotlari as $not) {
+    $files[] = 'docs/surum-notlari/' . basename($not);
+}
+
 sort($files);
 $files = array_values(array_unique($files));
 
@@ -439,11 +457,257 @@ foreach ($manifestEntries as [, $relative]) {
         $missing[] = $relative . ' (manifestte var, zip\'te yok)';
     }
 }
+// K99 EK — ÇALIŞMA ZAMANI KATALOGLARI PAKETTE Mİ?
+//
+// Bu blok, v1.2.0'ın ilk paketinde yaşananın doğrudan karşılığıdır: kataloglar
+// `docs/` altındaydı, `docs/` pakete girmiyordu ve DOSYA SAYAN doğrulama bunu
+// göremedi — 2225 dosya sayıldı, hepsinin SHA'sı tuttu, paket "DOĞRULANDI"
+// dedi ve içindeki bildirim sistemi ölüydü.
+foreach ([
+    'config/bildirim-olay-katalogu.json' => 'bildirim olay kataloğu (K99)',
+    'config/panorama-brifing-katalogu.json' => 'panorama brifing kataloğu (K99)',
+] as $katalog => $aciklama) {
+    if ($verify->locateName($katalog) === false) {
+        $missing[] = $katalog . ' — ' . $aciklama;
+    }
+}
+// Sürüm notu olmadan "Yenilikler" balonu sessizce boş çıkar.
+$notVar = false;
+for ($i = 0; $i < $verify->numFiles; $i++) {
+    if (str_starts_with((string) $verify->getNameIndex($i), 'docs/surum-notlari/')) {
+        $notVar = true;
+
+        break;
+    }
+}
+if (!$notVar) {
+    $missing[] = 'docs/surum-notlari/*.md (Yenilikler balonu boş çıkar)';
+}
+
 $verify->close();
 
 if ($missing !== []) {
     @unlink($zipPath);
     $fail("Zip doğrulaması BAŞARISIZ — release üretilmedi:\n  - " . implode("\n  - ", $missing));
+}
+
+// ── 5) PAKET ÇALIŞTIRMA DENETİMİ (K99 · V3-B paket düzeltmesi) ──
+//
+// DOSYA SAYMAK YETMEZ. Yukarıdaki denetim üç şeyi kanıtlıyor: dosyalar var,
+// SHA'ları tutuyor, manifest eşleşiyor. Hiçbiri "uygulama BU PAKETLE çalışır
+// mı?" sorusunu sormuyordu — ve tam bu boşluk, bildirim sistemi ölü bir paketi
+// "DOĞRULANDI" damgasıyla geçirdi.
+//
+// Bu adım zip'i geçici bir dizine açar ve sınıfları ORADAN yükleyip katalogları
+// gerçekten okur. Başarısızsa zip SİLİNİR (mevcut desen korunur).
+$calistirmaSorunlari = paketCalistirmaDenetimi($zipPath);
+if ($calistirmaSorunlari !== []) {
+    @unlink($zipPath);
+    $fail(
+        "Paket ÇALIŞTIRMA denetimi BAŞARISIZ — release üretilmedi:\n  - "
+        . implode("\n  - ", $calistirmaSorunlari)
+        . "\n(Dosya listesi denetimi GEÇMİŞTİ; bu adım dosyaları KULLANARAK bakar.)",
+    );
+}
+
+/**
+ * PAKET ÇALIŞTIRMA DENETİMİ (K99 · V3-B paket düzeltmesi EK-1).
+ *
+ * Zip'i geçici bir dizine açar ve uygulamayı ORADAN kullanır. Dosya saymaz —
+ * dosyaları KULLANIR. Sınanan altı şey:
+ *
+ *   1. Bildirim olay kataloğu yüklenir ve olay taşır.
+ *   2. Panorama brifing kataloğu yüklenir ve brifing taşır.
+ *   3. Yerel sözlükler (K56 Katman 1) yüklenir ve terim taşır.
+ *   4. Sürüm notu okunur ve MADDE üretir ("Yenilikler" balonu dolu çıkar).
+ *   5. `KatalogDurumu` paket kökünde SAĞLIKLI der.
+ *   6. EK-1 SENARYOSU: migration 0035 ZATEN UYGULANMIŞ bir veritabanında
+ *      bekleyen migration KALMAZ. Reddedilen paket canlıya kuruldu ve 0035
+ *      koştu; düzeltilmiş paket onun ÜSTÜNE kurulacak. "Bekleyen migration
+ *      yok" demezse kullanıcı sihirbazda takılırdı.
+ *
+ * exec/proc_open KULLANILMAZ (docs/04 §7): denetim aynı süreçte, paketin
+ * autoloader'ı ayrı bir dizinden yüklenerek yapılır.
+ *
+ * @return list<string> sorunlar; boşsa paket çalışıyor
+ */
+function paketCalistirmaDenetimi(string $zipPath): array
+{
+    $sorunlar = [];
+    $gecici = sys_get_temp_dir() . '/tedarikapp-release-' . bin2hex(random_bytes(6));
+
+    $zip = new ZipArchive();
+    if ($zip->open($zipPath) !== true) {
+        return ['zip yeniden açılamadı: ' . $zipPath];
+    }
+    if (!$zip->extractTo($gecici)) {
+        $zip->close();
+
+        return ['zip geçici dizine açılamadı: ' . $gecici];
+    }
+    $zip->close();
+
+    try {
+        // 1-2) Kataloglar: VARLIK DEĞİL, YÜKLENEBİLİRLİK sınanır.
+        foreach ([
+            'config/bildirim-olay-katalogu.json' => 'olaylar',
+            'config/panorama-brifing-katalogu.json' => 'brifing_sablonlari',
+        ] as $goreli => $anahtar) {
+            $ham = @file_get_contents($gecici . '/' . $goreli);
+            if ($ham === false) {
+                $sorunlar[] = $goreli . ' okunamadı (pakette yok ya da izin yok)';
+
+                continue;
+            }
+            $veri = json_decode($ham, true);
+            if (!is_array($veri) || !isset($veri[$anahtar]) || !is_array($veri[$anahtar]) || $veri[$anahtar] === []) {
+                $sorunlar[] = $goreli . " yüklendi ama '" . $anahtar . "' boş — bağlı özellik ÇALIŞMAZ";
+            }
+        }
+
+        // 3) Sözlükler: dosya PHP dizisi döndürmeli.
+        foreach (['config/sozluk-zh-tr.php', 'config/sozluk-en-tr.php'] as $sozluk) {
+            $yol = $gecici . '/' . $sozluk;
+            if (!is_file($yol)) {
+                $sorunlar[] = $sozluk . ' pakette yok';
+
+                continue;
+            }
+            /** @var mixed $terimler */
+            $terimler = require $yol;
+            if (!is_array($terimler) || $terimler === []) {
+                $sorunlar[] = $sozluk . ' boş dizi döndü — Katman 1 sessizce boş çalışır';
+            }
+        }
+
+        // 4) Sürüm notu MADDE üretiyor mu? Dosyanın varlığı yetmez; balon
+        //    boş bir dosyayla da "boş" çıkardı.
+        $notlar = glob($gecici . '/docs/surum-notlari/*.md') ?: [];
+        if ($notlar === []) {
+            $sorunlar[] = 'docs/surum-notlari/ pakette yok — Yenilikler balonu boş';
+        } else {
+            $maddeliVar = false;
+            foreach ($notlar as $not) {
+                if (preg_match('/^- .+/m', (string) file_get_contents($not)) === 1) {
+                    $maddeliVar = true;
+
+                    break;
+                }
+            }
+            if (!$maddeliVar) {
+                $sorunlar[] = 'sürüm notlarının hiçbiri madde imi taşımıyor — balon boş çıkar';
+            }
+        }
+
+        // 5) Uygulamanın kendi sağlık denetimi PAKET KÖKÜNDE ne diyor?
+        //    Sınıf repodan yüklenir ama KÖK DİZİN olarak paket verilir:
+        //    denetlenen şey paketin içeriğidir.
+        $durum = new App\Core\KatalogDurumu($gecici);
+        if (!$durum->saglikliMi()) {
+            foreach ($durum->dokum() as $satir) {
+                if (!$satir['saglikli']) {
+                    $sorunlar[] = 'KatalogDurumu: ' . (string) $satir['hata'];
+                }
+            }
+        }
+
+        // 6) EK-1: 0035 ZATEN UYGULANMIŞ veritabanında bekleyen kalmamalı.
+        $sorunlar = array_merge($sorunlar, mevcutKurulumUstuneDenetimi($gecici));
+    } catch (Throwable $hata) {
+        $sorunlar[] = 'çalıştırma denetimi istisna attı: ' . $hata->getMessage();
+    } finally {
+        geciciDiziniSil($gecici);
+    }
+
+    return $sorunlar;
+}
+
+/**
+ * EK-1 SENARYOSU — MEVCUT KURULUMUN ÜSTÜNE.
+ *
+ * Reddedilen v1.2.0 paketi canlıya kuruldu ve migration 0035 koştu. Düzeltilmiş
+ * paket onun üstüne gelecek; sihirbaz "bekleyen migration yok" demeli. Bu
+ * denetim, paketteki migration dosyalarını 0035'in UYGULANMIŞ olduğu bir
+ * SQLite defterine karşı sayar.
+ *
+ * @return list<string>
+ */
+function mevcutKurulumUstuneDenetimi(string $paketKok): array
+{
+    $migrationDizini = $paketKok . '/migrations';
+    if (!is_dir($migrationDizini)) {
+        return ['pakette migrations/ dizini yok'];
+    }
+
+    $dosyalar = glob($migrationDizini . '/*.php') ?: [];
+    if ($dosyalar === []) {
+        return ['pakette migration dosyası yok'];
+    }
+
+    // Defter şeması `Migrator`ın beklediğiyle AYNI olmalı (name/checksum/
+    // execution_ms). Elle uydurulmuş bir şema, denetimi "eski şema" hatasıyla
+    // düşürür ve asıl sınanan şey hiç sınanmamış olurdu.
+    $pdo = new PDO('sqlite::memory:', null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+    $pdo->exec(
+        'CREATE TABLE migrations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name VARCHAR(190) NOT NULL UNIQUE,
+            checksum CHAR(64) NOT NULL,
+            execution_ms INT UNSIGNED NOT NULL,
+            applied_at DATETIME NOT NULL
+        )',
+    );
+
+    // CANLININ BUGÜNKÜ HÂLİ: paketteki TÜM migration'lar uygulanmış sayılır
+    // (0035 dâhil — reddedilen paket onu koşturdu). Checksum dosyanın kendi
+    // özetidir; `Migrator` bunu değişiklik denetimi için okur.
+    $ekle = $pdo->prepare(
+        'INSERT INTO migrations (name, checksum, execution_ms, applied_at)
+         VALUES (:ad, :ozet, 0, :zaman)',
+    );
+    foreach ($dosyalar as $dosya) {
+        $ekle->execute([
+            'ad' => basename($dosya, '.php'),
+            'ozet' => hash_file('sha256', $dosya),
+            'zaman' => '2026-08-29 10:57:00',
+        ]);
+    }
+
+    $migrator = new App\Core\Migrator($pdo, $migrationDizini);
+    $bekleyen = $migrator->pending();
+
+    if ($bekleyen !== []) {
+        return ['0035 uygulanmış kurulumda BEKLEYEN migration kaldı: ' . implode(', ', $bekleyen)];
+    }
+
+    // 0035 paketteki migration listesinde gerçekten var mı? (yoksa yukarıdaki
+    // "bekleyen yok" sonucu anlamsız olurdu)
+    $adlar = array_map(static fn (string $d): string => basename($d, '.php'), $dosyalar);
+    if (!in_array('0035_bildirimler', $adlar, true)) {
+        return ['pakette 0035_bildirimler migration dosyası YOK'];
+    }
+
+    return [];
+}
+
+/** Geçici dizini kökten siler (exec yok — özyinelemeli PHP). */
+function geciciDiziniSil(string $dizin): void
+{
+    if (!is_dir($dizin)) {
+        return;
+    }
+
+    $ogeler = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($dizin, FilesystemIterator::SKIP_DOTS),
+        RecursiveIteratorIterator::CHILD_FIRST,
+    );
+    foreach ($ogeler as $oge) {
+        if (!$oge instanceof SplFileInfo) {
+            continue;
+        }
+        $oge->isDir() ? @rmdir($oge->getPathname()) : @unlink($oge->getPathname());
+    }
+    @rmdir($dizin);
 }
 
 printf(

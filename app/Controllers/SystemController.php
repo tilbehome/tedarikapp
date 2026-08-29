@@ -40,6 +40,9 @@ final class SystemController
         private readonly ?MediaService $media = null,
         private readonly ?StateMachine $stateMachine = null,
         private readonly ?\App\Core\Config $appConfig = null,
+        // K99: açılışta yapılan katalog denetiminin sonucu — "Sistem durumu"
+        // ekranı bunu kırmızı madde olarak basar.
+        private readonly ?\App\Core\KatalogDurumu $katalogDurumu = null,
     ) {
     }
 
@@ -566,6 +569,25 @@ final class SystemController
         return Response::success($response, ['queued' => true]);
     }
 
+    /**
+     * K102 — kayıt sonrası yazılamayan bildirim sayacı.
+     *
+     * @return array{sayi: int, son: string|null}
+     */
+    private function bildirimHatalari(): array
+    {
+        try {
+            $ayarlar = new \App\Models\SettingsRepository($this->connection);
+            $sayi = (int) ($ayarlar->get(\App\Services\Bildirim\BildirimYayinci::KEY_HATA_SAYISI, '0') ?? '0');
+            $son = $ayarlar->get(\App\Services\Bildirim\BildirimYayinci::KEY_SON_HATA);
+        } catch (Throwable) {
+            // Ayar tablosu okunamıyorsa sistem durumu ekranı yine açılmalı.
+            return ['sayi' => 0, 'son' => null];
+        }
+
+        return ['sayi' => $sayi, 'son' => $son];
+    }
+
     public function status(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
         $this->authenticatedUser($request);
@@ -594,6 +616,13 @@ final class SystemController
         return Response::success($response, [
             'app_version' => AppVersion::VALUE,
             'php_version' => PHP_VERSION,
+            // K99: çalışma zamanı katalogları. SAĞLIKLI olanlar da listelenir —
+            // boş bir liste "denetim yapılmadı" ile "her şey yolunda" arasında
+            // ayırt edilemezdi.
+            'kataloglar' => $this->katalogDurumu?->dokum() ?? [],
+            // K102: kayıt SONRASI yazılamayan bildirimler. Birincil eylem
+            // düşmedi ama olay KAYBOLDU — sayı sıfırdan büyükse bu görünmeli.
+            'bildirim_hatalari' => $this->bildirimHatalari(),
             'db_version' => $databaseVersion,
             'installed_at' => is_array($lockDetails) && isset($lockDetails['installed_at'])
                 ? (string) $lockDetails['installed_at']

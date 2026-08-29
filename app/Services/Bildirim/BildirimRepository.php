@@ -99,6 +99,19 @@ final class BildirimRepository
     }
 
     /**
+     * Şu an açık bir transaction var mı? (K102)
+     *
+     * Yayıncı bu bilgiyle karar veriyor: transaction İÇİNDEYSE bildirim hatası
+     * yukarı verilir ve birincil kayıt da geri alınır (ya ikisi de olur ya
+     * hiçbiri). DIŞINDAYSA birincil kayıt ZATEN COMMIT OLMUŞTUR; istisnayı
+     * yukarı vermek, başarılı bir işlemi 500'e çevirmek olurdu.
+     */
+    public function islemIcindeMi(): bool
+    {
+        return $this->connection->pdo()->inTransaction();
+    }
+
+    /**
      * Okunmamış bildirim sayısı — üst çubuk rozeti bunu okur.
      */
     public function okunmamisSayisi(): int

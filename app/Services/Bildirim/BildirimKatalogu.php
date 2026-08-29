@@ -21,7 +21,7 @@ use RuntimeException;
  */
 final class BildirimKatalogu
 {
-    private const GORELI_YOL = '/docs/v3/hazirlik/v3-b/bildirim-olay-katalogu.json';
+    private const GORELI_YOL = '/config/bildirim-olay-katalogu.json';
 
     /** @var array<string, array<string, mixed>>|null */
     private ?array $olaylar = null;
@@ -34,13 +34,17 @@ final class BildirimKatalogu
      * Tek olayın katalog tanımı.
      *
      * @return array<string, mixed>|null bilinmeyen kodda null
+     * @throws RuntimeException katalog okunamadı/bozuk (K99 — yutulmaz)
      */
     public function olay(string $olayKodu): ?array
     {
         return $this->tumu()[$olayKodu] ?? null;
     }
 
-    /** @return array<string, array<string, mixed>> olay_kodu => tanım */
+    /**
+     * @return array<string, array<string, mixed>> olay_kodu => tanım
+     * @throws RuntimeException katalog okunamadı/bozuk (K99 — yutulmaz)
+     */
     public function tumu(): array
     {
         if ($this->olaylar !== null) {

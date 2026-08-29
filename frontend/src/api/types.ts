@@ -226,6 +226,17 @@ export interface RateHistoryEntry {
 export interface SystemStatus {
   app_version: string;
   php_version: string;
+  /**
+   * K99: çalışma zamanı katalogları (bildirim, panorama). Sağlıklı olanlar da
+   * listelenir — boş liste "denetim yapılmadı" ile "her şey yolunda" arasında
+   * ayırt edilemezdi.
+   */
+  kataloglar: { kod: string; ad: string; yol: string; saglikli: boolean; hata: string | null }[];
+  /**
+   * K102: kayıt SONRASI yazılamayan bildirimler. Birincil eylem düşmedi ama
+   * olay kayboldu — sıfırdan büyükse ekranda görünür.
+   */
+  bildirim_hatalari: { sayi: number; son: string | null };
   db_version: string | null;
   installed_at: string | null;
   migrations: { applied: number; pending: string[]; pending_count: number };

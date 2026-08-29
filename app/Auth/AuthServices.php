@@ -65,6 +65,8 @@ final class AuthServices
             new BildirimKatalogu($basePath ?? dirname(__DIR__, 2)),
             new GrupAnahtariCozucu(),
             $clock,
+            // K102: kayıt sonrası yayında hatayı sayacak yer + kritik log.
+            new \App\Models\SettingsRepository($connection),
             $logger,
         );
         $this->throttle = new LoginThrottle(

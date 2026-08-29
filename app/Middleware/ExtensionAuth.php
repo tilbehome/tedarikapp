@@ -60,7 +60,7 @@ final class ExtensionAuth implements MiddlewareInterface
             // Token DEĞERİ bildirime GİRMEZ (K34/K51): yalnız istemci kimliği
             // olarak Origin ve hata kodu taşınır. Birleştirme sayesinde ard arda
             // gelen yüzlerce geçersiz istek tek satırda sayılır.
-            $this->bildirim?->yayimla('NTF-TOKEN-INVALID', [
+            $this->bildirim?->guvenliYayimla('NTF-TOKEN-INVALID', [
                 'istemci_id' => $origin === '' ? 'bilinmiyor' : $origin,
                 'hata_kodu' => $token === '' ? 'eksik' : 'gecersiz',
             ]);
