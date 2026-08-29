@@ -1,0 +1,1075 @@
+<!doctype html>
+<html lang="tr" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="TedarikApp ürün kartı Kaynak Verisi sekmesi ve Kaynağından güncelle fark akışı mockup'ı">
+  <title>TedarikApp — Kaynak Verisi</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --navy: #0f2557;
+      --navy-2: #16336e;
+      --navy-3: #1e4086;
+      --gold: #d4a017;
+      --blue: #2a5bd7;
+      --blue-soft: #eef3fe;
+      --orange: #e85f00;
+      --orange-soft: #fff1e6;
+      --g-50: #f8fafc;
+      --g-100: #f1f4f9;
+      --g-200: #e6eaf1;
+      --g-300: #d3dae6;
+      --g-400: #98a2b3;
+      --g-500: #5b6472;
+      --g-700: #334155;
+      --g-900: #0f1728;
+      --bg: #f5f7fa;
+      --surface: #ffffff;
+      --line: #e6eaf1;
+      --line-soft: #f0f3f8;
+      --text: #0f1728;
+      --text-2: #5b6472;
+      --text-3: #8490a2;
+      --ok: #0e7a4a;
+      --ok-bg: #e6f6ee;
+      --warn: #9a6700;
+      --warn-bg: #fff6e0;
+      --err: #b42318;
+      --err-bg: #feeceb;
+      --info: #175cd3;
+      --info-bg: #eaf1fe;
+      --purple: #6e3cbc;
+      --purple-bg: #f1eafd;
+      --r-sm: 8px;
+      --r: 12px;
+      --r-lg: 16px;
+      --shadow-1: 0 1px 2px rgba(15, 23, 42, .06);
+      --shadow-2: 0 6px 20px -6px rgba(15, 23, 42, .16);
+      --shadow-3: 0 24px 64px -20px rgba(15, 23, 42, .34);
+      --sp-1: 4px;
+      --sp-2: 8px;
+      --sp-3: 12px;
+      --sp-4: 16px;
+      --sp-5: 20px;
+      --sp-6: 24px;
+      --sp-8: 32px;
+      --sidebar: 244px;
+      --topbar: 60px;
+      --font: Inter, "Noto Sans", "Noto Sans SC", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      --t-fast: 120ms;
+      --t: 180ms;
+    }
+
+    [data-theme="dark"] {
+      color-scheme: dark;
+      --bg: #0b1220;
+      --surface: #111a2b;
+      --line: #1e2a40;
+      --line-soft: #18233a;
+      --text: #e8edf5;
+      --text-2: #a8b6c9;
+      --text-3: #71829c;
+      --g-50: #162134;
+      --g-100: #162134;
+      --g-200: #22304a;
+      --g-300: #2c3b58;
+      --g-400: #6f819d;
+      --g-500: #9fb0c8;
+      --g-700: #d8e0eb;
+      --g-900: #f2f5f9;
+      --blue-soft: #152648;
+      --orange-soft: #3a2312;
+      --ok-bg: #0f2a20;
+      --warn-bg: #2a2214;
+      --err-bg: #2a1616;
+      --info-bg: #132444;
+      --purple-bg: #241a3a;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      color: var(--text);
+      background: var(--bg);
+      font-family: var(--font);
+      font-size: 14px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    a { color: inherit; }
+    [hidden] { display: none !important; }
+    :where(button, input, a, [tabindex]):focus-visible {
+      outline: 3px solid color-mix(in srgb, var(--blue) 42%, transparent);
+      outline-offset: 2px;
+    }
+    .icon {
+      width: 18px;
+      height: 18px;
+      flex: none;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .mono { font-family: var(--mono); }
+    .num { font-variant-numeric: tabular-nums; }
+
+    .shell { min-height: 100vh; }
+    .topbar {
+      position: fixed;
+      inset: 0 0 auto 0;
+      z-index: 40;
+      height: var(--topbar);
+      display: flex;
+      align-items: center;
+      color: white;
+      background: var(--navy);
+      border-bottom: 1px solid rgba(255, 255, 255, .1);
+    }
+    .brand {
+      width: var(--sidebar);
+      height: 100%;
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding: 0 20px;
+      border-right: 1px solid rgba(255, 255, 255, .12);
+    }
+    .brand-mark {
+      position: relative;
+      width: 32px;
+      height: 32px;
+      border-radius: 9px;
+      background: white;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .4);
+    }
+    .brand-mark::before {
+      content: "";
+      position: absolute;
+      inset: 8px 7px auto;
+      height: 3px;
+      background: var(--navy);
+      box-shadow: 0 6px 0 var(--orange), 0 12px 0 var(--navy);
+    }
+    .brand-copy { display: grid; line-height: 1.05; }
+    .brand-copy strong { font-size: 16px; letter-spacing: -.02em; }
+    .brand-copy span { margin-top: 4px; color: #aebbd0; font-size: 9px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+    .top-content {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 0 22px;
+    }
+    .crumb { display: flex; align-items: center; gap: 9px; color: #cbd5e3; font-size: 12px; }
+    .crumb strong { color: white; }
+    .top-actions { display: flex; align-items: center; gap: 8px; }
+    .top-btn {
+      min-height: 34px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 10px;
+      color: #dce5f0;
+      background: rgba(255, 255, 255, .07);
+      border: 1px solid rgba(255, 255, 255, .13);
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .top-btn:hover { background: rgba(255, 255, 255, .12); }
+    .avatar { width: 32px; height: 32px; display: grid; place-items: center; color: var(--navy); background: #f3c65b; border-radius: 9px; font-size: 11px; font-weight: 900; }
+
+    .sidebar {
+      position: fixed;
+      inset: var(--topbar) auto 0 0;
+      z-index: 30;
+      width: var(--sidebar);
+      padding: 16px 12px;
+      background: var(--surface);
+      border-right: 1px solid var(--line);
+    }
+    .nav-label { padding: 8px 10px 6px; color: var(--text-3); font-size: 10px; font-weight: 850; letter-spacing: .12em; text-transform: uppercase; }
+    .nav { display: grid; gap: 3px; }
+    .nav a {
+      min-height: 42px;
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding: 0 11px;
+      color: var(--text-2);
+      border-radius: 9px;
+      font-weight: 680;
+      text-decoration: none;
+    }
+    .nav a:hover { color: var(--text); background: var(--g-50); }
+    .nav a.active { color: var(--navy-3); background: var(--blue-soft); box-shadow: inset 3px 0 0 var(--gold); }
+    [data-theme="dark"] .nav a.active { color: #b9ccff; }
+    .sidebar-foot {
+      position: absolute;
+      inset: auto 12px 16px;
+      padding: 13px;
+      color: var(--text-2);
+      background: var(--g-50);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      font-size: 11px;
+    }
+    .sidebar-foot strong { display: block; margin-bottom: 4px; color: var(--text); font-size: 12px; }
+
+    .main { margin-left: var(--sidebar); padding: calc(var(--topbar) + 26px) 30px 70px; }
+    .page { width: min(1380px, 100%); margin: 0 auto; }
+    .page-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 18px;
+    }
+    .page-head h1 { margin: 0; font-size: 25px; line-height: 1.2; letter-spacing: -.025em; }
+    .page-head p { margin: 6px 0 0; color: var(--text-2); font-size: 13px; }
+    .btn {
+      min-height: 40px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 0 14px;
+      border: 1px solid transparent;
+      border-radius: 9px;
+      font-weight: 760;
+      transition: transform var(--t), background var(--t), border-color var(--t);
+    }
+    .btn:hover { transform: translateY(-1px); }
+    .btn-primary { color: white; background: var(--blue); box-shadow: 0 7px 18px rgba(42, 91, 215, .2); }
+    .btn-primary:hover { background: #204fc4; }
+    .btn-secondary { color: var(--text); background: var(--surface); border-color: var(--g-300); }
+    .btn-secondary:hover { border-color: var(--g-400); }
+    .btn-quiet { color: var(--text-2); background: transparent; border-color: transparent; }
+    .btn-danger { color: var(--err); background: var(--err-bg); border-color: color-mix(in srgb, var(--err) 22%, transparent); }
+    .btn-sm { min-height: 34px; padding: 0 10px; font-size: 12px; }
+
+    .product-card {
+      overflow: hidden;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--r-lg);
+      box-shadow: var(--shadow-1);
+    }
+    .product-summary {
+      display: grid;
+      grid-template-columns: 94px minmax(0, 1fr) auto;
+      gap: 18px;
+      align-items: center;
+      padding: 20px 22px;
+      border-bottom: 1px solid var(--line);
+    }
+    .product-image {
+      position: relative;
+      width: 94px;
+      height: 94px;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      color: var(--navy);
+      background:
+        radial-gradient(circle at 72% 25%, rgba(232, 95, 0, .18), transparent 28%),
+        linear-gradient(145deg, #f7e9dc, #eef3f8);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+    }
+    .product-image svg { width: 58px; height: 58px; stroke-width: 1.2; }
+    .image-count { position: absolute; right: 6px; bottom: 6px; padding: 3px 6px; color: white; background: rgba(15, 37, 87, .86); border-radius: 5px; font-size: 10px; font-weight: 800; }
+    .summary-main { min-width: 0; }
+    .summary-top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+    .platform-badge, .badge, .source-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      min-height: 24px;
+      padding: 3px 8px;
+      border-radius: 7px;
+      font-size: 11px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+    .platform-badge { color: #b54708; background: var(--orange-soft); }
+    .badge-ok { color: var(--ok); background: var(--ok-bg); }
+    .badge-warn { color: var(--warn); background: var(--warn-bg); }
+    .badge-info { color: var(--info); background: var(--info-bg); }
+    .badge-neutral { color: var(--text-2); background: var(--g-100); }
+    .badge-purple { color: var(--purple); background: var(--purple-bg); }
+    .summary-main h2 { max-width: 850px; margin: 9px 0 7px; overflow: hidden; font-size: 18px; line-height: 1.35; letter-spacing: -.018em; text-overflow: ellipsis; white-space: nowrap; }
+    .original-title { max-width: 900px; overflow: hidden; color: var(--text-2); font-family: "Noto Sans SC", var(--font); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+    .summary-meta { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 10px; color: var(--text-2); font-size: 11px; }
+    .summary-meta span { display: inline-flex; align-items: center; gap: 5px; }
+    .summary-actions { min-width: 224px; text-align: right; }
+    .summary-actions .btn { width: 100%; }
+    .last-capture { margin: 9px 0 0; color: var(--text-2); font-size: 11px; }
+
+    .tabs {
+      display: flex;
+      gap: 4px;
+      padding: 0 18px;
+      border-bottom: 1px solid var(--line);
+    }
+    .tab {
+      position: relative;
+      min-height: 52px;
+      padding: 0 13px;
+      color: var(--text-2);
+      background: transparent;
+      border: 0;
+      font-size: 13px;
+      font-weight: 750;
+    }
+    .tab:hover { color: var(--text); }
+    .tab.active { color: var(--navy-3); }
+    [data-theme="dark"] .tab.active { color: #b9ccff; }
+    .tab.active::after { content: ""; position: absolute; right: 10px; bottom: -1px; left: 10px; height: 3px; background: var(--gold); border-radius: 3px 3px 0 0; }
+    .tab-count { margin-left: 5px; padding: 2px 6px; color: var(--text-2); background: var(--g-100); border-radius: 99px; font-size: 10px; }
+
+    .tab-body { padding: 20px; }
+    .notice {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 16px;
+      padding: 13px 14px;
+      color: var(--warn);
+      background: var(--warn-bg);
+      border: 1px solid color-mix(in srgb, var(--warn) 20%, transparent);
+      border-radius: 10px;
+    }
+    .notice strong { display: block; color: var(--text); font-size: 12px; }
+    .notice p { margin: 2px 0 0; color: var(--text-2); font-size: 11px; }
+    .notice .btn { margin-left: auto; flex: none; }
+    .health-row { display: grid; grid-template-columns: minmax(320px, 1.25fr) repeat(3, minmax(145px, .45fr)); gap: 12px; margin-bottom: 16px; }
+    .health-card, .metric {
+      padding: 15px;
+      background: var(--g-50);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+    }
+    .health-title { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+    .health-title strong, .metric strong { font-size: 12px; }
+    .health-title span { color: var(--ok); font-size: 12px; font-weight: 850; }
+    .health-bar { height: 7px; margin: 11px 0 8px; overflow: hidden; background: var(--g-200); border-radius: 99px; }
+    .health-bar i { display: block; width: 94%; height: 100%; background: linear-gradient(90deg, var(--ok), #39ad7d); border-radius: inherit; }
+    .health-card p, .metric p { margin: 0; color: var(--text-2); font-size: 10.5px; }
+    .metric .value { display: block; margin: 5px 0 3px; color: var(--text); font-size: 20px; font-weight: 850; letter-spacing: -.03em; }
+
+    .tools {
+      position: sticky;
+      top: calc(var(--topbar) + 8px);
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 16px;
+      padding: 10px;
+      background: color-mix(in srgb, var(--surface) 94%, transparent);
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      box-shadow: var(--shadow-1);
+      backdrop-filter: blur(12px);
+    }
+    .search { position: relative; flex: 1; max-width: 520px; }
+    .search .icon { position: absolute; left: 11px; top: 10px; color: var(--text-3); }
+    .search input {
+      width: 100%;
+      height: 38px;
+      padding: 0 38px;
+      color: var(--text);
+      background: var(--surface);
+      border: 1px solid var(--g-300);
+      border-radius: 9px;
+      outline: 0;
+    }
+    .search input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px color-mix(in srgb, var(--blue) 12%, transparent); }
+    .search kbd { position: absolute; right: 9px; top: 9px; padding: 2px 6px; color: var(--text-3); background: var(--g-100); border: 1px solid var(--line); border-radius: 5px; font: 10px var(--mono); }
+    .tool-right { display: flex; align-items: center; gap: 8px; }
+
+    .content-grid { display: grid; grid-template-columns: 186px minmax(0, 1fr); gap: 16px; align-items: start; }
+    .section-nav {
+      position: sticky;
+      top: calc(var(--topbar) + 72px);
+      padding: 9px;
+      background: var(--g-50);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+    }
+    .section-nav a { display: block; padding: 8px 9px; color: var(--text-2); border-radius: 7px; font-size: 11px; font-weight: 700; text-decoration: none; }
+    .section-nav a:hover { color: var(--text); background: var(--surface); }
+    .section-nav a.active { color: var(--info); background: var(--info-bg); }
+    .sections { display: grid; gap: 14px; min-width: 0; }
+    .data-section { scroll-margin-top: calc(var(--topbar) + 80px); border: 1px solid var(--line); border-radius: 11px; }
+    .section-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px 15px;
+      background: var(--g-50);
+      border-bottom: 1px solid var(--line);
+      border-radius: 11px 11px 0 0;
+    }
+    .section-title { display: flex; align-items: center; gap: 10px; }
+    .section-icon { width: 32px; height: 32px; display: grid; place-items: center; color: var(--info); background: var(--info-bg); border-radius: 8px; }
+    .section-title h3 { margin: 0; font-size: 13px; }
+    .section-title p { margin: 2px 0 0; color: var(--text-2); font-size: 10px; }
+    .section-count { color: var(--text-3); font-size: 10px; }
+    .fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .field-row {
+      min-width: 0;
+      display: grid;
+      grid-template-columns: minmax(120px, .82fr) minmax(150px, 1.18fr);
+      gap: 12px;
+      padding: 12px 15px;
+      border-bottom: 1px solid var(--line-soft);
+    }
+    .field-row:nth-child(odd) { border-right: 1px solid var(--line-soft); }
+    .field-row:last-child, .field-row:nth-last-child(2):nth-child(odd) { border-bottom: 0; }
+    .field-label { min-width: 0; }
+    .field-label strong { display: block; font-size: 11px; line-height: 1.35; }
+    .field-label small { display: block; margin-top: 3px; overflow: hidden; color: var(--text-3); font: 10px/1.3 "Noto Sans SC", var(--font); text-overflow: ellipsis; white-space: nowrap; }
+    .field-value { min-width: 0; text-align: right; }
+    .field-value > strong { display: block; overflow: hidden; font-size: 11.5px; line-height: 1.45; text-overflow: ellipsis; white-space: nowrap; }
+    .field-value > strong.multiline { white-space: normal; }
+    .field-meta { display: flex; justify-content: flex-end; gap: 5px; margin-top: 5px; }
+    .source-chip { min-height: 19px; padding: 2px 5px; color: var(--text-2); background: var(--g-100); font-size: 8.5px; letter-spacing: .04em; }
+    .source-chip.json { color: var(--info); background: var(--info-bg); }
+    .source-chip.dom { color: var(--purple); background: var(--purple-bg); }
+    .source-chip.mtop { color: var(--ok); background: var(--ok-bg); }
+    .dash { color: var(--text-3); font-size: 16px; font-weight: 700; }
+    .missing-note { display: block; margin-top: 3px; color: var(--text-3); font-size: 9px; }
+    .original { color: var(--text-2); font-family: "Noto Sans SC", var(--font); }
+
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 11px; }
+    th { padding: 9px 11px; color: var(--text-2); background: var(--g-50); border-bottom: 1px solid var(--line); text-align: left; font-size: 9px; letter-spacing: .045em; text-transform: uppercase; white-space: nowrap; }
+    td { padding: 11px; border-bottom: 1px solid var(--line-soft); vertical-align: middle; }
+    tbody tr:last-child td { border-bottom: 0; }
+    tbody tr:hover { background: color-mix(in srgb, var(--blue-soft) 38%, transparent); }
+    .sku-name strong { display: block; }
+    .sku-name span { display: block; margin-top: 2px; color: var(--text-3); font: 9px var(--mono); }
+    .stock-low { color: var(--warn); font-weight: 800; }
+    .stock-ok { color: var(--ok); font-weight: 800; }
+    .price { font-weight: 850; font-variant-numeric: tabular-nums; }
+    .section-foot { padding: 10px 14px; color: var(--text-2); background: var(--g-50); border-top: 1px solid var(--line); border-radius: 0 0 11px 11px; font-size: 10px; }
+
+    .empty-search { padding: 36px; text-align: center; color: var(--text-2); border: 1px dashed var(--g-300); border-radius: 11px; }
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 14px;
+      margin-top: 16px;
+      padding: 12px 14px;
+      color: var(--text-2);
+      background: var(--g-50);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      font-size: 10px;
+    }
+    .legend strong { color: var(--text); }
+    .legend span { display: inline-flex; align-items: center; gap: 5px; }
+
+    .toast {
+      position: fixed;
+      right: 22px;
+      bottom: 22px;
+      z-index: 100;
+      max-width: 390px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 13px 15px;
+      color: white;
+      background: #172a47;
+      border: 1px solid rgba(255, 255, 255, .14);
+      border-radius: 10px;
+      box-shadow: var(--shadow-3);
+      transform: translateY(18px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity var(--t), transform var(--t);
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast strong { display: block; font-size: 12px; }
+    .toast span { display: block; margin-top: 2px; color: #c4d0df; font-size: 10px; }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 90;
+      display: grid;
+      place-items: center;
+      padding: 22px;
+      background: rgba(8, 18, 35, .58);
+      backdrop-filter: blur(4px);
+    }
+    .modal {
+      width: min(920px, 100%);
+      max-height: min(820px, calc(100vh - 44px));
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 15px;
+      box-shadow: var(--shadow-3);
+    }
+    .modal-head, .modal-foot { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 18px; }
+    .modal-head { border-bottom: 1px solid var(--line); }
+    .modal-head h2 { margin: 0; font-size: 17px; letter-spacing: -.02em; }
+    .modal-head p { margin: 3px 0 0; color: var(--text-2); font-size: 10px; }
+    .modal-close { width: 34px; height: 34px; display: grid; place-items: center; color: var(--text-2); background: var(--g-50); border: 1px solid var(--line); border-radius: 8px; }
+    .modal-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 12px 18px; background: var(--g-50); border-bottom: 1px solid var(--line); }
+    .modal-summary div { padding: 9px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
+    .modal-summary span { display: block; color: var(--text-3); font-size: 8.5px; text-transform: uppercase; letter-spacing: .05em; }
+    .modal-summary strong { display: block; margin-top: 3px; font-size: 11px; }
+    .diff-tools { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 18px; border-bottom: 1px solid var(--line); }
+    .check-all { display: inline-flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 750; }
+    input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--blue); }
+    .diff-body { min-height: 0; overflow: auto; padding: 0 18px 8px; }
+    .diff-group h3 { position: sticky; top: 0; z-index: 2; margin: 0; padding: 12px 0 8px; color: var(--text-2); background: var(--surface); font-size: 9px; letter-spacing: .08em; text-transform: uppercase; }
+    .diff-row {
+      display: grid;
+      grid-template-columns: 24px minmax(120px, .7fr) minmax(320px, 1.6fr) auto;
+      gap: 12px;
+      align-items: center;
+      padding: 11px 10px;
+      border: 1px solid var(--line);
+      border-bottom: 0;
+    }
+    .diff-row:first-of-type { border-radius: 9px 9px 0 0; }
+    .diff-row:last-child { border-bottom: 1px solid var(--line); border-radius: 0 0 9px 9px; }
+    .diff-row:hover { background: var(--g-50); }
+    .diff-field strong { display: block; font-size: 10.5px; }
+    .diff-field small { color: var(--text-3); font: 9px "Noto Sans SC", var(--font); }
+    .change { display: grid; grid-template-columns: minmax(0, 1fr) 18px minmax(0, 1fr); gap: 8px; align-items: center; }
+    .change-value { min-width: 0; padding: 7px 8px; background: var(--g-50); border-radius: 6px; }
+    .change-value span { display: block; color: var(--text-3); font-size: 8px; text-transform: uppercase; }
+    .change-value strong { display: block; margin-top: 2px; overflow: hidden; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+    .change-value.new { background: var(--info-bg); }
+    .arrow { color: var(--text-3); text-align: center; }
+    .delta { color: var(--ok); font-size: 10px; font-weight: 850; white-space: nowrap; }
+    .delta.up { color: var(--err); }
+    .diff-row.protected { background: var(--warn-bg); }
+    .diff-row.protected input { visibility: hidden; }
+    .protection { display: block; margin-top: 4px; color: var(--warn); font-size: 8.5px; font-weight: 800; }
+    .modal-foot { border-top: 1px solid var(--line); }
+    .modal-foot p { margin: 0; color: var(--text-2); font-size: 10px; }
+    .modal-actions { display: flex; gap: 8px; }
+
+    .anonymous-only { display: none; }
+    body.anonymous .anonymous-only { display: inline-flex; }
+    body.anonymous .authenticated-only { display: none; }
+
+    @media (max-width: 1120px) {
+      :root { --sidebar: 74px; }
+      .brand { justify-content: center; padding: 0; }
+      .brand-copy, .nav-label, .nav a span, .sidebar-foot { display: none; }
+      .nav a { justify-content: center; padding: 0; }
+      .health-row { grid-template-columns: repeat(3, 1fr); }
+      .health-card { grid-column: 1 / -1; }
+      .fields { grid-template-columns: 1fr; }
+      .field-row:nth-child(odd) { border-right: 0; }
+      .field-row:nth-last-child(2):nth-child(odd) { border-bottom: 1px solid var(--line-soft); }
+    }
+    @media (max-width: 800px) {
+      :root { --sidebar: 0px; }
+      .sidebar, .brand { display: none; }
+      .top-content { padding: 0 14px; }
+      .crumb span, .auth-text { display: none; }
+      .main { padding-right: 14px; padding-left: 14px; }
+      .page-head { display: block; }
+      .page-head .btn { margin-top: 14px; }
+      .product-summary { grid-template-columns: 72px minmax(0, 1fr); }
+      .product-image { width: 72px; height: 72px; }
+      .summary-actions { grid-column: 1 / -1; }
+      .health-row { grid-template-columns: 1fr; }
+      .health-card { grid-column: auto; }
+      .content-grid { grid-template-columns: 1fr; }
+      .section-nav { display: none; }
+      .tools { top: calc(var(--topbar) + 5px); }
+      .tool-right .btn span { display: none; }
+      .field-row { grid-template-columns: 1fr; }
+      .field-value { text-align: left; }
+      .field-meta { justify-content: flex-start; }
+      .modal-summary { grid-template-columns: repeat(2, 1fr); }
+      .diff-row { grid-template-columns: 22px 1fr; }
+      .change, .delta { grid-column: 2; }
+      .modal-foot { align-items: flex-start; flex-direction: column; }
+      .modal-actions { width: 100%; }
+      .modal-actions .btn { flex: 1; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <svg aria-hidden="true" width="0" height="0" style="position:absolute">
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></symbol>
+    <symbol id="i-box" viewBox="0 0 24 24"><path d="m3 7.5 9-4 9 4-9 4-9-4Z"/><path d="M3 7.5V17l9 4 9-4V7.5M12 11.5V21"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3 6h.01M3 12h.01M3 18h.01"/></symbol>
+    <symbol id="i-inbox" viewBox="0 0 24 24"><path d="M4 4h16l2 11h-6l-2 3h-4l-2-3H2L4 4Z"/></symbol>
+    <symbol id="i-truck" viewBox="0 0 24 24"><path d="M3 5h11v12H3zM14 9h4l3 3v5h-7z"/><circle cx="7" cy="19" r="2"/><circle cx="18" cy="19" r="2"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1A1.7 1.7 0 0 0 9 4.6 1.7 1.7 0 0 0 10 3V2.8h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 7v5h-5"/><path d="M18.5 16a8 8 0 1 1 .7-9L20 12"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.65 17.65l1.42 1.42M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.65 6.35l1.42-1.42"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 20 6v5c0 5-3.4 8.4-8 10-4.6-1.6-8-5-8-10V6l8-3Z"/><path d="m9 12 2 2 4-5"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></symbol>
+    <symbol id="i-tag" viewBox="0 0 24 24"><path d="M20 13 13 20 4 11V4h7l9 9Z"/><circle cx="8" cy="8" r="1"/></symbol>
+    <symbol id="i-ruler" viewBox="0 0 24 24"><path d="m4 17 13-13 3 3L7 20l-3-3Z"/><path d="m14 7 3 3M11 10l2 2M8 13l3 3"/></symbol>
+    <symbol id="i-store" viewBox="0 0 24 24"><path d="M4 10v10h16V10M3 4h18l-1 6c-1 2-4 2-5 0-1 2-5 2-6 0-1 2-4 2-5 0L3 4Z"/><path d="M9 20v-6h6v6"/></symbol>
+    <symbol id="i-coins" viewBox="0 0 24 24"><ellipse cx="9" cy="7" rx="6" ry="3"/><path d="M3 7v5c0 1.7 2.7 3 6 3 .8 0 1.5-.1 2.2-.2M3 12v5c0 1.7 2.7 3 6 3 1.3 0 2.4-.2 3.4-.6"/><ellipse cx="16" cy="14" rx="5" ry="2.5"/><path d="M11 14v4.5c0 1.4 2.2 2.5 5 2.5s5-1.1 5-2.5V14"/></symbol>
+    <symbol id="i-certificate" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="15" rx="2"/><path d="M8 7h8M8 11h5M9 18v4l3-2 3 2v-4"/></symbol>
+    <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m3 17 5-4 4 3 3-2 6 5"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  </svg>
+
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand" aria-label="TedarikApp">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span class="brand-copy"><strong>TedarikApp</strong><span>Ürün karar merkezi</span></span>
+      </div>
+      <div class="top-content">
+        <div class="crumb"><span>Ürünler</span><span>›</span><strong>TA-2841</strong></div>
+        <div class="top-actions">
+          <button class="top-btn" id="authToggle" type="button" aria-pressed="false">
+            <svg class="icon"><use href="#i-shield"></use></svg>
+            <span class="auth-text authenticated-only">1688: giriş yapıldı</span>
+            <span class="auth-text anonymous-only">1688: giriş yapılmadı</span>
+          </button>
+          <button class="top-btn" id="themeToggle" type="button" aria-label="Temayı değiştir"><svg class="icon"><use href="#i-sun"></use></svg></button>
+          <span class="avatar" aria-label="Ürün Sahibi">ÜS</span>
+        </div>
+      </div>
+    </header>
+
+    <aside class="sidebar" aria-label="Ana menü">
+      <div class="nav-label">Çalışma alanı</div>
+      <nav class="nav">
+        <a href="#"><svg class="icon"><use href="#i-grid"></use></svg><span>Panorama</span></a>
+        <a class="active" href="#"><svg class="icon"><use href="#i-box"></use></svg><span>Ürünler</span></a>
+        <a href="#"><svg class="icon"><use href="#i-list"></use></svg><span>Listeler</span></a>
+        <a href="#"><svg class="icon"><use href="#i-inbox"></use></svg><span>Gelen Kutusu</span></a>
+        <a href="#"><svg class="icon"><use href="#i-truck"></use></svg><span>Sevkiyatlar</span></a>
+      </nav>
+      <div class="nav-label" style="margin-top:14px">Sistem</div>
+      <nav class="nav"><a href="#"><svg class="icon"><use href="#i-settings"></use></svg><span>Ayarlar</span></a></nav>
+      <div class="sidebar-foot"><strong>Kaynak yakalama</strong>Yalnız açık ürün sayfasında ve kullanıcı tetiklemesiyle çalışır.</div>
+    </aside>
+
+    <main class="main">
+      <div class="page">
+        <div class="page-head">
+          <div><h1>Ürün kartı</h1><p>Kaynak ilan, kullanıcı kararları ve tarihçe birbirinden ayrı korunur.</p></div>
+          <button class="btn btn-secondary" type="button" data-demo-toast="Liste görünümü bu mockup kapsamının dışında."><svg class="icon"><use href="#i-list"></use></svg>Listeye dön</button>
+        </div>
+
+        <article class="product-card">
+          <div class="product-summary">
+            <div class="product-image" aria-label="Taşınabilir blender temsili ürün görseli">
+              <svg class="icon" viewBox="0 0 64 64"><path d="M23 9h18l-2 34H25L23 9Z"/><path d="M26 4h12v5M26 43h12l4 15H22l4-15Z"/><path d="M28 18c5 1 9 0 12-3M27 26c5 1 8 0 12-3"/></svg>
+              <span class="image-count">7 görsel</span>
+            </div>
+            <div class="summary-main">
+              <div class="summary-top">
+                <span class="platform-badge">1688</span>
+                <span class="badge badge-ok">İlan açık</span>
+                <span class="badge badge-neutral mono">895133432293</span>
+              </div>
+              <h2>Şarjlı taşınabilir blender — çift bataryalı, 350 ml</h2>
+              <div class="original-title" lang="zh-CN">2026新款便携式榨汁杯双电池大功率家用迷你果汁机跨境专供</div>
+              <div class="summary-meta">
+                <span><svg class="icon"><use href="#i-store"></use></svg>中山市初遇电器厂</span>
+                <span><svg class="icon"><use href="#i-coins"></use></svg><strong class="num">¥48,00–¥58,00</strong></span>
+                <span><svg class="icon"><use href="#i-box"></use></svg>MOQ 1 adet</span>
+              </div>
+            </div>
+            <div class="summary-actions">
+              <button class="btn btn-primary" id="refreshButton" type="button"><svg class="icon"><use href="#i-refresh"></use></svg><span>Kaynağından güncelle</span></button>
+              <p class="last-capture"><svg class="icon" style="width:13px;height:13px;vertical-align:-2px"><use href="#i-clock"></use></svg> Son çekim: <strong>29 Ağu 2026 · 14:42</strong></p>
+            </div>
+          </div>
+
+          <div class="tabs" role="tablist" aria-label="Ürün kartı sekmeleri">
+            <button class="tab" type="button" role="tab" aria-selected="false" data-demo-toast="Genel Bakış sekmesi bu teslimde çizilmedi.">Genel Bakış</button>
+            <button class="tab active" type="button" role="tab" aria-selected="true">Kaynak Verisi <span class="tab-count">86</span></button>
+            <button class="tab" type="button" role="tab" aria-selected="false" data-demo-toast="Değişiklik Geçmişi şartnamede tanımlıdır.">Değişiklik Geçmişi <span class="tab-count">6</span></button>
+          </div>
+
+          <div class="tab-body">
+            <div class="notice" id="authNotice">
+              <svg class="icon"><use href="#i-info"></use></svg>
+              <div>
+                <strong class="authenticated-only">Girişli 1688 görünümü yakalandı</strong>
+                <strong class="anonymous-only">1688'e giriş yapılmadan yakalandı</strong>
+                <p class="authenticated-only">Üye fiyatı, kargo hedefi ve dağıtım metrikleri hesap/ürün tipine göre yine değişebilir.</p>
+                <p class="anonymous-only">Üye fiyatı, ayrıntılı satıcı karnesi ve dağıtım metrikleri eksik olabilir. Eksikler silinmiş sayılmaz.</p>
+              </div>
+              <button class="btn btn-secondary btn-sm" type="button" data-demo-toast="Provenance çekmecesi: auth_state=authenticated · PC-DEFAULT-2026">Yakalama ayrıntısı</button>
+            </div>
+
+            <div class="health-row">
+              <div class="health-card">
+                <div class="health-title"><strong>Yakalama sağlığı</strong><span class="num">%94 · Tam</span></div>
+                <div class="health-bar" aria-label="Yakalama sağlığı yüzde 94"><i></i></div>
+                <p>86/91 beklenen alan gözlendi · 3 koşullu alan görünmedi · 2 alan kaynakta boş.</p>
+              </div>
+              <div class="metric"><strong>Ürün özellikleri</strong><span class="value num">31</span><p>Orijinal etiket + değer</p></div>
+              <div class="metric"><strong>SKU</strong><span class="value num">2</span><p>Fiyat, stok ve paketleme</p></div>
+              <div class="metric"><strong>Kaynaklar</strong><span class="value num">3</span><p>JSON · DOM · MTOP</p></div>
+            </div>
+
+            <div class="tools">
+              <label class="search" aria-label="Kaynak alanlarında ara">
+                <svg class="icon"><use href="#i-search"></use></svg>
+                <input id="fieldSearch" type="search" placeholder="Alan, Çince etiket veya değerde ara…" autocomplete="off">
+                <kbd>/</kbd>
+              </label>
+              <div class="tool-right">
+                <button class="btn btn-secondary btn-sm" id="missingToggle" type="button" aria-pressed="false"><span>Yalnız eksikler</span></button>
+                <button class="btn btn-secondary btn-sm" type="button" data-demo-toast="RAW / NORMALIZED / VERIFIED katman seçici açıldı."><svg class="icon"><use href="#i-shield"></use></svg><span>Katmanlar</span></button>
+              </div>
+            </div>
+
+            <div class="content-grid">
+              <nav class="section-nav" aria-label="Kaynak veri grupları">
+                <a class="active" href="#temel">Temel</a>
+                <a href="#ozellikler">Özellikler</a>
+                <a href="#sku">SKU & Paketleme</a>
+                <a href="#satici">Satıcı & Sevkiyat</a>
+                <a href="#fiyat">Fiyat & Kampanya</a>
+                <a href="#uyum">Sertifika & Uyum</a>
+                <a href="#medya">Medya</a>
+              </nav>
+
+              <div class="sections" id="sections">
+                <section class="data-section" id="temel" data-section="Temel">
+                  <div class="section-head"><div class="section-title"><span class="section-icon"><svg class="icon"><use href="#i-box"></use></svg></span><div><h3>Temel</h3><p>Kimlik, yayın, kategori ve satış özeti</p></div></div><span class="section-count">12 alan</span></div>
+                  <div class="fields">
+                    <div class="field-row" data-search="kaynak ilan kimliği 商品ID offerId 895133432293"><div class="field-label"><strong>Kaynak İlan Kimliği</strong><small lang="zh-CN">商品ID · offerId</small></div><div class="field-value"><strong class="mono">895133432293</strong><div class="field-meta"><span class="source-chip json">JSON</span><span class="source-chip">RAW</span></div></div></div>
+                    <div class="field-row" data-search="ilan durumu 商品状态 PUBLISHED açık"><div class="field-label"><strong>İlan Durumu</strong><small lang="zh-CN">商品状态</small></div><div class="field-value"><strong>Yayında</strong><div class="field-meta"><span class="source-chip json">JSON</span><span class="source-chip">VERIFIED ID</span></div></div></div>
+                    <div class="field-row" data-search="kategori 类目 家用电器 榨汁机"><div class="field-label"><strong>Kategori</strong><small lang="zh-CN">类目</small></div><div class="field-value"><strong>Ev Aletleri › Blender</strong><div class="field-meta"><span class="source-chip json">JSON</span><span class="source-chip">NORMALIZED</span></div></div></div>
+                    <div class="field-row" data-search="satış birimi 单位 个 adet"><div class="field-label"><strong>Satış Birimi</strong><small lang="zh-CN">单位</small></div><div class="field-value"><strong>Adet <span class="original">(个)</span></strong><div class="field-meta"><span class="source-chip json">JSON</span></div></div></div>
+                    <div class="field-row" data-search="ürün kodu 货号 GC-Z03"><div class="field-label"><strong>Ürün Kodu</strong><small lang="zh-CN">货号</small></div><div class="field-value"><strong class="mono">GC-Z03</strong><div class="field-meta"><span class="source-chip json">JSON</span></div></div></div>
+                    <div class="field-row" data-search="model 型号 Z03"><div class="field-label"><strong>Model</strong><small lang="zh-CN">型号</small></div><div class="field-value"><strong>Z03</strong><div class="field-meta"><span class="source-chip json">JSON</span></div></div></div>
+                    <div class="field-row" data-search="ilk yayın tarihi 最早上架时间 3 Mart 2025"><div class="field-label"><strong>İlk Yayın Tarihi</strong><small lang="zh-CN">最早上架时间</small></div><div class="field-value"><strong class="num">3 Mar 2025</strong><div class="field-meta"><span class="source-chip json">JSON</span><span class="source-chip dom">DOM</span></div></div></div>
+                    <div class="field-row" data-search="son güncellenme 最新发布时间 9 Ağustos 2026"><div class="field-label"><strong>Son Güncellenme</strong><small lang="zh-CN">最新发布时间</small></div><div class="field-value"><strong class="num">9 Ağu 2026 · 12:11</strong><div class="field-meta"><span class="source-chip json">JSON</span></div></div></div>
+                    <div class="field-row" data-search="satış adedi 已售 10"><div class="field-label"><strong>Satış Adedi</strong><small lang="zh-CN">已售 · 一年内</small></div><div class="field-value"><strong class="num">10+</strong><div class="field-meta"><span class="source-chip json">JSON</span></div></div></div>
+                    <div class="field-row" data-search="favori sayısı 收藏数 7"><div class="field-label"><strong>Favori Sayısı</strong><small lang="zh-CN">收藏数</small></div><div class="field-value"><strong class="num">7</strong><div class="field-meta"><span class="source-chip json">JSON</span></div></div></div>
+                    <div class="field-row" data-search="yorum sayısı 评价数 538"><div class="field-label"><strong>Yorum Sayısı</strong><small lang="zh-CN">评价数 · 全部</small></div><div class="field-value"><strong class="num">538</strong><div class="field-meta"><span class="source-chip mtop">MTOP</span></div></div></div>
+                    <div class="field-row" data-search="değerlendirme puanı 评价 5.0"><div class="field-label"><strong>Değerlendirme Puanı</strong><small lang="zh-CN">评价 · goodsGrade</small></div><div class="field-value"><strong class="num">5,0 / 5</strong><div class="field-meta"><span class="source-chip mtop">MTOP</span></div></div></div>
+                  </div>
+                </section>
+
+                <section class="data-section" id="ozellikler" data-section="Özellikler">
+                  <div class="section-head"><div class="section-title"><span class="section-icon"><svg class="icon"><use href="#i-tag"></use></svg></span><div><h3>Özellikler</h3><p>`产品属性` tam tablo; bilinmeyen alanlar da korunur</p></div></div><span class="section-count">31 alan · 8 gösteriliyor</span></div>
+                  <div class="fields">
+                    <div class="field-row" data-search="marka 品牌 总裁小姐"><div class="field-label"><strong>Marka</strong><small lang="zh-CN">品牌 · fid 2176</small></div><div class="field-value"><strong lang="zh-CN">总裁小姐</strong><div class="field-meta"><span class="source-chip json">JSON</span><span class="source-chip">RAW</span></div></div></div>
+                    <div class="field-row" data-search="güç 功率 40W 80W"><div class="field-label"><strong>Güç</strong><small lang="zh-CN">功率 · fid 1134</small></div><div class="field-value"><strong class="num">40 W / 80 W</strong><div class="field-meta"><span class="source-chip json">JSON</span><span class="source-chip">NORMALIZED</span></div></div></div>
+                    <div class="field-row" data-search="gövde malzemesi 机身材质 塑料 plastik"><div class="field-label"><strong>Gövde Malzemesi</strong><small lang="zh-CN">机身材质 · fid 6311483</small></div><div class="field-value"><strong>Plastik <span class="original">(塑料)</span></strong><div class="field-meta"><span class="source-chip json">JSON</span></div></div></div>
+                    <div class="field-row" data-search="kapasite 容量 350ml"><div class="field-label"><strong>Kapasite</strong><small lang="zh-CN">容量 · fid 2340</small></div><div class="field-value"><strong class="num">350 ml</strong><div class="field-meta"><span class="source-chip json">JSON</span></div></div></div>
+                    <div class="field-row" data-search="gıda malzemesi 是否为食品级材质 是 evet"><div class="field-label"><strong>Gıdaya Uygun Malzeme</strong><small lang="zh-CN">是否为食品级材质</small></div><div class="field-value"><strong>Evet <span class="original">(是)</span></strong><div class="field-meta"><span class="source-chip json">JSON</span></div></div></div>
+                    <div class="field-row" data-search="piyasaya çıkış 上市时间 2023 yaz"><div class="field-label"><strong>Piyasaya Çıkış Zamanı</strong><small lang="zh-CN">上市时间</small></div><div class="field-value"><strong>2023 Yazı</strong><div class="field-meta"><span class="source-chip json">JSON</span></div></div></div>
+                    <div class="field-row" data-search="başlıca alt pazar platformları 主要下游平台 其他"><div class="field-label"><strong>Başlıca Alt Pazar Platformları</strong><small lang="zh-CN">主要下游平台</small></div><div class="field-value"><strong>Diğer <span class="original">(其他)</span></strong><div class="field-meta"><span class="source-chip json">JSON</span></div></div></div>
+                    <div class="field-row missing" data-search="başlıca satış bölgeleri 主要销售地区 eksik"><div class="field-label"><strong>Başlıca Satış Bölgeleri</strong><small lang="zh-CN">主要销售地区</small></div><div class="field-value"><span class="dash">—</span><span class="missing-note">Kaynakta bu ilan için gözlenmedi</span><div class="field-meta"><span class="source-chip">NOT OBSERVED</span></div></div></div>
+                  </div>
+                  <div class="section-foot">23 ek kaynak özelliği gizlendi. “Tümünü göster” üretim arayüzünde genişleyen tablo/çekmece olarak açılır; hiçbir alan silinmez.</div>
+                </section>
+
+                <section class="data-section" id="sku" data-section="SKU & Paketleme">
+                  <div class="section-head"><div class="section-title"><span class="section-icon"><svg class="icon"><use href="#i-ruler"></use></svg></span><div><h3>SKU & Paketleme</h3><p>`规格` ve `商品件重尺` birleşik görünümü</p></div></div><span class="section-count">2 SKU</span></div>
+                  <div class="table-wrap">
+                    <table>
+                      <thead><tr><th>SKU / ad</th><th>Voltaj</th><th>Ölçü (U×G×Y)</th><th>Birim net ağırlık</th><th>Hacim (CBM)</th><th>Beyan stok</th><th>Birim fiyat</th><th>Kaynak</th></tr></thead>
+                      <tbody>
+                        <tr data-search="sku 5745692521572 7.4V çift batarya Z03 榨汁杯 1000 gram 48 yuan"><td class="sku-name"><strong>7,4 V · çift batarya</strong><span>5745692521572</span></td><td class="num">7,4 V</td><td class="missing"><span class="dash">—</span><span class="missing-note">0 değer kaynakta “girilmemiş”</span></td><td class="num">1.000 g</td><td class="missing"><span class="dash">—</span></td><td class="stock-ok num">9.998</td><td class="price">¥58,00</td><td><span class="source-chip json">JSON</span></td></tr>
+                        <tr data-search="sku 5745692521573 3.7V tek batarya Z03 榨汁杯 1000 gram 48 yuan"><td class="sku-name"><strong>3,7 V · tek batarya</strong><span>5745692521573</span></td><td class="num">3,7 V</td><td class="missing"><span class="dash">—</span><span class="missing-note">0 değer kaynakta “girilmemiş”</span></td><td class="num">1.000 g</td><td class="missing"><span class="dash">—</span></td><td class="stock-ok num">9.972</td><td class="price">¥48,00</td><td><span class="source-chip json">JSON</span></td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <div class="section-foot"><strong>Toplam beyan stok:</strong> 19.970 · Stok satıcı beyanıdır. Koli içi adet kullanıcı alanıdır ve kaynak yenilemeyle ezilmez.</div>
+                </section>
+
+                <section class="data-section" id="satici" data-section="Satıcı & Sevkiyat">
+                  <div class="section-head"><div class="section-title"><span class="section-icon"><svg class="icon"><use href="#i-store"></use></svg></span><div><h3>Satıcı & Sevkiyat</h3><p>Mağaza karnesi, gönderim yeri ve hizmet taahhütleri</p></div></div><span class="section-count">14 alan</span></div>
+                  <div class="fields">
+                    <div class="field-row" data-search="satıcı 公司名称 中山市初遇电器厂"><div class="field-label"><strong>Satıcı</strong><small lang="zh-CN">公司名称</small></div><div class="field-value"><strong lang="zh-CN">中山市初遇电器厂</strong><div class="field-meta"><span class="source-chip json">JSON</span></div></div></div>
+                    <div class="field-row" data-search="satıcı türü 商家类型 factory fabrika"><div class="field-label"><strong>Satıcı Türü</strong><small lang="zh-CN">商家类型 · cardType</small></div><div class="field-value"><strong>Fabrika</strong><div class="field-meta"><span class="source-chip json">JSON</span></div></div></div>
+                    <div class="field-row" data-search="chengxintong 诚信通 doğrulandı"><div class="field-label"><strong>Chengxintong Üyeliği</strong><small lang="zh-CN">诚信通 · isTp</small></div><div class="field-value"><strong>Var</strong><div class="field-meta"><span class="source-chip json">JSON</span></div></div></div>
+                    <div class="field-row" data-search="satıcı yılı 入驻年限 6"><div class="field-label"><strong>Satıcı Yılı</strong><small lang="zh-CN">入驻年限</small></div><div class="field-value"><strong class="num">6 yıl</strong><div class="field-meta"><span class="source-chip mtop">MTOP</span><span class="source-chip dom">DOM</span></div></div></div>
+                    <div class="field-row" data-search="satıcı hizmet puanı 服务分 4.0"><div class="field-label"><strong>Satıcı Hizmet Puanı</strong><small lang="zh-CN">服务分</small></div><div class="field-value"><strong class="num">4,0 / 5</strong><div class="field-meta"><span class="source-chip mtop">MTOP</span></div></div></div>
+                    <div class="field-row" data-search="tekrar alım oranı 回头率 48.09"><div class="field-label"><strong>Tekrar Alım Oranı</strong><small lang="zh-CN">回头率</small></div><div class="field-value"><strong class="num">%48,09</strong><div class="field-meta"><span class="source-chip mtop">MTOP</span></div></div></div>
+                    <div class="field-row" data-search="gönderim yeri 发货地 广东省中山市 Guangdong Zhongshan"><div class="field-label"><strong>Gönderim Yeri</strong><small lang="zh-CN">发货地</small></div><div class="field-value"><strong>Guangdong · Zhongshan</strong><div class="field-meta"><span class="source-chip json">JSON</span></div></div></div>
+                    <div class="field-row" data-search="sevkiyata verme süresi 发货时效 48 saat"><div class="field-label"><strong>Sevkiyata Verme Süresi</strong><small lang="zh-CN">承诺48小时发货</small></div><div class="field-value"><strong class="num">48 saat</strong><div class="field-meta"><span class="source-chip json">JSON</span></div></div></div>
+                    <div class="field-row" data-search="7 gün koşulsuz iade 7天无理由退货"><div class="field-label"><strong>7 Gün Koşulsuz İade</strong><small lang="zh-CN">7天无理由退货</small></div><div class="field-value"><strong>Destekleniyor</strong><div class="field-meta"><span class="source-chip json">JSON</span><span class="source-chip dom">DOM</span></div></div></div>
+                    <div class="field-row" data-search="geç sevkiyat tazmini 晚发必赔"><div class="field-label"><strong>Geç Sevkiyat Tazmini</strong><small lang="zh-CN">晚发必赔</small></div><div class="field-value"><strong>Destekleniyor</strong><div class="field-meta"><span class="source-chip json">JSON</span></div></div></div>
+                    <div class="field-row authenticated-only" data-auth="required" data-signedin="¥2,00 · Zhejiang hedefi" data-search="çin içi kargo ücreti 运费 2 yuan"><div class="field-label"><strong>Çin İçi Kargo Ücreti</strong><small lang="zh-CN">运费 · postFeeValue</small></div><div class="field-value"><strong class="num">¥2,00 · Zhejiang hedefi</strong><div class="field-meta"><span class="source-chip json">JSON</span></div></div></div>
+                    <div class="field-row anonymous-only missing" data-search="çin içi kargo ücreti 运费 giriş gerekli eksik"><div class="field-label"><strong>Çin İçi Kargo Ücreti</strong><small lang="zh-CN">运费 · postFeeValue</small></div><div class="field-value"><span class="dash">—</span><span class="missing-note">Hedef bölge/oturum görünmedi</span><div class="field-meta"><span class="source-chip">AUTH HIDDEN</span></div></div></div>
+                  </div>
+                  <div class="section-foot">Satıcı oranları platform sinyalleridir; bağımsız doğrulama değildir.</div>
+                </section>
+
+                <section class="data-section" id="fiyat" data-section="Fiyat & Kampanya">
+                  <div class="section-head"><div class="section-title"><span class="section-icon"><svg class="icon"><use href="#i-coins"></use></svg></span><div><h3>Fiyat & Kampanya</h3><p>MOQ, fiyat kademeleri, üyelik ve dağıtım metrikleri</p></div></div><span class="section-count">11 alan</span></div>
+                  <div class="table-wrap">
+                    <table>
+                      <thead><tr><th>Tür</th><th>Alt sınır</th><th>Üst sınır</th><th>Birim fiyat</th><th>Geçerlilik</th><th>Kaynak</th></tr></thead>
+                      <tbody>
+                        <tr data-search="kademeli fiyat 阶梯价 normal 1 adet 48 58 yuan"><td><span class="badge badge-neutral">Standart</span></td><td class="num">1 adet</td><td>—</td><td class="price">¥48,00–¥58,00</td><td>İlan açıkken</td><td><span class="source-chip json">JSON</span></td></tr>
+                        <tr class="authenticated-only" data-search="üye fiyatı 会员价 46 yuan"><td><span class="badge badge-purple">Üye fiyatı</span></td><td class="num">10 adet</td><td>—</td><td class="price">¥46,00</td><td>Hesaba bağlı</td><td><span class="source-chip json">JSON</span></td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <div class="fields" style="border-top:1px solid var(--line)">
+                    <div class="field-row" data-search="minimum sipariş 起订量 1"><div class="field-label"><strong>Minimum Sipariş</strong><small lang="zh-CN">起订量</small></div><div class="field-value"><strong class="num">1 adet</strong><div class="field-meta"><span class="source-chip json">JSON</span></div></div></div>
+                    <div class="field-row" data-search="süreli indirim 限时折扣"><div class="field-label"><strong>Süreli İndirim</strong><small lang="zh-CN">限时折扣</small></div><div class="field-value"><strong>Etkin değil</strong><div class="field-meta"><span class="source-chip json">JSON</span></div></div></div>
+                    <div class="field-row" data-search="kupon 优惠券 红包 15 yuan"><div class="field-label"><strong>Kupon</strong><small lang="zh-CN">红包最高减15元</small></div><div class="field-value"><strong class="num">En fazla ¥15,00</strong><div class="field-meta"><span class="source-chip json">JSON</span></div></div></div>
+                    <div class="field-row" data-search="tekli dropshipping 一件代发 destek"><div class="field-label"><strong>Tekli Dropshipping</strong><small lang="zh-CN">一件代发</small></div><div class="field-value"><strong>Destekleniyor</strong><div class="field-meta"><span class="source-chip json">JSON</span></div></div></div>
+                    <div class="field-row authenticated-only" data-search="dropshipping popülerliği 商家代发热度 875"><div class="field-label"><strong>Dropshipping Popülerliği</strong><small lang="zh-CN">商家代发热度</small></div><div class="field-value"><strong class="num">875</strong><div class="field-meta"><span class="source-chip mtop">MTOP</span></div></div></div>
+                    <div class="field-row authenticated-only" data-search="dağıtıcı sayısı 铺货分销商数 7000"><div class="field-label"><strong>Dağıtıcı Sayısı</strong><small lang="zh-CN">铺货分销商数</small></div><div class="field-value"><strong class="num">7.000+</strong><div class="field-meta"><span class="source-chip mtop">MTOP</span></div></div></div>
+                    <div class="field-row anonymous-only missing" data-search="dropshipping popülerliği giriş gerekli auth hidden"><div class="field-label"><strong>Dropshipping Popülerliği</strong><small lang="zh-CN">商家代发热度</small></div><div class="field-value"><span class="dash">—</span><span class="missing-note">Girişli modül gözlenmedi</span><div class="field-meta"><span class="source-chip">AUTH HIDDEN</span></div></div></div>
+                    <div class="field-row anonymous-only missing" data-search="dağıtıcı sayısı giriş gerekli auth hidden"><div class="field-label"><strong>Dağıtıcı Sayısı</strong><small lang="zh-CN">铺货分销商数</small></div><div class="field-value"><span class="dash">—</span><span class="missing-note">Girişli modül gözlenmedi</span><div class="field-meta"><span class="source-chip">AUTH HIDDEN</span></div></div></div>
+                  </div>
+                </section>
+
+                <section class="data-section" id="uyum" data-section="Sertifika & Uyum">
+                  <div class="section-head"><div class="section-title"><span class="section-icon"><svg class="icon"><use href="#i-certificate"></use></svg></span><div><h3>Sertifika & Uyum</h3><p>Kaynak beyanı ile doğrulanmış belge birbirinden ayrıdır</p></div></div><span class="section-count">6 alan</span></div>
+                  <div class="fields">
+                    <div class="field-row" data-search="3C CCC sertifikası 3C证书 kaynak beyanı"><div class="field-label"><strong>3C / CCC Sertifikası</strong><small lang="zh-CN">3C证书</small></div><div class="field-value"><strong>Kaynakta belge beyanı var</strong><span class="missing-note">Bağımsız doğrulama yapılmadı</span><div class="field-meta"><span class="source-chip mtop">MTOP</span><span class="source-chip">RAW</span></div></div></div>
+                    <div class="field-row" data-search="sınır ötesi ihracata özel 是否跨境出口专供货源"><div class="field-label"><strong>Sınır Ötesi İhracata Özel Tedarik</strong><small lang="zh-CN">是否跨境出口专供货源</small></div><div class="field-value"><strong>Evet</strong><div class="field-meta"><span class="source-chip json">JSON</span></div></div></div>
+                    <div class="field-row" data-search="marka yetkisi 有可授权的自有品牌"><div class="field-label"><strong>Yetkilendirilebilir Kendi Markası</strong><small lang="zh-CN">有可授权的自有品牌</small></div><div class="field-value"><strong>Evet</strong><div class="field-meta"><span class="source-chip json">JSON</span></div></div></div>
+                    <div class="field-row" data-search="patentli tedarik 是否专利货源 hayır"><div class="field-label"><strong>Patentli Tedarik</strong><small lang="zh-CN">是否专利货源</small></div><div class="field-value"><strong>Hayır</strong><div class="field-meta"><span class="source-chip json">JSON</span></div></div></div>
+                    <div class="field-row missing" data-search="resmi inceleme 官方验货 eksik"><div class="field-label"><strong>Resmî İnceleme</strong><small lang="zh-CN">官方验货</small></div><div class="field-value"><span class="dash">—</span><span class="missing-note">Bu ilanda gözlenmedi</span><div class="field-meta"><span class="source-chip">NOT OBSERVED</span></div></div></div>
+                    <div class="field-row" data-search="kontrollü kesici alet 管制刀具 hayır"><div class="field-label"><strong>Kontrollü Kesici Alet Uyarısı</strong><small lang="zh-CN">管制刀具</small></div><div class="field-value"><strong>Hayır</strong><div class="field-meta"><span class="source-chip json">JSON</span></div></div></div>
+                  </div>
+                  <div class="section-foot">Kaynak sertifikası VERIFIED değildir. VERIFIED yalnız insan/kurum doğrulamasıyla oluşur ve kaynak yenilemeyle ezilmez.</div>
+                </section>
+
+                <section class="data-section" id="medya" data-section="Medya">
+                  <div class="section-head"><div class="section-title"><span class="section-icon"><svg class="icon"><use href="#i-image"></use></svg></span><div><h3>Medya</h3><p>URL, sıra, kullanım türü ve mevcutsa içerik hash'i</p></div></div><span class="section-count">7 + 21 medya</span></div>
+                  <div class="fields">
+                    <div class="field-row" data-search="ana ürün görselleri 主图 5"><div class="field-label"><strong>Ana Ürün Görselleri</strong><small lang="zh-CN">主图 · mainImageList</small></div><div class="field-value"><strong class="num">5 görsel</strong><div class="field-meta"><span class="source-chip json">JSON</span></div></div></div>
+                    <div class="field-row" data-search="ürün görselleri 商品图片 7"><div class="field-label"><strong>Ürün Görselleri</strong><small lang="zh-CN">商品图片 · imageList</small></div><div class="field-value"><strong class="num">7 görsel</strong><div class="field-meta"><span class="source-chip json">JSON</span></div></div></div>
+                    <div class="field-row" data-search="detay görselleri 详情图片 21"><div class="field-label"><strong>Detay Görselleri</strong><small lang="zh-CN">详情图片</small></div><div class="field-value"><strong class="num">21 görsel</strong><div class="field-meta"><span class="source-chip dom">DOM</span></div></div></div>
+                    <div class="field-row" data-search="sku görselleri 规格图片 2"><div class="field-label"><strong>SKU Görselleri</strong><small lang="zh-CN">规格图片</small></div><div class="field-value"><strong class="num">2 görsel</strong><div class="field-meta"><span class="source-chip json">JSON</span></div></div></div>
+                    <div class="field-row missing" data-search="video 视频 eksik yok"><div class="field-label"><strong>Video</strong><small lang="zh-CN">视频 · wirelessVideo</small></div><div class="field-value"><span class="dash">—</span><span class="missing-note">Kaynak video kimliği 0; video yok</span><div class="field-meta"><span class="source-chip json">CONFIRMED ABSENT</span></div></div></div>
+                    <div class="field-row" data-search="ürün detayları 商品详情 html"><div class="field-label"><strong>Ürün Detayları</strong><small lang="zh-CN">商品详情 · detailUrl</small></div><div class="field-value"><strong>HTML + görsel dizini kaydedildi</strong><div class="field-meta"><span class="source-chip json">JSON</span><span class="source-chip dom">DOM</span></div></div></div>
+                  </div>
+                </section>
+              </div>
+            </div>
+
+            <div class="empty-search" id="emptySearch" hidden><strong>Eşleşen kaynak alanı yok</strong><div>Çince etiketi, Türkçe alan adını veya değeri deneyin.</div></div>
+            <div class="legend"><strong>— mantığı</strong><span><b class="dash">—</b> kaynakta yok veya gözlenemedi</span><span><b class="num">0</b> kaynakta gerçek sıfır</span><span class="source-chip">NOT OBSERVED</span><span>silinmiş demek değildir</span><span class="source-chip">AUTH HIDDEN</span><span>giriş/üyelik nedeniyle görünmedi</span></div>
+          </div>
+        </article>
+      </div>
+    </main>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"><svg class="icon"><use href="#i-info"></use></svg><div><strong>Demo bilgisi</strong><span id="toastText"></span></div></div>
+
+  <div class="modal-backdrop" id="diffModal" hidden>
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="diffTitle">
+      <header class="modal-head">
+        <div><h2 id="diffTitle">Kaynak değişikliklerini incele</h2><p>Eski: 25 Ağu 2026 · 10:14 → Yeni: 29 Ağu 2026 · 14:42</p></div>
+        <button class="modal-close" id="modalClose" type="button" aria-label="Kapat"><svg class="icon"><use href="#i-x"></use></svg></button>
+      </header>
+      <div class="modal-summary">
+        <div><span>Değişiklik</span><strong class="num">6 alan</strong></div>
+        <div><span>SKU</span><strong class="num">2 etkilendi</strong></div>
+        <div><span>Yakalama</span><strong style="color:var(--ok)">%94 · Tam</strong></div>
+        <div><span>Giriş</span><strong class="authenticated-only">Yapıldı</strong><strong class="anonymous-only">Yapılmadı</strong></div>
+      </div>
+      <div class="diff-tools">
+        <label class="check-all"><input id="selectAllDiffs" type="checkbox" checked> Tüm güvenli değişiklikleri kabul et</label>
+        <span class="badge badge-warn">1 kullanıcı alanı korunuyor</span>
+      </div>
+      <div class="diff-body">
+        <div class="diff-group">
+          <h3>Fiyat & stok</h3>
+          <div class="diff-row"><input class="diff-check" type="checkbox" checked aria-label="En düşük fiyatı kabul et"><div class="diff-field"><strong>En Düşük Birim Fiyat</strong><small lang="zh-CN">最低价</small></div><div class="change"><div class="change-value"><span>Eski</span><strong>¥48,00</strong></div><span class="arrow">→</span><div class="change-value new"><span>Yeni</span><strong>¥44,00</strong></div></div><span class="delta">−¥4 · −%8,33</span></div>
+          <div class="diff-row"><input class="diff-check" type="checkbox" checked aria-label="SKU stok değişikliğini kabul et"><div class="diff-field"><strong>Beyan Stok · 7,4 V</strong><small lang="zh-CN">可订购数量</small></div><div class="change"><div class="change-value"><span>Eski</span><strong>9.998</strong></div><span class="arrow">→</span><div class="change-value new"><span>Yeni</span><strong>6.421</strong></div></div><span class="delta up">−3.577 · −%35,78</span></div>
+          <div class="diff-row"><input class="diff-check" type="checkbox" checked aria-label="Kuponu kabul et"><div class="diff-field"><strong>Kupon</strong><small lang="zh-CN">优惠券</small></div><div class="change"><div class="change-value"><span>Eski</span><strong>Yok</strong></div><span class="arrow">→</span><div class="change-value new"><span>Yeni</span><strong>En fazla ¥15</strong></div></div><span class="delta">Eklendi</span></div>
+        </div>
+        <div class="diff-group">
+          <h3>Ürün & SKU</h3>
+          <div class="diff-row"><input class="diff-check" type="checkbox" checked aria-label="Yeni SKU'yu kabul et"><div class="diff-field"><strong>SKU</strong><small lang="zh-CN">规格</small></div><div class="change"><div class="change-value"><span>Eski</span><strong>—</strong></div><span class="arrow">→</span><div class="change-value new"><span>Yeni</span><strong>9 V · üç batarya</strong></div></div><span class="delta">SKU eklendi</span></div>
+          <div class="diff-row"><input class="diff-check" type="checkbox" checked aria-label="Ana görsel sırasını kabul et"><div class="diff-field"><strong>Ana Görsel Sırası</strong><small lang="zh-CN">主图</small></div><div class="change"><div class="change-value"><span>Eski</span><strong>IMG-01, IMG-02</strong></div><span class="arrow">→</span><div class="change-value new"><span>Yeni</span><strong>IMG-02, IMG-01</strong></div></div><span class="delta">Sıra değişti</span></div>
+          <div class="diff-row protected"><input type="checkbox" aria-hidden="true"><div class="diff-field"><strong>TedarikApp Kategorisi</strong><small>kullanıcı alanı</small><span class="protection">KORUNDU · OTOMATİK UYGULANMAZ</span></div><div class="change"><div class="change-value"><span>Kart</span><strong>Mutfak › Blender</strong></div><span class="arrow">≠</span><div class="change-value new"><span>Kaynak önerisi</span><strong>Küçük Ev Aletleri</strong></div></div><span class="badge badge-warn">İncele</span></div>
+        </div>
+      </div>
+      <footer class="modal-foot">
+        <p><strong id="selectedCount">5</strong> güvenli değişiklik seçildi. Snapshot, reddetseniz de tarihçede kalır.</p>
+        <div class="modal-actions"><button class="btn btn-secondary" id="rejectAll" type="button">Tümünü reddet</button><button class="btn btn-primary" id="applyDiffs" type="button">Seçilenleri uygula</button></div>
+      </footer>
+    </section>
+  </div>
+
+  <script>
+    (() => {
+      const body = document.body;
+      const root = document.documentElement;
+      const toast = document.getElementById('toast');
+      const toastText = document.getElementById('toastText');
+      const search = document.getElementById('fieldSearch');
+      const missingToggle = document.getElementById('missingToggle');
+      const sections = [...document.querySelectorAll('.data-section')];
+      const emptySearch = document.getElementById('emptySearch');
+      const modal = document.getElementById('diffModal');
+      const refreshButton = document.getElementById('refreshButton');
+      const modalClose = document.getElementById('modalClose');
+      const selectAll = document.getElementById('selectAllDiffs');
+      const diffChecks = [...document.querySelectorAll('.diff-check')];
+      const selectedCount = document.getElementById('selectedCount');
+      let onlyMissing = false;
+      let toastTimer;
+
+      function showToast(message, title = 'Demo bilgisi') {
+        toast.querySelector('strong').textContent = title;
+        toastText.textContent = message;
+        toast.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toast.classList.remove('show'), 3200);
+      }
+
+      document.querySelectorAll('[data-demo-toast]').forEach((button) => {
+        button.addEventListener('click', () => showToast(button.dataset.demoToast));
+      });
+
+      document.getElementById('themeToggle').addEventListener('click', () => {
+        root.dataset.theme = root.dataset.theme === 'dark' ? 'light' : 'dark';
+      });
+
+      document.getElementById('authToggle').addEventListener('click', (event) => {
+        const isAnonymous = body.classList.toggle('anonymous');
+        event.currentTarget.setAttribute('aria-pressed', String(isAnonymous));
+        showToast(isAnonymous
+          ? 'Girişsiz profil: koşullu alanlar — olarak gösterilir ve silinmiş sayılmaz.'
+          : 'Girişli profil: üyelik/konum alanları kaynakta görünürse gösterilir.',
+        'Yakalama profili değişti');
+        applyFilter();
+      });
+
+      function normalize(value) {
+        return value.toLocaleLowerCase('tr-TR').normalize('NFKD').replace(/[\u0300-\u036f]/g, '');
+      }
+
+      function applyFilter() {
+        const query = normalize(search.value.trim());
+        let visibleTotal = 0;
+        sections.forEach((section) => {
+          const rows = [...section.querySelectorAll('.field-row, tbody tr')];
+          let sectionVisible = 0;
+          rows.forEach((row) => {
+            const haystack = normalize(row.dataset.search || row.textContent || '');
+            const queryMatch = !query || haystack.includes(query);
+            const missingMatch = !onlyMissing || row.classList.contains('missing');
+            const roleHidden = (body.classList.contains('anonymous') && row.classList.contains('authenticated-only')) || (!body.classList.contains('anonymous') && row.classList.contains('anonymous-only'));
+            const visible = queryMatch && missingMatch && !roleHidden;
+            row.hidden = !visible;
+            if (visible) sectionVisible++;
+          });
+          section.hidden = sectionVisible === 0;
+          visibleTotal += sectionVisible;
+        });
+        emptySearch.hidden = visibleTotal !== 0;
+      }
+
+      search.addEventListener('input', applyFilter);
+      document.addEventListener('keydown', (event) => {
+        if (event.key === '/' && document.activeElement !== search) {
+          event.preventDefault();
+          search.focus();
+        }
+        if (event.key === 'Escape' && !modal.hidden) closeModal();
+      });
+      missingToggle.addEventListener('click', () => {
+        onlyMissing = !onlyMissing;
+        missingToggle.setAttribute('aria-pressed', String(onlyMissing));
+        missingToggle.classList.toggle('btn-primary', onlyMissing);
+        missingToggle.classList.toggle('btn-secondary', !onlyMissing);
+        applyFilter();
+      });
+
+      const sectionLinks = [...document.querySelectorAll('.section-nav a')];
+      const observer = new IntersectionObserver((entries) => {
+        const current = entries.filter((entry) => entry.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        if (!current) return;
+        sectionLinks.forEach((link) => link.classList.toggle('active', link.getAttribute('href') === '#' + current.target.id));
+      }, { rootMargin: '-25% 0px -65% 0px', threshold: [0, .2, .5] });
+      sections.forEach((section) => observer.observe(section));
+
+      function openModal() {
+        modal.hidden = false;
+        modalClose.focus();
+        document.documentElement.style.overflow = 'hidden';
+        updateSelected();
+      }
+      function closeModal() {
+        modal.hidden = true;
+        document.documentElement.style.overflow = '';
+        refreshButton.focus();
+      }
+      refreshButton.addEventListener('click', () => {
+        const label = refreshButton.querySelector('span');
+        const old = label.textContent;
+        refreshButton.disabled = true;
+        label.textContent = 'Kaynak okunuyor…';
+        setTimeout(() => {
+          refreshButton.disabled = false;
+          label.textContent = old;
+          openModal();
+        }, 700);
+      });
+      modalClose.addEventListener('click', closeModal);
+      modal.addEventListener('click', (event) => { if (event.target === modal) closeModal(); });
+
+      function updateSelected() {
+        const count = diffChecks.filter((check) => check.checked).length;
+        selectedCount.textContent = String(count);
+        selectAll.checked = count === diffChecks.length;
+        selectAll.indeterminate = count > 0 && count < diffChecks.length;
+      }
+      diffChecks.forEach((check) => check.addEventListener('change', updateSelected));
+      selectAll.addEventListener('change', () => {
+        diffChecks.forEach((check) => { check.checked = selectAll.checked; });
+        updateSelected();
+      });
+      document.getElementById('rejectAll').addEventListener('click', () => {
+        diffChecks.forEach((check) => { check.checked = false; });
+        updateSelected();
+        showToast('Tüm kaynak farkları reddedildi; yeni snapshot tarihçede korundu.', 'Karar kaydedildi');
+        closeModal();
+      });
+      document.getElementById('applyDiffs').addEventListener('click', () => {
+        const count = diffChecks.filter((check) => check.checked).length;
+        showToast(`${count} değişiklik uygulandı · 1 kullanıcı alanı korundu.`, 'Kaynak verisi güncellendi');
+        closeModal();
+      });
+
+      applyFilter();
+    })();
+  </script>
+</body>
+</html>

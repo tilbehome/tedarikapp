@@ -1,0 +1,680 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tedarikapp.local/spec/v3/urun-veri-semasi.schema.json",
+  "title": "TedarikApp V3 platform-bağımsız ürün ve kaynak ilan veri şeması önerisi",
+  "description": "Görev #32 şartname önerisidir; migration veya uygulama kararı değildir. Bilinen alanlar tipli, bilinmeyen alanlar kayıpsız raw_attributes içinde saklanır.",
+  "schema_version": "3.2-proposal.1",
+  "status": "proposal_pm_product_owner_decision_required",
+  "generated_for": "docs/v3/hazirlik/eklenti-2-1/gorev-32",
+  "invariants": [
+    "Product, source listing ve listing snapshot farklı nesnelerdir.",
+    "Offer snapshots eklemeli ve salt okunurdur; geçmiş snapshot güncellenmez.",
+    "RAW kaynak değer hiçbir çeviri, AI çıkarımı, normalizasyon veya kullanıcı düzeltmesiyle ezilmez.",
+    "VERIFIED yalnız insan ya da yetkili kurum doğrulamasıyla oluşur.",
+    "Kullanıcı alanları kaynak yenilemeyle otomatik değişmez.",
+    "Gözlenemeyen alan null ve observation_state ile taşınır; sıfır veya silindi varsayılmaz.",
+    "Para decimal string ve ISO 4217 para birimiyle; ölçüler decimal string ve açık birimle saklanır.",
+    "Ham HAR, cookie, token, imza, alıcı hesabı, analitik kimlik ve kişisel veri saklanmaz."
+  ],
+  "enums": {
+    "data_layer": [
+      "RAW",
+      "NORMALIZED",
+      "VERIFIED"
+    ],
+    "provenance_method": [
+      "url",
+      "embedded_json",
+      "visible_dom",
+      "passive_mtop_response",
+      "manual",
+      "ai_inference",
+      "derived"
+    ],
+    "observation_state": [
+      "observed",
+      "confirmed_absent",
+      "not_observed",
+      "auth_hidden",
+      "template_unsupported",
+      "parse_error"
+    ],
+    "capture_status": [
+      "complete",
+      "partial",
+      "failed"
+    ],
+    "auth_state": [
+      "anonymous",
+      "authenticated",
+      "unknown"
+    ],
+    "listing_status": [
+      "active",
+      "closed",
+      "sold_out",
+      "hidden",
+      "unknown"
+    ],
+    "diff_kind": [
+      "added",
+      "removed",
+      "changed",
+      "reordered",
+      "became_observable",
+      "became_unobservable",
+      "unchanged"
+    ],
+    "acceptance_state": [
+      "pending",
+      "accepted",
+      "rejected",
+      "not_applicable"
+    ],
+    "protection_policy": [
+      "source_refreshable",
+      "manual_protected",
+      "verified_protected",
+      "snapshot_only"
+    ]
+  },
+  "type_rules": {
+    "money": {
+      "amount": "decimal_string",
+      "currency": "iso_4217_uppercase",
+      "rounding": "none_on_capture",
+      "example": {
+        "amount": "48.00",
+        "currency": "CNY"
+      }
+    },
+    "quantity": {
+      "value": "decimal_string",
+      "unit_original": "string_or_null",
+      "unit_normalized": "ucum_or_domain_unit_or_null"
+    },
+    "dimension": {
+      "value": "decimal_string_or_null",
+      "unit": "mm|cm|m|null",
+      "normalized_mm": "decimal_string_or_null"
+    },
+    "weight": {
+      "value": "decimal_string_or_null",
+      "unit": "g|kg|null",
+      "normalized_g": "decimal_string_or_null"
+    },
+    "volume": {
+      "value": "decimal_string_or_null",
+      "unit": "cm3|m3|CBM|null",
+      "normalized_cbm": "decimal_string_or_null",
+      "derivation": "source|length_width_height|null"
+    },
+    "percentage": {
+      "value": "decimal_string_or_null",
+      "scale": "0_to_100"
+    },
+    "timestamp": "RFC3339_UTC",
+    "hash": "sha256_lowercase_hex"
+  },
+  "tables": {
+    "products": {
+      "purpose": "Platformlardan bağımsız kanonik ürün ve kullanıcı kararları.",
+      "primary_key": [
+        "id"
+      ],
+      "fields": {
+        "id": "uuid_or_bigint",
+        "name_tr": "string|null",
+        "category_id": "uuid_or_bigint|null",
+        "note": "string|null",
+        "tags": "string[]",
+        "planned_quantity": "decimal_string|null",
+        "planned_quantity_unit": "string|null",
+        "units_per_carton_manual": "integer|null",
+        "manual_fields_version": "integer",
+        "created_at": "timestamp",
+        "updated_at": "timestamp"
+      },
+      "protection": {
+        "name_tr": "manual_protected",
+        "category_id": "manual_protected",
+        "note": "manual_protected",
+        "tags": "manual_protected",
+        "planned_quantity": "manual_protected",
+        "planned_quantity_unit": "manual_protected",
+        "units_per_carton_manual": "manual_protected"
+      }
+    },
+    "source_listings": {
+      "purpose": "Bir platformdaki bir satıcı ilanının güncel, onaylanmış kart görünümü.",
+      "primary_key": [
+        "id"
+      ],
+      "unique": [
+        "platform_id",
+        "external_id"
+      ],
+      "fields": {
+        "id": "uuid_or_bigint",
+        "product_id": "products.id",
+        "platform_id": "platforms.id",
+        "external_id": "string",
+        "canonical_url": "url",
+        "source_type": "product_detail",
+        "title_original": "string|null",
+        "listing_status": "listing_status",
+        "offer_type": "string|null",
+        "category_external_id": "string|null",
+        "category_name_original": "string|null",
+        "category_path_original": "string[]",
+        "sale_unit_original": "string|null",
+        "product_code_original": "string|null",
+        "model_original": "string|null",
+        "first_listed_at": "timestamp|null",
+        "source_modified_at": "timestamp|null",
+        "source_expires_at": "timestamp|null",
+        "seller_id": "sellers.id|null",
+        "currency": "iso_4217_uppercase|null",
+        "min_price": "decimal_string|null",
+        "max_price": "decimal_string|null",
+        "moq": "decimal_string|null",
+        "declared_stock_total": "decimal_string|null",
+        "sales_count": "integer|null",
+        "sales_period_original": "string|null",
+        "paid_orders_30d": "integer|null",
+        "favorite_count": "integer|null",
+        "review_count": "integer|null",
+        "review_score": "decimal_string|null",
+        "positive_review_rate": "decimal_string|null",
+        "shipping_origin_original": "string|null",
+        "shipping_origin_code": "string|null",
+        "delivery_limit_original": "string|null",
+        "latest_accepted_snapshot_id": "offer_snapshots.id|null",
+        "last_captured_at": "timestamp|null",
+        "last_capture_health": "decimal_string|null",
+        "created_at": "timestamp",
+        "updated_at": "timestamp"
+      },
+      "protection_default": "source_refreshable",
+      "update_rule": "Only accepted diff items may project from an immutable snapshot into this table."
+    },
+    "offer_snapshots": {
+      "purpose": "Tarihli ve salt okunur ilan görüntüsü; offer_snapshots geçmiş kanıtıdır.",
+      "primary_key": [
+        "id"
+      ],
+      "immutable": true,
+      "fields": {
+        "id": "uuid_or_bigint",
+        "listing_id": "source_listings.id",
+        "capture_id": "uuid",
+        "captured_at": "timestamp",
+        "capture_status": "capture_status",
+        "auth_state": "auth_state",
+        "page_template": "string|null",
+        "page_url": "url",
+        "extension_version": "semver",
+        "parser_version": "string",
+        "selector_set_id": "string",
+        "selector_set_version": "string",
+        "selector_set_signature": "string|null",
+        "raw_payload_ref": "content_blobs.id|null",
+        "raw_payload_sha256": "hash|null",
+        "normalized_payload": "json_object",
+        "observed_field_count": "integer",
+        "expected_field_count": "integer",
+        "capture_health_score": "decimal_string",
+        "capture_health_reasons": "string[]",
+        "excluded_data_classes": "string[]",
+        "previous_comparable_snapshot_id": "offer_snapshots.id|null",
+        "created_at": "timestamp"
+      },
+      "write_rules": [
+        "No UPDATE or DELETE in application paths.",
+        "A failed attempt may create a snapshot shell without raw payload, but it is not comparable.",
+        "Snapshot payload excludes buyerModel, cookies, headers, tokens, signatures, trace IDs and analytics."
+      ]
+    },
+    "field_observations": {
+      "purpose": "Alan bazlı RAW/NORMALIZED/VERIFIED değer, görünürlük ve provenance.",
+      "primary_key": [
+        "id"
+      ],
+      "unique": [
+        "snapshot_id",
+        "entity_type",
+        "entity_key",
+        "field_key",
+        "data_layer"
+      ],
+      "fields": {
+        "id": "uuid_or_bigint",
+        "snapshot_id": "offer_snapshots.id",
+        "entity_type": "listing|sku|seller|service|campaign|certificate|media|attribute",
+        "entity_key": "string",
+        "field_key": "normalized_snake_case",
+        "data_layer": "data_layer",
+        "value_json": "json_scalar_array_or_object|null",
+        "value_text_original": "string|null",
+        "original_label": "string|null",
+        "source_path": "string|null",
+        "source_method": "provenance_method",
+        "source_channel": "DOM|EMBEDDED_JSON|MTOP|URL|MANUAL|DERIVED",
+        "observation_state": "observation_state",
+        "confidence": "decimal_string_0_to_1|null",
+        "observed_at": "timestamp",
+        "protection_policy": "protection_policy",
+        "verified_by": "user_or_authority_id|null",
+        "verified_at": "timestamp|null"
+      }
+    },
+    "raw_attributes": {
+      "purpose": "Şema-agnostik, platform-bağımsız ve kayıpsız anahtar-değer alanları.",
+      "primary_key": [
+        "id"
+      ],
+      "unique": [
+        "snapshot_id",
+        "entity_type",
+        "entity_key",
+        "namespace",
+        "normalized_key",
+        "ordinal"
+      ],
+      "fields": {
+        "id": "uuid_or_bigint",
+        "snapshot_id": "offer_snapshots.id",
+        "listing_id": "source_listings.id",
+        "entity_type": "listing|product|sku|seller|campaign|service|certificate|related_item",
+        "entity_key": "string",
+        "namespace": "product_attribute|platform_signal|unknown_field|source_metadata",
+        "source_attribute_id": "string|null",
+        "original_label": "string",
+        "normalized_key": "unicode_nfkc_snake_case",
+        "value_type": "text|number|money|date|boolean|list|table|object|null",
+        "value_original": "json_scalar_array_or_object|null",
+        "value_normalized": "json_scalar_array_or_object|null",
+        "unit_original": "string|null",
+        "unit_normalized": "string|null",
+        "source_method": "provenance_method",
+        "source_path": "string|null",
+        "observation_state": "observation_state",
+        "ordinal": "integer",
+        "captured_at": "timestamp"
+      },
+      "normalization_rules": [
+        "original_label and value_original are never rewritten.",
+        "normalized_key is Unicode NFKC, trimmed, lower snake_case where possible; collisions keep ordinal and source_attribute_id.",
+        "A newly recognized field may later project into a typed table without deleting historical raw_attributes rows."
+      ]
+    },
+    "listing_skus": {
+      "purpose": "İstenen ayrı SKU tablosu: kimlik, ad, ölçü, ağırlık, hacim, stok ve fiyat.",
+      "primary_key": [
+        "id"
+      ],
+      "unique": [
+        "listing_id",
+        "source_sku_id"
+      ],
+      "fields": {
+        "id": "uuid_or_bigint",
+        "listing_id": "source_listings.id",
+        "source_sku_id": "string",
+        "source_spec_id": "string|null",
+        "name_original": "string|null",
+        "props_original": "json_object",
+        "props_normalized": "json_object",
+        "image_url": "url|null",
+        "length": "decimal_string|null",
+        "width": "decimal_string|null",
+        "height": "decimal_string|null",
+        "dimension_unit": "mm|cm|m|null",
+        "length_mm": "decimal_string|null",
+        "width_mm": "decimal_string|null",
+        "height_mm": "decimal_string|null",
+        "weight": "decimal_string|null",
+        "weight_unit": "g|kg|null",
+        "weight_g": "decimal_string|null",
+        "volume": "decimal_string|null",
+        "volume_unit": "cm3|m3|CBM|null",
+        "volume_cbm": "decimal_string|null",
+        "volume_derivation": "source|length_width_height|null",
+        "declared_stock": "decimal_string|null",
+        "price": "decimal_string|null",
+        "original_price": "decimal_string|null",
+        "currency": "iso_4217_uppercase|null",
+        "moq": "decimal_string|null",
+        "sales_count": "integer|null",
+        "is_hot_sale": "boolean|null",
+        "latest_accepted_snapshot_id": "offer_snapshots.id",
+        "active": "boolean",
+        "created_at": "timestamp",
+        "updated_at": "timestamp"
+      },
+      "history_rule": "Current projection only; each snapshot has its immutable listing_snapshot_skus rows."
+    },
+    "listing_snapshot_skus": {
+      "purpose": "Her snapshot'taki SKU değerlerinin salt okunur tarihçesi.",
+      "primary_key": [
+        "id"
+      ],
+      "unique": [
+        "snapshot_id",
+        "source_sku_id"
+      ],
+      "fields": {
+        "id": "uuid_or_bigint",
+        "snapshot_id": "offer_snapshots.id",
+        "source_sku_id": "string",
+        "source_spec_id": "string|null",
+        "stable_signature": "hash",
+        "name_original": "string|null",
+        "props_original": "json_object",
+        "price": "decimal_string|null",
+        "original_price": "decimal_string|null",
+        "currency": "iso_4217_uppercase|null",
+        "moq": "decimal_string|null",
+        "declared_stock": "decimal_string|null",
+        "length_mm": "decimal_string|null",
+        "width_mm": "decimal_string|null",
+        "height_mm": "decimal_string|null",
+        "weight_g": "decimal_string|null",
+        "volume_cbm": "decimal_string|null",
+        "image_url": "url|null",
+        "ordinal": "integer"
+      },
+      "immutable": true
+    },
+    "listing_price_tiers": {
+      "purpose": "Güncel kabul edilmiş fiyat kademeleri.",
+      "primary_key": [
+        "id"
+      ],
+      "unique": [
+        "listing_id",
+        "source_sku_id",
+        "min_quantity",
+        "price_kind"
+      ],
+      "fields": {
+        "id": "uuid_or_bigint",
+        "listing_id": "source_listings.id",
+        "source_sku_id": "string|null",
+        "min_quantity": "decimal_string",
+        "max_quantity": "decimal_string|null",
+        "price": "decimal_string",
+        "currency": "iso_4217_uppercase",
+        "price_kind": "regular|promotion|member|private",
+        "starts_at": "timestamp|null",
+        "ends_at": "timestamp|null",
+        "latest_accepted_snapshot_id": "offer_snapshots.id"
+      }
+    },
+    "sellers": {
+      "purpose": "Platform satıcı kimliği; kişi iletişim verisi içermez.",
+      "primary_key": [
+        "id"
+      ],
+      "unique": [
+        "platform_id",
+        "external_member_id"
+      ],
+      "fields": {
+        "id": "uuid_or_bigint",
+        "platform_id": "platforms.id",
+        "external_member_id": "string",
+        "external_login_id": "string|null",
+        "company_name_original": "string|null",
+        "store_url": "url|null",
+        "seller_type": "string|null",
+        "region_original": "string|null",
+        "created_at": "timestamp",
+        "updated_at": "timestamp"
+      }
+    },
+    "seller_snapshots": {
+      "purpose": "Mağaza karnesinin tarihli platform sinyalleri.",
+      "primary_key": [
+        "id"
+      ],
+      "fields": {
+        "id": "uuid_or_bigint",
+        "seller_id": "sellers.id",
+        "offer_snapshot_id": "offer_snapshots.id",
+        "membership_verified": "boolean|null",
+        "membership_years": "integer|null",
+        "service_score": "decimal_string|null",
+        "repeat_buyer_rate": "decimal_string|null",
+        "on_time_shipping_rate": "decimal_string|null",
+        "positive_review_rate": "decimal_string|null",
+        "response_rate": "decimal_string|null",
+        "followers_count": "integer|null",
+        "factory_signal": "string|null",
+        "signals_json": "json_object",
+        "captured_at": "timestamp"
+      },
+      "immutable": true
+    },
+    "listing_media": {
+      "purpose": "Ana, detay, SKU görseli ve videoların güncel kabul edilmiş dizini.",
+      "primary_key": [
+        "id"
+      ],
+      "fields": {
+        "id": "uuid_or_bigint",
+        "listing_id": "source_listings.id",
+        "source_sku_id": "string|null",
+        "media_type": "image|video|video_poster|description_image",
+        "usage_scope": "main|gallery|variant|detail|video|poster",
+        "source_url": "url",
+        "canonical_url": "url",
+        "source_media_id": "string|null",
+        "content_sha256": "hash|null",
+        "media_asset_id": "media_assets.id|null",
+        "width": "integer|null",
+        "height": "integer|null",
+        "duration_seconds": "decimal_string|null",
+        "ordinal": "integer",
+        "latest_accepted_snapshot_id": "offer_snapshots.id",
+        "active": "boolean"
+      }
+    },
+    "listing_services": {
+      "purpose": "İade, geç sevkiyat, hasar ve diğer platform hizmet rozetleri.",
+      "primary_key": [
+        "id"
+      ],
+      "unique": [
+        "listing_id",
+        "service_code"
+      ],
+      "fields": {
+        "id": "uuid_or_bigint",
+        "listing_id": "source_listings.id",
+        "service_code": "string",
+        "name_original": "string",
+        "description_original": "string|null",
+        "service_url": "url|null",
+        "active": "boolean",
+        "latest_accepted_snapshot_id": "offer_snapshots.id"
+      }
+    },
+    "listing_campaigns": {
+      "purpose": "Süreli indirim, kupon, limit ve üyelik fiyatı gibi kampanyalar.",
+      "primary_key": [
+        "id"
+      ],
+      "fields": {
+        "id": "uuid_or_bigint",
+        "listing_id": "source_listings.id",
+        "source_campaign_id": "string|null",
+        "campaign_type": "limited_discount|coupon|red_packet|member_price|private_price|other",
+        "name_original": "string|null",
+        "starts_at": "timestamp|null",
+        "ends_at": "timestamp|null",
+        "discount_amount": "decimal_string|null",
+        "currency": "iso_4217_uppercase|null",
+        "quantity_limit": "decimal_string|null",
+        "rules_json": "json_object",
+        "latest_accepted_snapshot_id": "offer_snapshots.id",
+        "active": "boolean"
+      }
+    },
+    "listing_certificates": {
+      "purpose": "Kaynak ilan sertifika ve resmî belge beyanları; doğrulanmışlık ayrı katmandır.",
+      "primary_key": [
+        "id"
+      ],
+      "fields": {
+        "id": "uuid_or_bigint",
+        "listing_id": "source_listings.id",
+        "certificate_type": "CCC|3C|brand_authorization|patent|official_inspection|other",
+        "source_certificate_id": "string|null",
+        "name_original": "string|null",
+        "issuer_original": "string|null",
+        "document_url": "url|null",
+        "valid_from": "date|null",
+        "valid_until": "date|null",
+        "source_claim_state": "present|absent|unknown",
+        "verification_state": "unverified|verified|rejected",
+        "verified_by": "user_or_authority_id|null",
+        "verified_at": "timestamp|null",
+        "latest_accepted_snapshot_id": "offer_snapshots.id"
+      }
+    },
+    "refresh_runs": {
+      "purpose": "Kaynağından güncelle işleminin kullanıcı tetiklemeli çalışma kaydı.",
+      "primary_key": [
+        "id"
+      ],
+      "fields": {
+        "id": "uuid_or_bigint",
+        "listing_id": "source_listings.id",
+        "trigger": "product_card|extension_refresh",
+        "requested_by": "user_id",
+        "requested_at": "timestamp",
+        "source_tab_url": "url",
+        "source_tab_id_ephemeral": "not_persisted",
+        "old_snapshot_id": "offer_snapshots.id|null",
+        "new_snapshot_id": "offer_snapshots.id|null",
+        "status": "queued|capturing|diff_ready|partially_applied|applied|rejected|failed",
+        "failure_code": "string|null",
+        "failure_message_safe": "string|null",
+        "completed_at": "timestamp|null"
+      }
+    },
+    "refresh_diff_items": {
+      "purpose": "Alan/SKU/medya bazlı fark ve kabul-ret kararı.",
+      "primary_key": [
+        "id"
+      ],
+      "fields": {
+        "id": "uuid_or_bigint",
+        "refresh_run_id": "refresh_runs.id",
+        "entity_type": "listing|sku|seller|price_tier|media|service|campaign|certificate|attribute",
+        "entity_key": "string",
+        "field_key": "string",
+        "diff_kind": "diff_kind",
+        "old_value_json": "json_value|null",
+        "new_value_json": "json_value|null",
+        "absolute_delta": "decimal_string|null",
+        "percentage_delta": "decimal_string|null",
+        "currency": "iso_4217_uppercase|null",
+        "old_observation_state": "observation_state|null",
+        "new_observation_state": "observation_state|null",
+        "risk_flags": "string[]",
+        "protection_policy": "protection_policy",
+        "acceptance_state": "acceptance_state",
+        "decided_by": "user_id|null",
+        "decided_at": "timestamp|null"
+      }
+    },
+    "change_history": {
+      "purpose": "Kullanıcının hangi snapshot farkını kabul/reddettiğinin denetlenebilir kaydı.",
+      "primary_key": [
+        "id"
+      ],
+      "fields": {
+        "id": "uuid_or_bigint",
+        "listing_id": "source_listings.id",
+        "refresh_run_id": "refresh_runs.id",
+        "diff_item_id": "refresh_diff_items.id",
+        "action": "accept|reject|accept_all_eligible|revert_projection",
+        "old_projection_version": "integer",
+        "new_projection_version": "integer",
+        "actor_id": "user_id",
+        "acted_at": "timestamp",
+        "reason": "string|null"
+      },
+      "append_only": true
+    },
+    "monitor_events": {
+      "purpose": "Aynı snapshot kıyasından türeyen fiyat/stok/ilan sinyalleri.",
+      "primary_key": [
+        "id"
+      ],
+      "fields": {
+        "id": "uuid_or_bigint",
+        "listing_id": "source_listings.id",
+        "source_sku_id": "string|null",
+        "old_snapshot_id": "offer_snapshots.id",
+        "new_snapshot_id": "offer_snapshots.id",
+        "event_type": "price_dropped|price_increased|stock_depleted|stock_restored|listing_closed|listing_reopened|sku_added|sku_removed|campaign_started|campaign_ended",
+        "severity": "info|warning|critical",
+        "event_payload": "json_object",
+        "created_at": "timestamp",
+        "acknowledged_at": "timestamp|null"
+      },
+      "generation_rule": "Events require comparable snapshots and must not be generated from auth_hidden, not_observed, template_unsupported or parse_error absence."
+    },
+    "content_blobs": {
+      "purpose": "Büyük sanitize açıklama ve seçilmiş ham ürün payload'larını içerik hash'iyle tekilleştirme.",
+      "primary_key": [
+        "id"
+      ],
+      "fields": {
+        "id": "uuid_or_bigint",
+        "sha256": "hash",
+        "content_type": "application/json|text/html|text/plain",
+        "compression": "none|gzip|zstd",
+        "byte_length": "integer",
+        "storage_key": "string",
+        "created_at": "timestamp"
+      },
+      "forbidden_content": [
+        "HAR",
+        "cookies",
+        "request_headers",
+        "response_headers",
+        "tokens",
+        "signatures",
+        "buyer_or_recipient_personal_data",
+        "analytics_identifiers"
+      ]
+    }
+  },
+  "display_precedence": [
+    "VERIFIED accepted value",
+    "manual protected value",
+    "NORMALIZED accepted source value",
+    "RAW source value",
+    "null rendered as em dash"
+  ],
+  "index_recommendations": [
+    "source_listings(platform_id, external_id) unique",
+    "offer_snapshots(listing_id, captured_at desc)",
+    "field_observations(snapshot_id, entity_type, entity_key, field_key, data_layer)",
+    "raw_attributes(listing_id, normalized_key, captured_at desc)",
+    "listing_snapshot_skus(snapshot_id, source_sku_id)",
+    "refresh_diff_items(refresh_run_id, acceptance_state, entity_type)",
+    "monitor_events(listing_id, created_at desc, acknowledged_at)"
+  ],
+  "compatibility": {
+    "existing_capture_schema": 2,
+    "existing_raw_attributes": "migrations/0014_add_products_raw_attributes.php",
+    "existing_listings": "migrations/0023_create_listings.php",
+    "migration_strategy": "additive_first_then_dual_read_then_projection_switch",
+    "platform_independence": "No field name, enum or table requires platform=1688; platform-specific labels and paths live in adapters and raw_attributes."
+  }
+}

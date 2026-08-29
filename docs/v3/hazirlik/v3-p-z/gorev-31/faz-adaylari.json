@@ -1,0 +1,337 @@
+[
+  {
+    "harf": "P",
+    "ad": "Operatör Hızı ve Sayfa Olgunluğu",
+    "amaç": "TedarikApp'in bütün yoğun veri ekranlarını tek kişinin klavye ve fareyle hızlı, hataya dayanıklı ve geri alınabilir biçimde işletebildiği profesyonel çalışma yüzeylerine dönüştürmek.",
+    "kapsam": [
+      "Tablo ve kartlarda satır içi düzenleme; alan tipine göre doğrulama ve kaydetme durumu",
+      "Çoklu seçim, aralık seçimi, tüm görünürleri seçme ve kapsamı açık toplu eylemler",
+      "Satır ve seçili grup için bağlama duyarlı sağ tık menüleri",
+      "Komut paleti, ekran bazlı klavye kısayolları ve keşfedilebilir kısayol yardımcısı",
+      "Kayıtlı görünümler, favoriler, sütun setleri, filtre-sıralama-gruplama ve kişisel yoğunluk ayarı",
+      "Tip güvenli akıllı yapıştırma; Excel/WhatsApp metninden önizlemeli sütun eşleme ve hata hücreleri",
+      "Sürükle-bırakla öncelik/sıra değiştirme ve görsel-belgeyi doğru kayda bırakma",
+      "Toplu işlemlerde etki özeti, geri al bağlantısı, kısmi başarısızlık raporu ve yeniden deneme",
+      "Odak korunumu, önceki/sonraki kayıt gezintisi ve URL ile paylaşılabilir görünüm durumu",
+      "Her etkileşim için masaüstü/PWA, erişilebilirlik ve büyük veri seti performans testleri"
+    ],
+    "boy": "L",
+    "bağımlılık": ["B", "G"],
+    "emsal": [
+      "Linear — seçili kayıtlarda komut paleti ve bağlam menüsü",
+      "Attio — doğrudan tablo düzenleme, toplu güncelleme ve elektronik tabloyla kopyala-yapıştır",
+      "Airtable — görünüm çeşitleri, hücre kısayolları ve toplu işlemler",
+      "Notion — veritabanı görünümleri, toplu satır düzenleme ve klavye gezintisi"
+    ],
+    "risk": [
+      "Çapraz ekran kapsamı nedeniyle regresyon ve test matrisi hızla büyür",
+      "Kısayollar tarayıcı, işletim sistemi ve erişilebilirlik komutlarıyla çakışabilir",
+      "Toplu işlem kapsamı anlaşılmazsa geniş veri değişiklikleri yapılabilir",
+      "Akıllı yapıştırma yanlış sütun eşlemesini sessizce kabul etmemelidir"
+    ]
+  },
+  {
+    "harf": "Q",
+    "ad": "İhtiyaç ve Teknik Şartname Stüdyosu",
+    "amaç": "Keşfedilen bir ürün fikrini firmaya gönderilmeden önce ölçülebilir, sürümlü ve karşılaştırılabilir bir satın alma şartnamesine dönüştürmek.",
+    "kapsam": [
+      "Kategoriye göre tekrar kullanılabilir sourcing brief ve şartname şablonları",
+      "Zorunlu, tercih edilen ve kabul edilemez koşulların ayrı alanlarda tanımlanması",
+      "Ölçü, malzeme, renk, set içeriği, tolerans, MOQ hedefi, hedef termin ve DDP hedef aralığı",
+      "Referans ürün, görsel, video, açıklama ve 同款 kümesi bağlantıları",
+      "Ambalaj, etiket, numune ve kalite beklentilerinin ilgili kayıtlara bağlanması",
+      "Eksik, çelişkili veya ölçülemeyen gereksinimler için hazırlık puanı ve kontrol listesi",
+      "Şartname sürümleri, alan bazlı fark görünümü ve firmaya gönderilen sürümün dondurulması",
+      "Firma yanıtını şartname maddesine bağlayan uygun/kısmi/uygun değil matrisi",
+      "Alternatif ürün teklifinde hangi maddelerin değiştiğini zorunlu gerekçeyle gösterme",
+      "TR ana çalışma dili ile EN/ZH firma çıktılarında M fazı sözlüğüne bağlı terim üretimi"
+    ],
+    "boy": "M",
+    "bağımlılık": ["A", "C", "I", "J", "M"],
+    "emsal": [
+      "ServiceNow Sourcing Intake Playbook — gereksinimi yapılandırma ve açıklama isteme",
+      "Lifecycle PLM Tech Pack Studio — canlı şartname, revizyon ve tedarikçi işbirliği",
+      "Specright — ürün ve ambalaj şartnamelerini ilişkili ve sürümlü yönetme",
+      "Sourcify — fabrika görüşmesinden önce üretime hazır teknik kapsam ihtiyacı"
+    ],
+    "risk": [
+      "Şablonlar çok ayrıntılı olursa hızlı keşif akışını yavaşlatır",
+      "Ev gereçleri kategorileri arasında alan gereksinimleri önemli ölçüde değişir",
+      "Serbest alanlar ile karşılaştırılabilir yapılandırılmış alanlar arasında denge gerekir",
+      "ZH çeviride teknik anlam kaybı firma tekliflerini karşılaştırılamaz kılabilir"
+    ]
+  },
+  {
+    "harf": "R",
+    "ad": "Tedarik Senaryosu ve Karar Laboratuvarı",
+    "amaç": "Onaylı DDP tekliflerini fiyat dışında miktar, MOQ, termin, kalite ve yük kısıtlarıyla şeffaf senaryolara dönüştürerek insan kararını desteklemek.",
+    "kapsam": [
+      "Teklif satırlarını paket/adet birimine ve onaylı kur snapshot'ına göre normalleştirme",
+      "Kademeli fiyat, MOQ, termin, teklif geçerliliği ve veri eksikliği için karşılaştırılabilir kolonlar",
+      "Miktarı tek firma veya birden çok firma/teklif arasında elle bölme senaryoları",
+      "Sepet düzeyinde bütçe üst sınırı, minimum sipariş, hedef adet ve CBM kısıtları",
+      "Fiyat, termin, şartname uyumu, veri tamlığı ve kalite kanıtı için açıklanabilir ağırlıklar",
+      "En ucuz, en erken, en az eksik veri ve dengeli senaryo gibi yalnız öneri niteliğinde hazır görünümler",
+      "Senaryolar arası toplam DDP, landed cost, CBM, termin ve karşılanmayan koşul farkı",
+      "Teklif turu değişince senaryonun bayatladığını gösterme ve yeniden hesaplama önizlemesi",
+      "Seçim, kısmi seçim veya reddetme için zorunlu olmayan fakat görünür karar gerekçesi",
+      "Hiçbir senaryonun otomatik sipariş veya platformdan alım başlatmaması"
+    ],
+    "boy": "M",
+    "bağımlılık": ["C", "D", "Q"],
+    "emsal": [
+      "SAP Ariba Guided Sourcing — manuel/optimizasyonlu award senaryoları ve bölünmüş miktar",
+      "SAP Ariba — teklif puanlama ve bid analysis",
+      "Jungle Scout Supplier Tracker — aynı veya farklı tedarikçilerin tekliflerini kaydetme ve karşılaştırma"
+    ],
+    "risk": [
+      "Ağırlıklı puan yanlış kesinlik hissi verebilir; skor karar değil açıklanabilir öneri olmalıdır",
+      "Az sayıda teklif olduğunda senaryo motorunun geliştirme maliyeti faydayı aşabilir",
+      "Eksik veriyi sıfır veya iyi değer gibi ele almak hatalı seçim üretir",
+      "Firma bölme senaryosu operasyonel karmaşıklığı ve minimum yük koşullarını artırabilir"
+    ]
+  },
+  {
+    "harf": "S",
+    "ad": "Karar ve Kanıt Defteri",
+    "amaç": "Ürün, teklif ve sipariş kararlarının hangi veri, varsayım ve sürüme dayanarak verildiğini sonradan yeniden kurulabilir biçimde saklamak.",
+    "kapsam": [
+      "Seç, beklet, reddet, alternatif iste ve siparişe geçir kararları için kısa gerekçe şablonları",
+      "Karar anındaki kaynak ürün, şartname, teklif, kur ve landed cost snapshot bağlantıları",
+      "Varsayım, belirsizlik ve güven düzeyinin açık kaydı",
+      "Karardan sonra değişen kritik alanları gösteren otomatik fark özeti",
+      "Görsel, ekran görüntüsü, firma yanıtı ve belgeyi kanıt türüyle ilişkilendirme",
+      "Karar zinciri: önceki karar, bozma nedeni, yeni karar ve etkilediği kayıtlar",
+      "Geçerlilik tarihi dolan teklif veya eski kanıta dayanan karar için uygulama içi bayatlık işareti",
+      "Ürün bazlı zaman çizelgesi ile olay günlüğü ve karar günlüğünü ayrı fakat bağlantılı gösterme",
+      "Dışa aktarılan karar paketinde hassas alanları rol/çıktı diline göre süzme",
+      "G fazındaki teknik audit/undo kayıtlarını iş gerekçesinin yerine kullanmama"
+    ],
+    "boy": "M",
+    "bağımlılık": ["G", "Q", "R"],
+    "emsal": [
+      "Anvyl/Sage Supply Chain Intelligence — merkezî faaliyet, belge ve audit izi",
+      "Airtable — kayıt düzeyinde revizyon geçmişi",
+      "Alibaba Trade Assurance — uyuşmazlıkta sipariş şartlarının ve kanıtın belirleyici olması"
+    ],
+    "risk": [
+      "Kullanıcıya zorunlu uzun not yazdırmak sistemi terk ettirebilir",
+      "Audit izi ile iş karar defteri birbirine karışırsa arama ve saklama maliyeti artar",
+      "Snapshot çoğaltması depolama ve kişisel/veri saklama politikası gerektirir",
+      "Kanıt eki kötüye kullanılırsa dosya çöplüğüne dönüşebilir"
+    ]
+  },
+  {
+    "harf": "T",
+    "ad": "Ambalaj ve Yük Mühendisliği",
+    "amaç": "Ürün ve koli şartlarını maliyet, hasar riski ve konteyner doluluğuna etkisiyle birlikte sipariş öncesinde görünür ve karşılaştırılabilir kılmak.",
+    "kapsam": [
+      "Birim, iç kutu, ana koli ve set ambalajı için ayrı ölçü-ağırlık-seviye modeli",
+      "Koli içi adet, boşluk, yön kısıtı, üst üste konabilirlik ve kırılganlık alanları",
+      "Ambalaj şartnamesi, baskı/proof sürümü, etiket ve ürün arasındaki izlenebilir bağlantı",
+      "Tedarikçi beyanı, numune ölçümü ve mal kabul ölçümünü yan yana karşılaştırma",
+      "Koli ölçüsü veya koli içi adet değişince CBM ve landed cost etki simülasyonu",
+      "20GP/40GP/40HQ ve özel tanımlı yük alanları için yerleşim önerisi",
+      "Otomatik yerleşim yanında elle sabitleme, döndürme/yön kısıtı ve hariç tutma",
+      "Hacim, ağırlık, kullanılmayan alan ve yerleşemeyen koli nedenlerini raporlama",
+      "3B/katmanlı yük planı ile yazdırılabilir ve firmayla paylaşılabilir manifest",
+      "Son plan ile gerçekleşen sevkiyat ölçüleri arasındaki sapma kaydı"
+    ],
+    "boy": "L",
+    "bağımlılık": ["D", "J", "Q"],
+    "emsal": [
+      "Specright — ambalaj ve ürün şartname yönetimi",
+      "EasyCargo — ölçü, ağırlık ve kısıtlarla otomatik/elle ayarlanabilir 3B yük planı"
+    ],
+    "risk": [
+      "Yerleşim optimizasyonu ayrı bir algoritma ve görselleştirme uzmanlığı gerektirir",
+      "Yanlış tedarikçi ölçüsü ikna edici fakat uygulanamaz plan üretir",
+      "Ağırlık dağılımı ve gerçek yükleme kuralları basit CBM hesabından daha karmaşıktır",
+      "İlk sürümde 3B motor yerine doğrulanabilir katman planı gerekebilir"
+    ]
+  },
+  {
+    "harf": "U",
+    "ad": "Kalite Güvence ve Düzeltici Faaliyet",
+    "amaç": "Numune onayından üretim ve sevkiyat öncesi kontrole kadar kalite beklentisini kanıt, kusur ve düzeltici faaliyet zinciriyle yönetmek.",
+    "kapsam": [
+      "Kategori/ürün bazlı tekrar kullanılabilir kontrol listeleri ve test adımları",
+      "Kritik, majör ve minör kusur sözlüğü; görsel örnek ve kabul edilebilir limit",
+      "Golden sample ile üretim örneği/ön sevkiyat kanıtını madde bazında karşılaştırma",
+      "Kontrol sırasında fotoğraf, video, belge, ölçüm ve açıklama toplama",
+      "AQL örneklem planını I fazından devralıp sonuç ve kanıtla ilişkilendirme",
+      "Geçti, şartlı geçti, kaldı ve yeniden kontrol gerekli kararları",
+      "Kök neden, düzeltici faaliyet, sorumlu taraf, hedef tarih ve kanıt kapanışı",
+      "Yeniden işleme, değişim, fiyat indirimi veya sevkiyatı bekletme seçeneklerini yalnız operasyon kararı olarak kaydetme",
+      "Tekrarlayan kusur deseni ve önceki sipariş derslerini ürün hafızasına aktarma",
+      "Kalite verisini tedarikçi due diligence puanına dönüştürmeden ürün/sipariş bağlamında tutma"
+    ],
+    "boy": "L",
+    "bağımlılık": ["D", "I", "J", "Q"],
+    "emsal": [
+      "QIMAone — standart kontrol listeleri, zengin kanıt, kusur ve görünürlük",
+      "QIMAone Inspector App — fotoğraf/video/belgeyle yönlendirilmiş denetim",
+      "Inspectorio — üretimin farklı noktalarında dijital kalite kontrolleri ve CAPA",
+      "Sourcify — numune turları ve sevkiyat öncesi kalite gözetimi"
+    ],
+    "risk": [
+      "Kalite kontrolü ile kalıcı RET olan mevzuat/compliance kapsamı ayrılmalıdır",
+      "Kullanıcı beyanı ile bağımsız denetim sonucu aynı güven seviyesinde gösterilmemelidir",
+      "Kusur sözlüğü kategoriye göre büyür ve yönetişim ister",
+      "CAPA akışı tek kişi için gereğinden ağır hale gelebilir"
+    ]
+  },
+  {
+    "harf": "V",
+    "ad": "Sipariş Değişiklik Kontrolü",
+    "amaç": "Yayımlanmış siparişte tarih, miktar, fiyat, şartname veya sevkiyat planı değiştiğinde tarafların aynı güncel sürüm üzerinde uzlaşmasını sağlamak.",
+    "kapsam": [
+      "PO/sipariş başlığı yerine satır düzeyinde kabul, ret ve değişiklik önerisi",
+      "Tarih, miktar, DDP fiyat, koli, şartname ve ödeme planı için resmî değişiklik talebi",
+      "Eski-yeni değer, gerekçe, öneren taraf, tarih ve etkilenen kayıtların fark görünümü",
+      "Kabul et, reddet, karşı öner ve kısmen kabul et eylemleri",
+      "Firma teyidi ile iç onayı ayrı durumlar olarak tutma",
+      "Farklı üretim partileri veya taşıma biçimleri için bölünmüş sevkiyat önerisi",
+      "Değişikliğin CBM, landed cost, termin, kalite planı ve etiket/ambalaj sürümüne etkisi",
+      "Kabul edilen değişiklikten yeni değişmez sipariş revizyonu üretme",
+      "Çakışan eşzamanlı değişiklikleri kilitleme ve yeniden baz alma",
+      "WhatsApp/Excel köprüsünden gelen değişikliği insan onaylı taslak olarak içeri alma"
+    ],
+    "boy": "M",
+    "bağımlılık": ["C", "D", "Q"],
+    "emsal": [
+      "SourceDay — PO acknowledgment, değişiklik ve istisna işbirliği",
+      "ServiceNow Purchase Order Management — tedarikçi değişikliğini kabul/yeniden önerme",
+      "Anvyl — yayımlanmış PO düzenleme ve split shipment",
+      "Coupa Purchase Order Collaboration — başlık/satır düzeyinde kabul-ret ve mesaj"
+    ],
+    "risk": [
+      "Mevcut 5-10 durum makinesini değiştirmeden ayrı revizyon alt durumu tasarlanmalıdır",
+      "Kısmi kabul sipariş toplamları ve ödeme takviminde karmaşıklık yaratır",
+      "WhatsApp'tan alınan serbest metin kesin değişiklik olarak otomatik uygulanamaz",
+      "Eski revizyonla işlem yapılmasını engelleyen görünür sürüm işaretleri gerekir"
+    ]
+  },
+  {
+    "harf": "W",
+    "ad": "İstisna ve Müdahale Merkezi",
+    "amaç": "Normal akıştan sapan teklif, sipariş, kalite ve sevkiyat olaylarını tek bir öncelikli iş kuyruğunda tespit edip sonuçlandırmak.",
+    "kapsam": [
+      "Eksik teyit, geciken kilometre taşı, süresi dolan teklif, fiyat/miktar farkı ve eksik kanıt kuralları",
+      "İstisna türü, önem, yaş, etkilenen tutar/adet ve bekleyen taraf alanları",
+      "Panorama ve Gelen Kutusu içinde tekil istisna kuyruğu; yeni bildirim kanalı açmama",
+      "Her vakada sahibi, sıradaki eylem, hedef tarih ve çözüm durumu",
+      "Kabul et, karşı öner, alternatif plan, bölünmüş sevkiyat, yeniden kontrol ve beklet gibi müdahale oyun kitapları",
+      "Benzer kayıtları tek vakada birleştirme ve bir vakayı birden çok sipariş satırına bağlama",
+      "Etki analizi: termin, DDP/landed cost, kalite, müşteri listesi ve yük planı",
+      "Çözüm kanıtı ve kapanış nedeni; tekrar açma ve yanlış pozitif işaretleme",
+      "Yaşlanan ve sık tekrarlanan istisnalar için uygulama içi öncelik yükseltme",
+      "Kuralın neden tetiklendiğini ve hangi verinin eksik/aykırı olduğunu açıklama"
+    ],
+    "boy": "L",
+    "bağımlılık": ["B", "D", "U", "V"],
+    "emsal": [
+      "ServiceNow Purchase Order Management — PO istisnası, görev ve müdahale akışı",
+      "SourceDay — gecikme, eksik teyit, fiyat ve miktar değişikliği görünürlüğü",
+      "Alibaba Trade Assurance — karşılanmayan sipariş şartında kanıtlı çözüm/uyuşmazlık mantığı"
+    ],
+    "risk": [
+      "Aşırı hassas kurallar alarm yorgunluğu yaratır",
+      "Mevcut bildirim ve durum kavramlarıyla çift kayıt oluşabilir",
+      "İstisna kapanışı ana kayıttaki sorunu gerçekten çözmeden yapılmamalıdır",
+      "Tetikleyici kurallar sürümlenmezse geçmiş vakalar açıklanamaz hale gelir"
+    ]
+  },
+  {
+    "harf": "X",
+    "ad": "Tekrar Sipariş ve Ürün Hafızası",
+    "amaç": "Daha önce alınmış bir ürünü sıfırdan araştırmak yerine doğrulanmış geçmiş, değişen koşullar ve öğrenilmiş derslerle güvenli bir yeni sipariş adayına dönüştürmek.",
+    "kapsam": [
+      "Tamamlanmış siparişten değişmez known-good ürün dosyası üretme",
+      "Son onaylı şartname, varyant, ambalaj, etiket, golden sample ve kalite sonucu bağlantıları",
+      "Önceki DDP, MOQ, kur snapshot'ı, termin, koli ölçüsü, CBM ve gerçekleşen landed cost özeti",
+      "Tekrar sipariş taslağında aynen kullan, yeniden doğrula ve değiştirilmiş olarak işaretle seçenekleri",
+      "Yeni teklif ile son alım arasında fiyat, termin, MOQ, şartname ve ambalaj farkı",
+      "Önceki istisna, kusur, rücu ve düzeltici faaliyet derslerinin görünür uyarısı",
+      "Eski ürün sayfası kaybolmuşsa kanonik görsel ve şartname üzerinden yeniden 同款 arama başlangıcı",
+      "Tekrar sipariş kontrol listesi ve zorunlu yeniden teyit tarihleri",
+      "Bir siparişten yeni siparişe belge kopyalamak yerine sürümlü referans verme",
+      "Stok seviyesi, satış API'si veya otomatik replenishment önerisi üretmeme"
+    ],
+    "boy": "M",
+    "bağımlılık": ["D", "S", "U", "V"],
+    "emsal": [
+      "Anvyl/Sage Supply Chain Intelligence — kayıtlı parça/tedarikçi verisiyle PO oluşturma ve sipariş zaman çizgisi",
+      "SourceDay — açık PO taahhütleri ve değişiklik geçmişi",
+      "Airtable record templates — mevcut kayda kontrollü şablon uygulama"
+    ],
+    "risk": [
+      "Geçmişte doğru olan şartlar yeni siparişte sessizce geçerli varsayılmamalıdır",
+      "Kopyalama yerine referans/sürüm modeli kurulmazsa veri ayrışır",
+      "Stok ve satış tahmini RET'ine kayma riski vardır",
+      "Eski kalite problemi görünür fakat çözülmüşse gereksiz engel oluşturmamalıdır"
+    ]
+  },
+  {
+    "harf": "Y",
+    "ad": "Kural ve Otomasyon Atölyesi",
+    "amaç": "Tekrarlanan uygulama içi kontrol ve hazırlık işlerini görünür, güvenli ve geri alınabilir kurallarla otomatikleştirirken satın alma kararını insanda bırakmak.",
+    "kapsam": [
+      "Olay-koşul-eylem biçiminde no-code kural oluşturucu",
+      "Teklif süresi, kilometre taşı, veri tamlığı, kalite sonucu ve istisna yaşı tetikleyicileri",
+      "Uygulama içi görev oluşturma, alan önerme, görünüm/kuyruğa ekleme ve taslak üretme eylemleri",
+      "Çalıştırmadan önce örnek kayıtlarla etki önizlemesi ve dry-run",
+      "İnsan onayı gerektiren eylemler ile güvenli otomatik eylemlerin açık ayrımı",
+      "Aynı olayın iki kez işlenmesini önleyen idempotency anahtarı",
+      "Kural sürümü, çalışma günlüğü, başarı/kısmi hata/atlandı sonuçları",
+      "Kuralı duraklatma, geri alma, yeniden çalıştırma ve geçmiş sürüme dönme",
+      "Hazır oyun kitabı şablonları: süresi dolacak teklif, geciken teyit, eksik şartname, yeniden kontrol",
+      "E-posta/push gönderme, resmî platform API'si çağırma veya otomatik sipariş verme eylemlerini sunmama"
+    ],
+    "boy": "L",
+    "bağımlılık": ["G", "P", "W"],
+    "emsal": [
+      "Airtable Automations — tetikleyici/eylem ve çalışma geçmişi",
+      "Notion repeating database templates — tekrarlanan kayıt şablonları",
+      "SourceDay — kurallı PO iş akışları ve istisna yönlendirmesi",
+      "ServiceNow — PO istisnası görev ve müdahale akışları"
+    ],
+    "risk": [
+      "Kural döngüsü, yinelenen görev ve görünmeyen yan etki riski",
+      "Tek kullanıcı için fazla genel no-code motor gereksiz ürün karmaşıklığı yaratabilir",
+      "Geri alma her dışa aktarım veya paylaşılan portal etkisini geri çeviremez",
+      "Kural motoru mevcut durum makinesini izinsiz atlamamalıdır"
+    ]
+  },
+  {
+    "harf": "Z",
+    "ad": "Uyarlanabilir Veri Katmanı",
+    "amaç": "Çekirdek durum ve sözlükleri bozmadan yeni ürün kategorileri ile operasyon ayrıntılarına özel alan, formül ve görünüm eklenebilmesini sağlamak.",
+    "kapsam": [
+      "Ürün, teklif, sipariş, firma ve kalite kayıtlarında yönetilen özel alanlar",
+      "Metin, sayı, para, tarih, seçim, çoklu seçim, bağlantı, dosya ve evet/hayır alan tipleri",
+      "Basit, deterministik formül alanları ve bağımlılık grafiği",
+      "Kategoriye veya kayıt türüne göre alan seti ve varsayılan görünüm şablonları",
+      "Çekirdek alanları koruyan, yalnız izinli özel alanlarda düzenleme yapan güvenlik sınırı",
+      "Alan adı, açıklama, birim, zorunluluk, görünürlük ve TR/EN/ZH çıktı etiketi",
+      "Alan arşivleme, yeniden adlandırma ve tip değişikliğinde etki analizi",
+      "Akıllı yapıştırma/CSV eşlemede özel alanları tip güvenli hedef olarak kullanma",
+      "Formül ve özel alanların kayıtlı görünüm, filtre, rapor ve dışa aktarıma katılması",
+      "Şema sürümü, kullanım sayısı ve bozuk formül/veri göçü sağlık ekranı"
+    ],
+    "boy": "L",
+    "bağımlılık": ["A", "G", "M", "P", "Y"],
+    "emsal": [
+      "Attio — sistem/özel attributes ve formül attributes",
+      "Airtable — typed fields, views ve linked records",
+      "Notion — database properties, relations ve rollups"
+    ],
+    "risk": [
+      "Durum makinesi ve 5B terim kaynağı özel alanlarla gölgelenmemelidir",
+      "Kontrolsüz özel alan çoğalması aynı anlamda mükerrer veri üretir",
+      "Alan tipi değişikliği veri kaybı ve çıktı uyumsuzluğu yaratabilir",
+      "Formül motoru güvenlik, performans ve döngü tespiti gerektirir",
+      "Bu faz alan modeli oturmadan erken yapılırsa teknik borcu kalıcılaştırır"
+    ]
+  }
+]
