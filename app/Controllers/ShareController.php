@@ -131,7 +131,7 @@ final class ShareController extends ApiController
             ActivityLog::ACTOR_ADMIN,
             $this->user($request)->id,
         );
-        $this->bildirim?->yayimla(
+        $this->bildirim?->guvenliYayimla(
             'NTF-SHARE-KEY-RENEWED',
             ['liste_id' => (int) $row['id'], 'liste_adi' => (string) $row['name']],
             $auditId,
@@ -252,7 +252,7 @@ final class ShareController extends ApiController
             ActivityLog::ACTOR_ADMIN,
             $this->user($request)->id,
         );
-        $this->bildirim?->yayimla(
+        $this->bildirim?->guvenliYayimla(
             'NTF-SHARE-CREATED',
             ['liste_id' => (int) $row['id'], 'liste_adi' => (string) $row['name']],
             $auditId,
@@ -305,7 +305,7 @@ final class ShareController extends ApiController
             ActivityLog::ACTOR_ADMIN,
             $this->user($request)->id,
         );
-        $this->bildirim?->yayimla(
+        $this->bildirim?->guvenliYayimla(
             'NTF-SHARE-REVOKED',
             ['liste_id' => (int) $row['id'], 'liste_adi' => (string) $row['name']],
             $auditId,

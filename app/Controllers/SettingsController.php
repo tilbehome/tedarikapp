@@ -124,7 +124,7 @@ final class SettingsController extends ApiController
             ActivityLog::ACTOR_ADMIN,
             $kullanici->id,
         );
-        $this->bildirim?->yayimla('NTF-SETTINGS-CHANGED', [
+        $this->bildirim?->guvenliYayimla('NTF-SETTINGS-CHANGED', [
             'kullanici_id' => $this->user($request)->id,
             'sekme_kodu' => 'genel',
             'ayar_grubu' => 'genel',
@@ -177,7 +177,7 @@ final class SettingsController extends ApiController
             \App\Services\ActivityLog::ACTOR_ADMIN,
             $this->user($request)->id,
         );
-        $this->bildirim?->yayimla('NTF-SETTINGS-CHANGED', [
+        $this->bildirim?->guvenliYayimla('NTF-SETTINGS-CHANGED', [
             'kullanici_id' => $this->user($request)->id,
             'sekme_kodu' => 'paylasim',
             'ayar_grubu' => 'paylasim',
@@ -237,7 +237,7 @@ final class SettingsController extends ApiController
             \App\Services\ActivityLog::ACTOR_ADMIN,
             $this->user($request)->id,
         );
-        $this->bildirim?->yayimla('NTF-SETTINGS-CHANGED', [
+        $this->bildirim?->guvenliYayimla('NTF-SETTINGS-CHANGED', [
             'kullanici_id' => $this->user($request)->id,
             'sekme_kodu' => 'ciktilar',
             'ayar_grubu' => 'ciktilar',
@@ -269,7 +269,7 @@ final class SettingsController extends ApiController
             ActivityLog::ACTOR_ADMIN,
             $this->user($request)->id,
         );
-        $this->bildirim?->yayimla('NTF-SETTINGS-CHANGED', [
+        $this->bildirim?->guvenliYayimla('NTF-SETTINGS-CHANGED', [
             'kullanici_id' => $this->user($request)->id,
             'sekme_kodu' => 'guvenlik',
             'ayar_grubu' => 'guvenlik',
@@ -298,7 +298,7 @@ final class SettingsController extends ApiController
             ActivityLog::ACTOR_ADMIN,
             $this->user($request)->id,
         );
-        $this->bildirim?->yayimla('NTF-SETTINGS-CHANGED', [
+        $this->bildirim?->guvenliYayimla('NTF-SETTINGS-CHANGED', [
             'kullanici_id' => $this->user($request)->id,
             'sekme_kodu' => 'guvenlik',
             'ayar_grubu' => 'guvenlik',
@@ -400,7 +400,7 @@ final class SettingsController extends ApiController
                     ActivityLog::ACTOR_ADMIN,
                     $this->user($request)->id,
                 );
-                $this->bildirim?->yayimla('NTF-FX-UPDATED', [
+                $this->bildirim?->guvenliYayimla('NTF-FX-UPDATED', [
                     'kullanici_id' => $this->user($request)->id,
                     'kur_ozeti' => implode(', ', array_map(
                         static fn (array $c): string => $c['currency'] . ' ' . $c['value'],

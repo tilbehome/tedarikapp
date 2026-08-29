@@ -98,6 +98,28 @@ export default function VeriBakim() {
           </div>
         ) : null}
 
+        {/* K102: kayıt sonrası yazılamayan bildirim. Birincil eylem düşmedi
+            ama olay KAYBOLDU — sessiz kalmamalı. */}
+        {(statusState.data?.bildirim_hatalari.sayi ?? 0) > 0 ? (
+          <div
+            className="mt-3 rounded-lg border border-err/40 bg-err-bg p-3 text-sm"
+            data-testid="bildirim-hatasi"
+          >
+            <b className="text-err">
+              {statusState.data?.bildirim_hatalari.sayi} bildirim yazılamadı
+            </b>
+            <p className="mt-0.5 text-xs text-ink-2">
+              İşlemleriniz kaydedildi ama bu olaylar bildirim merkezine düşmedi.
+              Yukarıdaki katalog satırları kırmızıysa sebebi odur.
+            </p>
+            {statusState.data?.bildirim_hatalari.son !== null ? (
+              <code className="mt-1 block break-all text-xs text-ink-3">
+                {statusState.data?.bildirim_hatalari.son}
+              </code>
+            ) : null}
+          </div>
+        ) : null}
+
         {statusState.data && statusState.data.migrations.pending_count > 0 ? (
           <MigrationActions onDone={statusState.reload} />
         ) : null}

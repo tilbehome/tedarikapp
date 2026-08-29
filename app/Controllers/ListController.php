@@ -571,7 +571,7 @@ final class ListController extends ApiController
         );
 
         foreach ($olaylar as $olayKodu) {
-            $this->bildirim?->yayimla(
+            $this->bildirim?->guvenliYayimla(
                 $olayKodu,
                 $baglam + ['liste_id' => $listId, 'kullanici_id' => $user->id],
                 $auditId,

@@ -131,7 +131,7 @@ final class PublicRoutes
                 $shareGate->recordInvalid($ip, $token, $now);
                 // IP HAM HALIYLE TASINMAZ: birlestirme anahtari `paylasim_id+ip_hash`
                 // ister; ozetlenmis deger K51 log disiplinidir.
-                $services->bildirim->yayimla('NTF-SHARE-INVALID-ACCESS', [
+                $services->bildirim->guvenliYayimla('NTF-SHARE-INVALID-ACCESS', [
                     'paylasim_id' => substr($token, 0, 8),
                     'ip_hash' => substr(hash('sha256', $ip), 0, 16),
                 ]);
@@ -221,7 +221,7 @@ final class PublicRoutes
                 $shareGate->recordInvalid($ip, $token, $now);
                 // IP HAM HALIYLE TASINMAZ: birlestirme anahtari `paylasim_id+ip_hash`
                 // ister; ozetlenmis deger K51 log disiplinidir.
-                $services->bildirim->yayimla('NTF-SHARE-INVALID-ACCESS', [
+                $services->bildirim->guvenliYayimla('NTF-SHARE-INVALID-ACCESS', [
                     'paylasim_id' => substr($token, 0, 8),
                     'ip_hash' => substr(hash('sha256', $ip), 0, 16),
                 ]);
@@ -254,7 +254,7 @@ final class PublicRoutes
                     \App\Services\ActivityLog::ACTOR_SYSTEM,
                     null,
                 );
-                $services->bildirim->yayimla('NTF-SHARE-RATE-LIMITED', [
+                $services->bildirim->guvenliYayimla('NTF-SHARE-RATE-LIMITED', [
                     'liste_id' => (int) $row['id'],
                     'liste_adi' => (string) $row['name'],
                 ], $auditId);

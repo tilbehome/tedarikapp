@@ -588,7 +588,7 @@ final class TranslationController extends ApiController
 
         // V3-B A3/C3: sözlük içe aktarımı bildirim doğurur (NTF-GLOSSARY-IMPORTED).
         if ($auditId !== null) {
-            $this->bildirim?->yayimla('NTF-GLOSSARY-IMPORTED', [
+            $this->bildirim?->guvenliYayimla('NTF-GLOSSARY-IMPORTED', [
                 'dil' => $dil,
                 'terim_sayisi' => $eklenen,
                 'surum' => $this->glossary->surum(),

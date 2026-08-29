@@ -132,7 +132,7 @@ final class KuyrukIsleyicileri
                 // yeniden deneme/ölüm kararını kendi verir, biz yalnız haber
                 // veririz. Sırayı ters çevirmek, ölen işin hiç duyulmaması
                 // demekti — D12'nin "sessiz başarısızlık" dersi.
-                $bildirim?->yayimla('NTF-TRANSLATION-JOB-FAILED', [
+                $bildirim?->guvenliYayimla('NTF-TRANSLATION-JOB-FAILED', [
                     'dil' => $kaynakDil,
                     'hata_kodu' => \App\Services\Kuyruk\HataSinifi::siniflandir($hata)['sinif'],
                     'urun_id' => $urunId,
@@ -142,7 +142,7 @@ final class KuyrukIsleyicileri
                 throw $hata;
             }
 
-            $bildirim?->yayimla('NTF-TRANSLATION-BATCH-COMPLETE', [
+            $bildirim?->guvenliYayimla('NTF-TRANSLATION-BATCH-COMPLETE', [
                 'dil' => $kaynakDil,
                 'urun_id' => $urunId,
                 'urun_adi' => (string) $urun['name'],

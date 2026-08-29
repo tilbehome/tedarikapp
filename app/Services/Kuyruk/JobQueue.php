@@ -74,7 +74,7 @@ final class JobQueue
      */
     private function duyur(string $olayKodu, array $baglam): void
     {
-        $this->bildirim?->yayimla($olayKodu, $baglam);
+        $this->bildirim?->guvenliYayimla($olayKodu, $baglam);
     }
 
     /**
@@ -112,7 +112,7 @@ final class JobQueue
             null,
         );
 
-        $this->bildirim->yayimla($olayKodu, $baglam, $auditId);
+        $this->bildirim->guvenliYayimla($olayKodu, $baglam, $auditId);
     }
 
     /**

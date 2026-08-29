@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace App\Services\Bildirim;
 
 use App\Core\Clock;
+use App\Models\SettingsRepository;
 use InvalidArgumentException;
+use Psr\Log\LoggerInterface;
+use Throwable;
 
 /**
  * BİLDİRİM YAYINCISI (V3-B A2) — olayların tek çıkış kapısı.
@@ -40,7 +43,103 @@ final class BildirimYayinci
         private readonly BildirimKatalogu $katalog,
         private readonly GrupAnahtariCozucu $cozucu,
         private readonly Clock $clock,
+        // K102: kayıt SONRASI yayında hatayı sayacak yer. Null ise sayaç
+        // tutulmaz ama hata yine loglanır — sessizlik hiçbir hâlde olmaz.
+        private readonly ?SettingsRepository $ayarlar = null,
+        private readonly ?LoggerInterface $logger = null,
     ) {
+    }
+
+    /** Ayar anahtarı: art arda kaç bildirim yazılamadı. */
+    public const KEY_HATA_SAYISI = 'bildirim_hata_sayisi';
+
+    /** Ayar anahtarı: son bildirim hatasının metni ve zamanı. */
+    public const KEY_SON_HATA = 'bildirim_son_hata';
+
+    /**
+     * TEK KURAL: TRANSACTION İÇİNDEYSE AT, DIŞINDAYSA SAY (K102).
+     *
+     * Bütün çağrı noktaları bunu kullanır; hangi noktanın transaction içinde
+     * olduğunu tek tek bilmek gerekmez — kural kendini uygular ve bir çağrı
+     * noktası ileride transaction'a taşınırsa davranış kendiliğinden değişir.
+     *
+     * · İÇERİDE: istisna YUKARI VERİLİR. Birincil kayıt geri alınır. Ya ikisi
+     *   de olur ya hiçbiri; yarım kalmış bir kayıt kalmaz.
+     * · DIŞARIDA: birincil kayıt ZATEN COMMIT OLMUŞTUR. İstisnayı yukarı
+     *   vermek, başarıyla kaydedilmiş bir listeyi kullanıcıya 500 olarak
+     *   göstermek olurdu. Bunun yerine KRİTİK log + "son bildirim hatası"
+     *   sayacı; birincil eylem DÜŞMEZ ama hata GÖRÜNÜR — Ayarlar > Sistem
+     *   durumu bu sayacı basar.
+     *
+     * Sözleşme ihlalleri (`InvalidArgumentException` — bilinmeyen olay kodu,
+     * tanımsız atom, eksik audit) HER İKİ HÂLDE de yukarı verilir: onlar
+     * çalışma zamanı arızası değil GELİŞTİRİCİ hatasıdır ve testte görülmeli.
+     *
+     * @param  array<string, scalar|null> $baglam
+     * @return int|null kayıt sonrası hata hâlinde null
+     */
+    public function guvenliYayimla(string $olayKodu, array $baglam = [], ?int $auditId = null): ?int
+    {
+        if ($this->depo->islemIcindeMi()) {
+            return $this->yayimla($olayKodu, $baglam, $auditId);
+        }
+
+        try {
+            $id = $this->yayimla($olayKodu, $baglam, $auditId);
+            $this->hataSayaciniSifirla();
+
+            return $id;
+        } catch (InvalidArgumentException $hata) {
+            throw $hata;
+        } catch (Throwable $hata) {
+            $this->hatayiKaydet($olayKodu, $hata);
+
+            return null;
+        }
+    }
+
+    private function hatayiKaydet(string $olayKodu, Throwable $hata): void
+    {
+        $this->logger?->critical('Bildirim yazılamadı — olay KAYBOLDU', [
+            'olay_kodu' => $olayKodu,
+            'hata' => $hata->getMessage(),
+            'karar' => 'K102',
+        ]);
+
+        if ($this->ayarlar === null) {
+            return;
+        }
+
+        try {
+            $sayi = (int) ($this->ayarlar->get(self::KEY_HATA_SAYISI, '0') ?? '0');
+            $this->ayarlar->set(self::KEY_HATA_SAYISI, (string) ($sayi + 1));
+            $this->ayarlar->set(self::KEY_SON_HATA, sprintf(
+                '%s · %s · %s',
+                $this->clock->now()->format(DATE_ATOM),
+                $olayKodu,
+                mb_substr($hata->getMessage(), 0, 300),
+            ));
+        } catch (Throwable) {
+            // Sayacı yazamamak, asıl hatayı gizlemek için sebep değil: log
+            // zaten düştü. Buradan yeni bir istisna çıkarmak, kayıt sonrası
+            // yolu yine 500'e çevirirdi.
+        }
+    }
+
+    /** Başarılı yayında sayaç sıfırlanır — eski bir arıza sonsuza dek kırmızı kalmaz. */
+    private function hataSayaciniSifirla(): void
+    {
+        if ($this->ayarlar === null) {
+            return;
+        }
+
+        try {
+            if ((int) ($this->ayarlar->get(self::KEY_HATA_SAYISI, '0') ?? '0') > 0) {
+                $this->ayarlar->set(self::KEY_HATA_SAYISI, '0');
+            }
+        } catch (Throwable) {
+            // Sayaç yazılamadı; yayın başarılıydı, akış etkilenmez.
+        }
     }
 
     /**

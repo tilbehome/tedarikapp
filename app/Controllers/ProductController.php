@@ -1038,7 +1038,7 @@ final class ProductController extends ApiController
         );
 
         foreach ($olaylar as $olayKodu) {
-            $this->bildirim?->yayimla($olayKodu, $baglam + ['kullanici_id' => $kullaniciId], $auditId);
+            $this->bildirim?->guvenliYayimla($olayKodu, $baglam + ['kullanici_id' => $kullaniciId], $auditId);
         }
     }
 }

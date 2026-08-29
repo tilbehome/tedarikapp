@@ -82,7 +82,7 @@ final class EsikSupurmesi
 
         try {
             foreach ($this->sapanListeler() as $liste) {
-                $this->yayinci->yayimla(
+                $this->yayinci->guvenliYayimla(
                     'NTF-LIST-RATE-DRIFT',
                     $liste,
                     $this->denetimIzi('list', (int) $liste['liste_id'], 'rate_drift_detected', sprintf(
@@ -128,7 +128,7 @@ final class EsikSupurmesi
             return false;
         }
 
-        $this->yayinci->yayimla(
+        $this->yayinci->guvenliYayimla(
             'NTF-QUEUE-STALLED',
             ['bekleme_dakika' => $enEski, 'bekleyen' => $saglik['bekleyen']],
             $this->denetimIzi('job', null, 'queue_stalled', sprintf(

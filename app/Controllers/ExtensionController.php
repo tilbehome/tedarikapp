@@ -55,7 +55,7 @@ final class ExtensionController extends ApiController
         /** @var array<string, mixed> $kaynak */
         $kaynak = is_array($payload['source'] ?? null) ? $payload['source'] : [];
 
-        $this->bildirim->yayimla($olayKodu, $ek + [
+        $this->bildirim->guvenliYayimla($olayKodu, $ek + [
             'platform' => is_scalar($kaynak['platform'] ?? null) ? (string) $kaynak['platform'] : null,
             'cihaz_id' => is_scalar($payload['capture_id'] ?? null) ? (string) $payload['capture_id'] : null,
             'urun_adi' => is_scalar($payload['name'] ?? null) ? (string) $payload['name'] : null,

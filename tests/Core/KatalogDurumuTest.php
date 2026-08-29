@@ -109,6 +109,99 @@ final class KatalogDurumuTest extends TestCase
         $yayinci->yayimla('NTF-LIST-CREATED', ['liste_id' => 1], 42);
     }
 
+    public function testKAYITSONRASIYAYINBIRINCILEYLEMIDUSURMEZ(): void
+    {
+        // K102 — TRANSACTION DIŞINDA: birincil kayıt ZATEN COMMIT olmuştur.
+        // Bildirim yazılamazsa istisna yukarı verilmez; sayaç artar, log düşer.
+        $pdo = $this->hazirPdo();
+        $baglanti = Connection::fromCallable(fn (): PDO => $pdo);
+        $ayarlar = new \App\Models\SettingsRepository($baglanti);
+
+        $yayinci = new BildirimYayinci(
+            new BildirimRepository($baglanti),
+            new BildirimKatalogu($this->bosKok),
+            new GrupAnahtariCozucu(),
+            new FrozenClock(),
+            $ayarlar,
+        );
+
+        self::assertFalse($pdo->inTransaction(), 'Ön koşul: transaction DIŞINDAYIZ.');
+
+        $sonuc = $yayinci->guvenliYayimla('NTF-LIST-CREATED', ['liste_id' => 1], 42);
+
+        self::assertNull($sonuc, 'Kayıt sonrası hata istisna atmamalı.');
+        self::assertSame(
+            '1',
+            $ayarlar->get(BildirimYayinci::KEY_HATA_SAYISI),
+            'Hata SAYILMALI — yutulmuş değil, GÖRÜNÜR.',
+        );
+        self::assertStringContainsString(
+            'NTF-LIST-CREATED',
+            (string) $ayarlar->get(BildirimYayinci::KEY_SON_HATA),
+            'Son hata hangi olayda olduğunu söylemeli.',
+        );
+    }
+
+    public function testTRANSACTIONICINDEHATAYUKARIVERILIR(): void
+    {
+        // K102 — TRANSACTION İÇİNDE: ya ikisi de olur ya hiçbiri. İstisna
+        // yukarı verilir ki birincil kayıt da geri alınsın.
+        $pdo = $this->hazirPdo();
+        $baglanti = Connection::fromCallable(fn (): PDO => $pdo);
+
+        $yayinci = new BildirimYayinci(
+            new BildirimRepository($baglanti),
+            new BildirimKatalogu($this->bosKok),
+            new GrupAnahtariCozucu(),
+            new FrozenClock(),
+            new \App\Models\SettingsRepository($baglanti),
+        );
+
+        $pdo->beginTransaction();
+
+        try {
+            $yayinci->guvenliYayimla('NTF-LIST-CREATED', ['liste_id' => 1], 42);
+            self::fail('Transaction içinde istisna YUKARI VERİLMELİYDİ.');
+        } catch (RuntimeException $hata) {
+            self::assertStringContainsString('Bildirim olay kataloğu okunamadı', $hata->getMessage());
+        } finally {
+            $pdo->rollBack();
+        }
+    }
+
+    public function testBASARILIYAYINSAYACISIFIRLAR(): void
+    {
+        // Eski bir arıza sonsuza dek kırmızı kalmamalı.
+        $pdo = $this->hazirPdo();
+        $baglanti = Connection::fromCallable(fn (): PDO => $pdo);
+        $ayarlar = new \App\Models\SettingsRepository($baglanti);
+        $ayarlar->set(BildirimYayinci::KEY_HATA_SAYISI, '7');
+
+        $yayinci = new BildirimYayinci(
+            new BildirimRepository($baglanti),
+            new BildirimKatalogu(dirname(__DIR__, 2)),
+            new GrupAnahtariCozucu(),
+            new FrozenClock(),
+            $ayarlar,
+        );
+
+        $yayinci->guvenliYayimla('NTF-LIST-CREATED', ['liste_id' => 1, 'liste_adi' => 'X'], 42);
+
+        self::assertSame('0', $ayarlar->get(BildirimYayinci::KEY_HATA_SAYISI));
+    }
+
+    /** Bildirim + ayar tabloları hazır bir bellek içi veritabanı. */
+    private function hazirPdo(): PDO
+    {
+        $pdo = new PDO('sqlite::memory:', null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+        /** @var \App\Core\Migration $migration */
+        $migration = require dirname(__DIR__, 2) . '/migrations/0035_bildirimler.php';
+        $migration->up($pdo);
+        $pdo->exec('CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT NULL)');
+
+        return $pdo;
+    }
+
     public function testKATALOGVARSAYAYINCICALISIR(): void
     {
         $pdo = new PDO('sqlite::memory:', null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
