@@ -468,7 +468,7 @@ jobs:
       - name: Üretim bundle'ı + Store zip'i
         run: npm run zip
       - name: Zip'i artefakt olarak yükle
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4 (E4: SHA pin)
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4 (E4: SHA pin)
         with:
           name: eklenti-zip
           path: extension/dist/*.zip
@@ -627,7 +627,7 @@ jobs:
 
       - name: Playwright raporu
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-raporu
           path: e2e/playwright-report
