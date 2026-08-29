@@ -44,7 +44,7 @@ jobs:
         run: composer validate --strict
 
       - name: Composer önbelleği
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.composer/cache
           key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
@@ -147,7 +147,7 @@ jobs:
           tools: none
 
       - name: Composer önbelleği
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.composer/cache
           key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
@@ -243,7 +243,7 @@ jobs:
           tools: none
 
       - name: Composer önbelleği
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.composer/cache
           key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
@@ -354,7 +354,7 @@ jobs:
           tools: none
 
       - name: Composer önbelleği
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4 (E4: SHA pin)
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v4 (E4: SHA pin)
         with:
           path: ~/.composer/cache
           key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
@@ -511,7 +511,7 @@ jobs:
           tools: none
 
       - name: Composer önbelleği
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.composer/cache
           key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
@@ -572,7 +572,7 @@ jobs:
       # Tarayıcı ikilisi önbelleğe alınır: anahtar KİLİT DOSYASININ özetidir, yani
       # Playwright sürümü değişince (ve yalnız o zaman) yeni indirme yapılır.
       - name: Playwright tarayıcı önbelleği
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('e2e/package-lock.json') }}
