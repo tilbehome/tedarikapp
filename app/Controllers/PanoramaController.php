@@ -34,7 +34,7 @@ final class PanoramaController extends ApiController
             return Response::error(
                 $response,
                 'KATALOG_EKSIK',
-                $hata . ' Ayarlar > Veri & Bakım > Sistem durumu bölümünde ayrıntısı var.',
+                $hata . ' Ayarlar > Sistem & Yedekler bölümünde ayrıntısı var.',
                 503,
             );
         }
