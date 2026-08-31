@@ -471,6 +471,8 @@ final class AppBuilder
                 new SettingsRepository($connection),
                 $services->activity,
                 $services->clock,
+                // C4: gizlenen hataların ayrıntısı yalnız günlüğe.
+                $logger,
             ),
             $activityController,
             $listController,

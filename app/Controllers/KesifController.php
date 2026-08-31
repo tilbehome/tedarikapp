@@ -40,6 +40,12 @@ final class KesifController
         private readonly SettingsRepository $settings,
         private readonly ActivityLog $activity,
         private readonly Clock $clock,
+        /**
+         * v1.2.1 C4 — gizlenen hataların ayrıntısı buraya yazılır. Opsiyonel:
+         * eski çağrılar ve bakım betikleri logger'sız kurabilir; o hâlde
+         * ayrıntı kaybolur ama YANIT yine sızdırmaz.
+         */
+        private readonly ?\Psr\Log\LoggerInterface $logger = null,
     ) {
     }
 
@@ -59,13 +65,34 @@ final class KesifController
         try {
             $sonuc = $motor->calistir($suzgec);
         } catch (Throwable $e) {
-            // Keşif tabloları (listings) henüz kurulmamışsa ekran ÇÖKMEZ.
+            // C4: "HER Throwable → kurulu:false" KALKTI. Bozuk bir SQL, düşen
+            // bir bağlantı ya da program hatası, kullanıcıya "tablolar hazır
+            // değil" diye gösteriliyordu; gerçek arıza bekleyen bir migration
+            // gibi görünüyor ve kimse doğru yere bakmıyordu. Üstelik yanıt ham
+            // istisna metnini 200 OK gövdesinde taşıyordu.
+            if (!\App\Core\GizliHata::tabloYokMu($e)) {
+                $kimlik = $this->logger === null
+                    ? null
+                    : \App\Core\GizliHata::kaydet($e, $this->logger, 'kesif.index');
+
+                return Response::error(
+                    $response,
+                    'SERVER_ERROR',
+                    'Keşif sorgusu çalıştırılamadı. Sorun sürerse destek kaydında hata kimliğini belirtin.',
+                    500,
+                    [],
+                    [],
+                    $kimlik,
+                );
+            }
+
+            // DOĞRULANMIŞ "tablo yok": kurulum yarım ya da migration bekliyor.
+            // Ekran çökmez, sebebi söyler — ama teknik ayrıntı TAŞIMAZ.
             return Response::success($response, [
                 'kurulu' => false,
                 'mesaj' => 'Keşif havuzu tabloları hazır değil — veritabanı güncellemesi bekliyor olabilir.',
                 'satirlar' => [],
                 'toplam' => 0,
-                'hata' => $e->getMessage(),
             ]);
         }
 

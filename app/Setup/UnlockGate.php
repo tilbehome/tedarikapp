@@ -31,6 +31,9 @@ final class UnlockGate
     public const ACTION_SUCCESS = 'setup_unlock';
     public const ACTION_FAILED = 'setup_unlock_failed';
 
+    /** C5: kimliksiz sahiplik sorgusu — tarama izi. */
+    public const ACTION_OWNER_CHECK = 'owner_check';
+
     private const ENTITY = 'setup';
     private const MAX_ATTEMPTS = 3;
     private const BASE_LOCK_MINUTES = 1;
@@ -191,6 +194,22 @@ final class UnlockGate
         }
 
         return is_string($secret) && $secret !== '';
+    }
+
+    /**
+     * SAHİPLİK SORGUSU İZİ (v1.2.1 C5) — kimliksiz uçtan gelen tarama görünsün.
+     *
+     * E-POSTA HAM YAZILMAZ: iz gerekli ama günlüğe adres dökmek, günlüğü
+     * okuyabilen birine hazır bir hesap listesi verir (K51). Kısa özet, aynı
+     * adresin tekrar tekrar sorulduğunu göstermeye yeter.
+     */
+    public function recordOwnerCheck(string $ip, ?string $email, DateTimeImmutable $now): void
+    {
+        $ozet = is_string($email) && trim($email) !== ''
+            ? substr(hash('sha256', strtolower(trim($email))), 0, 12)
+            : 'bos';
+
+        $this->record(self::ACTION_OWNER_CHECK, 'Sahiplik sorgusu · eposta_ozeti:' . $ozet, $ip, $now);
     }
 
     public function recordFailure(string $ip, DateTimeImmutable $now): void

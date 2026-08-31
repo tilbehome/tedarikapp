@@ -204,8 +204,21 @@ final class SetupController
         try {
             $statement = $this->connection()->pdo()->query('SELECT COUNT(*) FROM users');
             $mevcutKullanici = $statement === false ? 0 : (int) $statement->fetchColumn();
-        } catch (Throwable) {
-            return false; // users tablosu yoksa kurulum gerçekten ilk kurulumdur
+        } catch (Throwable $hata) {
+            // v1.2.1 C3 — FAIL-CLOSED. Burada `catch (Throwable) { return false; }`
+            // vardı: HERHANGİ bir hata kapıyı AÇIYORDU. Bağlantıyı bir an
+            // düşürebilen ya da izinleri bozabilen biri, kimliksiz bir yönetici
+            // oluşturma kapısı elde ediyordu.
+            //
+            // Gerekçe ("users tablosu yoksa kurulum gerçekten ilk kurulumdur")
+            // DOĞRU ama yalnız TABLO YOKSA doğru. "Tablo yok" ile "veritabanı
+            // yanıt vermiyor" aynı catch'te toplandığı an, doğru gerekçe yanlış
+            // bir kapıya dönüşür. K37 deseni: karar verilemiyorsa GEÇİLMEZ.
+            if (\App\Core\GizliHata::tabloYokMu($hata)) {
+                return false;
+            }
+
+            return true;
         }
 
         if ($mevcutKullanici === 0) {

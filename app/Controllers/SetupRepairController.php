@@ -433,17 +433,39 @@ final class SetupRepairController
      */
     public function ownerCheck(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
+        // v1.2.1 C5 — SABİT YANIT. Bu uç KİMLİKSİZDİR ve eskiden hesaba göre
+        // farklı cevap veriyordu: 2FA'lı hesap `true`, 2FA'sız ya da HİÇ OLMAYAN
+        // hesap `false`. Bu iki şey sızdırır — hesabın VARLIĞI ve savunma
+        // durumu ("bu yönetici 2FA kullanmıyor", yani iyi bir hedef).
+        //
+        // Artık üç durum da aynı gövdeyi döner. Kod alanı HER ZAMAN gösterilir
+        // ve isteğe bağlıdır; gerçek zorunluluk doğrulama adımında SUNUCUDA
+        // uygulanır — orada zaten kimlik vardır ve sızdıracak bir şey kalmaz.
+        //
+        // UX BEDELİ BİLİNÇLİ: 2FA kullanmayan kullanıcı boş bir kod kutusu
+        // görür. Alternatifi, kimliksiz birine "bu hesapta 2FA yok" demekti.
+        $ip = ClientIp::from($request);
+        $now = $this->clock->now();
         $connection = $this->connectionOrNull();
-        if ($connection === null) {
-            return Response::success($response, ['iki_adimli' => false]);
+
+        if ($connection !== null) {
+            $gate = new UnlockGate($connection, $this->basePath, new DateTimeZone(date_default_timezone_get()));
+
+            // HIZ SINIRI: tarama yavaşlamalı. Sınır IP başınadır — hesap adına
+            // bağlasaydık saldırgan her istekte başka e-posta yazıp atlardı.
+            $bekleme = $gate->retryAfterSeconds($ip, $now);
+            if ($bekleme > 0) {
+                return $this->rateLimited($response, $bekleme);
+            }
+
+            $email = $this->body($request)['email'] ?? null;
+            // Her sorgu hem İZ bırakır hem de sınır sayacını besler; yoksa
+            // tarama ne yavaşlar ne görünür.
+            $gate->recordOwnerCheck($ip, is_string($email) ? $email : null, $now);
+            $gate->recordFailure($ip, $now);
         }
 
-        $gate = new UnlockGate($connection, $this->basePath, new DateTimeZone(date_default_timezone_get()));
-        $email = $this->body($request)['email'] ?? null;
-
-        return Response::success($response, [
-            'iki_adimli' => $gate->ikiAdimliGerekliMi(is_string($email) ? $email : null, $connection),
-        ]);
+        return Response::success($response, ['iki_adimli' => true]);
     }
 
     private function rateLimited(ResponseInterface $response, int $retryAfter): ResponseInterface
