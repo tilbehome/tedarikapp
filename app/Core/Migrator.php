@@ -104,6 +104,12 @@ final class Migrator
         '0035_bildirimler' => [
             ['table' => 'notifications'],
         ],
+        // v1.2.1 D8: kolon GENİŞLETMESİ — yeni nesne yok, hedef kolonun kendisi.
+        // Baseline'da kolon zaten varsa (kurulu sistem) migration uygulanmış
+        // sayılır; genişletme idempotenttir ve normal koşumda da güvenlidir.
+        '0036_paylasim_anahtari_sifreli_alan' => [
+            ['column' => ['lists', 'share_key_plain']],
+        ],
         // İE#21 B1: Keşif havuzu — küme anahtarı ve normalize arama alanı.
         '0030_kesif_havuzu' => [
             ['column' => ['listings', 'kume_anahtari']],
