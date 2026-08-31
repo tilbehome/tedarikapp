@@ -172,23 +172,12 @@ final class CurlMediaFetcher implements MediaFetcher
         ]);
 
         $ok = curl_exec($handle);
-        // D3 — SON SAVUNMA: gerçekten bağlanılan adres, onayladığımız listede mi?
-        // Pin bir şekilde uygulanmadıysa (eski cURL, araya giren proxy) istek
-        // yine de kesilir. Boş değer GÜVENSİZ sayılır: doğrulanamayan bağlantı,
-        // doğrulanmamış bağlantıdır.
-        if ($pinliAdresler !== []) {
-            $baglanilan = (string) curl_getinfo($handle, CURLINFO_PRIMARY_IP);
-            if (!$this->guard->baglantiDogru($baglanilan, $pinliAdresler)) {
-                curl_close($handle);
-
-                throw new MediaDeniedException('Bağlanılan adres doğrulanamadı, indirme reddedildi.');
-            }
-        }
 
         $status = (int) curl_getinfo($handle, CURLINFO_HTTP_CODE);
         $contentType = (string) curl_getinfo($handle, CURLINFO_CONTENT_TYPE);
         $redirect = curl_getinfo($handle, CURLINFO_REDIRECT_URL);
         $error = curl_error($handle);
+        $baglanilan = (string) curl_getinfo($handle, CURLINFO_PRIMARY_IP);
         curl_close($handle);
 
         if ($ok === false && strlen($body) > $maxBytes) {
@@ -196,6 +185,20 @@ final class CurlMediaFetcher implements MediaFetcher
         }
         if ($ok === false && $error !== '') {
             throw new MediaException('İndirme başarısız oldu.');
+        }
+
+        // D3 — SON SAVUNMA: gerçekten bağlanılan adres, onayladığımız listede mi?
+        // Pin bir şekilde uygulanmadıysa (eski cURL, araya giren proxy) istek
+        // yine de kesilir.
+        //
+        // SIRA ÖNEMLİ — İLK YAZIMDA YANLIŞTI: denetim `curl_exec`ten hemen sonra,
+        // BAŞARI KONTROLÜNDEN ÖNCE yapılıyordu. Bağlantı hiç kurulamadığında
+        // `PRIMARY_IP` boş döner ve kod bunu "adres doğrulanamadı" diye
+        // raporluyordu: ağsız ortamda her indirme, GÜVENLİK REDDİ gibi
+        // görünüyordu. Doğrulanacak bir bağlantı ancak KURULMUŞSA vardır;
+        // kurulamadıysa gerçek hata yukarıda zaten bildirildi.
+        if ($pinliAdresler !== [] && !$this->guard->baglantiDogru($baglanilan, $pinliAdresler)) {
+            throw new MediaDeniedException('Bağlanılan adres doğrulanamadı, indirme reddedildi.');
         }
         if ($status >= 300 && $status < 400) {
             if (!is_string($redirect) || $redirect === '') {
