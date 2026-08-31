@@ -28,10 +28,10 @@ jobs:
 
     steps:
       - name: Depoyu al
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7 (E4: SHA pin)
 
       - name: PHP 8.4 kur
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@b604ade2a87db23f8871b7182e69ec5e75effb45 # v2 (E4: SHA pin)
         with:
           php-version: '8.4'
           # Üretimdeki (docs/04 §7) ve testlerdeki eklentiler: sqlite testler için,
@@ -44,7 +44,7 @@ jobs:
         run: composer validate --strict
 
       - name: Composer önbelleği
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4 (E4: SHA pin)
         with:
           path: ~/.composer/cache
           key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
@@ -100,7 +100,7 @@ jobs:
         dilim: [http-1, http-2, http-3, http-4]
     steps:
       - name: Depoyu al
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7 (E4: SHA pin)
 
       - name: PHP 8.4 kur
         # GELISTIRME ZINCIRI 8.4 ISTER: php-cs-fixer'in cektigi symfony/console
@@ -109,7 +109,7 @@ jobs:
         # (olculdu). Kalite job'i da bu yuzden 8.4 kullaniyor; dilimler onunla
         # ayni zeminde kosar. Uygulamanin CALISMA ZAMANI tabani ayri bir istir:
         # php-taban-uyum, 8.2 + 8.3 matrisi (K84).
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@b604ade2a87db23f8871b7182e69ec5e75effb45 # v2 (E4: SHA pin)
         with:
           php-version: '8.4'
           extensions: bcmath, curl, fileinfo, gd, intl, mbstring, openssl, pdo_mysql, pdo_sqlite, sodium, zip
@@ -147,10 +147,10 @@ jobs:
 
     steps:
       - name: Depoyu al
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7 (E4: SHA pin)
 
       - name: PHP 8.4 kur
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@b604ade2a87db23f8871b7182e69ec5e75effb45 # v2 (E4: SHA pin)
         with:
           php-version: '8.4'
           extensions: bcmath, curl, fileinfo, gd, intl, mbstring, openssl, pdo_mysql, pdo_sqlite, sodium, zip
@@ -158,7 +158,7 @@ jobs:
           tools: none
 
       - name: Composer önbelleği
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4 (E4: SHA pin)
         with:
           path: ~/.composer/cache
           key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
@@ -188,7 +188,7 @@ jobs:
       dokunuldu: ${{ steps.olc.outputs.dokunuldu }}
     steps:
       - name: Depoyu al
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7 (E4: SHA pin)
         with:
           fetch-depth: 0
 
@@ -243,10 +243,10 @@ jobs:
 
     steps:
       - name: Depoyu al
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7 (E4: SHA pin)
 
       - name: PHP 8.4 kur
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@b604ade2a87db23f8871b7182e69ec5e75effb45 # v2 (E4: SHA pin)
         with:
           php-version: '8.4'
           extensions: bcmath, curl, fileinfo, gd, intl, mbstring, openssl, pdo_mysql, pdo_sqlite, sodium, zip
@@ -254,7 +254,7 @@ jobs:
           tools: none
 
       - name: Composer önbelleği
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4 (E4: SHA pin)
         with:
           path: ~/.composer/cache
           key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
@@ -286,10 +286,10 @@ jobs:
         php: ['8.2', '8.3']
     steps:
       - name: Depoyu al
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7 (E4: SHA pin)
 
       - name: PHP ${{ matrix.php }} kur
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@b604ade2a87db23f8871b7182e69ec5e75effb45 # v2 (E4: SHA pin)
         with:
           php-version: ${{ matrix.php }}
           extensions: bcmath, curl, fileinfo, gd, mbstring, openssl, pdo_mysql, pdo_sqlite, zip
@@ -511,10 +511,10 @@ jobs:
 
     steps:
       - name: Depoyu al
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7 (E4: SHA pin)
 
       - name: PHP 8.3 kur
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@b604ade2a87db23f8871b7182e69ec5e75effb45 # v2 (E4: SHA pin)
         with:
           php-version: '8.3'
           extensions: bcmath, curl, fileinfo, gd, intl, mbstring, openssl, pdo_mysql, pdo_sqlite, zip
@@ -522,7 +522,7 @@ jobs:
           tools: none
 
       - name: Composer önbelleği
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4 (E4: SHA pin)
         with:
           path: ~/.composer/cache
           key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
@@ -538,7 +538,7 @@ jobs:
           done
 
       - name: Node 22 kur
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7 (E4: SHA pin)
         with:
           node-version: '22'
           cache: npm
@@ -583,7 +583,7 @@ jobs:
       # Tarayıcı ikilisi önbelleğe alınır: anahtar KİLİT DOSYASININ özetidir, yani
       # Playwright sürümü değişince (ve yalnız o zaman) yeni indirme yapılır.
       - name: Playwright tarayıcı önbelleği
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4 (E4: SHA pin)
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('e2e/package-lock.json') }}
@@ -638,7 +638,7 @@ jobs:
 
       - name: Playwright raporu
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4 (E4: SHA pin)
         with:
           name: playwright-raporu
           path: e2e/playwright-report
@@ -704,10 +704,10 @@ jobs:
 
     steps:
       - name: Depoyu al
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7 (E4: SHA pin)
 
       - name: Node 22 kur
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7 (E4: SHA pin)
         with:
           node-version: '22'
           cache: npm
