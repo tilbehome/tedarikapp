@@ -22,6 +22,7 @@ use App\Services\Translation\LayeredTranslator;
 use App\Services\Translation\LlmIstemci;
 use App\Services\Translation\LlmTranslator;
 use App\Services\Translation\MyMemoryTranslator;
+use App\Services\Translation\SozlukFabrikasi;
 use App\Services\Translation\TranslationService;
 use App\Services\UrlGuard;
 use Psr\Log\LoggerInterface;
@@ -80,7 +81,10 @@ final class KuyrukIsleyicileri
                 throw new RuntimeException('Ürün bulunamadı (silinmiş olabilir): #' . $urunId);
             }
 
-            $glossary = new Glossary($basePath);
+            // v1.2.1 A6: sözlük TEK FABRİKADAN. Burada elle kurulmuştu ve
+            // `config`/`storage` eklerini kaçırıyordu: kuyrukla çevrilen her
+            // ürün BOŞ sözlükle çevriliyordu, üstelik sessizce.
+            $glossary = SozlukFabrikasi::kur($basePath);
             $makine = new TranslationService(
                 new TranslationCacheRepository($connection),
                 new MyMemoryTranslator(

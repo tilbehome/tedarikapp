@@ -26,7 +26,7 @@ final class ValueSetFabrikasi
         string $basePath,
         string $hedefDil = 'tr',
     ): ValueSet {
-        $sozluk = new Glossary($basePath . '/config', $basePath . '/storage');
+        $sozluk = SozlukFabrikasi::kur($basePath);
 
         // Sürüm ayarlardan okunur; ayar okunamıyorsa (kurulum yarım, tablo yok)
         // önbelleksiz ama ÇALIŞAN bir ValueSet döner — belge üretimi durmaz.
