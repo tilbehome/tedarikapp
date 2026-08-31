@@ -97,7 +97,9 @@ final class ShareController extends ApiController
         $row = $this->anahtar?->hazirla($row, $this->clock->now()) ?? $row;
 
         return Response::success($response, [
-            'key' => (string) ($row['share_key_plain'] ?? ''),
+            // D8: saklanan değer ŞİFRELİ olabilir; panele çözülmüş hâli gider.
+            // `gosterilecek()` göç öncesi düz satırları da doğru okur.
+            'key' => $this->anahtar?->gosterilecek($row) ?? (string) ($row['share_key_plain'] ?? ''),
             'enabled' => (int) ($row['share_key_enabled'] ?? 1) === 1,
         ]);
     }

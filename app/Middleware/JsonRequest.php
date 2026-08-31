@@ -118,12 +118,40 @@ final class JsonRequest implements MiddlewareInterface
             return sprintf('%d KB', intdiv($bildirilen, 1024));
         }
 
-        $gercek = $request->getBody()->getSize();
-        if ($gercek !== null && $gercek > $tavan) {
-            return sprintf('%d KB', intdiv($gercek, 1024));
+        $govde = $request->getBody();
+        $gercek = $govde->getSize();
+        if ($gercek !== null) {
+            return $gercek > $tavan ? sprintf('%d KB', intdiv($gercek, 1024)) : null;
         }
 
-        return null;
+        // v1.2.1 D7 — BOYUT BİLİNMİYORSA SINIRLI OKU.
+        //
+        // Eskiden burada `return null` vardı: chunked istek (Transfer-Encoding)
+        // boyut bildirmez, dolayısıyla İKİ denetim de sessizce atlanıyordu.
+        // Yorumdaki gerekçe "PHP'nin kendi sınırları devrede" idi ama JSON
+        // gövdesi `php://input`ten AKIŞ olarak okunur ve `post_max_size` orada
+        // devreye girmez. Yani sınır, onu atlamak isteyen için hiç yoktu;
+        // yalnız dürüst istemciler için vardı.
+        //
+        // Tavan + 1 bayt okuruz: fazlası varsa aşım kesindir, yoksa gövde zaten
+        // tamamen elimizdedir ve okuma maliyeti sınırlıdır.
+        if (!$govde->isReadable()) {
+            return null;
+        }
+
+        $okunan = $govde->read($tavan + 1);
+        $uzunluk = strlen($okunan);
+
+        // OKUDUĞUMUZU GERİ VERMEK ZORUNDAYIZ: denetim, koruduğu isteği
+        // bozmamalı. Akış geri sarılamıyorsa ölçtüğümüzü aşağı akışa
+        // veremeyiz — ölçemediğimiz bir gövdeyi geçirmek sınırı kaldırmakla
+        // aynı şey olduğu için istek REDDEDİLİR.
+        if (!$govde->isSeekable()) {
+            return sprintf('%d KB', intdiv($uzunluk, 1024));
+        }
+        $govde->rewind();
+
+        return $uzunluk > $tavan ? sprintf('%d KB', intdiv($uzunluk, 1024)) : null;
     }
 
     /** İstek bir HTML form yüzeyine mi gidiyor? (JSON şartından muaf) */

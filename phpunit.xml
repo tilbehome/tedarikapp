@@ -94,6 +94,7 @@
             <file>tests/Http/SetupHttpsSiniriTest.php</file>
             <file>tests/Http/IstisnaSizmazTest.php</file>
             <file>tests/Http/EklentiHizSiniriTest.php</file>
+            <file>tests/Http/GovdeSiniriChunkedTest.php</file>
             <file>tests/Http/OwnerCheckSabitYanitTest.php</file>
             <file>tests/Http/SetupOnarimUclariTest.php</file>
             <file>tests/Http/SozluksuzCeviriKartiTest.php</file>

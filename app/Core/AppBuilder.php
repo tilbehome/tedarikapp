@@ -318,7 +318,12 @@ final class AppBuilder
             $lists,
             $services->activity,
             $services->clock,
-            new \App\Services\Share\ShareKeyService($lists, (string) $config->get('APP_KEY', '')),
+            new \App\Services\Share\ShareKeyService(
+                $lists,
+                (string) $config->get('APP_KEY', ''),
+                // D8: erişim anahtarı dinlenmede şifrelenir; bağlam TOTP'tan AYRI.
+                new \App\Core\Encrypter($config, baglam: \App\Core\Encrypter::BAGLAM_PAYLASIM_ANAHTARI),
+            ),
             $config,
             new \App\Services\Inbox\SistemListesi($settingsRepository),
             $services->bildirim,
