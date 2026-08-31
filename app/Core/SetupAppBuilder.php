@@ -93,7 +93,13 @@ final class SetupAppBuilder
         // State şifreli+doğrulamalı ÇEREZDE taşınır; diske ve DB'ye ihtiyaç yoktur.
         $cookieSession = null;
         if ($session === null) {
-            $cookieSession = new CookieSession($basePath, secure: self::serverIsHttps());
+            $cookieSession = new CookieSession(
+                $basePath,
+                secure: self::serverIsHttps(),
+                // C2: TTL denetimi ve anahtar-dönemi düşürme uyarısı için.
+                saat: $clock,
+                gunlukcu: $logger,
+            );
             $session = $cookieSession;
         }
         $state = new SetupState($session);
