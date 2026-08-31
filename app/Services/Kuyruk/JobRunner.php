@@ -24,7 +24,7 @@ use Throwable;
  */
 final class JobRunner
 {
-    /** @var array<string, callable(array<string, mixed>, array<string, mixed>): void> */
+    /** @var array<string, callable(array<string, mixed>, array<string, mixed>, IsBaglami): void> */
     private array $isleyiciler = [];
 
     public function __construct(
@@ -71,8 +71,11 @@ final class JobRunner
     }
 
     /**
-     * @param callable(array<string, mixed>, array<string, mixed>): void $isleyici
-     *        (yük, iş satırı) alır; hata fırlatırsa iş başarısız sayılır
+     * @param callable(array<string, mixed>, array<string, mixed>, IsBaglami): void $isleyici
+     *        (yük, iş satırı, iş bağlamı) alır; hata fırlatırsa iş başarısız sayılır.
+     *        Üçüncü parametre A2 ile geldi ve OPSİYONEL BİLDİRİLEBİLİR: PHP,
+     *        daha az parametre bildiren kapanışlara fazladan argümanı sorunsuz
+     *        geçirir; eski işleyiciler değişmeden çalışır.
      */
     public function kaydet(string $tur, callable $isleyici): void
     {
@@ -257,7 +260,10 @@ final class JobRunner
             $this->askidaki = ['id' => (int) $is['id'], 'token' => $token];
 
             try {
-                $isleyici($yuk, $is);
+                // A2: işleyici artık kirasını uzatabilir ve kaybını GÖREBİLİR.
+                // Üçüncü parametre geriye dönük uyumludur — daha az parametre
+                // bildiren eski işleyiciler fazladan argümanı görmezden gelir.
+                $isleyici($yuk, $is, new IsBaglami($this->kuyruk, (int) $is['id'], $token));
                 $bitisAni = $this->simdi($dondurulmus);
                 $yazildi = $this->sonucYaz((int) $is['id'], function () use ($is, $bitisAni, $token): void {
                     $this->kuyruk->basarili((int) $is['id'], $bitisAni, $token);
