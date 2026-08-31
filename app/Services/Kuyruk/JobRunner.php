@@ -208,7 +208,13 @@ final class JobRunner
                 // panel "5 bekleyen" derken günlük her turda "kuyruk boş"
                 // yazıyordu ve çelişkiyi kimse fark etmiyordu; işçi artık
                 // neden hiçbir şey almadığını SÖYLER.
-                $durmaNedeni = $this->neden($now);
+                //
+                // v1.2.1 A7: ÇEKİŞME AYRI BİR SEBEPTİR. İş vardı ama başka bir
+                // işleyici kaptı — bunu "boş" diye raporlamak, iki işleyicinin
+                // birbirini yavaşlattığını görünmez kılardı.
+                $durmaNedeni = $this->kuyruk->sonSecimNedeni() === JobQueue::SECIM_YARIS
+                    ? 'çekişme: adaylar başka işleyicilerce alındı (kuyruk BOŞ değil)'
+                    : $this->neden($now);
 
                 break;
             }
