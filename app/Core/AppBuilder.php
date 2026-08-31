@@ -226,6 +226,7 @@ final class AppBuilder
             $katalogDurumu,
             // A6-EK: "Yeniden çevir" düğmesi ürünleri MEVCUT çeviri kuyruğuna alır.
             $kuyruk,
+            $logger,
         );
         Routes\SystemRoutes::register($app, $system, $services, $responseFactory);
 

@@ -62,32 +62,36 @@ final class SozluksuzCeviriKartiTest extends AuthTestCase
         return $urunId;
     }
 
-    public function testSTATUSSOZLESMESIALANITASIR(): void
+    public function testSTATUSSAYIYIDONER(): void
     {
-        // `/api/system/status` SQLite altında koşturulamaz: `VERSION()` MySQL'e
-        // özgüdür ve uç oradan 500 döner (bu KUSUR bizden önce vardı, kapsam
-        // dışı — Blok F'de raporlanır). Bu yüzden sözleşme KAYNAKTAN denetlenir:
-        // alan payload'a gerçekten ekli mi?
-        $kaynak = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Controllers/SystemController.php');
+        // v1.2.1 F: `/api/system/status` artık SQLite altında da çalışıyor
+        // (`VERSION()` süs bilgisi olarak ele alındı), bu yüzden sözleşme
+        // KAYNAK TARAMASIYLA değil GERÇEK YANITLA sınanıyor.
+        $yanit = $this->call('GET', '/api/system/status');
+        $govde = $this->json($yanit)['data'] ?? null;
 
-        self::assertStringContainsString(
-            "'sozluksuz_ceviri' => \$this->sozluksuzSayisi(),",
-            $kaynak,
-            'Sayı status yanıtına eklenmemiş; panel kartı hep gizli kalırdı.',
-        );
-
-        $tipler = (string) file_get_contents(dirname(__DIR__, 2) . '/frontend/src/api/types.ts');
-        self::assertStringContainsString('sozluksuz_ceviri: number;', $tipler, 'Panel tipi alanı bilmiyor.');
+        self::assertIsArray($govde, (string) $yanit->getBody());
+        self::assertArrayHasKey('sozluksuz_ceviri', $govde);
+        self::assertSame(0, $govde['sozluksuz_ceviri'], 'Temiz kurulumda sayı 0 — panel kartı gizler.');
     }
 
-    public function testSAYACURUNUGORUR(): void
+    public function testSTATUSSAYIYIGUNCELLER(): void
     {
-        // Sayının kendisi birim testinde ölçülüyor; burada sınanan şey, HTTP
-        // kompozisyonunun kurduğu bağlantılarla (config + connection) sayacın
-        // gerçekten çalışabildiği.
         $this->bozukCevrilmisUrun('不锈钢杯');
 
-        self::assertSame(1, $this->sayac()->urunSayisi());
+        $govde = $this->json($this->call('GET', '/api/system/status'))['data'];
+
+        self::assertSame(1, $govde['sozluksuz_ceviri']);
+    }
+
+    public function testSTATUSSURUMOKUNAMAZSADUSMEZ(): void
+    {
+        // Tek bir süs alanı (DB sürümü) yüzünden bütün teşhis ekranını
+        // düşürmek orantısızdı; SQLite'ta uç TAMAMEN erişilemezdi.
+        $yanit = $this->call('GET', '/api/system/status');
+
+        self::assertSame(200, $yanit->getStatusCode(), (string) $yanit->getBody());
+        self::assertNull($this->json($yanit)['data']['db_version'], 'Okunamayan sürüm null kalır, ekran çalışır.');
     }
 
     public function testDUGMEURUNLERIKUYRUGAALIR(): void

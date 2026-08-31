@@ -47,6 +47,8 @@ final class SystemController
         // kuyruğa alır. Kuyruk yoksa kart yalnız SAYIYI gösterir — düğme
         // olmayan bir kuyruğa iş atmaz.
         private readonly ?\App\Services\Kuyruk\JobQueue $kuyruk = null,
+        /** C4/F: gizlenen hataların ayrıntısı yalnız günlüğe. */
+        private readonly ?\Psr\Log\LoggerInterface $logger = null,
     ) {
     }
 
@@ -629,11 +631,31 @@ final class SystemController
             $row = $statement === false ? false : $statement->fetch();
             $applied = is_array($row) ? (int) $row['total'] : 0;
 
-            $versionStatement = $this->connection->pdo()->query('SELECT VERSION() AS version');
-            $versionRow = $versionStatement === false ? false : $versionStatement->fetch();
-            $databaseVersion = is_array($versionRow) ? (string) $versionRow['version'] : null;
+            // v1.2.1 F: `VERSION()` MySQL'e ÖZGÜDÜR ve SQLite'ta "no such
+            // function" ile patlıyordu — bütün sistem durumu ekranı 500
+            // veriyordu. Üretimde MySQL koştuğu için canlıda görünmüyordu ama
+            // testlerde ucun TAMAMI erişilemezdi: teşhis yüzeyi, teşhis
+            // edilemez hâldeydi.
+            //
+            // Sürüm bir SÜS BİLGİSİDİR: okunamıyorsa null kalır, ekranın geri
+            // kalanı çalışmaya devam eder. Tek bir alan yüzünden bütün ekranı
+            // düşürmek orantısız.
+            $databaseVersion = $this->veritabaniSurumu();
         } catch (Throwable $e) {
-            return Response::error($response, 'SERVER_ERROR', 'Sistem durumu okunamadı: ' . $e->getMessage(), 500);
+            $kimlik = $this->logger === null
+                ? null
+                : \App\Core\GizliHata::kaydet($e, $this->logger, 'system.status');
+
+            // C4 hattı: ham istisna metni yanıta GİRMEZ.
+            return Response::error(
+                $response,
+                'SERVER_ERROR',
+                'Sistem durumu okunamadı. Sorun sürerse destek kaydında hata kimliğini belirtin.',
+                500,
+                [],
+                [],
+                $kimlik,
+            );
         }
 
         $lockDetails = $this->lock->read();
@@ -668,6 +690,24 @@ final class SystemController
             // hâle gelir ve gerçek uyarıyı da görünmez kılar.
             'sozluksuz_ceviri' => $this->sozluksuzSayisi(),
         ]);
+    }
+
+    /**
+     * Veritabanı sürümü — okunamıyorsa null (süs bilgisidir).
+     *
+     * `VERSION()` MySQL'e özgüdür; SQLite'ta istisna atar. Sürücüye göre
+     * dallanmak yerine denenip bırakılır: cevap alınamazsa ekran "—" gösterir.
+     */
+    private function veritabaniSurumu(): ?string
+    {
+        try {
+            $statement = $this->connection->pdo()->query('SELECT VERSION() AS version');
+            $satir = $statement === false ? false : $statement->fetch();
+
+            return is_array($satir) ? (string) $satir['version'] : null;
+        } catch (Throwable) {
+            return null;
+        }
     }
 
     /**

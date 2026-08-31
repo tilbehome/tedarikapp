@@ -25,6 +25,54 @@ final class SozlukCsvTest extends AuthTestCase
         $this->call('POST', '/api/auth/login', ['email' => 'admin@tedarikapp.test', 'password' => 'cok-gizli-sifre']);
         $this->call('POST', '/api/auth/totp', ['code' => $this->totpCodeFor($user['secret'])]);
         $this->csrf = (string) $this->json($this->call('GET', '/api/auth/me'))['data']['csrf_token'];
+        $this->sozlukAnliginiAl();
+    }
+
+    /**
+     * SÖZLÜK ANLIK GÖRÜNTÜSÜ — v1.2.1 F.
+     *
+     * BU TEST GERÇEK `storage/sozluk-*.php` DOSYALARINA YAZIYOR ve yazdığını
+     * temizlemiyordu: ikinci koşumda kendi eklediği terimleri "zaten var" sayıp
+     * `atlanan: 2` veriyor ve KIRMIZI oluyordu. Yerelde tekrar koşulamayan bir
+     * test, koşulmayan bir testtir.
+     *
+     * CI bunu HİÇ görmedi çünkü `storage/` `.gitignore`'da: her koşum temiz bir
+     * çalışma kopyasında başlıyor. Yani kusur yalnız geliştiricinin makinesinde
+     * yaşıyordu — ve tam da orada, en çok koşulan yerde.
+     *
+     * Çözüm izolasyon değil GERİ ALMA: test uçları gerçek yapılandırma yolunu
+     * kullanmalı (sınadığı şey o), ama bıraktığı izi kaldırmalı.
+     *
+     * @var array<string, string|null> dosya yolu → koşum öncesi içerik (yoksa null)
+     */
+    private array $sozlukAnligi = [];
+
+    private function sozlukAnliginiAl(): void
+    {
+        foreach (glob(dirname(__DIR__, 2) . '/storage/sozluk-*.php') ?: [] as $dosya) {
+            $this->sozlukAnligi[$dosya] = (string) file_get_contents($dosya);
+        }
+        // Henüz var olmayan dosyalar da izlenir: test onları YARATIRSA silinmeli.
+        foreach (['zh', 'en'] as $dil) {
+            $yol = dirname(__DIR__, 2) . '/storage/sozluk-' . $dil . '-tr.php';
+            if (!array_key_exists($yol, $this->sozlukAnligi)) {
+                $this->sozlukAnligi[$yol] = null;
+            }
+        }
+    }
+
+    protected function tearDown(): void
+    {
+        foreach ($this->sozlukAnligi as $dosya => $icerik) {
+            if ($icerik === null) {
+                @unlink($dosya);
+
+                continue;
+            }
+            file_put_contents($dosya, $icerik);
+        }
+
+        parent::tearDown();
     }
 
     public function testDISAAKTARIMCSVVEBOMLUDONER(): void
