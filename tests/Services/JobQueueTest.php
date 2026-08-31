@@ -89,8 +89,10 @@ final class JobQueueTest extends TestCase
     public function testBASARISIZISARTANBEKLEMEYLEGERIBIRAKILIR(): void
     {
         $id = $this->kuyruk->ekle('ceviri', 'urun:42', [], $this->simdi);
-        $this->kuyruk->sahiplen('isleyici', $this->simdi);
-        $this->kuyruk->basarisiz($id, 'ağ hatası', $this->simdi);
+        // v1.2.1 A1: sonuç yazımı kira token'ı ister — sahiplenme satırı tutulur.
+        $is = $this->kuyruk->sahiplen('isleyici', $this->simdi);
+        self::assertNotNull($is);
+        $this->kuyruk->basarisiz($id, 'ağ hatası', $this->simdi, token: (string) $is['kilit_token']);
 
         $satir = $this->pdo->query('SELECT * FROM jobs WHERE id = ' . $id)->fetch();
         self::assertSame(JobQueue::BEKLIYOR, $satir['durum']);
@@ -108,8 +110,9 @@ final class JobQueueTest extends TestCase
         $an = $this->simdi;
         for ($i = 0; $i < 2; $i++) {
             $an = $an->modify('+3 hours');
-            self::assertNotNull($this->kuyruk->sahiplen('isleyici', $an));
-            $this->kuyruk->basarisiz($id, 'kalıcı hata', $an);
+            $is = $this->kuyruk->sahiplen('isleyici', $an);
+            self::assertNotNull($is);
+            $this->kuyruk->basarisiz($id, 'kalıcı hata', $an, token: (string) $is['kilit_token']);
         }
 
         $satir = $this->pdo->query('SELECT * FROM jobs WHERE id = ' . $id)->fetch();
@@ -123,8 +126,9 @@ final class JobQueueTest extends TestCase
     public function testOLUISYENIDENISTENINCECANLANIR(): void
     {
         $id = $this->kuyruk->ekle('ceviri', 'urun:42', [], $this->simdi, maxDeneme: 1);
-        $this->kuyruk->sahiplen('isleyici', $this->simdi);
-        $this->kuyruk->basarisiz($id, 'hata', $this->simdi);
+        $is = $this->kuyruk->sahiplen('isleyici', $this->simdi);
+        self::assertNotNull($is);
+        $this->kuyruk->basarisiz($id, 'hata', $this->simdi, token: (string) $is['kilit_token']);
         self::assertSame(JobQueue::OLU, $this->pdo->query('SELECT durum FROM jobs WHERE id = ' . $id)->fetchColumn());
 
         // Kullanıcı "yeniden dene" dediğinde ona "zaten kuyrukta" demek hiçbir şey yapmamaktır.
@@ -157,12 +161,14 @@ final class JobQueueTest extends TestCase
     public function testBitenIsTEMIZLENIROLUISKALIR(): void
     {
         $biten = $this->kuyruk->ekle('ceviri', 'a', [], $this->simdi);
-        $this->kuyruk->sahiplen('isleyici', $this->simdi);
-        $this->kuyruk->basarili($biten, $this->simdi);
+        $ilk = $this->kuyruk->sahiplen('isleyici', $this->simdi);
+        self::assertNotNull($ilk);
+        $this->kuyruk->basarili($biten, $this->simdi, (string) $ilk['kilit_token']);
 
         $olu = $this->kuyruk->ekle('ceviri', 'b', [], $this->simdi, maxDeneme: 1);
-        $this->kuyruk->sahiplen('isleyici', $this->simdi);
-        $this->kuyruk->basarisiz($olu, 'hata', $this->simdi);
+        $ikinci = $this->kuyruk->sahiplen('isleyici', $this->simdi);
+        self::assertNotNull($ikinci);
+        $this->kuyruk->basarisiz($olu, 'hata', $this->simdi, token: (string) $ikinci['kilit_token']);
 
         $silinen = $this->kuyruk->temizle($this->simdi->modify('+30 days'));
 

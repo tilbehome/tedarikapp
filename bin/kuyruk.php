@@ -57,7 +57,11 @@ try {
     date_default_timezone_set($config->get('TZ', 'Europe/Istanbul'));
     $connection = Connection::fromCallable(static fn (): PDO => Database::connect($config));
     $config->attachSettings(static fn (): array => \App\Models\SettingsRepository::configOverrides($connection));
-    $now = SystemClock::fromConfig($config)->now();
+    // v1.2.1 A3: SAAT NESNESİ taşınır, tek bir AN değil. Tur 50 saniye
+    // sürebilir; donmuş bir an bütün tura yayılırsa kira, geri çekilme ve
+    // bitiş damgaları turun başına kilitlenir.
+    $saat = SystemClock::fromConfig($config);
+    $now = $saat->now();
     $logger = Logger::create($config, $basePath, new \App\Core\RequestContext(), $connection);
 
     $kuyruk = new JobQueue($connection);
@@ -93,7 +97,7 @@ try {
         exit(0);
     }
 
-    $kosucu = new JobRunner($kuyruk, $logger, $sure);
+    $kosucu = new JobRunner($kuyruk, $logger, $sure, saat: $saat);
     KuyrukIsleyicileri::kaydet($kosucu, $config, $connection, $logger, $basePath);
 
     // TUR YARIDA KESİLİRSE İŞ ASILI KALMASIN (D9-KESİN, 25 Ağu 2026).
@@ -106,16 +110,18 @@ try {
     // Kanca, süreç düzgün kapanabildiği her hâlde (ölümcül hata, exit, süre
     // sınırı) işi DERHAL geri bırakır. SIGKILL gibi kancasız ölümlerde kira
     // devreye girer — ama kira artık cron aralığı kadardır (300 sn), üç tur değil.
-    register_shutdown_function(static function () use ($kosucu, $kuyruk, $now): void {
+    register_shutdown_function(static function () use ($kosucu, $kuyruk, $saat): void {
         $askida = $kosucu->askidakiIs();
         if ($askida === null) {
             return;
         }
 
+        // A3: GERÇEK AN. Eskiden turun başındaki `$now` kapatılıyordu; süreç
+        // 49. saniyede ölse bile bırakma kaydı 0. saniyeye yazılıyordu.
         $birakildi = $kuyruk->birak(
             $askida['id'],
             $askida['token'],
-            $now,
+            $saat->now(),
             'Tur yarıda kesildi (süreç kapandı); iş bir sonraki turda yeniden alınacak.',
         );
         fwrite(

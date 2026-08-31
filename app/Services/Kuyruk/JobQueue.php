@@ -312,12 +312,17 @@ final class JobQueue
             && (string) $terkSatir['durum'] === self::CALISIYOR
             && (int) $terkSatir['deneme'] >= (int) $terkSatir['max_deneme']
         ) {
-            $this->oldur(
+            // TOKENSIZ YOL BİLİNÇLİ: bu bir işleyici sonucu değil, TOPARLAYICI
+            // eylemidir. Ortada kirasını yazacak bir işleyici zaten yok — düşen
+            // sürecin token'ı kimsenin elinde değil. Sahiplik denetimi istemek
+            // burada işi sonsuza kadar rehin bırakırdı.
+            $this->oluYaz(
                 (int) $id,
                 'İşleyici sonuç yazmadan düştü; kira ' . (int) $terkSatir['deneme']
                 . ' kez devralındı. Süreç zaman/bellek sınırına takılıyor olabilir.',
                 $now,
                 HataSinifi::KALICI,
+                null,
             );
 
             // Aynı turda sıradaki işe geçilir; tek bir bozuk iş kuyruğu tıkamaz.
@@ -448,34 +453,44 @@ final class JobQueue
     }
 
     /**
-     * @param string $token sahiplenmede verilen kira token'ı; boşsa doğrulama
-     *                      YAPILMAZ (eski çağrılar ve elle müdahale için)
+     * İŞ BAŞARIYLA BİTTİ — TEK CAS YAZIMI (v1.2.1 A1).
+     *
+     * WHERE üç koşul taşır: `id` + `durum = calisiyor` + `kilit_token`.
+     * Üçü birden tutmuyorsa yazım YAPILMAZ ve `KiraKaybedildi` atılır.
+     *
+     * ESKİDEN token OPSİYONELDİ ve boş geçilince sahiplik hiç denetlenmiyordu;
+     * `durum` da denetlenmiyordu. Kirası devralınmış yavaş bir işleyici,
+     * ikinci işleyicinin ÇALIŞAN işini "bitti" damgalayıp kirasını siliyordu.
+     *
+     * @throws KiraKaybedildi kira artık bu işleyicinin değilse
      */
-    public function basarili(int $id, DateTimeImmutable $now, string $token = ''): void
+    public function basarili(int $id, DateTimeImmutable $now, string $token): void
     {
-        $kosul = $token === '' ? '' : ' AND kilit_token = :token';
-        $statement = $this->connection->pdo()->prepare(
-            'UPDATE jobs SET durum = :durum, hata = NULL, hata_sinifi = NULL, kilit_sahibi = NULL,
-                    kilit_token = NULL, kilitlendi_at = NULL, kilit_bitis = NULL,
-                    bitti_at = :bitti_at, updated_at = :guncelleme_at
-             WHERE id = :id' . $kosul,
-        );
-        $zaman = Dates::toStorage($now);
-        $parametreler = [
-            'durum' => self::BITTI,
-            'bitti_at' => $zaman,
-            'guncelleme_at' => $zaman,
-            'id' => $id,
-        ];
-        if ($token !== '') {
-            $parametreler['token'] = $token;
-        }
         // Toparlanma bildirimi için deneme sayısı UPDATE'ten ÖNCE okunur:
         // sonrasında iş "bitti" olur ama `deneme` kolonu korunur — yine de
         // sıralamayı okumaya bırakmak, kolonun ileride sıfırlanması hâlinde
         // sessizce yanlış davranırdı.
         $onceki = $this->denemeSayisi($id);
-        $statement->execute($parametreler);
+
+        $statement = $this->connection->pdo()->prepare(
+            'UPDATE jobs SET durum = :durum, hata = NULL, hata_sinifi = NULL, kilit_sahibi = NULL,
+                    kilit_token = NULL, kilitlendi_at = NULL, kilit_bitis = NULL,
+                    bitti_at = :bitti_at, updated_at = :guncelleme_at
+             WHERE id = :id AND durum = :calisiyor AND kilit_token = :token',
+        );
+        $zaman = Dates::toStorage($now);
+        $statement->execute([
+            'durum' => self::BITTI,
+            'bitti_at' => $zaman,
+            'guncelleme_at' => $zaman,
+            'id' => $id,
+            'calisiyor' => self::CALISIYOR,
+            'token' => $token,
+        ]);
+
+        if ($statement->rowCount() !== 1) {
+            throw new KiraKaybedildi($id, 'basarili');
+        }
 
         // Yalnız DAHA ÖNCE BAŞARISIZ OLMUŞ iş "toparlandı" sayılır; ilk denemede
         // biten her işi duyurmak bildirim merkezini gürültüye boğardı.
@@ -498,10 +513,22 @@ final class JobQueue
     }
 
     /**
-     * Başarısız iş: deneme hakkı varsa GERİ BIRAKILIR (artan bekleme), yoksa ÖLÜ RAFINA.
+     * BAŞARISIZ İŞ — TEK CAS YAZIMI (v1.2.1 A1).
      *
-     * Artan bekleme (backoff) bilinçlidir: geçici bir ağ hatasında hemen tekrar
-     * denemek aynı hatayı alır ve deneme haklarını saniyeler içinde tüketir.
+     * Deneme hakkı varsa GERİ BIRAKILIR (artan bekleme), yoksa ÖLÜ RAFINA.
+     * Artan bekleme bilinçlidir: geçici bir ağ hatasında hemen tekrar denemek
+     * aynı hatayı alır ve deneme haklarını saniyeler içinde tüketir.
+     *
+     * ESKİ KOD ÖNCE OKUYUP SONRA YAZIYORDU: `SELECT kilit_token` → PHP'de
+     * karşılaştır → token'sız `UPDATE`. İki ifade arasında kira devralınabilir;
+     * okuma anında geçerli olan token yazma anında geçersizdir (TOCTOU). Daha
+     * kötüsü ölüm yolu `oldur()`a giriyordu ve o hiçbir denetim yapmıyordu —
+     * eski sahip, ikinci işleyicinin ÇALIŞAN işini ölü rafına atabiliyordu.
+     *
+     * Karar için okuma hâlâ var (deneme/max), ama YAZIM tek CAS'tır: karar
+     * yanlış satıra dayansa bile yazım tutmaz ve istisna atılır.
+     *
+     * @throws KiraKaybedildi kira artık bu işleyicinin değilse
      */
     public function basarisiz(
         int $id,
@@ -512,16 +539,11 @@ final class JobQueue
         string $token = '',
     ): void {
         $pdo = $this->connection->pdo();
-        $oku = $pdo->prepare('SELECT deneme, max_deneme, kilit_token FROM jobs WHERE id = :id');
+        $oku = $pdo->prepare('SELECT deneme, max_deneme FROM jobs WHERE id = :id');
         $oku->execute(['id' => $id]);
         $satir = $oku->fetch();
         if (!is_array($satir)) {
-            return;
-        }
-
-        // B11: kirası devralınmış işin ESKİ sahibi sonucu yazamaz.
-        if ($token !== '' && (string) ($satir['kilit_token'] ?? '') !== $token) {
-            return;
+            throw new KiraKaybedildi($id, 'basarisiz');
         }
 
         $deneme = (int) $satir['deneme'];
@@ -530,14 +552,9 @@ final class JobQueue
 
         // KALICI hata TEKRAR DENENMEZ: aynı sonucu üç kez üretmek kuyruğu meşgul
         // eder ve gerçek arızayı üç kat gecikmeyle görünür kılar.
-        if ($sinif === HataSinifi::KALICI) {
-            $this->oldur($id, $hata, $now, $sinif);
-
-            return;
-        }
-
-        if ($deneme >= $max) {
-            $this->oldur($id, $hata, $now, $sinif);
+        // Deneme hakkı bitmişse de aynı yol: ölü rafı — ama SAHİPLİK DENETİMİYLE.
+        if ($sinif === HataSinifi::KALICI || $deneme >= $max) {
+            $this->oluRafinaYaz($id, $hata, $now, $sinif, $token);
 
             return;
         }
@@ -548,7 +565,7 @@ final class JobQueue
             'UPDATE jobs SET durum = :durum, hata = :hata, hata_sinifi = :sinif, kilit_sahibi = NULL,
                     kilit_token = NULL, kilitlendi_at = NULL, kilit_bitis = NULL,
                     calisacak_at = :sonra, updated_at = :simdi
-             WHERE id = :id',
+             WHERE id = :id AND durum = :calisiyor AND kilit_token = :token',
         );
         $statement->execute([
             'durum' => self::BEKLIYOR,
@@ -557,7 +574,13 @@ final class JobQueue
             'sonra' => Dates::toStorage($now->modify('+' . $bekleme . ' seconds')),
             'simdi' => Dates::toStorage($now),
             'id' => $id,
+            'calisiyor' => self::CALISIYOR,
+            'token' => $token,
         ]);
+
+        if ($statement->rowCount() !== 1) {
+            throw new KiraKaybedildi($id, 'basarisiz');
+        }
 
         $this->duyur('NTF-JOB-RETRY-SCHEDULED', [
             'is_turu' => $this->isTuru($id),
@@ -568,40 +591,85 @@ final class JobQueue
     }
 
     /**
-     * İşi DOĞRUDAN ölü rafına gönderir — tekrar denemenin ANLAMSIZ olduğu hâller.
+     * YÖNETİCİ ÖLDÜRME — token İSTEMEZ, iş akışından çağrılMAZ.
      *
-     * `basarisiz()` geçici hatalar içindir (ağ, kota) ve deneme hakkı bırakır.
-     * Ama "tanınmayan iş türü" ya da "ürün silinmiş" gibi bir hata tekrar
-     * denemekle düzelmez: aynı sonucu üç kez üretir, kuyruğu meşgul eder ve
-     * gerçek arızayı üç kat gecikmeyle görünür kılar.
+     * Yöneticinin elinde kira token'ı yoktur; "bu iş bir daha denenmesin"
+     * diyebilmelidir. Bu yüzden bu yol denetimsizdir — ve ADI bunu açıkça
+     * söyler. Eskiden `oldur()` hem yönetici hem iş akışı tarafından
+     * kullanılıyordu; tek denetimsiz kapı iki amaca hizmet edince, iş akışı
+     * sahipliği doğrulamadan yazabiliyordu.
      */
-    public function oldur(
+    public function yoneticiOldur(
         int $id,
         string $hata,
         DateTimeImmutable $now,
         string $sinif = HataSinifi::KALICI,
     ): void {
+        $this->oluYaz($id, $hata, $now, $sinif, null);
+    }
+
+    /**
+     * İş akışı ölüm yolu — SAHİPLİK DENETİMLİ.
+     *
+     * @throws KiraKaybedildi kira artık bu işleyicinin değilse
+     */
+    private function oluRafinaYaz(
+        int $id,
+        string $hata,
+        DateTimeImmutable $now,
+        string $sinif,
+        string $token,
+    ): void {
+        if (!$this->oluYaz($id, $hata, $now, $sinif, $token)) {
+            throw new KiraKaybedildi($id, 'olu');
+        }
+    }
+
+    /**
+     * Ölü rafına tek UPDATE. `$token` null ise sahiplik denetlenmez (yönetici).
+     *
+     * @return bool yazım tuttu mu (yönetici yolunda daima true sayılır)
+     */
+    private function oluYaz(
+        int $id,
+        string $hata,
+        DateTimeImmutable $now,
+        string $sinif,
+        ?string $token,
+    ): bool {
+        $kosul = $token === null ? '' : ' AND durum = :calisiyor AND kilit_token = :token';
         $statement = $this->connection->pdo()->prepare(
             'UPDATE jobs SET durum = :durum, hata = :hata, hata_sinifi = :sinif, kilit_sahibi = NULL,
                     kilit_token = NULL, kilitlendi_at = NULL, kilit_bitis = NULL,
                     bitti_at = :bitti_at, updated_at = :guncelleme_at
-             WHERE id = :id',
+             WHERE id = :id' . $kosul,
         );
         $zaman = Dates::toStorage($now);
-        $statement->execute([
+        $parametreler = [
             'durum' => self::OLU,
             'hata' => mb_substr($hata, 0, 2000),
             'sinif' => $sinif,
             'bitti_at' => $zaman,
             'guncelleme_at' => $zaman,
             'id' => $id,
-        ]);
+        ];
+        if ($token !== null) {
+            $parametreler['calisiyor'] = self::CALISIYOR;
+            $parametreler['token'] = $token;
+        }
+        $statement->execute($parametreler);
+
+        if ($statement->rowCount() !== 1) {
+            return false;
+        }
 
         $this->duyurDenetimli('NTF-JOB-DEAD', $id, 'job_dead', $hata, $now, [
             'is_turu' => $this->isTuru($id),
             'hata_kodu' => $sinif,
             'is_id' => $id,
         ]);
+
+        return true;
     }
 
     /** İşin türü — bildirim bağlamı için; iş silinmişse null. */

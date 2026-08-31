@@ -130,7 +130,14 @@ final class KuyrukSertlestirmeTest extends TestCase
         self::assertNotNull($b);
 
         // A geç kalmış sonucu yazmaya çalışır — YAZAMAZ.
-        $this->kuyruk->basarili((int) $a['id'], $sonra, (string) $a['kilit_token']);
+        // v1.2.1 A1: eskiden SESSİZCE yazılmıyordu; artık KiraKaybedildi atılır.
+        // Sessiz dönüş, işleyicinin kendini başarılı sanmasına yol açıyordu.
+        try {
+            $this->kuyruk->basarili((int) $a['id'], $sonra, (string) $a['kilit_token']);
+            self::fail('Kirası devralınmış iş için KiraKaybedildi bekleniyordu.');
+        } catch (\App\Services\Kuyruk\KiraKaybedildi) {
+            // beklenen
+        }
         self::assertSame(JobQueue::CALISIYOR, (string) $this->satir((int) $a['id'])['durum']);
 
         // B'nin sonucu geçerlidir.
@@ -146,7 +153,19 @@ final class KuyrukSertlestirmeTest extends TestCase
         $sonra = $this->simdi->modify('+' . (JobQueue::KILIT_OMRU_SANIYE + 60) . ' seconds');
         $this->kuyruk->sahiplen('isci-B', $sonra);
 
-        $this->kuyruk->basarisiz((int) $a['id'], 'geç kalan hata', $sonra, HataSinifi::GECICI, null, (string) $a['kilit_token']);
+        try {
+            $this->kuyruk->basarisiz(
+                (int) $a['id'],
+                'geç kalan hata',
+                $sonra,
+                HataSinifi::GECICI,
+                null,
+                (string) $a['kilit_token'],
+            );
+            self::fail('KiraKaybedildi bekleniyordu.');
+        } catch (\App\Services\Kuyruk\KiraKaybedildi) {
+            // beklenen
+        }
 
         self::assertSame(JobQueue::CALISIYOR, (string) $this->satir((int) $a['id'])['durum']);
     }
@@ -165,6 +184,8 @@ final class KuyrukSertlestirmeTest extends TestCase
             'Ürün bulunamadı (silinmiş olabilir)',
             $this->simdi,
             HataSinifi::KALICI,
+            null,
+            (string) $is['kilit_token'],
         );
 
         $satir = $this->satir((int) $is['id']);
@@ -179,7 +200,14 @@ final class KuyrukSertlestirmeTest extends TestCase
         $is = $this->kuyruk->sahiplen('isci-1', $this->simdi);
         self::assertNotNull($is);
 
-        $this->kuyruk->basarisiz((int) $is['id'], 'bağlantı zaman aşımı', $this->simdi, HataSinifi::GECICI);
+        $this->kuyruk->basarisiz(
+            (int) $is['id'],
+            'bağlantı zaman aşımı',
+            $this->simdi,
+            HataSinifi::GECICI,
+            null,
+            (string) $is['kilit_token'],
+        );
 
         $satir = $this->satir((int) $is['id']);
         self::assertSame(JobQueue::BEKLIYOR, (string) $satir['durum']);
@@ -193,7 +221,14 @@ final class KuyrukSertlestirmeTest extends TestCase
         $is = $this->kuyruk->sahiplen('isci-1', $this->simdi);
         self::assertNotNull($is);
 
-        $this->kuyruk->basarisiz((int) $is['id'], '429 rate limit', $this->simdi, HataSinifi::HIZ_SINIRI, 300);
+        $this->kuyruk->basarisiz(
+            (int) $is['id'],
+            '429 rate limit',
+            $this->simdi,
+            HataSinifi::HIZ_SINIRI,
+            300,
+            (string) $is['kilit_token'],
+        );
 
         $bekleyen = (string) $this->satir((int) $is['id'])['calisacak_at'];
         // En az 300 saniye (üstüne küçük pay eklenir), en fazla 5 dk + 10 sn.
@@ -251,7 +286,7 @@ final class KuyrukSertlestirmeTest extends TestCase
     public function testVAZGECOLUISISILER(): void
     {
         $id = $this->kuyruk->ekle('ceviri', 'a', [], $this->simdi);
-        $this->kuyruk->oldur($id, 'kalıcı hata', $this->simdi);
+        $this->kuyruk->yoneticiOldur($id, 'kalıcı hata', $this->simdi);
 
         self::assertTrue($this->kuyruk->vazgec($id));
         self::assertSame(0, (int) $this->pdo->query('SELECT COUNT(*) FROM jobs')->fetchColumn());
@@ -269,7 +304,7 @@ final class KuyrukSertlestirmeTest extends TestCase
     public function testDUZELTYUKUDEGISTIRIPKUYRUGAALIR(): void
     {
         $id = $this->kuyruk->ekle('ceviri', 'a', ['urun_id' => 999], $this->simdi);
-        $this->kuyruk->oldur($id, 'Ürün bulunamadı: #999', $this->simdi);
+        $this->kuyruk->yoneticiOldur($id, 'Ürün bulunamadı: #999', $this->simdi);
 
         self::assertTrue($this->kuyruk->yukuDuzelt($id, ['urun_id' => 12], $this->simdi));
 
@@ -316,11 +351,12 @@ final class KuyrukSertlestirmeTest extends TestCase
     public function testSAGLIKMETRIKLERIDOLU(): void
     {
         $biten = $this->kuyruk->ekle('ceviri', 'a', [], $this->simdi);
-        $this->kuyruk->sahiplen('isci-1', $this->simdi);
-        $this->kuyruk->basarili($biten, $this->simdi);
+        $is = $this->kuyruk->sahiplen('isci-1', $this->simdi);
+        self::assertNotNull($is);
+        $this->kuyruk->basarili($biten, $this->simdi, (string) $is['kilit_token']);
 
         $olen = $this->kuyruk->ekle('ceviri', 'b', [], $this->simdi);
-        $this->kuyruk->oldur($olen, 'kalıcı', $this->simdi);
+        $this->kuyruk->yoneticiOldur($olen, 'kalıcı', $this->simdi);
 
         $saglik = $this->kuyruk->saglik($this->simdi);
 
