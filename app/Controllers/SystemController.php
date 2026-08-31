@@ -43,7 +43,32 @@ final class SystemController
         // K99: açılışta yapılan katalog denetiminin sonucu — "Sistem durumu"
         // ekranı bunu kırmızı madde olarak basar.
         private readonly ?\App\Core\KatalogDurumu $katalogDurumu = null,
+        // A6-EK: "sözlüksüz çevrilmiş ürün" kartının düğmesi ürünleri yeniden
+        // kuyruğa alır. Kuyruk yoksa kart yalnız SAYIYI gösterir — düğme
+        // olmayan bir kuyruğa iş atmaz.
+        private readonly ?\App\Services\Kuyruk\JobQueue $kuyruk = null,
     ) {
+    }
+
+    /**
+     * A6-EK: sözlüksüz (boş sözlükle) çevrilmiş ürün sayacı.
+     *
+     * Ayarlar okunamıyorsa (kurulum yarım, sağlayıcı girilmemiş) sayaç
+     * kurulamaz. Böyle bir durumda 0 döneriz — "bilinmiyor"u sıfır saymak
+     * genelde yanlıştır ama burada kart bir EYLEM ÖNERİR: eylem üretemeyecek
+     * bir kartı göstermek kullanıcıyı boşa uğraştırır.
+     */
+    private function sozluksuzSayac(): ?\App\Services\Translation\SozluksuzCeviriSayaci
+    {
+        if ($this->appConfig === null) {
+            return null;
+        }
+
+        return new \App\Services\Translation\SozluksuzCeviriSayaci(
+            $this->connection,
+            $this->appConfig,
+            $this->basePath,
+        );
     }
 
     /**
@@ -638,6 +663,79 @@ final class SystemController
                 'writable' => $this->media?->isWritable(),
             ],
             'setup_lock_in_database' => $this->lock->storesInDatabase(),
+            // A6-EK: boş sözlükle çevrilmiş ürün sayısı. SALT OKUNUR; 0 ise
+            // panel kartı GİZLER — sıfır gösteren uyarı bir süre sonra okunmaz
+            // hâle gelir ve gerçek uyarıyı da görünmez kılar.
+            'sozluksuz_ceviri' => $this->sozluksuzSayisi(),
+        ]);
+    }
+
+    /**
+     * Sözlüksüz çevrilmiş ürün sayısı — sistem durumu okunurken PATLAMAZ.
+     *
+     * Sayım bir teşhis alanıdır; hesaplanamıyorsa (çeviri ayarları yok, tablo
+     * eksik) bütün sistem durumu ekranını düşürmemeli. Hata yutulmuyor: 0
+     * dönerken kart gizlenir, yani yanlış bir "her şey yolunda" iddiası da
+     * üretilmez — kart zaten yalnız pozitif sayıda bir şey iddia eder.
+     */
+    private function sozluksuzSayisi(): int
+    {
+        try {
+            return $this->sozluksuzSayac()?->urunSayisi() ?? 0;
+        } catch (Throwable) {
+            return 0;
+        }
+    }
+
+    /**
+     * POST /api/system/sozluksuz-ceviri-yenile — A6-EK.
+     *
+     * Etkilenen ürünleri MEVCUT toplu çeviri yoluna kuyruğa alır. Yeni bir
+     * çeviri hattı YOKTUR: aynı iş türü, aynı idempotent anahtar (`urun:<id>`),
+     * dolayısıyla düğmeye iki kez basmak iki iş açmaz.
+     *
+     * K54 KORUNUR: kuyruk işi ürün alanlarına yazmaz, önbelleği doldurur; elle
+     * düzeltilmiş alanlar zaten ezilmez.
+     *
+     * VERİ SİLİNMEZ: eski (öksüz) önbellek satırları oldukları yerde kalır;
+     * doğru anahtarla üretilen yeni satırlar onların yerine OKUNUR.
+     */
+    public function sozluksuzCeviriYenile(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        $user = $this->authenticatedUser($request);
+
+        $sayac = $this->sozluksuzSayac();
+        if ($sayac === null || $this->kuyruk === null) {
+            return Response::error($response, 'SERVER_ERROR', 'Çeviri kuyruğu yapılandırılmamış.', 500);
+        }
+
+        try {
+            $kimlikler = $sayac->urunKimlikleri();
+        } catch (Throwable $e) {
+            return Response::error($response, 'SERVER_ERROR', 'Etkilenen ürünler okunamadı: ' . $e->getMessage(), 500);
+        }
+
+        $now = $this->clock->now();
+        foreach ($kimlikler as $urunId) {
+            $this->kuyruk->ekle(
+                \App\Services\Kuyruk\KuyrukIsleyicileri::TUR_CEVIRI,
+                'urun:' . $urunId,
+                ['urun_id' => $urunId],
+                $now,
+            );
+        }
+
+        (new ActivityLog($this->connection))->record(
+            'system',
+            null,
+            'sozluksuz_ceviri_yenile',
+            sprintf('%s: %d ürün yeniden çeviri kuyruğuna alındı', $user->email, count($kimlikler)),
+            ClientIp::from($request),
+            $now,
+        );
+
+        return Response::success($response, [
+            'kuyruga_alinan' => count($kimlikler),
         ]);
     }
 

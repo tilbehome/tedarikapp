@@ -92,6 +92,7 @@
             <file>tests/Http/SettingsEndpointsTest.php</file>
             <file>tests/Http/SetupHardeningTest.php</file>
             <file>tests/Http/SetupOnarimUclariTest.php</file>
+            <file>tests/Http/SozluksuzCeviriKartiTest.php</file>
             <file>tests/Http/TranslateEndpointsTest.php</file>
         </testsuite>
     </testsuites>

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { system as systemApi } from '../../../api/endpoints';
 import { useAsync } from '../../../lib/useAsync';
 import { count, dateTime } from '../../../lib/format';
@@ -105,10 +106,79 @@ export default function SistemDurumu() {
           </div>
         ) : null}
 
+        {/* A6-EK: boş sözlükle çevrilmiş ürünler. SIFIRDA GİZLİ — sıfır
+            gösteren bir uyarı bir süre sonra okunmaz hâle gelir ve gerçek
+            uyarıyı da görünmez kılar. */}
+        {(statusState.data?.sozluksuz_ceviri ?? 0) > 0 ? (
+          <SozluksuzCeviriKarti
+            sayi={statusState.data?.sozluksuz_ceviri ?? 0}
+            onDone={statusState.reload}
+          />
+        ) : null}
+
         {statusState.data && statusState.data.migrations.pending_count > 0 ? (
           <MigrationActions onDone={statusState.reload} />
         ) : null}
       </section>
     </>
+  );
+}
+
+/**
+ * A6-EK — "Sözlüksüz çevrilmiş ürün" kartı.
+ *
+ * NE ANLATIYOR: kuyruk yolu bir dönem boş sözlükle koştu. Ürünlere yanlış
+ * metin YAZILMADI (çeviri bir öneridir, ürüne yazılmaz) ama üretilen önbellek
+ * satırları başka bir anahtara düştü ve panel onları hiç bulamıyor. Yani
+ * toplu çeviri "başarılı" göründü, ürün çevrilmemiş kaldı.
+ *
+ * Tek düğme, tek eylem: ürünleri MEVCUT çeviri kuyruğuna geri koy. Kuyruk
+ * bütçeli ve parçalı çalışır; iş anahtarı idempotenttir, iki kez basmak iki
+ * iş açmaz. Veri silinmez — eski satırlar oldukları yerde kalır, yenileri
+ * onların yerine OKUNUR.
+ */
+function SozluksuzCeviriKarti({ sayi, onDone }: { sayi: number; onDone: () => void }) {
+  const [calisiyor, setCalisiyor] = useState(false);
+  const [sonuc, setSonuc] = useState<string | null>(null);
+  const [hata, setHata] = useState<string | null>(null);
+
+  async function yenile() {
+    setCalisiyor(true);
+    setHata(null);
+    try {
+      const cevap = await systemApi.sozluksuzCeviriYenile();
+      setSonuc(`${count(cevap.kuyruga_alinan)} ürün çeviri kuyruğuna alındı.`);
+      onDone();
+    } catch (e) {
+      // Sessiz yutma yok: kullanıcı düğmeye bastı, sonucu görmeli.
+      setHata(e instanceof Error ? e.message : 'Kuyruğa alma başarısız.');
+    } finally {
+      setCalisiyor(false);
+    }
+  }
+
+  return (
+    <div
+      className="mt-3 rounded-lg border border-warn/40 bg-warn-bg p-3 text-sm"
+      data-testid="sozluksuz-ceviri"
+    >
+      <b className="text-warn">Sözlüksüz çevrilmiş ürün: {count(sayi)}</b>
+      <p className="mt-0.5 text-xs text-ink-2">
+        Bu ürünler için üretilen çeviriler sözlük olmadan hesaplandı ve panel
+        onları okuyamıyor — ürün çevrilmemiş görünür. Yeniden çevirmek sorunu
+        kapatır; elle düzelttiğiniz alanlar korunur.
+      </p>
+      <button
+        type="button"
+        className="btn btn-sm mt-2"
+        onClick={yenile}
+        disabled={calisiyor}
+        data-testid="sozluksuz-ceviri-yenile"
+      >
+        {calisiyor ? 'Kuyruğa alınıyor…' : `Yeniden çevir (${count(sayi)} ürün)`}
+      </button>
+      {sonuc !== null ? <p className="mt-1 text-xs text-ok">{sonuc}</p> : null}
+      {hata !== null ? <p className="mt-1 text-xs text-err">{hata}</p> : null}
+    </div>
   );
 }

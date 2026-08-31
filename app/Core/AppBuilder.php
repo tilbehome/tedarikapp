@@ -155,9 +155,13 @@ final class AppBuilder
         // yakalama da tur açıyor. İşleyiciler bu yüzden HTTP kompozisyonunda da
         // kayıtlı olmalı — kayıtlı olmasa tur "tanınmayan iş türü" der ve işleri
         // ölü rafına atardı.
+        // A3: HTTP kompozisyonunda da SAAT taşınır — panel ziyaretinde açılan
+        // tur da uzun sürebilir ve her geçiş kendi anını okumalıdır.
+        $kuyruk = new \App\Services\Kuyruk\JobQueue($connection, $services->bildirim);
         $kuyrukKosucusu = new \App\Services\Kuyruk\JobRunner(
-            new \App\Services\Kuyruk\JobQueue($connection, $services->bildirim),
+            $kuyruk,
             $logger,
+            saat: $services->clock,
         );
         \App\Services\Kuyruk\KuyrukIsleyicileri::kaydet(
             $kuyrukKosucusu,
@@ -211,7 +215,18 @@ final class AppBuilder
 
         // Güncelleme yolu (İE#5 §12): kurulum kilitlendikten sonra migration koşmanın
         // kimlik doğrulamalı yolu. Yazma ucu ayrıca CSRF ister.
-        $system = new SystemController($basePath, $connection, $setupLock, $services->clock, $mediaService, $stateMachine, $config, $katalogDurumu);
+        $system = new SystemController(
+            $basePath,
+            $connection,
+            $setupLock,
+            $services->clock,
+            $mediaService,
+            $stateMachine,
+            $config,
+            $katalogDurumu,
+            // A6-EK: "Yeniden çevir" düğmesi ürünleri MEVCUT çeviri kuyruğuna alır.
+            $kuyruk,
+        );
         Routes\SystemRoutes::register($app, $system, $services, $responseFactory);
 
         $listController = new ListController(
