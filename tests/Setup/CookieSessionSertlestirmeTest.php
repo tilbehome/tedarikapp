@@ -195,15 +195,23 @@ final class CookieSessionSertlestirmeTest extends TestCase
         self::assertStringContainsString('SameSite=Lax', $satir);
     }
 
-    public function testCEREZYOLUSETUPADARALTILIR(): void
+    public function testCEREZYOLUAPISETUPUDAKAPSAR(): void
     {
-        // Çerez `Path=/` ile bütün siteye gidiyordu: panelin her isteği kurulum
-        // state'ini de taşıyordu. Kapsamı daraltmak, sırrın gitmesi gerekmeyen
-        // yerlere gitmesini önler.
+        // KAPSAM DARALTMASI DENENDİ VE GERİ ALINDI (CI kanıtı).
+        //
+        // `Path=/setup` mantıklı görünüyordu ama sihirbaz SAYFASI `/setup`,
+        // API'si `/api/setup/...` altında. Dar çerez `/api/setup/database`
+        // isteğine gitmez; oturum kaybolur ve istek CSRF ile düşer — CI'ın
+        // üretim profili işi bunu anında yakaladı.
+        //
+        // İki yolun `/` dışında ortak öneki yok. Bu test kararın gerekçesini
+        // taşır ki daraltma iyi niyetle yeniden denenmesin.
         $oturum = $this->oturum();
         $oturum->set('adim', 'database');
+        $satir = $this->cerezSatiri($oturum);
 
-        self::assertStringContainsString('Path=/setup', $this->cerezSatiri($oturum));
+        self::assertStringContainsString('Path=/;', $satir . ';');
+        self::assertStringNotContainsString('Path=/setup', $satir);
     }
 
     public function testSILMECEREZIAYNIYOLUKULLANIR(): void
@@ -217,7 +225,10 @@ final class CookieSessionSertlestirmeTest extends TestCase
 
         $satir = $this->cerezSatiri($oturum);
 
-        self::assertStringContainsString('Path=/setup', $satir);
+        // Silme çerezi ASIL çerezle AYNI yolu kullanmalı; farklı `Path` ile
+        // yazılan silme çerezi tarayıcıda hiçbir şey silmez ve state sessizce
+        // hayatta kalır.
+        self::assertStringContainsString('Path=/;', $satir . ';');
         self::assertStringContainsString('Expires=Thu, 01 Jan 1970', $satir);
     }
 }

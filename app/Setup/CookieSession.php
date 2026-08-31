@@ -32,11 +32,19 @@ final class CookieSession implements SessionInterface
     public const COOKIE_NAME = 'tedarikapp_setup_state';
 
     /**
-     * CEREZ YOLU (v1.2.1 C2) — `/` idi, yani panelin HER istegi kurulum
-     * state'ini de tasiyordu. Sirrin gitmesi gerekmeyen yere gitmesi, tek
-     * basina acik olmasa da gereksiz maruziyettir.
+     * ÇEREZ YOLU — `/` KALMAK ZORUNDA (v1.2.1 C2, CI'da kanıtlandı).
+     *
+     * Daraltmayı denedim: `Path=/setup`. CI'ın üretim profili işi bunu anında
+     * kırdı — sihirbaz SAYFASI `/setup` altında ama API'si `/api/setup/...`
+     * altında. `Path=/setup` çerezi `/api/setup/database` isteğine GİTMEZ;
+     * oturum kaybolur ve istek CSRF hatasıyla düşer.
+     *
+     * İki yolun `/` dışında ortak öneki YOK. Daraltmak için rotaları taşımak
+     * gerekirdi ve bu, sertleştirme turunun kapsamı dışında bir değişiklik.
+     * Kapsamı daraltmak iyi bir fikirdi ama BEDELİ kurulumun çalışmaması
+     * olamaz; asıl sertleştirmeler (TTL, nonce, anahtar dönemi) yerinde duruyor.
      */
-    private const COOKIE_PATH = '/setup';
+    private const COOKIE_PATH = '/';
 
     /**
      * STATE OMRU (v1.2.1 C2) — 30 dakika. Omur siniri YOKTU: bir kez uretilen
