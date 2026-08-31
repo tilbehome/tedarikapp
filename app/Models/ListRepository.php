@@ -17,12 +17,22 @@ use DateTimeImmutable;
 final class ListRepository
 {
     private const COLUMNS = 'id, name, period, supplier_name, status, note, visibility,
-        yuan_rate, usd_rate, rate_locked_at, revision, share_token_hash, share_token_prefix,
-        share_expires_at, share_key_hash, share_key_plain, share_key_enabled,
+        yuan_rate, usd_rate, rate_locked_at, revision,
         created_at, updated_at, archived_at, deleted_at';
 
     public function __construct(private readonly Connection $connection)
     {
+    }
+
+    /** COLUMNS listesinin tablo takma adıyla nitelendirilmiş hâli (JOIN'ler için). */
+    private static function nitelikli(string $takma): string
+    {
+        $parcalar = array_map(
+            static fn (string $kolon): string => $takma . '.' . trim($kolon),
+            explode(',', self::COLUMNS),
+        );
+
+        return implode(', ', $parcalar);
     }
 
     /** @return array<string, mixed>|null */
@@ -168,9 +178,7 @@ final class ListRepository
         $allowed = [
             'name', 'period', 'supplier_name', 'status', 'note', 'visibility',
             'yuan_rate', 'usd_rate', 'rate_locked_at', 'archived_at',
-            'share_token_hash', 'share_token_prefix', 'share_expires_at',
             // İE#18 G6 (K62): erişim anahtarı — hash + panelde gösterilen düz metin + kapı anahtarı.
-            'share_key_hash', 'share_key_plain', 'share_key_enabled',
         ];
 
         $assignments = [];
@@ -216,8 +224,17 @@ final class ListRepository
      */
     public function findByShareHash(string $hash): ?array
     {
+        // K103: token artik `shares` tablosunda. Sorgu oraya JOIN eder;
+        // `lists` paylasim kolonlari OKUNMAZ (gecis suresince salt-okunur
+        // duruyorlar ama uygulama yollarinin hicbiri onlara bakmaz).
         $statement = $this->connection->pdo()->prepare(
-            'SELECT ' . self::COLUMNS . ' FROM lists WHERE share_token_hash = :hash AND deleted_at IS NULL',
+            // Kolonlar `l.` ile NİTELENDİRİLİR: `id`, `created_at` ve
+            // `updated_at` iki tabloda da var; niteliksiz bırakmak "ambiguous
+            // column" hatası verirdi.
+            'SELECT ' . self::nitelikli('l') . ' FROM lists l
+             JOIN shares s ON s.list_id = l.id
+             WHERE s.token_hash = :hash AND s.revoked_at IS NULL AND l.deleted_at IS NULL
+             LIMIT 1',
         );
         $statement->execute(['hash' => $hash]);
         $row = $statement->fetch();

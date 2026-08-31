@@ -96,6 +96,12 @@ final class SharePage
         // ve linki üçüncü kişilere dağıtmaya davet eder — erişim anahtarı kapısını
         // (K62) fiilen delen şey budur.
         bool $sahipGorunumu = false,
+        // K103: BİTİŞ TARİHİ PAYLAŞIMIN ALANIDIR, LİSTENİN DEĞİL. Eskiden
+        // `lists.share_expires_at`ten geliyordu ve sayfa onu liste dizisinden
+        // fişliyordu; `shares`e taşındıktan sonra bu yol SESSİZCE boşa düştü —
+        // tarih hiç yazılmadı, hiçbir hata da çıkmadı. Açık parametre bunu bir
+        // daha mümkün kılmaz.
+        ?string $paylasimBitisi = null,
     ): string {
         $e = static fn (mixed $value): string => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
         $this->aktifDegerler = $this->values?->withDil($dil);
@@ -137,7 +143,7 @@ final class SharePage
             : $this->s('kur_guncel');
         $revizyonHarfi = TemplateV2::revisionLabel(max(1, (int) ($list['revision'] ?? 0) + 1));
 
-        $araclar = $this->araclar($list, $sira, $canonicalUrl, $token, $dil, $now, $e, $sahipGorunumu);
+        $araclar = $this->araclar($list, $sira, $canonicalUrl, $token, $dil, $now, $e, $sahipGorunumu, $paylasimBitisi);
         $lightboxVerisi = htmlspecialchars(
             json_encode($galeriler, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '[]',
             ENT_QUOTES,
@@ -309,6 +315,7 @@ final class SharePage
         ?\DateTimeImmutable $now,
         callable $e,
         bool $sahipGorunumu = false,
+        ?string $paylasimBitisi = null,
     ): string {
         $html = '<div class="tgrp" role="group" aria-label="' . $e($this->s('ciktilar')) . '">';
 
@@ -336,7 +343,7 @@ final class SharePage
             'liste' => (string) $list['name'],
             'adet' => $urunSayisi,
             'link' => $link,
-            'tarih' => $this->gecerlilik($list),
+            'tarih' => $this->gecerlilik($paylasimBitisi),
         ]);
         $konu = ShareTexts::metin($dil, 'eposta_konu', [
             'liste' => (string) $list['name'],
@@ -386,15 +393,10 @@ final class SharePage
         return $html;
     }
 
-    /**
-     * Paylaşım metnindeki geçerlilik tarihi — YOKSA satır hiç yazılmaz (uydurma yok).
-     *
-     * @param array<string, mixed> $list
-     */
-    private function gecerlilik(array $list): ?string
+    /** Paylaşım metnindeki geçerlilik tarihi — YOKSA satır hiç yazılmaz (uydurma yok). */
+    private function gecerlilik(?string $tarih): ?string
     {
-        $tarih = $list['share_expires_at'] ?? null;
-        if (!is_string($tarih) || $tarih === '') {
+        if ($tarih === null || $tarih === '') {
             return null;
         }
 

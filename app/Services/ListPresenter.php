@@ -33,6 +33,8 @@ final class ListPresenter
          * Verilmezse davranış eskisi gibi kalır — `name` neyse o basılır.
          */
         private readonly ?\App\Services\Translation\AdCozumleyici $adCozumleyici = null,
+        // K103: paylaşım kaydı `shares` tablosunda.
+        private readonly ?\App\Models\ShareRepository $shares = null,
     ) {
     }
 
@@ -71,6 +73,7 @@ final class ListPresenter
         [$yuanRate, $usdRate] = $this->effectiveRates($row);
 
         $lastExport = $this->lists->lastExport($listId);
+        $paylasim = $this->shares?->listeninAktifi($listId) ?? [];
         $revision = (int) $row['revision'];
 
         return [
@@ -85,8 +88,11 @@ final class ListPresenter
             'usd_rate' => $usdRate,
             'rate_locked_at' => $this->nullableDate($row['rate_locked_at']),
             'revision' => $revision,
-            'share_token_prefix' => $this->nullableString($row['share_token_prefix']),
-            'share_expires_at' => $this->nullableDate($row['share_expires_at']),
+            // K103: paylasim `shares` tablosunda. API ANAHTAR ADLARI KORUNUR
+            // (`share_token_prefix`/`share_expires_at`) - panel sozlesmesi
+            // kirilmaz; degisen yalnizca degerin nereden okundugu.
+            'share_token_prefix' => $this->nullableString($paylasim['token_prefix'] ?? null),
+            'share_expires_at' => $this->nullableDate($paylasim['expires_at'] ?? null),
             'product_count' => count($productRows),
             'progress' => $this->progress($productRows),
             'totals' => $this->totals($productRows, $yuanRate, $usdRate),

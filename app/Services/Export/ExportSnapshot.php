@@ -41,7 +41,7 @@ final class ExportSnapshot
      * @param list<array<string, mixed>> $productRows ham ürün satırları (sort_no sıralı)
      * @param array<int, string> $categoryNames id → ad (kategori adı snapshot'ta DONAR —
      *                                          sonradan yeniden adlandırma eski çıktıyı değiştirmez)
-     * @param array{copy?: string, statuses?: list<string>, lang?: string, document_code?: string|null, revision_label?: string, share_url?: string|null, document_header?: array{company: string|null, web: string|null, email: string|null, prepared_by: string|null}} $options
+     * @param array{copy?: string, statuses?: list<string>, lang?: string, document_code?: string|null, revision_label?: string, share_url?: string|null, paylasim_onek?: string|null, document_header?: array{company: string|null, web: string|null, email: string|null, prepared_by: string|null}} $options
      *
      * @return array<string, mixed>
      */
@@ -77,7 +77,10 @@ final class ExportSnapshot
             'list' => [
                 'id' => $list['id'],
                 'name' => $list['name'],
-                'share_token_prefix' => $list['share_token_prefix'],
+                // K103: belge QR'i icin paylasim oneki. Anahtar adi
+                // `paylasim_onek` oldu: bu dizi IC sozlesmedir (snapshot ->
+                // render'ci) ve eski ad `lists` kolonuyla karistiriliyordu.
+                'paylasim_onek' => is_string($options['paylasim_onek'] ?? null) ? $options['paylasim_onek'] : null,
                 'period' => $list['period'],
                 'supplier_name' => $list['supplier_name'],
                 'status' => $list['status'],

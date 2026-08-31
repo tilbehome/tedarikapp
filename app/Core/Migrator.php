@@ -104,6 +104,39 @@ final class Migrator
         '0035_bildirimler' => [
             ['table' => 'notifications'],
         ],
+        // V3-C A1: firma döngüsü omurgası. DDL ve göç AYRI dosyalarda (K23);
+        // her biri haritada olmalı — 0032 dersi: haritada olmayan migration
+        // K49 baseline akışında SESSİZCE atlanır.
+        // Dosyanın YARATTIĞI HER TABLO listelenir: baseline kontrolü "hepsi
+        // varsa uygulanmış say" der. Yarısını listeleseydik, eksik yaratılmış
+        // bir kurulumda 0036 "uygulanmış" damgalanır ve kalan tablolar bir
+        // daha ASLA açılmazdı.
+        '0036_firmalar_ve_turlar' => [
+            ['table' => 'suppliers'],
+            ['table' => 'supplier_contacts'],
+            ['table' => 'rfq_snapshots'],
+            ['table' => 'rfq_lines'],
+            ['table' => 'supplier_rounds'],
+            ['table' => 'quote_responses'],
+            ['table' => 'quote_lines'],
+            ['table' => 'quote_price_tiers'],
+            ['table' => 'quote_alternatives'],
+        ],
+        '0037_paylasim_tablosu' => [
+            ['table' => 'shares'],
+            ['table' => 'share_dispatch_log'],
+        ],
+        // Göç dosyasının "nesnesi" hedef tablodur: veri taşır, şema
+        // değiştirmez. Baseline'da tablo varsa göç de uygulanmış sayılır —
+        // dosya idempotenttir (WHERE NOT EXISTS), ikinci koşum satır çoğaltmaz.
+        '0038_paylasim_gocu' => [
+            ['table' => 'shares'],
+        ],
+        '0039_belgeler_ve_sablonlar' => [
+            ['table' => 'documents'],
+            ['table' => 'document_links'],
+            ['table' => 'list_templates'],
+        ],
         // İE#21 B1: Keşif havuzu — küme anahtarı ve normalize arama alanı.
         '0030_kesif_havuzu' => [
             ['column' => ['listings', 'kume_anahtari']],

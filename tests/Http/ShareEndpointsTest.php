@@ -52,9 +52,14 @@ final class ShareEndpointsTest extends AuthTestCase
 
         self::assertSame(64, strlen($token), 'Token 256-bit (64 hex) olmalı.');
 
-        $row = $this->pdo->query('SELECT share_token_hash, share_token_prefix FROM lists WHERE id = ' . $listId)->fetch(\PDO::FETCH_ASSOC);
-        self::assertSame(hash('sha256', $token), $row['share_token_hash'], 'DB\'de HASH durmalı.');
-        self::assertSame(substr($token, 0, 8), $row['share_token_prefix']);
+        // K103: paylaşımın gerçeği artık `shares` tablosunda. Test eskiden
+        // `lists` kolonlarını okuyordu; sınadığı DAVRANIŞ (düz token DB'ye
+        // yazılmaz) değişmedi, yalnız kaydın yeri değişti.
+        $row = $this->pdo->query(
+            'SELECT token_hash, token_prefix FROM shares WHERE list_id = ' . $listId . ' AND revoked_at IS NULL',
+        )->fetch(\PDO::FETCH_ASSOC);
+        self::assertSame(hash('sha256', $token), $row['token_hash'], 'DB\'de HASH durmalı.');
+        self::assertSame(substr($token, 0, 8), $row['token_prefix']);
         self::assertStringNotContainsString($token, json_encode($this->json($this->call('GET', '/api/lists/' . $listId))), 'Tam token liste nesnesinde görünMEMELİ.');
     }
 
@@ -117,7 +122,9 @@ final class ShareEndpointsTest extends AuthTestCase
         self::assertSame(200, $this->call('GET', '/p/' . $token)->getStatusCode());
 
         // Süreyi geçmişe çek — sayfa artık sabit 404.
-        $this->pdo->exec("UPDATE lists SET share_expires_at = '2020-01-01 00:00:00' WHERE id = " . $listId);
+        $this->pdo->exec(
+            "UPDATE shares SET expires_at = '2020-01-01 00:00:00' WHERE list_id = " . $listId . ' AND revoked_at IS NULL',
+        );
         self::assertSame(404, $this->call('GET', '/p/' . $token)->getStatusCode());
     }
 

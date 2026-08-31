@@ -112,10 +112,11 @@ final class ShareLockPage
     /**
      * @param array<string, mixed> $list ListPresenter::list çıktısı (yalnız ad/firma/bitiş kullanılır)
      * @param bool $hatali önceki denemede anahtar yanlış mıydı?
-     * @param array{iletisim?: string|null, ardisik_hata?: int, adres?: string|null} $ek
+     * @param array{iletisim?: string|null, ardisik_hata?: int, adres?: string|null, paylasim_bitis?: string|null} $ek
      *        iletisim: wa.me için RAKAM dizisi (boşsa düğme basılmaz),
      *        ardisik_hata: son dakikadaki deneme sayısı (uyarı eşiği için),
-     *        adres: paylaşım sayfasının kanonik adresi (WhatsApp metnine girer)
+     *        adres: paylaşım sayfasının kanonik adresi (WhatsApp metnine girer),
+     *        paylasim_bitis: `shares.expires_at` (K103 — listede DEĞİL)
      */
     public function render(
         array $list,
@@ -160,8 +161,9 @@ final class ShareLockPage
 
         // GERÇEK bilgi: bağlantının bitişi. Yoksa "süre sınırı yok" yazar —
         // olmayan bir geri sayım gösterilmez (bkz. sınıf başlığı, sapma 1).
-        $bitis = is_string($list['share_expires_at'] ?? null) && $list['share_expires_at'] !== ''
-            ? $this->tarih((string) $list['share_expires_at'])
+        // K103: bitiş PAYLAŞIMIN alanıdır, listenin değil — bağlamla gelir.
+        $bitis = is_string($ek['paylasim_bitis'] ?? null) && $ek['paylasim_bitis'] !== ''
+            ? $this->tarih((string) $ek['paylasim_bitis'])
             : $m['suresiz'];
 
         $dilSecici = '';

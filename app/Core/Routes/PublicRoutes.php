@@ -102,14 +102,16 @@ final class PublicRoutes
         );
         $shareGate = new ShareGate($connection);
         // İE#18 G6 (K62): erişim anahtarı kapısı — "linki bilen görür" dönemi bitti.
-        $anahtar = new \App\Services\Share\ShareKeyService($lists, (string) $config->get('APP_KEY', ''));
+        // K103: paylaşım kaydının tek erişim noktası.
+        $shareDepo = new \App\Models\ShareRepository($connection);
+        $anahtar = new \App\Services\Share\ShareKeyService($shareDepo, (string) $config->get('APP_KEY', ''));
         $kilitSayfasi = new \App\Services\Share\ShareLockPage();
         $surum = \App\Core\AppVersion::VALUE;
         // İE#18 G5 — ADRES ÖN EKİ: kanonik ön ek artık `/liste/`; `/p/` ALIAS
         // olarak AYNEN kalır (yönlendirme DEĞİL, aynı handler iki yola bağlı) —
         // daha önce gönderilmiş bağlantılar kırılmasın. K51 disiplini iki ön ekte
         // BİREBİR aynıdır: token denetimi, sabit 404, hız sınırı, X-Robots-Tag.
-        $sayfaHandler = static function (ServerRequestInterface $request, ResponseInterface $response, array $args) use ($lists, $products, $presenter, $connection, $sharePage, $shareGate, $services, $anahtar, $kilitSayfasi, $surum, $config): ResponseInterface {
+        $sayfaHandler = static function (ServerRequestInterface $request, ResponseInterface $response, array $args) use ($lists, $products, $presenter, $connection, $sharePage, $shareGate, $services, $anahtar, $kilitSayfasi, $surum, $config, $shareDepo): ResponseInterface {
             $now = $services->clock->now();
             $ip = ClientIp::from($request);
             $token = (string) ($args['token'] ?? '');
@@ -127,6 +129,8 @@ final class PublicRoutes
             }
 
             $row = $lists->findByShareHash(hash('sha256', $token));
+            // K103: gecerlilik ve anahtar artik PAYLASIM kaydinda.
+            $paylasim = $shareDepo->tokenOzetiyle(hash('sha256', $token));
             if ($row === null) {
                 $shareGate->recordInvalid($ip, $token, $now);
                 // IP HAM HALIYLE TASINMAZ: birlestirme anahtari `paylasim_id+ip_hash`
@@ -138,7 +142,7 @@ final class PublicRoutes
 
                 return $notFound();
             }
-            if ($row['share_expires_at'] !== null && Dates::fromStorage((string) $row['share_expires_at'], $services->timezone) <= $now) {
+            if ($paylasim['expires_at'] !== null && Dates::fromStorage((string) $paylasim['expires_at'], $services->timezone) <= $now) {
                 return $notFound();
             }
 
@@ -149,16 +153,18 @@ final class PublicRoutes
             // Kapı AÇIKSA ve geçerli çerez YOKSA: kilit ekranı döner. Bu yanıtta
             // LİSTE VERİSİ YOKTUR (ürün, fiyat, adet hiç render edilmez) — kapı
             // görsel bir katman değil, veri sınırıdır.
-            $row = $anahtar->hazirla($row, $now);
-            if ($anahtar->kapiAcik($row)) {
+            $paylasim = $anahtar->hazirla($paylasim, $now);
+            if ($anahtar->kapiAcik($paylasim)) {
                 $cerez = $request->getCookieParams()[\App\Services\Share\ShareKeyService::CEREZ_ADI] ?? null;
-                if (!$anahtar->cerezGecerli($token, $row, is_string($cerez) ? $cerez : null, $now)) {
+                if (!$anahtar->cerezGecerli($token, $paylasim, is_string($cerez) ? $cerez : null, $now)) {
                     $response->getBody()->write(
                         $kilitSayfasi->render($presenter->list($row), $token, $surum, false, $dil, [
                             // İE#21 EK-4: "yeni anahtar iste" köprüsü ve art arda
                             // hatalı deneme uyarısı için bağlam.
                             'iletisim' => (new \App\Models\SettingsRepository($connection))->shareContactPhone(),
                             'ardisik_hata' => $shareGate->anahtarDenemeSayisi($token, $ip, $now),
+                            // K103: bitiş `shares` kaydından gelir.
+                            'paylasim_bitis' => $paylasim['expires_at'] ?? null,
                             'adres' => \App\Core\AppUrl::to($config->get('APP_URL'), $request, self::KANONIK_ON_EK . '/' . $token, \App\Core\AppUrl::hostYedegiIzinli($config->get('APP_ENV'))),
                         ]),
                     );
@@ -188,6 +194,8 @@ final class PublicRoutes
                 // İE#21 B8-4: sahip görünümü = panelde oturumu AÇIK olan kişi.
                 // Aynı adresi firma da açar; ikisini ayıran tek şey oturumdur.
                 $services->session->isLoggedIn(),
+                // K103: geçerlilik tarihi paylaşım kaydından.
+                is_string($paylasim['expires_at'] ?? null) ? (string) $paylasim['expires_at'] : null,
             );
             $response->getBody()->write($html);
 
@@ -202,7 +210,7 @@ final class PublicRoutes
 
         // ── İE#18 G6-c: ANAHTAR DOĞRULAMA UCU ────────────────────────────────
         $settingsRepo = new \App\Models\SettingsRepository($connection);
-        $anahtarHandler = static function (ServerRequestInterface $request, ResponseInterface $response, array $args) use ($lists, $presenter, $shareGate, $services, $anahtar, $kilitSayfasi, $surum, $logger, $settingsRepo, $config, $connection): ResponseInterface {
+        $anahtarHandler = static function (ServerRequestInterface $request, ResponseInterface $response, array $args) use ($lists, $presenter, $shareGate, $services, $anahtar, $kilitSayfasi, $surum, $logger, $settingsRepo, $config, $connection, $shareDepo): ResponseInterface {
             $now = $services->clock->now();
             $ip = ClientIp::from($request);
             $token = (string) ($args['token'] ?? '');
@@ -217,6 +225,8 @@ final class PublicRoutes
                 return $notFound();
             }
             $row = $lists->findByShareHash(hash('sha256', $token));
+            // K103: gecerlilik ve anahtar artik PAYLASIM kaydinda.
+            $paylasim = $shareDepo->tokenOzetiyle(hash('sha256', $token));
             if ($row === null) {
                 $shareGate->recordInvalid($ip, $token, $now);
                 // IP HAM HALIYLE TASINMAZ: birlestirme anahtari `paylasim_id+ip_hash`
@@ -228,8 +238,8 @@ final class PublicRoutes
 
                 return $notFound();
             }
-            if ($row['share_expires_at'] !== null
-                && Dates::fromStorage((string) $row['share_expires_at'], $services->timezone) <= $now) {
+            if ($paylasim['expires_at'] !== null
+                && Dates::fromStorage((string) $paylasim['expires_at'], $services->timezone) <= $now) {
                 return $notFound();
             }
 
@@ -276,8 +286,8 @@ final class PublicRoutes
             }
             $shareGate->recordAnahtarDeneme($token, $ip, $now);
 
-            $row = $anahtar->hazirla($row, $now);
-            if (!$anahtar->dogru($row, $girilen)) {
+            $paylasim = $anahtar->hazirla($paylasim, $now);
+            if (!$anahtar->dogru($paylasim, $girilen)) {
                 // İç teşhis (İE#17 G6 hattı) — istemciye yalnız "hatalı" döner.
                 $logger->warning('Erişim anahtarı hatalı', [
                     'token_onek' => substr($token, 0, 8),
@@ -290,6 +300,7 @@ final class PublicRoutes
                     $kilitSayfasi->render($presenter->list($row), $token, $surum, true, $dil, [
                         'iletisim' => $settingsRepo->shareContactPhone(),
                         'ardisik_hata' => $shareGate->anahtarDenemeSayisi($token, $ip, $now),
+                        'paylasim_bitis' => $paylasim['expires_at'] ?? null,
                         'adres' => \App\Core\AppUrl::to($config->get('APP_URL'), $request, self::KANONIK_ON_EK . '/' . $token, \App\Core\AppUrl::hostYedegiIzinli($config->get('APP_ENV'))),
                     ]),
                 );
@@ -303,7 +314,7 @@ final class PublicRoutes
             $cerez = sprintf(
                 '%s=%s; Path=/; Max-Age=%d; HttpOnly; SameSite=Lax%s',
                 \App\Services\Share\ShareKeyService::CEREZ_ADI,
-                $anahtar->cerezDegeri($token, $row, $now),
+                $anahtar->cerezDegeri($token, $paylasim, $now),
                 \App\Services\Share\ShareKeyService::CEREZ_OMRU_SANIYE,
                 $request->getUri()->getScheme() === 'https' ? '; Secure' : '',
             );
@@ -332,6 +343,7 @@ final class PublicRoutes
             $services->timezone,
             $logger,
             $anahtar,
+            $shareDepo,
         );
         foreach (self::ON_EKLER as $onEk) {
             $app->get($onEk . '/{token}/export', [$publicExport, 'download']);
@@ -342,7 +354,7 @@ final class PublicRoutes
 
         // İE#15 C3 — PAYLAŞIM QR'ı: sunucuda üretilir (dış servis YOK, K45).
         // İçeriği YALNIZ paylaşım adresidir; imzalı indirme adresi QR'a KONMAZ.
-        $qrHandler = static function (ServerRequestInterface $request, ResponseInterface $response, array $args) use ($lists, $shareGate, $services, $anahtar, $config): ResponseInterface {
+        $qrHandler = static function (ServerRequestInterface $request, ResponseInterface $response, array $args) use ($lists, $shareGate, $services, $anahtar, $config, $shareDepo): ResponseInterface {
             $now = $services->clock->now();
             $token = (string) ($args['token'] ?? '');
             $bos404 = static fn (): ResponseInterface => $response->withStatus(404)
@@ -352,18 +364,20 @@ final class PublicRoutes
                 return $bos404();
             }
             $row = $lists->findByShareHash(hash('sha256', $token));
+            // K103: gecerlilik ve anahtar artik PAYLASIM kaydinda.
+            $paylasim = $shareDepo->tokenOzetiyle(hash('sha256', $token));
             if ($row === null) {
                 return $bos404();
             }
-            if ($row['share_expires_at'] !== null
-                && Dates::fromStorage((string) $row['share_expires_at'], $services->timezone) <= $now) {
+            if ($paylasim['expires_at'] !== null
+                && Dates::fromStorage((string) $paylasim['expires_at'], $services->timezone) <= $now) {
                 return $bos404();
             }
 
             // İE#18 G6-e: QR de kapıya tabidir — anahtarsız kare üretilmez.
-            if ($anahtar->kapiAcik($row)) {
+            if ($anahtar->kapiAcik($paylasim)) {
                 $cerez = $request->getCookieParams()[\App\Services\Share\ShareKeyService::CEREZ_ADI] ?? null;
-                if (!$anahtar->cerezGecerli($token, $row, is_string($cerez) ? $cerez : null, $now)) {
+                if (!$anahtar->cerezGecerli($token, $paylasim, is_string($cerez) ? $cerez : null, $now)) {
                     return $bos404();
                 }
             }

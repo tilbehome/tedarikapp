@@ -40,6 +40,8 @@ final class ExportController extends ApiController
         private readonly Clock $clock,
         // İE#13 F1: belge antedi ayarları (firma adı/web/e-posta/hazırlayan).
         private readonly \App\Models\SettingsRepository $settings,
+        // K103: paylaşım kaydı `shares` tablosunda.
+        private readonly ?\App\Models\ShareRepository $shareDepo = null,
     ) {
     }
 
@@ -102,6 +104,9 @@ final class ExportController extends ApiController
             // F6 — QR: paylaşım adresi YALNIZ istekle gelirse gömülür. Tam token
             // sunucuda SAKLANMAZ (K51: yalnız hash) — bu yüzden yeniden üretilemez.
             'share_url' => $this->shareUrl($body['share_url'] ?? null, $row),
+            // K103: QR yalnız AKTİF bir paylaşım varsa basılır. Önek artık
+            // paylaşım kaydından geliyor; render'cılar bu anahtara bakıyor.
+            'paylasim_onek' => $this->shareDepo?->listeninAktifi((int) $row['id'])['token_prefix'] ?? null,
             // İE#21 EK-5 (K81): belge dili. Panelden istenmezse Türkçe; oturumsuz
             // indirme yolu (`/liste/{token}/export?lang=`) zaten dili taşıyordu,
             // panel tarafı taşımıyordu — aynı belge iki kapıdan farklı dilde
@@ -180,11 +185,15 @@ final class ExportController extends ApiController
      * listede AKTİF bir paylaşım linki olmalıdır. Böylece belgeye yabancı bir adres
      * bastırılamaz (QR, tıklanan bir link kadar tehlikelidir).
      *
+     * K103: aktif paylasim `shares` tablosundan okunur; `lists` paylasim
+     * kolonlarina uygulama kodundan basvuru kalmadi.
+     *
      * @param array<string, mixed> $listRow
      */
     private function shareUrl(mixed $raw, array $listRow): ?string
     {
-        if (!is_string($raw) || $raw === '' || ($listRow['share_token_hash'] ?? null) === null) {
+        $paylasim = $this->shareDepo?->listeninAktifi((int) $listRow['id']);
+        if (!is_string($raw) || $raw === '' || ($paylasim['token_hash'] ?? null) === null) {
             return null;
         }
         // İE#18: kanonik önek `/liste/`, `/p/` takma addır — ikisi de kabul edilir.
@@ -196,7 +205,7 @@ final class ExportController extends ApiController
         // Verilen token GERÇEKTEN bu listenin linki mi? Hash'i karşılaştırılır.
         $hash = hash('sha256', $eslesme[1]);
 
-        return hash_equals((string) $listRow['share_token_hash'], $hash) ? $raw : null;
+        return hash_equals((string) $paylasim['token_hash'], $hash) ? $raw : null;
     }
 
     /**

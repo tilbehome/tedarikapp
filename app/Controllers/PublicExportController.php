@@ -61,6 +61,8 @@ final class PublicExportController
         private readonly ?\Psr\Log\LoggerInterface $logger = null,
         // İE#18 G6-e: anahtar kapısı EXPORT'TAN DOLAŞILARAK aşılamaz.
         private readonly ?\App\Services\Share\ShareKeyService $anahtar = null,
+        // K103: geçerlilik ve anahtar PAYLAŞIM kaydında.
+        private readonly ?\App\Models\ShareRepository $shareDepo = null,
     ) {
     }
 
@@ -72,17 +74,23 @@ final class PublicExportController
      * kapıyı dolaşırdı. Çerez K58 imza modelinin YERİNE GEÇMEZ; imza yine
      * zorunludur, çerez EK katmandır.
      *
-     * @param array<string, mixed> $row
+     * K103: kapı ve çerez artık PAYLAŞIM satırına bakar; `lists` paylaşım
+     * kolonları uygulama kodundan okunmaz.
+     *
+     * @param array<string, mixed>|null $paylasim
      */
-    private function anahtarKapisiAcik(array $row, string $token, ServerRequestInterface $request, \DateTimeImmutable $now): bool
+    private function anahtarKapisiAcik(?array $paylasim, string $token, ServerRequestInterface $request, \DateTimeImmutable $now): bool
     {
-        if ($this->anahtar === null || !$this->anahtar->kapiAcik($row)) {
+        if ($paylasim === null) {
+            return false;
+        }
+        if ($this->anahtar === null || !$this->anahtar->kapiAcik($paylasim)) {
             return true; // kapı kapalı liste: eski davranış (token yeter)
         }
 
         $cerez = $request->getCookieParams()[\App\Services\Share\ShareKeyService::CEREZ_ADI] ?? null;
 
-        return $this->anahtar->cerezGecerli($token, $row, is_string($cerez) ? $cerez : null, $now);
+        return $this->anahtar->cerezGecerli($token, $paylasim, is_string($cerez) ? $cerez : null, $now);
     }
 
     /**
@@ -153,16 +161,18 @@ final class PublicExportController
         }
 
         $row = $this->lists->findByShareHash(hash('sha256', $token));
+        // K103: gecerlilik artik PAYLASIM kaydinda.
+        $paylasim = $this->shareDepo?->tokenOzetiyle(hash('sha256', $token));
         if ($row === null) {
             $this->gate->recordInvalid(ClientIp::from($request), $token, $now);
 
             return $notFound('token');
         }
-        if ($row['share_expires_at'] !== null
-            && Dates::fromStorage((string) $row['share_expires_at'], $this->timezone) <= $now) {
+        if ($paylasim['expires_at'] !== null
+            && Dates::fromStorage((string) $paylasim['expires_at'], $this->timezone) <= $now) {
             return $notFound('sure');
         }
-        if (!$this->anahtarKapisiAcik($row, $token, $request, $now)) {
+        if (!$this->anahtarKapisiAcik($paylasim, $token, $request, $now)) {
             return $notFound('anahtar');
         }
         // Dakikalık üst sınır: uç imza üretim otomasyonuna dönüşmesin. SAATLİK
@@ -221,14 +231,16 @@ final class PublicExportController
         }
 
         $row = $this->lists->findByShareHash(hash('sha256', $token));
+        // K103: gecerlilik artik PAYLASIM kaydinda.
+        $paylasim = $this->shareDepo?->tokenOzetiyle(hash('sha256', $token));
         if ($row === null) {
             return $notFound('token');
         }
-        if ($row['share_expires_at'] !== null
-            && Dates::fromStorage((string) $row['share_expires_at'], $this->timezone) <= $now) {
+        if ($paylasim['expires_at'] !== null
+            && Dates::fromStorage((string) $paylasim['expires_at'], $this->timezone) <= $now) {
             return $notFound('sure');
         }
-        if (!$this->anahtarKapisiAcik($row, $token, $request, $now)) {
+        if (!$this->anahtarKapisiAcik($paylasim, $token, $request, $now)) {
             return $notFound('anahtar');
         }
 

@@ -357,6 +357,43 @@ abstract class AuthTestCase extends TestCase
                 deleted_at TEXT NULL
             )',
         );
+        // V3-C A1/A3: paylaşım artık `shares` tablosunda (K103). `lists`
+        // kolonları yukarıda DURUYOR çünkü göç testi göç ÖNCESİ dünyayı
+        // kurmak için onları yazıyor — canlının ikizi ancak böyle olur.
+        //
+        // Şema `migrations/0037_paylasim_tablosu.php` ile AYNI olmalı: eksik
+        // bir kolon burada "çalışıyor" görünüp üretimde patlar.
+        $this->pdo->exec(
+            'CREATE TABLE shares (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                list_id INTEGER NOT NULL,
+                supplier_round_id INTEGER NULL,
+                recipient_type TEXT NOT NULL DEFAULT "importer",
+                token_hash TEXT NOT NULL,
+                token_prefix TEXT NULL,
+                key_hash TEXT NULL,
+                key_plain TEXT NULL,
+                key_enabled INTEGER NOT NULL DEFAULT 1,
+                expires_at TEXT NULL,
+                revoked_at TEXT NULL,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                UNIQUE (token_hash)
+            )',
+        );
+        $this->pdo->exec(
+            'CREATE TABLE share_dispatch_log (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                share_id INTEGER NOT NULL,
+                supplier_round_id INTEGER NULL,
+                kanal TEXT NOT NULL DEFAULT "whatsapp",
+                alici TEXT NULL,
+                dil TEXT NULL,
+                gonderen_id INTEGER NULL,
+                not_metni TEXT NULL,
+                created_at TEXT NOT NULL
+            )',
+        );
         $this->pdo->exec(
             'CREATE TABLE products (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,

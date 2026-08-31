@@ -431,7 +431,7 @@ final class PdfRenderer implements ExportRenderer
     private function qrEtiketi(array $list, array $options): string
     {
         $url = $options['share_url'] ?? null;
-        if (!is_string($url) || $url === '' || ($list['share_token_prefix'] ?? null) === null) {
+        if (!is_string($url) || $url === '' || ($list['paylasim_onek'] ?? null) === null) {
             return '';
         }
 

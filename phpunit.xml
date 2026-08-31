@@ -58,6 +58,7 @@
             <file>tests/Http/KesifHavuzuTest.php</file>
             <file>tests/Http/MigrateBaselineEndpointTest.php</file>
             <file>tests/Http/PanoramaTest.php</file>
+            <file>tests/Http/PaylasimGocuTest.php</file>
             <file>tests/Http/RevisionSequenceTest.php</file>
             <file>tests/Http/ShareEndpointsTest.php</file>
             <file>tests/Http/SistemListesiKorumasiTest.php</file>

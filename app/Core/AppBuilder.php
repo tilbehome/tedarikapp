@@ -194,6 +194,8 @@ final class AppBuilder
             $settingsRepository,
             $adCozumleyici,
         );
+        // K103: paylasim kaydinin tek erisim noktasi.
+        $shareDepo = new \App\Models\ShareRepository($connection);
         $validator = new InputValidator($money);
         $stateMachine = new StateMachine();
         $mutationPolicy = new ListMutationPolicy();
@@ -297,16 +299,18 @@ final class AppBuilder
             $services->activity,
             $services->clock,
             $settingsRepository,
+            $shareDepo,
         );
 
         $shareController = new ShareController(
             $lists,
             $services->activity,
             $services->clock,
-            new \App\Services\Share\ShareKeyService($lists, (string) $config->get('APP_KEY', '')),
+            new \App\Services\Share\ShareKeyService($shareDepo, (string) $config->get('APP_KEY', '')),
             $config,
             new \App\Services\Inbox\SistemListesi($settingsRepository),
             $services->bildirim,
+            $shareDepo,
         );
 
         // İE#11 Faz 3: eklenti uçları — Bearer + CORS allowlist + hız sınırı (ExtensionAuth).

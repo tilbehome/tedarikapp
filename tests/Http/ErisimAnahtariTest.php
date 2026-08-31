@@ -409,4 +409,34 @@ final class ErisimAnahtariTest extends AuthTestCase
         self::assertSame(6, substr_count($html, 'name="anahtar_hane[]"'), 'Altı hane de gönderilebilir olmalı.');
     }
 
+
+    /**
+     * K103 REGRESYONU: ANAHTAR ÜRETMEK KAPIYI AÇMAZ.
+     *
+     * Paylaşım `shares`e taşınırken `anahtariYaz()` bir ara `key_enabled = 1`
+     * de yazıyordu. Sonuç: kullanıcı kapıyı kapatır, sonra anahtarı OLMAYAN
+     * bir paylaşımda sayfa ilk kez açılınca eksik anahtar üretilir ve o yazım
+     * kapıyı YENİDEN AÇARDI. Panelde hiçbir şey değişmiş görünmez; firma linki
+     * anahtarsız açar. Sessiz güvenlik kaybının tarifi budur.
+     */
+    public function testANAHTARURETIMIKAPATILMISKAPIYIACMAZ(): void
+    {
+        $this->write('PATCH', '/api/lists/' . $this->listId . '/share-key', ['enabled' => false]);
+
+        // Anahtarı SİL: sonraki erişim "eksik anahtar" yolunu tetikler.
+        $this->pdo->exec('UPDATE shares SET key_hash = NULL, key_plain = NULL WHERE list_id = ' . $this->listId);
+
+        $html = (string) $this->call('GET', '/liste/' . $this->token)->getBody();
+
+        self::assertStringNotContainsString(
+            'data-anahtar-haneler',
+            $html,
+            'Eksik anahtar üretimi kapatılmış kapıyı yeniden açtı.',
+        );
+
+        $acik = $this->pdo->query(
+            'SELECT key_enabled FROM shares WHERE list_id = ' . $this->listId . ' AND revoked_at IS NULL',
+        )->fetchColumn();
+        self::assertSame(0, (int) $acik, 'Veritabanında kapı KAPALI kalmalı.');
+    }
 }

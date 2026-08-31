@@ -179,7 +179,7 @@ final class XlsxRenderer implements ExportRenderer
     private function paylasimQr(Worksheet $sheet, array $list, array $options): void
     {
         $url = $options['share_url'] ?? null;
-        if (!is_string($url) || $url === '' || ($list['share_token_prefix'] ?? null) === null) {
+        if (!is_string($url) || $url === '' || ($list['paylasim_onek'] ?? null) === null) {
             return;
         }
 

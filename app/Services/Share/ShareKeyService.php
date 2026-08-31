@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services\Share;
 
-use App\Models\ListRepository;
 use DateTimeImmutable;
 
 /**
@@ -37,7 +36,10 @@ final class ShareKeyService
     public const CEREZ_ADI = 'tdk_liste_anahtar';
 
     public function __construct(
-        private readonly ListRepository $lists,
+        // K103: paylaşım artık `shares` tablosunda. Servis liste deposunu
+        // değil paylaşım deposunu bilir — `lists` paylaşım kolonlarına
+        // uygulama kodundan hiçbir başvuru kalmadı.
+        private readonly \App\Models\ShareRepository $shares,
         private readonly string $appKey,
     ) {
     }
@@ -70,38 +72,45 @@ final class ShareKeyService
      */
     public function yenile(int $listId, DateTimeImmutable $now): string
     {
+        $paylasim = $this->shares->listeninAktifi($listId);
+        if ($paylasim === null) {
+            // Paylaşım yoksa anahtar da yoktur. Sessizce boş dönmek yerine
+            // çağıranın önce linki üretmesi gerektiğini söyleriz.
+            throw new \RuntimeException('Bu listenin aktif paylaşımı yok; önce link üretilmeli.');
+        }
+
         $anahtar = $this->uret();
-        $this->lists->update($listId, [
-            'share_key_hash' => $this->hash($anahtar),
-            'share_key_plain' => $anahtar,
-        ], $now);
+        $this->shares->anahtariYaz((int) $paylasim['id'], $this->hash($anahtar), $anahtar, $now);
 
         return $anahtar;
     }
 
     /**
-     * Liste satırında anahtar yoksa üretir (migration sonrası ilk erişim).
+     * PAYLAŞIM satırında anahtar yoksa üretir (göç sonrası ilk erişim).
      *
-     * @param array<string, mixed> $row
+     * K103: artık `lists` değil `shares` satırı üzerinde çalışır. Göçten gelen
+     * eski kayıtlarda anahtar zaten taşınmıştır; anahtarsız bir kurulumdan
+     * (0021 öncesi yedek) gelen satırda burada üretilir.
      *
-     * @return array<string, mixed> güncel satır
+     * @param array<string, mixed> $paylasim
+     *
+     * @return array<string, mixed> güncel paylaşım satırı
      */
-    public function hazirla(array $row, DateTimeImmutable $now): array
+    public function hazirla(array $paylasim, DateTimeImmutable $now): array
     {
-        if (is_string($row['share_key_hash'] ?? null) && $row['share_key_hash'] !== '') {
-            return $row;
+        if (is_string($paylasim['key_hash'] ?? null) && $paylasim['key_hash'] !== '') {
+            return $paylasim;
         }
 
         $anahtar = $this->uret();
-        $this->lists->update((int) $row['id'], [
-            'share_key_hash' => $this->hash($anahtar),
-            'share_key_plain' => $anahtar,
-        ], $now);
+        $this->shares->anahtariYaz((int) $paylasim['id'], $this->hash($anahtar), $anahtar, $now);
 
-        $row['share_key_hash'] = $this->hash($anahtar);
-        $row['share_key_plain'] = $anahtar;
+        $paylasim['key_hash'] = $this->hash($anahtar);
+        $paylasim['key_plain'] = $anahtar;
+        // `key_enabled` BİLEREK YAZILMAZ: anahtar üretmek kapıyı açmaz.
+        // Kullanıcı kapıyı kapattıysa kapalı kalır (bkz. ShareRepository::anahtariYaz).
 
-        return $row;
+        return $paylasim;
     }
 
     /**
@@ -111,7 +120,7 @@ final class ShareKeyService
      */
     public function kapiAcik(array $row): bool
     {
-        return (int) ($row['share_key_enabled'] ?? 1) === 1;
+        return (int) ($row['key_enabled'] ?? 1) === 1;
     }
 
     /**
@@ -121,7 +130,7 @@ final class ShareKeyService
      */
     public function dogru(array $row, string $girilen): bool
     {
-        $kayitli = $row['share_key_hash'] ?? null;
+        $kayitli = $row['key_hash'] ?? null;
         if (!is_string($kayitli) || $kayitli === '') {
             return false;
         }
@@ -179,7 +188,7 @@ final class ShareKeyService
         $kapsam = implode("\n", [
             'tdk-liste-anahtar-v1',
             $token,
-            (string) ($row['share_key_hash'] ?? ''),
+            (string) ($row['key_hash'] ?? ''),
             (string) $sonKullanma,
         ]);
 

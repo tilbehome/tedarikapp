@@ -35,6 +35,8 @@ final class ShareController extends ApiController
         private readonly ?\App\Services\Inbox\SistemListesi $sistem = null,
         // V3-B A3: paylaşım olayları (oluşturma, yenileme, iptal) bildirim doğurur.
         private readonly ?\App\Services\Bildirim\BildirimYayinci $bildirim = null,
+        // K103: paylaşım kaydı artık `shares` tablosunda.
+        private readonly ?\App\Models\ShareRepository $shares = null,
     ) {
     }
 
@@ -66,8 +68,9 @@ final class ShareController extends ApiController
             'adet' => $adet,
             'link' => '{link}',
         ];
-        if (is_string($row['share_expires_at'] ?? null) && $row['share_expires_at'] !== '') {
-            $degerler['tarih'] = (new \DateTimeImmutable((string) $row['share_expires_at']))->format('d.m.Y');
+        $paylasim = $this->shares?->listeninAktifi((int) $row['id']);
+        if (is_string($paylasim['expires_at'] ?? null) && $paylasim['expires_at'] !== '') {
+            $degerler['tarih'] = (new \DateTimeImmutable((string) $paylasim['expires_at']))->format('d.m.Y');
         }
 
         return Response::success($response, [
@@ -94,11 +97,17 @@ final class ShareController extends ApiController
             return $hata;
         }
 
-        $row = $this->anahtar?->hazirla($row, $this->clock->now()) ?? $row;
+        // K103: anahtar PAYLAŞIM kaydındadır. Paylaşım yoksa anahtar da yok —
+        // "boş anahtar" göstermek yerine durumu açıkça söyleriz.
+        $paylasim = $this->shares?->listeninAktifi((int) $row['id']);
+        if ($paylasim === null) {
+            return Response::error($response, 'NOT_FOUND', 'Bu listenin aktif paylaşımı yok.', 404);
+        }
+        $paylasim = $this->anahtar?->hazirla($paylasim, $this->clock->now()) ?? $paylasim;
 
         return Response::success($response, [
-            'key' => (string) ($row['share_key_plain'] ?? ''),
-            'enabled' => (int) ($row['share_key_enabled'] ?? 1) === 1,
+            'key' => (string) ($paylasim['key_plain'] ?? ''),
+            'enabled' => (int) ($paylasim['key_enabled'] ?? 1) === 1,
         ]);
     }
 
@@ -159,7 +168,11 @@ final class ShareController extends ApiController
         $govde = $this->body($request);
         $acik = ($govde['enabled'] ?? null) === true;
         $now = $this->clock->now();
-        $this->lists->update((int) $row['id'], ['share_key_enabled' => $acik ? 1 : 0], $now);
+        $paylasim = $this->shares?->listeninAktifi((int) $row['id']);
+        if ($paylasim === null) {
+            return Response::error($response, 'NOT_FOUND', 'Bu listenin aktif paylaşımı yok.', 404);
+        }
+        $this->shares->anahtarKapisi((int) $paylasim['id'], $acik, $now);
 
         $this->activity->record(
             'list',
@@ -235,13 +248,17 @@ final class ShareController extends ApiController
 
         // 256-bit rastgele token — üretimden sonra bir daha OKUNAMAZ (yalnız hash durur).
         $token = bin2hex(random_bytes(32));
-        $this->lists->update((int) $row['id'], [
-            'share_token_hash' => hash('sha256', $token),
-            'share_token_prefix' => substr($token, 0, 8),
-            'share_expires_at' => $expiresAt,
+        // K103: TEK YAZMA YOLU — paylaşım `shares` tablosuna açılır.
+        // `lists` kolonlarına yazan yol kalmadı; iki kaynak arasında
+        // sessizce ayrışma imkânsız.
+        $oncekiPaylasim = $this->shares?->listeninAktifi((int) $row['id']);
+        $isRenewal = $oncekiPaylasim !== null;
+        $this->shares?->ac([
+            'list_id' => (int) $row['id'],
+            'token_hash' => hash('sha256', $token),
+            'token_prefix' => substr($token, 0, 8),
+            'expires_at' => $expiresAt,
         ], $now);
-
-        $isRenewal = $row['share_token_hash'] !== null;
         $auditId = $this->activity->record(
             'list',
             (int) $row['id'],
@@ -289,17 +306,14 @@ final class ShareController extends ApiController
         }
 
         $now = $this->clock->now();
-        $this->lists->update((int) $row['id'], [
-            'share_token_hash' => null,
-            'share_token_prefix' => null,
-            'share_expires_at' => null,
-        ], $now);
+        $oncekiOnek = (string) ($this->shares?->listeninAktifi((int) $row['id'])['token_prefix'] ?? '—');
+        $this->shares?->iptalEt((int) $row['id'], $now);
 
         $auditId = $this->activity->record(
             'list',
             (int) $row['id'],
             'share_revoked',
-            'önek:' . (string) ($row['share_token_prefix'] ?? '—'),
+            'önek:' . $oncekiOnek,
             ClientIp::from($request),
             $now,
             ActivityLog::ACTOR_ADMIN,
