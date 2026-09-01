@@ -229,4 +229,87 @@ final class MySqlIntegrationTest extends AuthTestCase
         self::assertCount(1, $this->json($cince)['data'], 'Orijinal başlıktan da bulunmalı.');
     }
 
+    /**
+     * v1.2.1 D8 — BASELINE, DAR KOLONU "UYGULANMIŞ" SAYMAZ (PM merge şartı).
+     *
+     * VARLIK ÖLÇÜTÜ GENİŞLETME MIGRATION'LARI İÇİN YANLIŞ YÜKLEMDİR.
+     * 0036 kolonu YARATMIYOR, GENİŞLETİYOR: kolon `VARCHAR(12)` olarak zaten
+     * vardı. Varlığa bakan bir baseline migration'ı "uygulandı" diye deftere
+     * işler, genişletme HİÇ KOŞMAZ ve şifreli anahtar yazılırken MySQL
+     * "Data too long" verir — kurulum sessizce bozuk kalır, üstelik defterde
+     * "uygulandı" yazar. Aramanın en zor olduğu yer tam da orasıdır.
+     *
+     * Bu vaka SQLITE'TA KURULAMAZ: orada VARCHAR uzunluğu bağlayıcı değildir
+     * ve "dar kolon" diye bir durum yoktur. Bu yüzden gerçek MySQL'de sınanır.
+     */
+    public function testDARKOLONBASELINEUYGULANMISSAYILMAZ(): void
+    {
+        $migrator = new Migrator($this->pdo, dirname(__DIR__, 2) . '/migrations');
+
+        // ÖN KOŞUL: setUp temiz migration koştu; kolon GENİŞ olmalı.
+        self::assertGreaterThanOrEqual(96, $this->kolonGenisligi('lists', 'share_key_plain'));
+
+        // Kolonu 0036 ÖNCESİ hâline daraltıp defter kaydını sil: "0036 hiç
+        // koşmamış ama kolon var" durumunu birebir kur.
+        $this->pdo->exec('ALTER TABLE lists MODIFY share_key_plain VARCHAR(12) NULL');
+        $this->pdo->exec("DELETE FROM migrations WHERE name = '0036_paylasim_anahtari_sifreli_alan'");
+
+        $sonuc = $migrator->baseline();
+
+        self::assertNotContains(
+            '0036_paylasim_anahtari_sifreli_alan',
+            $sonuc['recorded'],
+            'DAR kolon "uygulanmış" sayıldı — genişletme hiç koşmaz ve kurulum sessizce bozuk kalır.',
+        );
+        $atlananlar = array_column($sonuc['skipped'], 'name');
+        self::assertContains('0036_paylasim_anahtari_sifreli_alan', $atlananlar);
+
+        // İKİZ VAKA: genişletme KOŞTUKTAN sonra baseline onu uygulanmış sayar.
+        $this->pdo->exec('ALTER TABLE lists MODIFY share_key_plain VARCHAR(96) NULL');
+        $ikinci = (new Migrator($this->pdo, dirname(__DIR__, 2) . '/migrations'))->baseline();
+
+        self::assertContains(
+            '0036_paylasim_anahtari_sifreli_alan',
+            $ikinci['recorded'],
+            'Kolon genişletildikten sonra baseline onu uygulanmış SAYMALI.',
+        );
+    }
+
+    /** Kolonun MySQL'deki gerçek karakter genişliği. */
+    private function kolonGenisligi(string $tablo, string $kolon): int
+    {
+        $statement = $this->pdo->prepare(
+            'SELECT CHARACTER_MAXIMUM_LENGTH FROM information_schema.columns
+             WHERE table_schema = DATABASE() AND table_name = ? AND column_name = ?',
+        );
+        $statement->execute([$tablo, $kolon]);
+
+        return (int) $statement->fetchColumn();
+    }
+
+    public function testSIFRELIANAHTARMYSQLEYAZILIR(): void
+    {
+        // Asıl arızanın uçtan uca kanıtı: 69 karakterlik şifreli değer gerçek
+        // MySQL kolonuna YAZILABİLMELİ. Genişlik bekçisi zarfı ölçer; bu test
+        // veritabanının onu kabul ettiğini gösterir.
+        $sifreli = (new \App\Core\Encrypter(
+            $this->config(),
+            baglam: \App\Core\Encrypter::BAGLAM_PAYLASIM_ANAHTARI,
+        ))->encrypt('A1B2C3');
+
+        $this->pdo->exec(
+            "INSERT INTO lists (name, yuan_rate, usd_rate, created_at, updated_at)
+             VALUES ('Sifreli anahtar', '7', '41', '2026-09-01 10:00:00', '2026-09-01 10:00:00')",
+        );
+        $listeId = (int) $this->pdo->lastInsertId();
+
+        $this->pdo->prepare('UPDATE lists SET share_key_plain = :deger WHERE id = :id')
+            ->execute(['deger' => $sifreli, 'id' => $listeId]);
+
+        self::assertSame(
+            $sifreli,
+            (string) $this->pdo->query('SELECT share_key_plain FROM lists WHERE id = ' . $listeId)->fetchColumn(),
+            'Şifreli değer MySQL kolonuna eksiksiz yazılmalı (kırpılmamalı).',
+        );
+    }
 }

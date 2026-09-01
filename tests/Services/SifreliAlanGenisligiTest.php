@@ -90,4 +90,36 @@ final class SifreliAlanGenisligiTest extends TestCase
 
         self::assertLessThanOrEqual(self::KOLON_GENISLIGI, strlen($yedek->encrypt('A1B2C3')));
     }
+
+    public function testBASELINEOLCUTUGENISLIKTIR(): void
+    {
+        // İKİZ VAKA'NIN SQLITE TARAFI (PM merge şartı).
+        //
+        // Asıl davranış — "kolon var ama dar → baseline uygulanmış saymaz" —
+        // gerçek MySQL'de sınanıyor (`MySqlIntegrationTest`), çünkü SQLite'ta
+        // VARCHAR uzunluğu bağlayıcı değildir ve "dar kolon" diye bir durum
+        // yoktur. Burada sınanan şey ÖLÇÜTÜN KENDİSİ: 0036 kaydı varlığa mı
+        // bakıyor, genişliğe mi?
+        //
+        // Varlık ölçütü GENİŞLETME migration'ları için YANLIŞ YÜKLEMDİR: kolon
+        // zaten vardı, değişen genişliktir. Varlığa bakan bir baseline,
+        // genişletmeyi "uygulandı" diye deftere işler ve DDL hiç koşmaz.
+        $kaynak = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Core/Migrator.php');
+        $kayit = substr(
+            $kaynak,
+            (int) strpos($kaynak, "'0036_paylasim_anahtari_sifreli_alan' => ["),
+            220,
+        );
+
+        self::assertStringContainsString(
+            "'column_min_length' => ['lists', 'share_key_plain', " . self::KOLON_GENISLIGI . ']',
+            $kayit,
+            '0036 baseline kaydı kolon GENİŞLİĞİNE bakmalı; varlık ölçütü bu migration için yanlış yüklemdir.',
+        );
+        self::assertStringNotContainsString(
+            "'column' => ['lists', 'share_key_plain']",
+            $kayit,
+            'Varlık ölçütü geri gelmiş.',
+        );
+    }
 }
