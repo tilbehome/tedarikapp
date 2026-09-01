@@ -58,6 +58,26 @@ const labels: Record<string, string> = {
   glossary_updated: 'Terim sözlüğü güncellendi',
   rates_updated: 'Kurlar güncellendi',
   migrate: 'Veritabanı güncellemesi çalıştırıldı',
+
+  // v1.2.2 Blok 0.3 — ETİKETSİZ KALMIŞ KODLAR.
+  //
+  // Bunlar `insanlastir()` yedeğine düşüyordu ve panelde "Ceviri urun",
+  // "Migrate baseline" gibi HAM kod okunuyordu: Türkçe değil, cümle değil,
+  // hatta doğru bile değil ("Ceviri urun" bir eylem adı gibi durmuyor).
+  // Yedek bir NEZAKET katmanıdır; kalıcı çözüm değildir.
+  migrate_baseline: 'Veritabanı defteri gerçeğe eşitlendi',
+  backup_created: 'Yedek alındı',
+  media_migrate: 'Görseller arşive taşındı',
+  media_check: 'Görsel bütünlüğü denetlendi',
+  glossary_imported: 'Terim sözlüğü içe aktarıldı',
+  app_url_updated: 'Uygulama adresi güncellendi',
+  share_contact_updated: 'Paylaşım iletişim numarası güncellendi',
+  share_key_rotated: 'Erişim anahtarı yenilendi',
+  share_key_rate_limited: 'Erişim anahtarı denemesi hız sınırına takıldı',
+  queue_retry: 'Kuyruk işi yeniden denendi',
+  queue_discard: 'Kuyruk işi çöpe atıldı',
+  queue_fix: 'Kuyruk işinin yükü düzeltildi',
+  sozluksuz_ceviri_yenile: 'Sözlüksüz çeviriler yeniden kuyruğa alındı',
   migrate_failed: 'Veritabanı güncellemesi başarısız',
   backup_completed: 'Yedek alındı',
   backup_failed: 'Yedekleme başarısız',
