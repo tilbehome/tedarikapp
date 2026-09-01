@@ -613,6 +613,9 @@ function paketCalistirmaDenetimi(string $zipPath): array
 
         // 6) EK-1: 0035 ZATEN UYGULANMIŞ veritabanında bekleyen kalmamalı.
         $sorunlar = array_merge($sorunlar, mevcutKurulumUstuneDenetimi($gecici));
+
+        // 7) v1.2.1: CANLININ GERÇEK HÂLİ — 0035 uygulanmış, 0036 BEKLİYOR.
+        $sorunlar = array_merge($sorunlar, yeniMigrationBekliyorDenetimi($gecici));
     } catch (Throwable $hata) {
         $sorunlar[] = 'çalıştırma denetimi istisna attı: ' . $hata->getMessage();
     } finally {
@@ -685,6 +688,82 @@ function mevcutKurulumUstuneDenetimi(string $paketKok): array
     $adlar = array_map(static fn (string $d): string => basename($d, '.php'), $dosyalar);
     if (!in_array('0035_bildirimler', $adlar, true)) {
         return ['pakette 0035_bildirimler migration dosyası YOK'];
+    }
+
+    return [];
+}
+
+/**
+ * v1.2.1 SENARYOSU — 0035 UYGULANMIŞ, 0036 BEKLİYOR.
+ *
+ * EK-1 denetimi "her şey uygulanmış" hâlini sınar ve `pending()` boş olmalı der.
+ * Ama canlının kurulum ANINDAKİ hâli o değil: v1.2.0 kurulu, 0035 koşmuş,
+ * v1.2.1'in getirdiği 0036 HENÜZ KOŞMAMIŞ. Paket bu durumda kuruluma
+ * "bekleyen migration var" demek ZORUNDA.
+ *
+ * NEDEN AYRI BİR DENETİM: 0036 bir GENİŞLETME migration'ıdır ve baseline ölçütü
+ * yanlış yazılırsa (kolon VARLIĞINA bakmak) "uygulanmış" sayılıp sessizce
+ * atlanır. O hâlde şifreli erişim anahtarı MySQL'de "Data too long" ile
+ * reddedilir ve kurulum bozuk kalır — üstelik defterde "uygulandı" yazar.
+ * Bu denetim, paketin o tuzağa düşmediğini KURULUMDAN ÖNCE gösterir.
+ *
+ * @return list<string>
+ */
+function yeniMigrationBekliyorDenetimi(string $paketKok): array
+{
+    $migrationDizini = $paketKok . '/migrations';
+    $dosyalar = glob($migrationDizini . '/*.php') ?: [];
+    if ($dosyalar === []) {
+        return ['pakette migration dosyası yok'];
+    }
+
+    $yeni = '0036_paylasim_anahtari_sifreli_alan';
+    $adlar = array_map(static fn (string $d): string => basename($d, '.php'), $dosyalar);
+    if (!in_array($yeni, $adlar, true)) {
+        return ['pakette ' . $yeni . ' migration dosyası YOK — v1.2.1 eksik paketlenmiş'];
+    }
+
+    $pdo = new PDO('sqlite::memory:', null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+    $pdo->exec(
+        'CREATE TABLE migrations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name VARCHAR(190) NOT NULL UNIQUE,
+            checksum CHAR(64) NOT NULL,
+            execution_ms INT UNSIGNED NOT NULL,
+            applied_at DATETIME NOT NULL
+        )',
+    );
+
+    // CANLININ HÂLİ: 0036 DIŞINDA her şey uygulanmış.
+    $ekle = $pdo->prepare(
+        'INSERT INTO migrations (name, checksum, execution_ms, applied_at)
+         VALUES (:ad, :ozet, 0, :zaman)',
+    );
+    foreach ($dosyalar as $dosya) {
+        if (basename($dosya, '.php') === $yeni) {
+            continue;
+        }
+        $ekle->execute([
+            'ad' => basename($dosya, '.php'),
+            'ozet' => hash_file('sha256', $dosya),
+            'zaman' => '2026-08-29 10:57:00',
+        ]);
+    }
+
+    $bekleyen = (new App\Core\Migrator($pdo, $migrationDizini))->pending();
+
+    if (!in_array($yeni, $bekleyen, true)) {
+        return [
+            $yeni . ' BEKLEYEN görünmüyor — kurulum onu atlar ve şifreli erişim '
+            . 'anahtarı MySQL\'de "Data too long" ile reddedilir (kolon dar kalır).',
+        ];
+    }
+
+    // Başka bir şey beklememeli: fazladan bekleyen, paketin eksik ya da
+    // defterin yanlış kurulduğunu gösterir.
+    $fazla = array_values(array_diff($bekleyen, [$yeni]));
+    if ($fazla !== []) {
+        return ['beklenmeyen bekleyen migration: ' . implode(', ', $fazla)];
     }
 
     return [];
