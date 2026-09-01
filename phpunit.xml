@@ -91,7 +91,13 @@
             <file>tests/Http/MigrationGuardTest.php</file>
             <file>tests/Http/SettingsEndpointsTest.php</file>
             <file>tests/Http/SetupHardeningTest.php</file>
+            <file>tests/Http/SetupHttpsSiniriTest.php</file>
+            <file>tests/Http/IstisnaSizmazTest.php</file>
+            <file>tests/Http/EklentiHizSiniriTest.php</file>
+            <file>tests/Http/GovdeSiniriChunkedTest.php</file>
+            <file>tests/Http/OwnerCheckSabitYanitTest.php</file>
             <file>tests/Http/SetupOnarimUclariTest.php</file>
+            <file>tests/Http/SozluksuzCeviriKartiTest.php</file>
             <file>tests/Http/TranslateEndpointsTest.php</file>
         </testsuite>
     </testsuites>

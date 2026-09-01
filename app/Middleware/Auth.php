@@ -88,7 +88,14 @@ final class Auth implements MiddlewareInterface
             ),
             RememberTokenStatus::Expired => $this->expiredToken($match->tokenId, $match->userId),
             RememberTokenStatus::Stolen => $this->stolenToken($match->userId, $ip),
-            RememberTokenStatus::Valid => $this->silentLogin($request, $handler, $match->userId, $match->tokenId, $ip),
+            RememberTokenStatus::Valid => $this->silentLogin(
+                $request,
+                $handler,
+                $match->userId,
+                $match->tokenId,
+                $ip,
+                is_string($raw) ? $raw : null,
+            ),
         };
     }
 
@@ -98,6 +105,8 @@ final class Auth implements MiddlewareInterface
         ?int $userId,
         ?int $tokenId,
         string $ip,
+        /** D4: rotasyon CAS'i için ELDEKİ çerez değeri (`selector:validator`). */
+        ?string $mevcutCerez = null,
     ): ResponseInterface {
         $user = $userId === null ? null : $this->services->users->findById($userId);
         if ($user === null || $tokenId === null) {
@@ -115,7 +124,20 @@ final class Auth implements MiddlewareInterface
         );
 
         // G8: kullanım başına rotasyon — çerez her sessiz girişte tazelenir.
-        $yeniCerez = $this->services->rememberTokens->rotate($tokenId, $user->id, $now);
+        //
+        // v1.2.1 D4: ELİMİZDEKİ token da koşula girer (CAS). Aynı çerezle
+        // paralel gelen ikinci istek rotasyonu KAYBEDER ve `null` alır; eskiden
+        // ikisi de kazanıyor ve ikisi de geçerli yeni çerez alıyordu.
+        [$mevcutSelector, $mevcutValidator] = str_contains((string) $mevcutCerez, ':')
+            ? explode(':', (string) $mevcutCerez, 2)
+            : ['', ''];
+        $yeniCerez = $this->services->rememberTokens->rotate(
+            $tokenId,
+            $user->id,
+            $now,
+            $mevcutSelector,
+            $mevcutValidator,
+        );
         $sonKullanma = $this->services->rememberTokens->expiresAt($tokenId, $now->getTimezone());
 
         $response = $handler->handle($request->withAttribute(self::USER_ATTRIBUTE, $user));

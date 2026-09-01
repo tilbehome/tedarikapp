@@ -31,6 +31,36 @@ final class CookieSession implements SessionInterface
 {
     public const COOKIE_NAME = 'tedarikapp_setup_state';
 
+    /**
+     * ÇEREZ YOLU — `/` KALMAK ZORUNDA (v1.2.1 C2, CI'da kanıtlandı).
+     *
+     * Daraltmayı denedim: `Path=/setup`. CI'ın üretim profili işi bunu anında
+     * kırdı — sihirbaz SAYFASI `/setup` altında ama API'si `/api/setup/...`
+     * altında. `Path=/setup` çerezi `/api/setup/database` isteğine GİTMEZ;
+     * oturum kaybolur ve istek CSRF hatasıyla düşer.
+     *
+     * İki yolun `/` dışında ortak öneki YOK. Daraltmak için rotaları taşımak
+     * gerekirdi ve bu, sertleştirme turunun kapsamı dışında bir değişiklik.
+     * Kapsamı daraltmak iyi bir fikirdi ama BEDELİ kurulumun çalışmaması
+     * olamaz; asıl sertleştirmeler (TTL, nonce, anahtar dönemi) yerinde duruyor.
+     */
+    private const COOKIE_PATH = '/';
+
+    /**
+     * STATE OMRU (v1.2.1 C2) — 30 dakika. Omur siniri YOKTU: bir kez uretilen
+     * state suresiz gecerliydi ve ele gecen bir cerez aylar sonra da ise
+     * yarardi. Kurulum sihirbazi dakikalar suren bir istir; 30 dakika rahat bir
+     * ust sinir ve "yarim birakip ertesi gun devam" senaryosunu bilerek kapatir
+     * (o senaryoda bastan baslamak zaten daha guvenli).
+     */
+    public const OMUR_SANIYE = 1800;
+
+    /** State'in uretildigi ani tasiyan ic alan (kullanici verisi degil). */
+    private const ALAN_URETIM = '__uretim_at';
+
+    /** Tek kullanimlik rastgelelik — ayni icerik iki kez ayni cerezi vermesin. */
+    private const ALAN_NONCE = '__nonce';
+
     private const CIPHER = 'aes-256-gcm';
     private const IV_LENGTH = 12;
     private const TAG_LENGTH = 16;
@@ -49,7 +79,19 @@ final class CookieSession implements SessionInterface
     public function __construct(
         private readonly string $basePath,
         private readonly bool $secure,
+        /** TTL denetimi icin; verilmezse sistem saati. */
+        private readonly ?\App\Core\Clock $saat = null,
+        /**
+         * ANAHTAR DONEMI DUSURME DENEMESI buraya yazilir. Reddetmek yetmez:
+         * bu bir saldiri sinyalidir ve sessiz kalirsa kimse denendigini bilmez.
+         */
+        private readonly ?\Psr\Log\LoggerInterface $gunlukcu = null,
     ) {
+    }
+
+    private function simdi(): \DateTimeImmutable
+    {
+        return $this->saat?->now() ?? new \DateTimeImmutable();
     }
 
     public function start(): void
@@ -69,9 +111,12 @@ final class CookieSession implements SessionInterface
     public function commitTo(ResponseInterface $response): ResponseInterface
     {
         if ($this->destroyed) {
+            // SILME AYNI YOLU KULLANMALI: farkli `Path` ile yazilan silme
+            // cerezi tarayicida ASIL cerezi silmez ve state hayatta kalir.
             return $response->withAddedHeader('Set-Cookie', sprintf(
-                '%s=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; SameSite=Lax%s',
+                '%s=; Path=%s; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; SameSite=Lax%s',
                 self::COOKIE_NAME,
+                self::COOKIE_PATH,
                 $this->secure ? '; Secure' : '',
             ));
         }
@@ -80,9 +125,11 @@ final class CookieSession implements SessionInterface
         }
 
         return $response->withAddedHeader('Set-Cookie', sprintf(
-            '%s=%s; Path=/; HttpOnly; SameSite=Lax%s',
+            '%s=%s; Path=%s; Max-Age=%d; HttpOnly; SameSite=Lax%s',
             self::COOKIE_NAME,
             $this->encode(),
+            self::COOKIE_PATH,
+            self::OMUR_SANIYE,
             $this->secure ? '; Secure' : '',
         ));
     }
@@ -143,27 +190,85 @@ final class CookieSession implements SessionInterface
         $tag = substr($binary, self::IV_LENGTH, self::TAG_LENGTH);
         $ciphertext = substr($binary, self::IV_LENGTH + self::TAG_LENGTH);
 
-        foreach ($this->candidateKeys() as $key) {
+        // ANAHTAR DÖNEMİ (v1.2.1 C2): config.php VARSA yalnız APP_KEY kabul
+        // edilir. Eskiden iki anahtar da deneniyordu; önyükleme anahtarı SIR
+        // DEĞİLDİR (türetmesi kodda, girdileri — yol, PHP sürümü, hostname —
+        // tahmin edilebilir), dolayısıyla APP_KEY yazıldıktan sonra bile
+        // saldırgan istediği state'i uydurabiliyordu ("admin adımı onaylı" gibi).
+        $configKey = $this->configKey();
+        $kabulEdilen = $configKey !== null ? [$configKey] : [$this->bootstrapKey()];
+
+        foreach ($kabulEdilen as $key) {
             $plain = openssl_decrypt($ciphertext, self::CIPHER, $key, OPENSSL_RAW_DATA, $iv, $tag);
             if ($plain === false) {
                 continue;
             }
             $decoded = json_decode($plain, true);
-            if (is_array($decoded)) {
-                $this->data = $decoded;
+            if (!is_array($decoded) || !$this->omruGecerli($decoded)) {
+                return; // süresi dolmuş ya da bozuk → temiz state, sihirbaz baştan
             }
+
+            $this->data = $decoded;
 
             return;
         }
-        // Hiçbir anahtar açamadı (bozuk/yabancı çerez) → temiz state ile başla.
+
+        // Buraya düşmenin İKİ sebebi olabilir: bozuk/yabancı çerez ya da
+        // ANAHTAR DÖNEMİ DÜŞÜRME denemesi. İkincisi bir saldırı sinyalidir ve
+        // sessiz kalırsa kimse denendiğini bilmez — ayırt edip loglarız.
+        if ($configKey !== null) {
+            $onyuklemeIle = openssl_decrypt(
+                $ciphertext,
+                self::CIPHER,
+                $this->bootstrapKey(),
+                OPENSSL_RAW_DATA,
+                $iv,
+                $tag,
+            );
+            if ($onyuklemeIle !== false) {
+                $this->gunlukcu?->warning(
+                    'Kurulum state reddedildi: önyükleme anahtarıyla üretilmiş çerez APP_KEY döneminde sunuldu.',
+                    ['olay' => 'setup_state_anahtar_dusurme'],
+                );
+            }
+        }
+    }
+
+    /**
+     * State'in omru dolmus mu? Damga YOKSA da reddedilir.
+     *
+     * Damgasiz cerez, TTL oncesinden kalma ya da elle uretilmis demektir;
+     * "damga yoksa suresiz gecerli" saymak, ekledigimiz siniri ilk gunden
+     * anlamsiz kilardi.
+     *
+     * @param array<string, mixed> $veri
+     */
+    private function omruGecerli(array $veri): bool
+    {
+        $uretim = $veri[self::ALAN_URETIM] ?? null;
+        if (!is_int($uretim)) {
+            return false;
+        }
+
+        $gecen = $this->simdi()->getTimestamp() - $uretim;
+
+        // Ileri tarihli damga da reddedilir: saat kaymasi ya da uydurma.
+        return $gecen >= 0 && $gecen <= self::OMUR_SANIYE;
     }
 
     private function encode(): string
     {
+        // URETIM DAMGASI + NONCE her yazimda TAZELENIR: TTL kayan pencere olur
+        // (kullanici sihirbazda ilerledikce sure yenilenir) ve ayni icerik iki
+        // kez ayni sifreli metni uretmez.
+        $govde = $this->data;
+        $govde[self::ALAN_URETIM] = $this->simdi()->getTimestamp();
+        $govde[self::ALAN_NONCE] = bin2hex(random_bytes(8));
+
         $iv = random_bytes(self::IV_LENGTH);
         $tag = '';
         $ciphertext = openssl_encrypt(
-            json_encode($this->data, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),
+            json_encode($govde, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),
             self::CIPHER,
             $this->writeKey(),
             OPENSSL_RAW_DATA,
@@ -183,19 +288,6 @@ final class CookieSession implements SessionInterface
     private function writeKey(): string
     {
         return $this->configKey() ?? $this->bootstrapKey();
-    }
-
-    /** @return list<string> çözümde denenecek anahtarlar (config önce) */
-    private function candidateKeys(): array
-    {
-        $keys = [];
-        $configKey = $this->configKey();
-        if ($configKey !== null) {
-            $keys[] = $configKey;
-        }
-        $keys[] = $this->bootstrapKey();
-
-        return $keys;
     }
 
     private function configKey(): ?string

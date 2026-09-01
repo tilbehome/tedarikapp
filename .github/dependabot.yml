@@ -18,6 +18,34 @@ updates:
     open-pull-requests-limit: 5
     labels: [bagimlilik, npm]
 
+  # v1.2.1 E2: eklenti ve E2E de bağımlılık taşır ve İKİSİ DE gözetimsizdi.
+  # Eklenti bundle'ına üçüncü parti girmiyor (K19) ama GELİŞTİRME zinciri
+  # (WXT, Vitest, TS) `npm audit --audit-level=high` kapısına tabidir; o zincir
+  # güncellenmezse kapı bir gün kırmızıya döner ve kimse sebebini bilmez.
+  - package-ecosystem: npm
+    directory: /extension
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    labels: [bagimlilik, npm, eklenti]
+    groups:
+      # Yama/minör TEK PR'da toplanır; ana sürüm AYRI kalır çünkü ana sürüm
+      # atlaması davranış değiştirebilir ve tek tek denetlenmelidir.
+      yama-minor:
+        update-types: [minor, patch]
+
+  - package-ecosystem: npm
+    directory: /e2e
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    labels: [bagimlilik, npm, e2e]
+    groups:
+      yama-minor:
+        update-types: [minor, patch]
+
   - package-ecosystem: github-actions
     directory: /
     schedule:

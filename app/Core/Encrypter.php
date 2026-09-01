@@ -31,8 +31,22 @@ final class Encrypter
     private const VERSION_SODIUM = 'v1s';
     private const VERSION_AES_GCM = 'v1a';
 
-    /** HKDF bilgi etiketi — amaca özel alt anahtar üretir. */
+    /**
+     * HKDF bilgi etiketi — amaca özel alt anahtar üretir.
+     *
+     * VARSAYILAN DEĞİŞMEZ: kurulu her sistemdeki TOTP sırları bu etiketle
+     * yazıldı; değiştirmek 2FA'yı çözülemez hâle getirirdi.
+     */
     private const KEY_INFO = 'tedarikapp:totp-secret:v1';
+
+    /**
+     * PAYLAŞIM ERİŞİM ANAHTARI bağlamı (v1.2.1 D8 · TDR-034).
+     *
+     * AYRI BAĞLAM ŞART: TOTP sırrıyla aynı alt anahtar kullanılsaydı, bir
+     * bağlamda çözülen şifreli metin başka bağlama taşınabilirdi (confused
+     * deputy). HKDF etiketi bağlamları birbirinden ayırır.
+     */
+    public const BAGLAM_PAYLASIM_ANAHTARI = 'tedarikapp:paylasim-anahtari:v1';
 
     private const AES_CIPHER = 'aes-256-gcm';
     private const AES_IV_LENGTH = 12;
@@ -54,6 +68,11 @@ final class Encrypter
         private readonly Config $config,
         ?bool $useSodium = null,
         ?bool $sodiumSupported = null,
+        /**
+         * HKDF bağlam etiketi (D8). Varsayılan TOTP bağlamıdır — geriye dönük
+         * uyum için değiştirilemez; yeni kullanımlar KENDİ etiketini verir.
+         */
+        private readonly string $baglam = self::KEY_INFO,
     ) {
         $this->sodiumSupported = $sodiumSupported ?? self::sodiumAvailable();
         // Tercih ne olursa olsun, desteklenmeyen arka uçla ŞİFRELEME yapılamaz (K39).
@@ -189,6 +208,6 @@ final class Encrypter
             throw new RuntimeException('APP_KEY çözümlenemedi.');
         }
 
-        return $this->key = hash_hkdf('sha256', $master, 32, self::KEY_INFO);
+        return $this->key = hash_hkdf('sha256', $master, 32, $this->baglam);
     }
 }

@@ -30,7 +30,12 @@ declare(strict_types=1);
 use App\Core\Config;
 use App\Core\Connection;
 use App\Core\Database;
+use App\Core\Encrypter;
+use App\Models\SettingsRepository;
 use App\Models\TranslationCacheRepository;
+use App\Services\Translation\CeviriAyarlari;
+use App\Services\Translation\CeviriSurumu;
+use App\Services\Translation\SozlukFabrikasi;
 
 if (PHP_SAPI !== 'cli') {
     http_response_code(403);
@@ -83,12 +88,44 @@ $urunler = $statement->fetchAll(PDO::FETCH_ASSOC);
 
 $cache = new TranslationCacheRepository($connection);
 
+// ── D11 KÖK NEDENİ: SINAV İLE EKRAN AYNI SATIRA BAKMALI (v1.2.1 A6 eki) ──────
+//
+// Yazıcı (`LlmTranslator::onbellegeYaz`) İKİ satır yazar: SÜRÜMLÜ ve SÜRÜMSÜZ
+// anahtar. Ekrandaki DEĞERLER (`ValueSet`) sürümlüyü okur; bu sınav ise yalnız
+// SÜRÜMSÜZÜ okuyordu.
+//
+// Kuyruk yolu boş sözlükle koştuğu dönemde (A6) sürümlü satır YANLIŞ bir
+// anahtara yazıldı, sürümsüz satır doğru yazıldı. Sonuç tam olarak 28 Ağustos
+// bulgusuydu: sınav "4/4 llm:deepseek" diyor, ekran ham Çince gösteriyor.
+//
+// Sınav artık İKİSİNİ DE okur ve ayrışmayı RAPORLAR. Ayrışmayı gizleyen bir
+// teşhis aracı teşhissizlikten kötüdür — yanlış yere güven verir.
+$surumAnahtari = '';
+
+try {
+    $surumAnahtari = CeviriSurumu::kur(
+        new CeviriAyarlari(new SettingsRepository($connection), new Encrypter($config)),
+        SozlukFabrikasi::kur($basePath),
+    )->anahtar();
+} catch (Throwable $e) {
+    fwrite(STDERR, 'UYARI: surum anahtari hesaplanamadi, yalniz surumsuz satir okunacak - ' . $e->getMessage() . "
+");
+}
+
 /** @var list<array{id:int, zh:string, tr:?string, tr_saglayici:?string, en:?string, en_saglayici:?string}> $satirlar */
 $satirlar = [];
 foreach ($urunler as $urun) {
     $zh = (string) $urun['name_original'];
     $tr = $cache->find(TranslationCacheRepository::hash($zh, 'zh', 'tr'));
     $en = $cache->find(TranslationCacheRepository::hash($zh, 'zh', 'en'));
+
+    // EKRANIN OKUDUĞU SATIR: sürümlü anahtar.
+    $trSurumlu = $surumAnahtari === ''
+        ? $tr
+        : $cache->find(TranslationCacheRepository::hash($zh, 'zh', 'tr', $surumAnahtari));
+    $enSurumlu = $surumAnahtari === ''
+        ? $en
+        : $cache->find(TranslationCacheRepository::hash($zh, 'zh', 'en', $surumAnahtari));
 
     $satir = [
         'id' => (int) $urun['id'],
@@ -97,6 +134,8 @@ foreach ($urunler as $urun) {
         'tr_saglayici' => $tr === null ? null : (string) $tr['provider'],
         'en' => $en === null ? null : (string) $en['suggested_text'],
         'en_saglayici' => $en === null ? null : (string) $en['provider'],
+        // AYRIŞMA: sınavın gördüğü satır ile ekranın gördüğü satır aynı mı?
+        'ayrisma' => ($tr === null) !== ($trSurumlu === null) || ($en === null) !== ($enSurumlu === null),
     ];
 
     if ($yalnizEksik && $satir['tr'] !== null && $satir['en'] !== null) {
@@ -204,6 +243,29 @@ if ($toplam === 0) {
 printf("TR kapsama   : %d/%d  (%%%.1f)\n", $trVar, $toplam, $trVar / $toplam * 100);
 printf("EN kapsama   : %d/%d  (%%%.1f)\n", $enVar, $toplam, $enVar / $toplam * 100);
 
+
+// D11: sınavın gördüğü ile EKRANIN gördüğü ayrışıyorsa bu, kapsamadan DAHA
+// ÖNEMLİ bir bulgudur — kapsama yüksek görünürken ekran boş olabilir.
+$ayrisan = count(array_filter($satirlar, static fn (array $s): bool => (bool) $s['ayrisma']));
+if ($ayrisan > 0) {
+    printf(
+        "
+AYRISMA      : %d/%d urun — sinav satiri BULUYOR ama ekranin okudugu
+"
+        . "               surumlu satir YOK (ya da tersi). Sozluk surumu degismis
+"
+        . "               ya da ceviri yanlis sozlukle uretilmis olabilir.
+"
+        . "               Onarim: panel > Ayarlar > Sistem durumu > Yeniden cevir.
+",
+        $ayrisan,
+        $toplam,
+    );
+} else {
+    echo "
+AYRISMA      : yok — sinav ile ekran AYNI satiri okuyor.
+";
+}
 tabloBas($satirlar, 'tr', 'TABLO 1 — TÜRKÇE');
 tabloBas($satirlar, 'en', 'TABLO 2 — İNGİLİZCE');
 

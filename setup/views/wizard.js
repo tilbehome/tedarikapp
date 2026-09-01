@@ -538,13 +538,11 @@
     // B14: e-posta yazılınca hesapta 2FA olup olmadığı sorulur ve kod alanı
     // yalnız gerekiyorsa açılır. Sorgu SIR SIZDIRMAZ: yalnız "kod gerekir mi"
     // bilgisini döner, hesabın var olup olmadığını değil (yoksa da false döner).
-    $('sahiplik-form').email.addEventListener('blur', function (event) {
-      var eposta = event.target.value.trim();
-      if (!eposta) { $('sahiplik-kod-alani').hidden = true; return; }
-      api('POST', '/api/setup/owner-check', { email: eposta }).then(function (data) {
-        $('sahiplik-kod-alani').hidden = !data.iki_adimli;
-      }).catch(function () { /* sorgu başarısızsa alan gizli kalır; kod yine gönderilebilir */ });
-    });
+    // v1.2.1 C5: owner-check artık SABİT yanıt verir — hesabın varlığı ve 2FA
+    // durumu kimliksiz sorguyla öğrenilemez. Kod alanı bu yüzden HER ZAMAN
+    // görünür ve İSTEĞE BAĞLIDIR. 2FA kullanmayan kullanıcı boş bir kutu görür;
+    // alternatifi, kimliksiz birine "bu hesapta 2FA yok" demekti.
+    $('sahiplik-kod-alani').hidden = false;
 
     $('sahiplik-form').addEventListener('submit', function (event) {
       event.preventDefault();

@@ -312,17 +312,24 @@ final class SetupOnarimUclariTest extends TestCase
         self::assertSame(200, $response->getStatusCode(), (string) $response->getBody());
     }
 
-    public function testOwnerCheckKODGEREKIRMISoyler(): void
+    public function testOwnerCheckSABITYANITVERIR(): void
     {
+        // v1.2.1 C5 — DAVRANIŞ DEĞİŞTİ. Bu test eskiden 2FA'lı hesap için
+        // `true`, olmayan hesap için `false` bekliyordu ve yorumu "uç hesabın
+        // VARLIĞINI sızdırmaz" diyordu. Varlığı sızdırmıyordu ama SAVUNMA
+        // DURUMUNU sızdırıyordu: "bu yönetici 2FA kullanmıyor" bilgisi,
+        // kimliksiz bir sorguyla öğrenilebiliyordu ve hedef seçme ölçütüdür.
+        // Üstelik 2FA'lı hesabın `true` dönmesi, varlığı da ele veriyordu.
+        //
+        // Artık yanıt SABİTTİR; kod alanı hep gösterilir ve isteğe bağlıdır.
         $this->kuruluSistem();
         $this->kullaniciTablosu('sahip@ornek.com', 'DogruSifre12345', totp: true);
 
         $var = $this->json($this->call('POST', '/api/setup/owner-check', ['email' => 'sahip@ornek.com']));
         $yok = $this->json($this->call('POST', '/api/setup/owner-check', ['email' => 'baska@ornek.com']));
 
-        self::assertTrue($var['data']['iki_adimli']);
-        // Olmayan hesap da false döner: uç hesabın VARLIĞINI sızdırmaz.
-        self::assertFalse($yok['data']['iki_adimli']);
+        self::assertSame($var['data'], $yok['data'], 'Var olan ve olmayan hesap AYIRT EDİLEMEMELİ.');
+        self::assertTrue($var['data']['iki_adimli'], 'Sabit yanıt kod alanını GÖSTERİR.');
     }
 
     /** activity_log + users tabloları — throttle ve kanıt bunları okur. */

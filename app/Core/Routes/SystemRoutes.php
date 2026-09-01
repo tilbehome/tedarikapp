@@ -47,6 +47,9 @@ final class SystemRoutes
             $group->post('/setup-unlock', [$system, 'setupUnlock']);
             // K47: uzak görselleri arşive taşıma (parti parti; Auth + CSRF bu grupta).
             $group->post('/media-migrate', [$system, 'mediaMigrate']);
+            // A6-EK: boş sözlükle çevrilmiş ürünleri yeniden kuyruğa alır.
+            // Yeni çeviri hattı yok — mevcut toplu çeviri yolunu kullanır.
+            $group->post('/sozluksuz-ceviri-yenile', [$system, 'sozluksuzCeviriYenile']);
             // K49: migration defterini gerçeğe eşitleme (DDL koşmaz; Auth + CSRF bu grupta).
             $group->post('/migrate-baseline', [$system, 'migrateBaseline']);
             // İE#10 5d: medya bütünlük denetimi + kayıp dosya onarımı (parti parti).

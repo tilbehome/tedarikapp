@@ -155,9 +155,13 @@ final class AppBuilder
         // yakalama da tur açıyor. İşleyiciler bu yüzden HTTP kompozisyonunda da
         // kayıtlı olmalı — kayıtlı olmasa tur "tanınmayan iş türü" der ve işleri
         // ölü rafına atardı.
+        // A3: HTTP kompozisyonunda da SAAT taşınır — panel ziyaretinde açılan
+        // tur da uzun sürebilir ve her geçiş kendi anını okumalıdır.
+        $kuyruk = new \App\Services\Kuyruk\JobQueue($connection, $services->bildirim);
         $kuyrukKosucusu = new \App\Services\Kuyruk\JobRunner(
-            new \App\Services\Kuyruk\JobQueue($connection, $services->bildirim),
+            $kuyruk,
             $logger,
+            saat: $services->clock,
         );
         \App\Services\Kuyruk\KuyrukIsleyicileri::kaydet(
             $kuyrukKosucusu,
@@ -211,7 +215,19 @@ final class AppBuilder
 
         // Güncelleme yolu (İE#5 §12): kurulum kilitlendikten sonra migration koşmanın
         // kimlik doğrulamalı yolu. Yazma ucu ayrıca CSRF ister.
-        $system = new SystemController($basePath, $connection, $setupLock, $services->clock, $mediaService, $stateMachine, $config, $katalogDurumu);
+        $system = new SystemController(
+            $basePath,
+            $connection,
+            $setupLock,
+            $services->clock,
+            $mediaService,
+            $stateMachine,
+            $config,
+            $katalogDurumu,
+            // A6-EK: "Yeniden çevir" düğmesi ürünleri MEVCUT çeviri kuyruğuna alır.
+            $kuyruk,
+            $logger,
+        );
         Routes\SystemRoutes::register($app, $system, $services, $responseFactory);
 
         $listController = new ListController(
@@ -303,7 +319,12 @@ final class AppBuilder
             $lists,
             $services->activity,
             $services->clock,
-            new \App\Services\Share\ShareKeyService($lists, (string) $config->get('APP_KEY', '')),
+            new \App\Services\Share\ShareKeyService(
+                $lists,
+                (string) $config->get('APP_KEY', ''),
+                // D8: erişim anahtarı dinlenmede şifrelenir; bağlam TOTP'tan AYRI.
+                new \App\Core\Encrypter($config, baglam: \App\Core\Encrypter::BAGLAM_PAYLASIM_ANAHTARI),
+            ),
             $config,
             new \App\Services\Inbox\SistemListesi($settingsRepository),
             $services->bildirim,
@@ -456,6 +477,8 @@ final class AppBuilder
                 new SettingsRepository($connection),
                 $services->activity,
                 $services->clock,
+                // C4: gizlenen hataların ayrıntısı yalnız günlüğe.
+                $logger,
             ),
             $activityController,
             $listController,

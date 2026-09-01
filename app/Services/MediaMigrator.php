@@ -70,10 +70,11 @@ final class MediaMigrator
 
                 continue;
             }
-            $statement = $this->connection->pdo()->prepare(
-                'UPDATE products SET main_image = :path, main_image_source = :source WHERE id = :id',
-            );
-            $statement->execute(['path' => $result['url'], 'source' => (string) $row['main_image'], 'id' => (int) $row['id']]);
+            if (!$this->anaGorseliYaz((int) $row['id'], (string) $row['main_image'], $result)) {
+                // CAS tutmadı: satır bu arada değişmiş. Atlanır, sonraki turda
+                // GÜNCEL url'den yeniden denenir.
+                continue;
+            }
             $migrated++;
         }
 
@@ -88,10 +89,9 @@ final class MediaMigrator
 
                     continue;
                 }
-                $statement = $this->connection->pdo()->prepare(
-                    "UPDATE product_images SET path = :path, storage_mode = 'local', source_url = :source WHERE id = :id",
-                );
-                $statement->execute(['path' => $result['path'], 'source' => $source, 'id' => (int) $row['id']]);
+                if (!$this->galeriGorseliYaz((int) $row['id'], (string) $row['path'], $source, $result)) {
+                    continue;
+                }
                 $migrated++;
             }
         }
@@ -116,12 +116,25 @@ final class MediaMigrator
      * yakalanan TEK ürünü hedefler ve kuyruk işinden çağrılır — yakalamadan
      * dakikalar sonra galeri kendiliğinden yerele iner.
      *
+     * @param  ?callable(): void $kontrol A2 — her dış adımın ÖNCESİNDE ve
+     *         SONRASINDA çağrılır; kira kaybedilmişse istisna atar ve döngü durur
      * @return array{indirilen: int, basarisiz: list<array{id: int, url: string, hata: string}>}
+     *
+     * @throws MedyaEksik eksik görsel kaldıysa (A4) — iş BİTMİŞ sayılmaz
      */
-    public function urununMedyasi(int $urunId, int $limit = 24): array
+    public function urununMedyasi(int $urunId, int $limit = 24, ?callable $kontrol = null): array
     {
         $indirilen = 0;
         $basarisiz = [];
+        /**
+         * Her hatanın kalıcı olup olmadığı — sonda TEK KARARA indirgenir.
+         *
+         * TEK BİR GEÇİCİ HATA BÜTÜNÜ GEÇİCİ YAPAR: hepsi kalıcı değilse
+         * yeniden denemek hâlâ bir şey kurtarabilir.
+         *
+         * @var list<bool>
+         */
+        $kaliciBayraklari = [];
 
         if ($this->media->mode() !== MediaService::MODE_DOWNLOAD) {
             return ['indirilen' => 0, 'basarisiz' => []];
@@ -135,19 +148,24 @@ final class MediaMigrator
         $anaSorgu->execute(['id' => $urunId]);
         $ana = $anaSorgu->fetch(\PDO::FETCH_ASSOC);
         if (is_array($ana)) {
+            // A2: DIŞ ADIMDAN ÖNCE. Kira bizde değilse indirmeye hiç başlamayız.
+            if ($kontrol !== null) {
+                $kontrol();
+            }
             $sonuc = $this->fetchLocal((string) $ana['main_image']);
+            // A2: DIŞ ADIMDAN SONRA. Uzun süren indirmenin ardından kira tazelenir.
+            if ($kontrol !== null) {
+                $kontrol();
+            }
             if (isset($sonuc['error'])) {
                 $basarisiz[] = ['id' => $urunId, 'url' => (string) $ana['main_image'], 'hata' => (string) $sonuc['error']];
+                $kaliciBayraklari[] = (bool) $sonuc['kalici'];
             } else {
-                $guncelle = $this->connection->pdo()->prepare(
-                    'UPDATE products SET main_image = :path, main_image_source = :source WHERE id = :id',
-                );
-                $guncelle->execute([
-                    'path' => $sonuc['url'],
-                    'source' => (string) $ana['main_image'],
-                    'id' => $urunId,
-                ]);
-                $indirilen++;
+                // A5: toplu yolla AYNI CAS. Tek ürün yolu kuyruktan koşar ve
+                // toplu göçle aynı anda aynı satıra uzanabilir.
+                if ($this->anaGorseliYaz($urunId, (string) $ana['main_image'], $sonuc)) {
+                    $indirilen++;
+                }
             }
         }
 
@@ -162,20 +180,35 @@ final class MediaMigrator
             $kaynak = (string) ($satir['source_url'] ?? '') !== ''
                 ? (string) $satir['source_url']
                 : (string) $satir['path'];
+            if ($kontrol !== null) {
+                $kontrol();
+            }
             $sonuc = $this->fetchLocal($kaynak);
+            if ($kontrol !== null) {
+                $kontrol();
+            }
             if (isset($sonuc['error'])) {
                 // BOZMAZ: satır remote kalır, arayüz bunu işaretler, sonraki tur
                 // yeniden dener. Sessiz boş kare artık yok.
                 $basarisiz[] = ['id' => (int) $satir['id'], 'url' => $kaynak, 'hata' => (string) $sonuc['error']];
+                $kaliciBayraklari[] = (bool) $sonuc['kalici'];
 
                 continue;
             }
 
-            $guncelle = $this->connection->pdo()->prepare(
-                "UPDATE product_images SET path = :path, storage_mode = 'local', source_url = :source WHERE id = :id",
-            );
-            $guncelle->execute(['path' => $sonuc['path'], 'source' => $kaynak, 'id' => (int) $satir['id']]);
-            $indirilen++;
+            if ($this->galeriGorseliYaz((int) $satir['id'], (string) $satir['path'], $kaynak, $sonuc)) {
+                $indirilen++;
+            }
+        }
+
+        if ($basarisiz !== []) {
+            // A4: EKSİK KALAN GÖRSEL VARSA İŞ BİTMEZ. Dönüşü okumayan bir
+            // çağıran kısmi başarıyı tam başarı sanardı — ve tam olarak öyle
+            // oluyordu: iki görsel sonsuza kadar uzak kalıyordu.
+            // Kalıcı sayılması için HEPSİNİN kalıcı olması gerekir.
+            $kalici = !in_array(false, $kaliciBayraklari, true);
+
+            throw new MedyaEksik($urunId, $indirilen, count($basarisiz), $kalici, $basarisiz);
         }
 
         return ['indirilen' => $indirilen, 'basarisiz' => $basarisiz];
@@ -193,22 +226,110 @@ final class MediaMigrator
     }
 
     /**
-     * @return array{path: string, url: string}|array{error: string}
+     * ANA GÖRSEL YAZIMI — SATIR CAS (v1.2.1 A5 · TDR-004).
+     *
+     * `WHERE id AND main_image = <indirmeye başlarken gördüğümüz url>`.
+     * İndirme saniyeler sürer; o aralıkta ürün yeniden yakalanmış ve satırda
+     * BAŞKA bir url belirmiş olabilir. Koşulsuz yazım, eski indirmeyi yeni
+     * url'nin üstüne basardı ve sonuç sessizce yanlış olurdu: görsel yanlış
+     * ama "yerel" görünür.
+     *
+     * CAS tutmazsa indirilen dosya SİLİNİR — öksüz dosya diskte birikirse
+     * kimse fark etmez ve hangi dosyanın kime ait olduğu bilinemez hâle gelir.
+     *
+     * @param  array{path?: string, url?: string, error?: string} $result
+     * @return bool yazım uygulandı mı
+     */
+    private function anaGorseliYaz(int $urunId, string $eskiUrl, array $result): bool
+    {
+        $statement = $this->connection->pdo()->prepare(
+            'UPDATE products SET main_image = :path, main_image_source = :source
+             WHERE id = :id AND main_image = :eski',
+        );
+        $statement->execute([
+            'path' => $result['url'] ?? '',
+            'source' => $eskiUrl,
+            'id' => $urunId,
+            'eski' => $eskiUrl,
+        ]);
+
+        if ($statement->rowCount() === 1) {
+            return true;
+        }
+
+        $this->indirileniSil($result['path'] ?? null);
+
+        return false;
+    }
+
+    /**
+     * GALERİ GÖRSELİ YAZIMI — SATIR CAS (aynı gerekçe).
+     *
+     * Koşula `storage_mode = 'remote'` de girer: satır bu arada başka bir
+     * koşum tarafından yerelleştirilmişse iki indirme aynı satıra yazar ve
+     * biri diğerinin dosyasını öksüz bırakırdı.
+     *
+     * @param  array{path?: string, url?: string, error?: string} $result
+     * @return bool yazım uygulandı mı
+     */
+    private function galeriGorseliYaz(int $gorselId, string $eskiPath, string $source, array $result): bool
+    {
+        $statement = $this->connection->pdo()->prepare(
+            "UPDATE product_images SET path = :path, storage_mode = 'local', source_url = :source
+             WHERE id = :id AND storage_mode = 'remote' AND path = :eski",
+        );
+        $statement->execute([
+            'path' => $result['path'] ?? '',
+            'source' => $source,
+            'id' => $gorselId,
+            'eski' => $eskiPath,
+        ]);
+
+        if ($statement->rowCount() === 1) {
+            return true;
+        }
+
+        $this->indirileniSil($result['path'] ?? null);
+
+        return false;
+    }
+
+    /** CAS tutmayınca indirilen dosyayı siler; öksüz dosya bırakmayız. */
+    private function indirileniSil(?string $goreliYol): void
+    {
+        if ($goreliYol === null || $goreliYol === '') {
+            return;
+        }
+
+        // `deleteFile()` yalnız medya klasöründeki, desene uyan dosya adlarını
+        // siler — yol enjeksiyonuyla klasör dışına çıkılamaz.
+        $this->media->deleteFile(basename($goreliYol));
+    }
+
+    /**
+     * @return array{path: string, url: string}|array{error: string, kalici: bool}
      */
     private function fetchLocal(string $url): array
     {
         try {
             $stored = $this->media->store($url);
         } catch (MediaException $e) {
+            // A8: KALICILIK TİPTEN OKUNUR, mesajdan değil. `MediaDeniedException`
+            // güvenlik/beyaz liste reddidir ve tekrar denemek DÜZELTMEZ; diğer
+            // MediaException'lar ağ/dosya hatasıdır ve geçicidir.
             // Sınıf adı hata raporunda ayırt edicidir (güvenlik reddi mi, ağ hatası mı).
-            return ['error' => basename(str_replace('\\', '/', $e::class)) . ': ' . $e->getMessage()];
+            return [
+                'error' => basename(str_replace('\\', '/', $e::class)) . ': ' . $e->getMessage(),
+                'kalici' => $e instanceof MediaDeniedException,
+            ];
         }
 
         if ($stored['mode'] !== MediaService::MODE_DOWNLOAD || !is_string($stored['path'])) {
-            return ['error' => 'Yazma başarısız: medya klasörü bu istekte yazılamadı.'];
+            // Yazma arızası GEÇİCİDİR: klasör izni düzelebilir, disk boşalabilir.
+            return ['error' => 'Yazma başarısız: medya klasörü bu istekte yazılamadı.', 'kalici' => false];
         }
 
-        return ['path' => $stored['path'], 'url' => $stored['url']];
+        return ['path' => (string) $stored['path'], 'url' => (string) $stored['url']];
     }
 
     /**

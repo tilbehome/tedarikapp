@@ -186,6 +186,25 @@ final class SetupController
         );
     }
 
+    /**
+     * DB ŞİFRESİNİ STATE'TEN SİLER (v1.2.1 C2).
+     *
+     * config.php yazıldıktan sonra şifre ORADA yaşar; state'te tutmaya devam
+     * etmenin tek etkisi sırrı her istekte tarayıcıya ve geri taşımaktır.
+     * Kalan adımlar (finish) yalnız "DB yapılandırıldı mı" bilgisine bakar,
+     * şifreye değil — bu yüzden alan çıkarılabilir, kayıt duruyor.
+     */
+    private function dbSifresiniUnut(): void
+    {
+        $database = $this->state->get(self::DATA_DB);
+        if (!is_array($database) || !array_key_exists('pass', $database)) {
+            return;
+        }
+
+        unset($database['pass']);
+        $this->state->put(self::DATA_DB, $database);
+    }
+
     private function reSetupTicket(): ReSetupTicket
     {
         return new ReSetupTicket($this->lock->connection() ?? $this->connection());
@@ -204,8 +223,21 @@ final class SetupController
         try {
             $statement = $this->connection()->pdo()->query('SELECT COUNT(*) FROM users');
             $mevcutKullanici = $statement === false ? 0 : (int) $statement->fetchColumn();
-        } catch (Throwable) {
-            return false; // users tablosu yoksa kurulum gerçekten ilk kurulumdur
+        } catch (Throwable $hata) {
+            // v1.2.1 C3 — FAIL-CLOSED. Burada `catch (Throwable) { return false; }`
+            // vardı: HERHANGİ bir hata kapıyı AÇIYORDU. Bağlantıyı bir an
+            // düşürebilen ya da izinleri bozabilen biri, kimliksiz bir yönetici
+            // oluşturma kapısı elde ediyordu.
+            //
+            // Gerekçe ("users tablosu yoksa kurulum gerçekten ilk kurulumdur")
+            // DOĞRU ama yalnız TABLO YOKSA doğru. "Tablo yok" ile "veritabanı
+            // yanıt vermiyor" aynı catch'te toplandığı an, doğru gerekçe yanlış
+            // bir kapıya dönüşür. K37 deseni: karar verilemiyorsa GEÇİLMEZ.
+            if (\App\Core\GizliHata::tabloYokMu($hata)) {
+                return false;
+            }
+
+            return true;
         }
 
         if ($mevcutKullanici === 0) {
@@ -410,6 +442,7 @@ final class SetupController
         }
 
         $this->state->put(self::DATA_ENV_KEY, $appKey);
+        $this->dbSifresiniUnut();
         $this->state->complete(SetupState::STEP_ENV);
 
         return Response::success($response, [

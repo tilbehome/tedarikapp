@@ -13,6 +13,7 @@ use App\Middleware\SetupAudit;
 use App\Middleware\SetupCookieSession;
 use App\Middleware\SetupCsrf;
 use App\Middleware\SetupGuard;
+use App\Middleware\SetupHttpsGate;
 use App\Setup\ConfigWriter;
 use App\Setup\CookieSession;
 use App\Setup\ReSetupTicket;
@@ -56,6 +57,12 @@ final class SetupAppBuilder
         ?SetupLock $setupLock = null,
         ?ConfigWriter $configWriter = null,
         ?string $appEnv = null,
+        /**
+         * v1.2.1 C1 — güvenilir proxy listesi (config.php TRUSTED_PROXIES).
+         * Sihirbaz `.env` YOKKEN de koşar; o hâlde liste boştur ve hiçbir
+         * forwarded başlığı okunmaz (fail-closed).
+         */
+        ?string $guvenilirProxyler = null,
     ): App {
         $requestContext ??= new RequestContext();
         $clock ??= new SystemClock(new \DateTimeZone('Europe/Istanbul'));
@@ -63,6 +70,7 @@ final class SetupAppBuilder
         // config henüz yokken APP_ENV yalnız sunucu ortamından okunabilir.
         // Hiçbiri yoksa GÜVENLİ varsayılan production'dur (K37 §A3 — fail-safe).
         $appEnv ??= self::detectAppEnv();
+        $guvenilirProxyler ??= self::guvenilirProxyleriOku($basePath);
 
         // K33: kilit veritabanındadır. K37: bağlantı yalnızca sistem YAPILANDIRILMIŞSA
         // (config.php veya legacy .env) verilir — varken okunamayan kilit "kilitli"
@@ -85,7 +93,13 @@ final class SetupAppBuilder
         // State şifreli+doğrulamalı ÇEREZDE taşınır; diske ve DB'ye ihtiyaç yoktur.
         $cookieSession = null;
         if ($session === null) {
-            $cookieSession = new CookieSession($basePath, secure: self::serverIsHttps());
+            $cookieSession = new CookieSession(
+                $basePath,
+                secure: self::serverIsHttps(),
+                // C2: TTL denetimi ve anahtar-dönemi düşürme uyarısı için.
+                saat: $clock,
+                gunlukcu: $logger,
+            );
             $session = $cookieSession;
         }
         $state = new SetupState($session);
@@ -160,6 +174,11 @@ final class SetupAppBuilder
             // Oturuma bakan her katmandan (guard dahil) ÖNCE bağlanmalı, yanıtı en sonda yazmalı.
             $app->add(new SetupCookieSession($cookieSession));
         }
+        // C1: SIR TAŞIYAN ADIMLARIN HTTPS KAPISI. Bu satır YOKTU — sınıf
+        // yazılmış, test edilmiş ve hiç bağlanmamıştı; DB/yönetici şifresi ve
+        // TOTP kodu üretimde düz HTTP'den gidebiliyordu. Kapı `SetupGuard`tan
+        // ÖNCE değil SONRA çalışır: kilitli sistemde zaten 403 dönmeli.
+        $app->add(new SetupHttpsGate($responseFactory, $appEnv, $guvenilirProxyler));
         $app->add(new SecurityHeaders());
         $app->add(new RequestId($requestContext));
         // EN DIŞTA: /setup/ gibi sondaki eğik çizgili adresler rotayı bulamıyordu (canlı vaka).
@@ -179,6 +198,24 @@ final class SetupAppBuilder
         $fromEnv = getenv('APP_ENV');
 
         return is_string($fromEnv) && $fromEnv !== '' ? $fromEnv : 'production';
+    }
+
+    /**
+     * GÜVENİLİR PROXY LİSTESİ (C1) — config.php varsa oradan, yoksa BOŞ.
+     *
+     * Sihirbaz `.env`/config YOKKEN de koşmak zorundadır; o hâlde liste boş
+     * kalır ve hiçbir forwarded başlığı okunmaz. Fail-closed: yapılandırılmamış
+     * bir kurulumda "proxy arkasındayım" iddiasına GÜVENİLMEZ.
+     */
+    private static function guvenilirProxyleriOku(string $basePath): string
+    {
+        try {
+            $config = Config::load($basePath);
+        } catch (Throwable) {
+            return '';
+        }
+
+        return trim($config->get('TRUSTED_PROXIES', ''));
     }
 
     /** Sihirbaz oturum çerezinin Secure bayrağı — istek HTTPS ise işaretlenir (K37 §A3). */

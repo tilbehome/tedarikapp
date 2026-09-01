@@ -55,7 +55,14 @@ final class ExtensionAuth implements MiddlewareInterface
 
         $token = $this->bearerToken($request);
 
-        $storedHash = (new SettingsRepository($this->connection))->get(SettingsRepository::KEY_EXTENSION_TOKEN_HASH, '');
+        // v1.2.1 D5 — TOKEN OKUMASI DA FAIL-CLOSED. Veritabanı düşerse bu satır
+        // istisna atıyor ve istek 500'e düşüyordu: teknik olarak "geçmiyor" ama
+        // sızdıran bir hata sayfasıyla. Doğrulanamayan token, geçersiz token'dır.
+        try {
+            $storedHash = (new SettingsRepository($this->connection))->get(SettingsRepository::KEY_EXTENSION_TOKEN_HASH, '');
+        } catch (\Throwable) {
+            $storedHash = null;
+        }
         if ($token === '' || $storedHash === null || $storedHash === '' || !hash_equals($storedHash, hash('sha256', $token))) {
             // Token DEĞERİ bildirime GİRMEZ (K34/K51): yalnız istemci kimliği
             // olarak Origin ve hata kodu taşınır. Birleştirme sayesinde ard arda
@@ -132,24 +139,39 @@ final class ExtensionAuth implements MiddlewareInterface
     {
         try {
             $pdo = $this->connection->pdo();
-            $windowStart = Dates::toStorage(new \DateTimeImmutable('-1 minute', $this->timezone));
-            $statement = $pdo->prepare(
-                "SELECT COUNT(*) FROM activity_log WHERE action = 'capture_request' AND ip = :ip AND created_at >= :start",
-            );
-            $statement->execute(['ip' => $ip, 'start' => $windowStart]);
-            if ((int) $statement->fetchColumn() >= $this->ratePerMinute) {
-                return true;
-            }
 
+            // v1.2.1 D5 — ÖNCE YAZ, SONRA SAY.
+            //
+            // Eskiden sıra tersti: `SELECT COUNT(*)` sonra `INSERT`. Elli
+            // paralel istek AYNI sayıyı okur, hepsi sınırın altında görünür ve
+            // hepsi geçer; sonra hepsi kendi satırını ekler. Sınır 10 iken 50
+            // istek geçebiliyordu — yani sınır yalnız SERİ trafikte çalışıyordu.
+            //
+            // Sırayı çevirmek, her isteğin KENDİ kaydını saymasını sağlar:
+            // eşzamanlı N istekten N'incisi en az N sayar. Sınır kenarında
+            // biraz FAZLA engelleme olabilir; bu güvenli yöndeki hatadır ve
+            // yeni tablo ya da dialekt-özel upsert gerektirmez.
             $insert = $pdo->prepare(
                 "INSERT INTO activity_log (entity_type, entity_id, action, detail, ip, actor_type, actor_id, created_at)
                  VALUES ('extension', NULL, 'capture_request', NULL, :ip, 'extension', NULL, :now)",
             );
             $insert->execute(['ip' => $ip, 'now' => Dates::toStorage(new \DateTimeImmutable('now', $this->timezone))]);
-        } catch (\Throwable) {
-            // Sayaç okunamıyorsa istek düşürülmez — hız sınırı koruma katmanıdır, kapı değil.
-        }
 
-        return false;
+            $windowStart = Dates::toStorage(new \DateTimeImmutable('-1 minute', $this->timezone));
+            $statement = $pdo->prepare(
+                "SELECT COUNT(*) FROM activity_log WHERE action = 'capture_request' AND ip = :ip AND created_at >= :start",
+            );
+            $statement->execute(['ip' => $ip, 'start' => $windowStart]);
+
+            return (int) $statement->fetchColumn() > $this->ratePerMinute;
+        } catch (\Throwable) {
+            // v1.2.1 D5 — FAIL-CLOSED. Burada istek GEÇİYORDU; gerekçe "hız
+            // sınırı koruma katmanıdır, kapı değil" idi. İlke doğru ama YANLIŞ
+            // UÇTA: capture ucu kimliksiz dünyaya bakar ve veri YAZAR.
+            // Veritabanını bir an düşürebilen biri sınırsız yazma hakkı elde
+            // ediyordu. Sayamıyorsak sınırı uygulayamayız; uygulayamıyorsak
+            // geçirmeyiz.
+            return true;
+        }
     }
 }

@@ -242,6 +242,11 @@ export interface SystemStatus {
   migrations: { applied: number; pending: string[]; pending_count: number };
   media: { mode: string | null; writable: boolean | null };
   setup_lock_in_database: boolean;
+  /**
+   * A6-EK: boş sözlükle çevrilmiş ürün sayısı. 0 ise kart GİZLENİR — sıfır
+   * gösteren bir uyarı bir süre sonra okunmaz hâle gelir.
+   */
+  sozluksuz_ceviri: number;
 }
 
 /** POST /api/system/media-migrate — K47 arşive taşıma parti sonucu. */
