@@ -1,0 +1,4386 @@
+{
+  "belge_adi": "V3-N Sızıntı Test Seti",
+  "surum": "34-R-v2",
+  "matris_bagi": "rol-gorunurluk-matrisi.json@34-R-v2",
+  "kabul_kapisi": "Tüm SZ vakaları yeşil olmadan V3-N kapanmaz.",
+  "negatif_beklenti_standardi": "Gizli alan adı/değeri ve “—” yer tutucusu hiçbir katmanda bulunmaz. Sahip operatör kısıtı sızıntısı dış rol sızıntısıyla aynı ciddiyettedir.",
+  "kapsam": {
+    "kirmizi_cizgi_alan_sayisi": 13,
+    "dis_rol_sayisi": 4,
+    "cikti_turu_sayisi": 5,
+    "zorunlu_kirmizi_capraz_vaka_sayisi": 210,
+    "kaynak_rol_bazli_negatif_vaka_sayisi": 67,
+    "silinen_kaynak_negatif_vaka_sayisi": 33,
+    "operator_kisitli_alan_vaka_sayisi": 32,
+    "operator_rol_yukseltme_vaka_sayisi": 1,
+    "operator_toplam_negatif_vaka_sayisi": 33,
+    "toplam_vaka_sayisi": 273
+  },
+  "vakalar": [
+    {
+      "id": "SZ-001",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.ddp_birim_maliyet tuzak değer taşır; rol token’dan ithalatci çözülür.",
+      "istek": "ithalatci için html istenir.",
+      "beklenen": "ic_maliyet.ddp_birim_maliyet adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html_kaynagi",
+        "hydration",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.ddp_birim_maliyet",
+      "rol": "ithalatci",
+      "cikti": "html"
+    },
+    {
+      "id": "SZ-002",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.ddp_birim_maliyet tuzak değer taşır; rol token’dan ithalatci çözülür.",
+      "istek": "ithalatci için pdf istenir.",
+      "beklenen": "ic_maliyet.ddp_birim_maliyet adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "pdf_metin_katmani",
+        "pdf_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.ddp_birim_maliyet",
+      "rol": "ithalatci",
+      "cikti": "pdf"
+    },
+    {
+      "id": "SZ-003",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.ddp_birim_maliyet tuzak değer taşır; rol token’dan ithalatci çözülür.",
+      "istek": "ithalatci için excel istenir.",
+      "beklenen": "ic_maliyet.ddp_birim_maliyet adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "excel_gizli_sutun",
+        "workbook_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.ddp_birim_maliyet",
+      "rol": "ithalatci",
+      "cikti": "excel"
+    },
+    {
+      "id": "SZ-004",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.ddp_birim_maliyet tuzak değer taşır; rol token’dan ithalatci çözülür.",
+      "istek": "ithalatci için csv istenir.",
+      "beklenen": "ic_maliyet.ddp_birim_maliyet adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "csv_baslik",
+        "csv_satir",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.ddp_birim_maliyet",
+      "rol": "ithalatci",
+      "cikti": "csv"
+    },
+    {
+      "id": "SZ-005",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.ddp_birim_maliyet tuzak değer taşır; rol token’dan ithalatci çözülür.",
+      "istek": "ithalatci için whatsapp-ozet istenir.",
+      "beklenen": "ic_maliyet.ddp_birim_maliyet adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "ozet_metni",
+        "sablon_payloadu",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.ddp_birim_maliyet",
+      "rol": "ithalatci",
+      "cikti": "whatsapp-ozet"
+    },
+    {
+      "id": "SZ-006",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.ddp_birim_maliyet tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için html istenir.",
+      "beklenen": "ic_maliyet.ddp_birim_maliyet adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html_kaynagi",
+        "hydration",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.ddp_birim_maliyet",
+      "rol": "musteri",
+      "cikti": "html"
+    },
+    {
+      "id": "SZ-007",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.ddp_birim_maliyet tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için pdf istenir.",
+      "beklenen": "ic_maliyet.ddp_birim_maliyet adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "pdf_metin_katmani",
+        "pdf_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.ddp_birim_maliyet",
+      "rol": "musteri",
+      "cikti": "pdf"
+    },
+    {
+      "id": "SZ-008",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.ddp_birim_maliyet tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için excel istenir.",
+      "beklenen": "ic_maliyet.ddp_birim_maliyet adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "excel_gizli_sutun",
+        "workbook_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.ddp_birim_maliyet",
+      "rol": "musteri",
+      "cikti": "excel"
+    },
+    {
+      "id": "SZ-009",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.ddp_birim_maliyet tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için csv istenir.",
+      "beklenen": "ic_maliyet.ddp_birim_maliyet adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "csv_baslik",
+        "csv_satir",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.ddp_birim_maliyet",
+      "rol": "musteri",
+      "cikti": "csv"
+    },
+    {
+      "id": "SZ-010",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.ddp_birim_maliyet tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için whatsapp-ozet istenir.",
+      "beklenen": "ic_maliyet.ddp_birim_maliyet adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "ozet_metni",
+        "sablon_payloadu",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.ddp_birim_maliyet",
+      "rol": "musteri",
+      "cikti": "whatsapp-ozet"
+    },
+    {
+      "id": "SZ-011",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.ddp_birim_maliyet tuzak değer taşır; rol token’dan cinli_uretici_ciktisi çözülür.",
+      "istek": "cinli_uretici_ciktisi için html istenir.",
+      "beklenen": "ic_maliyet.ddp_birim_maliyet adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html_kaynagi",
+        "hydration",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.ddp_birim_maliyet",
+      "rol": "cinli_uretici_ciktisi",
+      "cikti": "html"
+    },
+    {
+      "id": "SZ-012",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.ddp_birim_maliyet tuzak değer taşır; rol token’dan cinli_uretici_ciktisi çözülür.",
+      "istek": "cinli_uretici_ciktisi için pdf istenir.",
+      "beklenen": "ic_maliyet.ddp_birim_maliyet adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "pdf_metin_katmani",
+        "pdf_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.ddp_birim_maliyet",
+      "rol": "cinli_uretici_ciktisi",
+      "cikti": "pdf"
+    },
+    {
+      "id": "SZ-013",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.ddp_birim_maliyet tuzak değer taşır; rol token’dan cinli_uretici_ciktisi çözülür.",
+      "istek": "cinli_uretici_ciktisi için excel istenir.",
+      "beklenen": "ic_maliyet.ddp_birim_maliyet adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "excel_gizli_sutun",
+        "workbook_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.ddp_birim_maliyet",
+      "rol": "cinli_uretici_ciktisi",
+      "cikti": "excel"
+    },
+    {
+      "id": "SZ-014",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.ddp_birim_maliyet tuzak değer taşır; rol token’dan cinli_uretici_ciktisi çözülür.",
+      "istek": "cinli_uretici_ciktisi için csv istenir.",
+      "beklenen": "ic_maliyet.ddp_birim_maliyet adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "csv_baslik",
+        "csv_satir",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.ddp_birim_maliyet",
+      "rol": "cinli_uretici_ciktisi",
+      "cikti": "csv"
+    },
+    {
+      "id": "SZ-015",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.ddp_birim_maliyet tuzak değer taşır; rol token’dan cinli_uretici_ciktisi çözülür.",
+      "istek": "cinli_uretici_ciktisi için whatsapp-ozet istenir.",
+      "beklenen": "ic_maliyet.ddp_birim_maliyet adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "ozet_metni",
+        "sablon_payloadu",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.ddp_birim_maliyet",
+      "rol": "cinli_uretici_ciktisi",
+      "cikti": "whatsapp-ozet"
+    },
+    {
+      "id": "SZ-016",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.ddp_birim_maliyet tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için html istenir.",
+      "beklenen": "ic_maliyet.ddp_birim_maliyet adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html_kaynagi",
+        "hydration",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.ddp_birim_maliyet",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "html"
+    },
+    {
+      "id": "SZ-017",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.ddp_birim_maliyet tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için pdf istenir.",
+      "beklenen": "ic_maliyet.ddp_birim_maliyet adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "pdf_metin_katmani",
+        "pdf_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.ddp_birim_maliyet",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "pdf"
+    },
+    {
+      "id": "SZ-018",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.ddp_birim_maliyet tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için excel istenir.",
+      "beklenen": "ic_maliyet.ddp_birim_maliyet adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "excel_gizli_sutun",
+        "workbook_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.ddp_birim_maliyet",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "excel"
+    },
+    {
+      "id": "SZ-019",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.ddp_birim_maliyet tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için csv istenir.",
+      "beklenen": "ic_maliyet.ddp_birim_maliyet adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "csv_baslik",
+        "csv_satir",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.ddp_birim_maliyet",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "csv"
+    },
+    {
+      "id": "SZ-020",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.ddp_birim_maliyet tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için whatsapp-ozet istenir.",
+      "beklenen": "ic_maliyet.ddp_birim_maliyet adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "ozet_metni",
+        "sablon_payloadu",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.ddp_birim_maliyet",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "whatsapp-ozet"
+    },
+    {
+      "id": "SZ-021",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.ddp_toplam_maliyet tuzak değer taşır; rol token’dan ithalatci çözülür.",
+      "istek": "ithalatci için html istenir.",
+      "beklenen": "ic_maliyet.ddp_toplam_maliyet adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html_kaynagi",
+        "hydration",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.ddp_toplam_maliyet",
+      "rol": "ithalatci",
+      "cikti": "html"
+    },
+    {
+      "id": "SZ-022",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.ddp_toplam_maliyet tuzak değer taşır; rol token’dan ithalatci çözülür.",
+      "istek": "ithalatci için pdf istenir.",
+      "beklenen": "ic_maliyet.ddp_toplam_maliyet adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "pdf_metin_katmani",
+        "pdf_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.ddp_toplam_maliyet",
+      "rol": "ithalatci",
+      "cikti": "pdf"
+    },
+    {
+      "id": "SZ-023",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.ddp_toplam_maliyet tuzak değer taşır; rol token’dan ithalatci çözülür.",
+      "istek": "ithalatci için excel istenir.",
+      "beklenen": "ic_maliyet.ddp_toplam_maliyet adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "excel_gizli_sutun",
+        "workbook_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.ddp_toplam_maliyet",
+      "rol": "ithalatci",
+      "cikti": "excel"
+    },
+    {
+      "id": "SZ-024",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.ddp_toplam_maliyet tuzak değer taşır; rol token’dan ithalatci çözülür.",
+      "istek": "ithalatci için csv istenir.",
+      "beklenen": "ic_maliyet.ddp_toplam_maliyet adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "csv_baslik",
+        "csv_satir",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.ddp_toplam_maliyet",
+      "rol": "ithalatci",
+      "cikti": "csv"
+    },
+    {
+      "id": "SZ-025",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.ddp_toplam_maliyet tuzak değer taşır; rol token’dan ithalatci çözülür.",
+      "istek": "ithalatci için whatsapp-ozet istenir.",
+      "beklenen": "ic_maliyet.ddp_toplam_maliyet adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "ozet_metni",
+        "sablon_payloadu",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.ddp_toplam_maliyet",
+      "rol": "ithalatci",
+      "cikti": "whatsapp-ozet"
+    },
+    {
+      "id": "SZ-026",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.ddp_toplam_maliyet tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için html istenir.",
+      "beklenen": "ic_maliyet.ddp_toplam_maliyet adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html_kaynagi",
+        "hydration",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.ddp_toplam_maliyet",
+      "rol": "musteri",
+      "cikti": "html"
+    },
+    {
+      "id": "SZ-027",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.ddp_toplam_maliyet tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için pdf istenir.",
+      "beklenen": "ic_maliyet.ddp_toplam_maliyet adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "pdf_metin_katmani",
+        "pdf_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.ddp_toplam_maliyet",
+      "rol": "musteri",
+      "cikti": "pdf"
+    },
+    {
+      "id": "SZ-028",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.ddp_toplam_maliyet tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için excel istenir.",
+      "beklenen": "ic_maliyet.ddp_toplam_maliyet adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "excel_gizli_sutun",
+        "workbook_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.ddp_toplam_maliyet",
+      "rol": "musteri",
+      "cikti": "excel"
+    },
+    {
+      "id": "SZ-029",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.ddp_toplam_maliyet tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için csv istenir.",
+      "beklenen": "ic_maliyet.ddp_toplam_maliyet adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "csv_baslik",
+        "csv_satir",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.ddp_toplam_maliyet",
+      "rol": "musteri",
+      "cikti": "csv"
+    },
+    {
+      "id": "SZ-030",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.ddp_toplam_maliyet tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için whatsapp-ozet istenir.",
+      "beklenen": "ic_maliyet.ddp_toplam_maliyet adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "ozet_metni",
+        "sablon_payloadu",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.ddp_toplam_maliyet",
+      "rol": "musteri",
+      "cikti": "whatsapp-ozet"
+    },
+    {
+      "id": "SZ-031",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.ddp_toplam_maliyet tuzak değer taşır; rol token’dan cinli_uretici_ciktisi çözülür.",
+      "istek": "cinli_uretici_ciktisi için html istenir.",
+      "beklenen": "ic_maliyet.ddp_toplam_maliyet adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html_kaynagi",
+        "hydration",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.ddp_toplam_maliyet",
+      "rol": "cinli_uretici_ciktisi",
+      "cikti": "html"
+    },
+    {
+      "id": "SZ-032",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.ddp_toplam_maliyet tuzak değer taşır; rol token’dan cinli_uretici_ciktisi çözülür.",
+      "istek": "cinli_uretici_ciktisi için pdf istenir.",
+      "beklenen": "ic_maliyet.ddp_toplam_maliyet adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "pdf_metin_katmani",
+        "pdf_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.ddp_toplam_maliyet",
+      "rol": "cinli_uretici_ciktisi",
+      "cikti": "pdf"
+    },
+    {
+      "id": "SZ-033",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.ddp_toplam_maliyet tuzak değer taşır; rol token’dan cinli_uretici_ciktisi çözülür.",
+      "istek": "cinli_uretici_ciktisi için excel istenir.",
+      "beklenen": "ic_maliyet.ddp_toplam_maliyet adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "excel_gizli_sutun",
+        "workbook_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.ddp_toplam_maliyet",
+      "rol": "cinli_uretici_ciktisi",
+      "cikti": "excel"
+    },
+    {
+      "id": "SZ-034",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.ddp_toplam_maliyet tuzak değer taşır; rol token’dan cinli_uretici_ciktisi çözülür.",
+      "istek": "cinli_uretici_ciktisi için csv istenir.",
+      "beklenen": "ic_maliyet.ddp_toplam_maliyet adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "csv_baslik",
+        "csv_satir",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.ddp_toplam_maliyet",
+      "rol": "cinli_uretici_ciktisi",
+      "cikti": "csv"
+    },
+    {
+      "id": "SZ-035",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.ddp_toplam_maliyet tuzak değer taşır; rol token’dan cinli_uretici_ciktisi çözülür.",
+      "istek": "cinli_uretici_ciktisi için whatsapp-ozet istenir.",
+      "beklenen": "ic_maliyet.ddp_toplam_maliyet adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "ozet_metni",
+        "sablon_payloadu",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.ddp_toplam_maliyet",
+      "rol": "cinli_uretici_ciktisi",
+      "cikti": "whatsapp-ozet"
+    },
+    {
+      "id": "SZ-036",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.ddp_toplam_maliyet tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için html istenir.",
+      "beklenen": "ic_maliyet.ddp_toplam_maliyet adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html_kaynagi",
+        "hydration",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.ddp_toplam_maliyet",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "html"
+    },
+    {
+      "id": "SZ-037",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.ddp_toplam_maliyet tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için pdf istenir.",
+      "beklenen": "ic_maliyet.ddp_toplam_maliyet adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "pdf_metin_katmani",
+        "pdf_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.ddp_toplam_maliyet",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "pdf"
+    },
+    {
+      "id": "SZ-038",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.ddp_toplam_maliyet tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için excel istenir.",
+      "beklenen": "ic_maliyet.ddp_toplam_maliyet adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "excel_gizli_sutun",
+        "workbook_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.ddp_toplam_maliyet",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "excel"
+    },
+    {
+      "id": "SZ-039",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.ddp_toplam_maliyet tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için csv istenir.",
+      "beklenen": "ic_maliyet.ddp_toplam_maliyet adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "csv_baslik",
+        "csv_satir",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.ddp_toplam_maliyet",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "csv"
+    },
+    {
+      "id": "SZ-040",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.ddp_toplam_maliyet tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için whatsapp-ozet istenir.",
+      "beklenen": "ic_maliyet.ddp_toplam_maliyet adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "ozet_metni",
+        "sablon_payloadu",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.ddp_toplam_maliyet",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "whatsapp-ozet"
+    },
+    {
+      "id": "SZ-041",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.hedef_satis_fiyati tuzak değer taşır; rol token’dan ithalatci çözülür.",
+      "istek": "ithalatci için html istenir.",
+      "beklenen": "ic_maliyet.hedef_satis_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html_kaynagi",
+        "hydration",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.hedef_satis_fiyati",
+      "rol": "ithalatci",
+      "cikti": "html"
+    },
+    {
+      "id": "SZ-042",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.hedef_satis_fiyati tuzak değer taşır; rol token’dan ithalatci çözülür.",
+      "istek": "ithalatci için pdf istenir.",
+      "beklenen": "ic_maliyet.hedef_satis_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "pdf_metin_katmani",
+        "pdf_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.hedef_satis_fiyati",
+      "rol": "ithalatci",
+      "cikti": "pdf"
+    },
+    {
+      "id": "SZ-043",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.hedef_satis_fiyati tuzak değer taşır; rol token’dan ithalatci çözülür.",
+      "istek": "ithalatci için excel istenir.",
+      "beklenen": "ic_maliyet.hedef_satis_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "excel_gizli_sutun",
+        "workbook_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.hedef_satis_fiyati",
+      "rol": "ithalatci",
+      "cikti": "excel"
+    },
+    {
+      "id": "SZ-044",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.hedef_satis_fiyati tuzak değer taşır; rol token’dan ithalatci çözülür.",
+      "istek": "ithalatci için csv istenir.",
+      "beklenen": "ic_maliyet.hedef_satis_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "csv_baslik",
+        "csv_satir",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.hedef_satis_fiyati",
+      "rol": "ithalatci",
+      "cikti": "csv"
+    },
+    {
+      "id": "SZ-045",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.hedef_satis_fiyati tuzak değer taşır; rol token’dan ithalatci çözülür.",
+      "istek": "ithalatci için whatsapp-ozet istenir.",
+      "beklenen": "ic_maliyet.hedef_satis_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "ozet_metni",
+        "sablon_payloadu",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.hedef_satis_fiyati",
+      "rol": "ithalatci",
+      "cikti": "whatsapp-ozet"
+    },
+    {
+      "id": "SZ-046",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.hedef_satis_fiyati tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için html istenir.",
+      "beklenen": "ic_maliyet.hedef_satis_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html_kaynagi",
+        "hydration",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.hedef_satis_fiyati",
+      "rol": "musteri",
+      "cikti": "html"
+    },
+    {
+      "id": "SZ-047",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.hedef_satis_fiyati tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için pdf istenir.",
+      "beklenen": "ic_maliyet.hedef_satis_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "pdf_metin_katmani",
+        "pdf_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.hedef_satis_fiyati",
+      "rol": "musteri",
+      "cikti": "pdf"
+    },
+    {
+      "id": "SZ-048",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.hedef_satis_fiyati tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için excel istenir.",
+      "beklenen": "ic_maliyet.hedef_satis_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "excel_gizli_sutun",
+        "workbook_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.hedef_satis_fiyati",
+      "rol": "musteri",
+      "cikti": "excel"
+    },
+    {
+      "id": "SZ-049",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.hedef_satis_fiyati tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için csv istenir.",
+      "beklenen": "ic_maliyet.hedef_satis_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "csv_baslik",
+        "csv_satir",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.hedef_satis_fiyati",
+      "rol": "musteri",
+      "cikti": "csv"
+    },
+    {
+      "id": "SZ-050",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.hedef_satis_fiyati tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için whatsapp-ozet istenir.",
+      "beklenen": "ic_maliyet.hedef_satis_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "ozet_metni",
+        "sablon_payloadu",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.hedef_satis_fiyati",
+      "rol": "musteri",
+      "cikti": "whatsapp-ozet"
+    },
+    {
+      "id": "SZ-051",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.hedef_satis_fiyati tuzak değer taşır; rol token’dan cinli_uretici_ciktisi çözülür.",
+      "istek": "cinli_uretici_ciktisi için html istenir.",
+      "beklenen": "ic_maliyet.hedef_satis_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html_kaynagi",
+        "hydration",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.hedef_satis_fiyati",
+      "rol": "cinli_uretici_ciktisi",
+      "cikti": "html"
+    },
+    {
+      "id": "SZ-052",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.hedef_satis_fiyati tuzak değer taşır; rol token’dan cinli_uretici_ciktisi çözülür.",
+      "istek": "cinli_uretici_ciktisi için pdf istenir.",
+      "beklenen": "ic_maliyet.hedef_satis_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "pdf_metin_katmani",
+        "pdf_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.hedef_satis_fiyati",
+      "rol": "cinli_uretici_ciktisi",
+      "cikti": "pdf"
+    },
+    {
+      "id": "SZ-053",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.hedef_satis_fiyati tuzak değer taşır; rol token’dan cinli_uretici_ciktisi çözülür.",
+      "istek": "cinli_uretici_ciktisi için excel istenir.",
+      "beklenen": "ic_maliyet.hedef_satis_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "excel_gizli_sutun",
+        "workbook_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.hedef_satis_fiyati",
+      "rol": "cinli_uretici_ciktisi",
+      "cikti": "excel"
+    },
+    {
+      "id": "SZ-054",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.hedef_satis_fiyati tuzak değer taşır; rol token’dan cinli_uretici_ciktisi çözülür.",
+      "istek": "cinli_uretici_ciktisi için csv istenir.",
+      "beklenen": "ic_maliyet.hedef_satis_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "csv_baslik",
+        "csv_satir",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.hedef_satis_fiyati",
+      "rol": "cinli_uretici_ciktisi",
+      "cikti": "csv"
+    },
+    {
+      "id": "SZ-055",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.hedef_satis_fiyati tuzak değer taşır; rol token’dan cinli_uretici_ciktisi çözülür.",
+      "istek": "cinli_uretici_ciktisi için whatsapp-ozet istenir.",
+      "beklenen": "ic_maliyet.hedef_satis_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "ozet_metni",
+        "sablon_payloadu",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.hedef_satis_fiyati",
+      "rol": "cinli_uretici_ciktisi",
+      "cikti": "whatsapp-ozet"
+    },
+    {
+      "id": "SZ-056",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.hedef_satis_fiyati tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için html istenir.",
+      "beklenen": "ic_maliyet.hedef_satis_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html_kaynagi",
+        "hydration",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.hedef_satis_fiyati",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "html"
+    },
+    {
+      "id": "SZ-057",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.hedef_satis_fiyati tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için pdf istenir.",
+      "beklenen": "ic_maliyet.hedef_satis_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "pdf_metin_katmani",
+        "pdf_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.hedef_satis_fiyati",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "pdf"
+    },
+    {
+      "id": "SZ-058",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.hedef_satis_fiyati tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için excel istenir.",
+      "beklenen": "ic_maliyet.hedef_satis_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "excel_gizli_sutun",
+        "workbook_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.hedef_satis_fiyati",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "excel"
+    },
+    {
+      "id": "SZ-059",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.hedef_satis_fiyati tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için csv istenir.",
+      "beklenen": "ic_maliyet.hedef_satis_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "csv_baslik",
+        "csv_satir",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.hedef_satis_fiyati",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "csv"
+    },
+    {
+      "id": "SZ-060",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.hedef_satis_fiyati tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için whatsapp-ozet istenir.",
+      "beklenen": "ic_maliyet.hedef_satis_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "ozet_metni",
+        "sablon_payloadu",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.hedef_satis_fiyati",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "whatsapp-ozet"
+    },
+    {
+      "id": "SZ-061",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kar_marji tuzak değer taşır; rol token’dan ithalatci çözülür.",
+      "istek": "ithalatci için html istenir.",
+      "beklenen": "ic_maliyet.kar_marji adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html_kaynagi",
+        "hydration",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kar_marji",
+      "rol": "ithalatci",
+      "cikti": "html"
+    },
+    {
+      "id": "SZ-062",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kar_marji tuzak değer taşır; rol token’dan ithalatci çözülür.",
+      "istek": "ithalatci için pdf istenir.",
+      "beklenen": "ic_maliyet.kar_marji adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "pdf_metin_katmani",
+        "pdf_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kar_marji",
+      "rol": "ithalatci",
+      "cikti": "pdf"
+    },
+    {
+      "id": "SZ-063",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kar_marji tuzak değer taşır; rol token’dan ithalatci çözülür.",
+      "istek": "ithalatci için excel istenir.",
+      "beklenen": "ic_maliyet.kar_marji adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "excel_gizli_sutun",
+        "workbook_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kar_marji",
+      "rol": "ithalatci",
+      "cikti": "excel"
+    },
+    {
+      "id": "SZ-064",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kar_marji tuzak değer taşır; rol token’dan ithalatci çözülür.",
+      "istek": "ithalatci için csv istenir.",
+      "beklenen": "ic_maliyet.kar_marji adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "csv_baslik",
+        "csv_satir",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kar_marji",
+      "rol": "ithalatci",
+      "cikti": "csv"
+    },
+    {
+      "id": "SZ-065",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kar_marji tuzak değer taşır; rol token’dan ithalatci çözülür.",
+      "istek": "ithalatci için whatsapp-ozet istenir.",
+      "beklenen": "ic_maliyet.kar_marji adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "ozet_metni",
+        "sablon_payloadu",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kar_marji",
+      "rol": "ithalatci",
+      "cikti": "whatsapp-ozet"
+    },
+    {
+      "id": "SZ-066",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kar_marji tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için html istenir.",
+      "beklenen": "ic_maliyet.kar_marji adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html_kaynagi",
+        "hydration",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kar_marji",
+      "rol": "musteri",
+      "cikti": "html"
+    },
+    {
+      "id": "SZ-067",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kar_marji tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için pdf istenir.",
+      "beklenen": "ic_maliyet.kar_marji adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "pdf_metin_katmani",
+        "pdf_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kar_marji",
+      "rol": "musteri",
+      "cikti": "pdf"
+    },
+    {
+      "id": "SZ-068",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kar_marji tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için excel istenir.",
+      "beklenen": "ic_maliyet.kar_marji adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "excel_gizli_sutun",
+        "workbook_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kar_marji",
+      "rol": "musteri",
+      "cikti": "excel"
+    },
+    {
+      "id": "SZ-069",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kar_marji tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için csv istenir.",
+      "beklenen": "ic_maliyet.kar_marji adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "csv_baslik",
+        "csv_satir",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kar_marji",
+      "rol": "musteri",
+      "cikti": "csv"
+    },
+    {
+      "id": "SZ-070",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kar_marji tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için whatsapp-ozet istenir.",
+      "beklenen": "ic_maliyet.kar_marji adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "ozet_metni",
+        "sablon_payloadu",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kar_marji",
+      "rol": "musteri",
+      "cikti": "whatsapp-ozet"
+    },
+    {
+      "id": "SZ-071",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kar_marji tuzak değer taşır; rol token’dan cinli_uretici_ciktisi çözülür.",
+      "istek": "cinli_uretici_ciktisi için html istenir.",
+      "beklenen": "ic_maliyet.kar_marji adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html_kaynagi",
+        "hydration",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kar_marji",
+      "rol": "cinli_uretici_ciktisi",
+      "cikti": "html"
+    },
+    {
+      "id": "SZ-072",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kar_marji tuzak değer taşır; rol token’dan cinli_uretici_ciktisi çözülür.",
+      "istek": "cinli_uretici_ciktisi için pdf istenir.",
+      "beklenen": "ic_maliyet.kar_marji adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "pdf_metin_katmani",
+        "pdf_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kar_marji",
+      "rol": "cinli_uretici_ciktisi",
+      "cikti": "pdf"
+    },
+    {
+      "id": "SZ-073",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kar_marji tuzak değer taşır; rol token’dan cinli_uretici_ciktisi çözülür.",
+      "istek": "cinli_uretici_ciktisi için excel istenir.",
+      "beklenen": "ic_maliyet.kar_marji adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "excel_gizli_sutun",
+        "workbook_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kar_marji",
+      "rol": "cinli_uretici_ciktisi",
+      "cikti": "excel"
+    },
+    {
+      "id": "SZ-074",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kar_marji tuzak değer taşır; rol token’dan cinli_uretici_ciktisi çözülür.",
+      "istek": "cinli_uretici_ciktisi için csv istenir.",
+      "beklenen": "ic_maliyet.kar_marji adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "csv_baslik",
+        "csv_satir",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kar_marji",
+      "rol": "cinli_uretici_ciktisi",
+      "cikti": "csv"
+    },
+    {
+      "id": "SZ-075",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kar_marji tuzak değer taşır; rol token’dan cinli_uretici_ciktisi çözülür.",
+      "istek": "cinli_uretici_ciktisi için whatsapp-ozet istenir.",
+      "beklenen": "ic_maliyet.kar_marji adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "ozet_metni",
+        "sablon_payloadu",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kar_marji",
+      "rol": "cinli_uretici_ciktisi",
+      "cikti": "whatsapp-ozet"
+    },
+    {
+      "id": "SZ-076",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kar_marji tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için html istenir.",
+      "beklenen": "ic_maliyet.kar_marji adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html_kaynagi",
+        "hydration",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kar_marji",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "html"
+    },
+    {
+      "id": "SZ-077",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kar_marji tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için pdf istenir.",
+      "beklenen": "ic_maliyet.kar_marji adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "pdf_metin_katmani",
+        "pdf_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kar_marji",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "pdf"
+    },
+    {
+      "id": "SZ-078",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kar_marji tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için excel istenir.",
+      "beklenen": "ic_maliyet.kar_marji adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "excel_gizli_sutun",
+        "workbook_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kar_marji",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "excel"
+    },
+    {
+      "id": "SZ-079",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kar_marji tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için csv istenir.",
+      "beklenen": "ic_maliyet.kar_marji adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "csv_baslik",
+        "csv_satir",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kar_marji",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "csv"
+    },
+    {
+      "id": "SZ-080",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kar_marji tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için whatsapp-ozet istenir.",
+      "beklenen": "ic_maliyet.kar_marji adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "ozet_metni",
+        "sablon_payloadu",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kar_marji",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "whatsapp-ozet"
+    },
+    {
+      "id": "SZ-081",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kar_tutari tuzak değer taşır; rol token’dan ithalatci çözülür.",
+      "istek": "ithalatci için html istenir.",
+      "beklenen": "ic_maliyet.kar_tutari adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html_kaynagi",
+        "hydration",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kar_tutari",
+      "rol": "ithalatci",
+      "cikti": "html"
+    },
+    {
+      "id": "SZ-082",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kar_tutari tuzak değer taşır; rol token’dan ithalatci çözülür.",
+      "istek": "ithalatci için pdf istenir.",
+      "beklenen": "ic_maliyet.kar_tutari adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "pdf_metin_katmani",
+        "pdf_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kar_tutari",
+      "rol": "ithalatci",
+      "cikti": "pdf"
+    },
+    {
+      "id": "SZ-083",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kar_tutari tuzak değer taşır; rol token’dan ithalatci çözülür.",
+      "istek": "ithalatci için excel istenir.",
+      "beklenen": "ic_maliyet.kar_tutari adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "excel_gizli_sutun",
+        "workbook_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kar_tutari",
+      "rol": "ithalatci",
+      "cikti": "excel"
+    },
+    {
+      "id": "SZ-084",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kar_tutari tuzak değer taşır; rol token’dan ithalatci çözülür.",
+      "istek": "ithalatci için csv istenir.",
+      "beklenen": "ic_maliyet.kar_tutari adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "csv_baslik",
+        "csv_satir",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kar_tutari",
+      "rol": "ithalatci",
+      "cikti": "csv"
+    },
+    {
+      "id": "SZ-085",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kar_tutari tuzak değer taşır; rol token’dan ithalatci çözülür.",
+      "istek": "ithalatci için whatsapp-ozet istenir.",
+      "beklenen": "ic_maliyet.kar_tutari adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "ozet_metni",
+        "sablon_payloadu",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kar_tutari",
+      "rol": "ithalatci",
+      "cikti": "whatsapp-ozet"
+    },
+    {
+      "id": "SZ-086",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kar_tutari tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için html istenir.",
+      "beklenen": "ic_maliyet.kar_tutari adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html_kaynagi",
+        "hydration",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kar_tutari",
+      "rol": "musteri",
+      "cikti": "html"
+    },
+    {
+      "id": "SZ-087",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kar_tutari tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için pdf istenir.",
+      "beklenen": "ic_maliyet.kar_tutari adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "pdf_metin_katmani",
+        "pdf_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kar_tutari",
+      "rol": "musteri",
+      "cikti": "pdf"
+    },
+    {
+      "id": "SZ-088",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kar_tutari tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için excel istenir.",
+      "beklenen": "ic_maliyet.kar_tutari adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "excel_gizli_sutun",
+        "workbook_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kar_tutari",
+      "rol": "musteri",
+      "cikti": "excel"
+    },
+    {
+      "id": "SZ-089",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kar_tutari tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için csv istenir.",
+      "beklenen": "ic_maliyet.kar_tutari adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "csv_baslik",
+        "csv_satir",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kar_tutari",
+      "rol": "musteri",
+      "cikti": "csv"
+    },
+    {
+      "id": "SZ-090",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kar_tutari tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için whatsapp-ozet istenir.",
+      "beklenen": "ic_maliyet.kar_tutari adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "ozet_metni",
+        "sablon_payloadu",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kar_tutari",
+      "rol": "musteri",
+      "cikti": "whatsapp-ozet"
+    },
+    {
+      "id": "SZ-091",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kar_tutari tuzak değer taşır; rol token’dan cinli_uretici_ciktisi çözülür.",
+      "istek": "cinli_uretici_ciktisi için html istenir.",
+      "beklenen": "ic_maliyet.kar_tutari adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html_kaynagi",
+        "hydration",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kar_tutari",
+      "rol": "cinli_uretici_ciktisi",
+      "cikti": "html"
+    },
+    {
+      "id": "SZ-092",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kar_tutari tuzak değer taşır; rol token’dan cinli_uretici_ciktisi çözülür.",
+      "istek": "cinli_uretici_ciktisi için pdf istenir.",
+      "beklenen": "ic_maliyet.kar_tutari adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "pdf_metin_katmani",
+        "pdf_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kar_tutari",
+      "rol": "cinli_uretici_ciktisi",
+      "cikti": "pdf"
+    },
+    {
+      "id": "SZ-093",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kar_tutari tuzak değer taşır; rol token’dan cinli_uretici_ciktisi çözülür.",
+      "istek": "cinli_uretici_ciktisi için excel istenir.",
+      "beklenen": "ic_maliyet.kar_tutari adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "excel_gizli_sutun",
+        "workbook_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kar_tutari",
+      "rol": "cinli_uretici_ciktisi",
+      "cikti": "excel"
+    },
+    {
+      "id": "SZ-094",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kar_tutari tuzak değer taşır; rol token’dan cinli_uretici_ciktisi çözülür.",
+      "istek": "cinli_uretici_ciktisi için csv istenir.",
+      "beklenen": "ic_maliyet.kar_tutari adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "csv_baslik",
+        "csv_satir",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kar_tutari",
+      "rol": "cinli_uretici_ciktisi",
+      "cikti": "csv"
+    },
+    {
+      "id": "SZ-095",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kar_tutari tuzak değer taşır; rol token’dan cinli_uretici_ciktisi çözülür.",
+      "istek": "cinli_uretici_ciktisi için whatsapp-ozet istenir.",
+      "beklenen": "ic_maliyet.kar_tutari adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "ozet_metni",
+        "sablon_payloadu",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kar_tutari",
+      "rol": "cinli_uretici_ciktisi",
+      "cikti": "whatsapp-ozet"
+    },
+    {
+      "id": "SZ-096",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kar_tutari tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için html istenir.",
+      "beklenen": "ic_maliyet.kar_tutari adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html_kaynagi",
+        "hydration",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kar_tutari",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "html"
+    },
+    {
+      "id": "SZ-097",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kar_tutari tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için pdf istenir.",
+      "beklenen": "ic_maliyet.kar_tutari adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "pdf_metin_katmani",
+        "pdf_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kar_tutari",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "pdf"
+    },
+    {
+      "id": "SZ-098",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kar_tutari tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için excel istenir.",
+      "beklenen": "ic_maliyet.kar_tutari adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "excel_gizli_sutun",
+        "workbook_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kar_tutari",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "excel"
+    },
+    {
+      "id": "SZ-099",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kar_tutari tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için csv istenir.",
+      "beklenen": "ic_maliyet.kar_tutari adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "csv_baslik",
+        "csv_satir",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kar_tutari",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "csv"
+    },
+    {
+      "id": "SZ-100",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kar_tutari tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için whatsapp-ozet istenir.",
+      "beklenen": "ic_maliyet.kar_tutari adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "ozet_metni",
+        "sablon_payloadu",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kar_tutari",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "whatsapp-ozet"
+    },
+    {
+      "id": "SZ-101",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kaynak_birim_fiyat tuzak değer taşır; rol token’dan ithalatci çözülür.",
+      "istek": "ithalatci için html istenir.",
+      "beklenen": "ic_maliyet.kaynak_birim_fiyat adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html_kaynagi",
+        "hydration",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kaynak_birim_fiyat",
+      "rol": "ithalatci",
+      "cikti": "html"
+    },
+    {
+      "id": "SZ-102",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kaynak_birim_fiyat tuzak değer taşır; rol token’dan ithalatci çözülür.",
+      "istek": "ithalatci için pdf istenir.",
+      "beklenen": "ic_maliyet.kaynak_birim_fiyat adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "pdf_metin_katmani",
+        "pdf_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kaynak_birim_fiyat",
+      "rol": "ithalatci",
+      "cikti": "pdf"
+    },
+    {
+      "id": "SZ-103",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kaynak_birim_fiyat tuzak değer taşır; rol token’dan ithalatci çözülür.",
+      "istek": "ithalatci için excel istenir.",
+      "beklenen": "ic_maliyet.kaynak_birim_fiyat adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "excel_gizli_sutun",
+        "workbook_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kaynak_birim_fiyat",
+      "rol": "ithalatci",
+      "cikti": "excel"
+    },
+    {
+      "id": "SZ-104",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kaynak_birim_fiyat tuzak değer taşır; rol token’dan ithalatci çözülür.",
+      "istek": "ithalatci için csv istenir.",
+      "beklenen": "ic_maliyet.kaynak_birim_fiyat adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "csv_baslik",
+        "csv_satir",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kaynak_birim_fiyat",
+      "rol": "ithalatci",
+      "cikti": "csv"
+    },
+    {
+      "id": "SZ-105",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kaynak_birim_fiyat tuzak değer taşır; rol token’dan ithalatci çözülür.",
+      "istek": "ithalatci için whatsapp-ozet istenir.",
+      "beklenen": "ic_maliyet.kaynak_birim_fiyat adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "ozet_metni",
+        "sablon_payloadu",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kaynak_birim_fiyat",
+      "rol": "ithalatci",
+      "cikti": "whatsapp-ozet"
+    },
+    {
+      "id": "SZ-106",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kaynak_birim_fiyat tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için html istenir.",
+      "beklenen": "ic_maliyet.kaynak_birim_fiyat adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html_kaynagi",
+        "hydration",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kaynak_birim_fiyat",
+      "rol": "musteri",
+      "cikti": "html"
+    },
+    {
+      "id": "SZ-107",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kaynak_birim_fiyat tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için pdf istenir.",
+      "beklenen": "ic_maliyet.kaynak_birim_fiyat adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "pdf_metin_katmani",
+        "pdf_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kaynak_birim_fiyat",
+      "rol": "musteri",
+      "cikti": "pdf"
+    },
+    {
+      "id": "SZ-108",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kaynak_birim_fiyat tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için excel istenir.",
+      "beklenen": "ic_maliyet.kaynak_birim_fiyat adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "excel_gizli_sutun",
+        "workbook_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kaynak_birim_fiyat",
+      "rol": "musteri",
+      "cikti": "excel"
+    },
+    {
+      "id": "SZ-109",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kaynak_birim_fiyat tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için csv istenir.",
+      "beklenen": "ic_maliyet.kaynak_birim_fiyat adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "csv_baslik",
+        "csv_satir",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kaynak_birim_fiyat",
+      "rol": "musteri",
+      "cikti": "csv"
+    },
+    {
+      "id": "SZ-110",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kaynak_birim_fiyat tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için whatsapp-ozet istenir.",
+      "beklenen": "ic_maliyet.kaynak_birim_fiyat adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "ozet_metni",
+        "sablon_payloadu",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kaynak_birim_fiyat",
+      "rol": "musteri",
+      "cikti": "whatsapp-ozet"
+    },
+    {
+      "id": "SZ-111",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kaynak_birim_fiyat tuzak değer taşır; rol token’dan cinli_uretici_ciktisi çözülür.",
+      "istek": "cinli_uretici_ciktisi için html istenir.",
+      "beklenen": "ic_maliyet.kaynak_birim_fiyat adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html_kaynagi",
+        "hydration",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kaynak_birim_fiyat",
+      "rol": "cinli_uretici_ciktisi",
+      "cikti": "html"
+    },
+    {
+      "id": "SZ-112",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kaynak_birim_fiyat tuzak değer taşır; rol token’dan cinli_uretici_ciktisi çözülür.",
+      "istek": "cinli_uretici_ciktisi için pdf istenir.",
+      "beklenen": "ic_maliyet.kaynak_birim_fiyat adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "pdf_metin_katmani",
+        "pdf_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kaynak_birim_fiyat",
+      "rol": "cinli_uretici_ciktisi",
+      "cikti": "pdf"
+    },
+    {
+      "id": "SZ-113",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kaynak_birim_fiyat tuzak değer taşır; rol token’dan cinli_uretici_ciktisi çözülür.",
+      "istek": "cinli_uretici_ciktisi için excel istenir.",
+      "beklenen": "ic_maliyet.kaynak_birim_fiyat adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "excel_gizli_sutun",
+        "workbook_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kaynak_birim_fiyat",
+      "rol": "cinli_uretici_ciktisi",
+      "cikti": "excel"
+    },
+    {
+      "id": "SZ-114",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kaynak_birim_fiyat tuzak değer taşır; rol token’dan cinli_uretici_ciktisi çözülür.",
+      "istek": "cinli_uretici_ciktisi için csv istenir.",
+      "beklenen": "ic_maliyet.kaynak_birim_fiyat adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "csv_baslik",
+        "csv_satir",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kaynak_birim_fiyat",
+      "rol": "cinli_uretici_ciktisi",
+      "cikti": "csv"
+    },
+    {
+      "id": "SZ-115",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kaynak_birim_fiyat tuzak değer taşır; rol token’dan cinli_uretici_ciktisi çözülür.",
+      "istek": "cinli_uretici_ciktisi için whatsapp-ozet istenir.",
+      "beklenen": "ic_maliyet.kaynak_birim_fiyat adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "ozet_metni",
+        "sablon_payloadu",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kaynak_birim_fiyat",
+      "rol": "cinli_uretici_ciktisi",
+      "cikti": "whatsapp-ozet"
+    },
+    {
+      "id": "SZ-116",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kaynak_birim_fiyat tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için html istenir.",
+      "beklenen": "ic_maliyet.kaynak_birim_fiyat adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html_kaynagi",
+        "hydration",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kaynak_birim_fiyat",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "html"
+    },
+    {
+      "id": "SZ-117",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kaynak_birim_fiyat tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için pdf istenir.",
+      "beklenen": "ic_maliyet.kaynak_birim_fiyat adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "pdf_metin_katmani",
+        "pdf_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kaynak_birim_fiyat",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "pdf"
+    },
+    {
+      "id": "SZ-118",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kaynak_birim_fiyat tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için excel istenir.",
+      "beklenen": "ic_maliyet.kaynak_birim_fiyat adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "excel_gizli_sutun",
+        "workbook_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kaynak_birim_fiyat",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "excel"
+    },
+    {
+      "id": "SZ-119",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kaynak_birim_fiyat tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için csv istenir.",
+      "beklenen": "ic_maliyet.kaynak_birim_fiyat adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "csv_baslik",
+        "csv_satir",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kaynak_birim_fiyat",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "csv"
+    },
+    {
+      "id": "SZ-120",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.kaynak_birim_fiyat tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için whatsapp-ozet istenir.",
+      "beklenen": "ic_maliyet.kaynak_birim_fiyat adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "ozet_metni",
+        "sablon_payloadu",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kaynak_birim_fiyat",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "whatsapp-ozet"
+    },
+    {
+      "id": "SZ-121",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.satis_fiyati tuzak değer taşır; rol token’dan ithalatci çözülür.",
+      "istek": "ithalatci için html istenir.",
+      "beklenen": "ic_maliyet.satis_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html_kaynagi",
+        "hydration",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.satis_fiyati",
+      "rol": "ithalatci",
+      "cikti": "html"
+    },
+    {
+      "id": "SZ-122",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.satis_fiyati tuzak değer taşır; rol token’dan ithalatci çözülür.",
+      "istek": "ithalatci için pdf istenir.",
+      "beklenen": "ic_maliyet.satis_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "pdf_metin_katmani",
+        "pdf_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.satis_fiyati",
+      "rol": "ithalatci",
+      "cikti": "pdf"
+    },
+    {
+      "id": "SZ-123",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.satis_fiyati tuzak değer taşır; rol token’dan ithalatci çözülür.",
+      "istek": "ithalatci için excel istenir.",
+      "beklenen": "ic_maliyet.satis_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "excel_gizli_sutun",
+        "workbook_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.satis_fiyati",
+      "rol": "ithalatci",
+      "cikti": "excel"
+    },
+    {
+      "id": "SZ-124",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.satis_fiyati tuzak değer taşır; rol token’dan ithalatci çözülür.",
+      "istek": "ithalatci için csv istenir.",
+      "beklenen": "ic_maliyet.satis_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "csv_baslik",
+        "csv_satir",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.satis_fiyati",
+      "rol": "ithalatci",
+      "cikti": "csv"
+    },
+    {
+      "id": "SZ-125",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.satis_fiyati tuzak değer taşır; rol token’dan ithalatci çözülür.",
+      "istek": "ithalatci için whatsapp-ozet istenir.",
+      "beklenen": "ic_maliyet.satis_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "ozet_metni",
+        "sablon_payloadu",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.satis_fiyati",
+      "rol": "ithalatci",
+      "cikti": "whatsapp-ozet"
+    },
+    {
+      "id": "SZ-126",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.satis_fiyati tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için html istenir.",
+      "beklenen": "ic_maliyet.satis_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html_kaynagi",
+        "hydration",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.satis_fiyati",
+      "rol": "musteri",
+      "cikti": "html"
+    },
+    {
+      "id": "SZ-127",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.satis_fiyati tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için pdf istenir.",
+      "beklenen": "ic_maliyet.satis_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "pdf_metin_katmani",
+        "pdf_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.satis_fiyati",
+      "rol": "musteri",
+      "cikti": "pdf"
+    },
+    {
+      "id": "SZ-128",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.satis_fiyati tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için excel istenir.",
+      "beklenen": "ic_maliyet.satis_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "excel_gizli_sutun",
+        "workbook_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.satis_fiyati",
+      "rol": "musteri",
+      "cikti": "excel"
+    },
+    {
+      "id": "SZ-129",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.satis_fiyati tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için csv istenir.",
+      "beklenen": "ic_maliyet.satis_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "csv_baslik",
+        "csv_satir",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.satis_fiyati",
+      "rol": "musteri",
+      "cikti": "csv"
+    },
+    {
+      "id": "SZ-130",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.satis_fiyati tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için whatsapp-ozet istenir.",
+      "beklenen": "ic_maliyet.satis_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "ozet_metni",
+        "sablon_payloadu",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.satis_fiyati",
+      "rol": "musteri",
+      "cikti": "whatsapp-ozet"
+    },
+    {
+      "id": "SZ-131",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.satis_fiyati tuzak değer taşır; rol token’dan cinli_uretici_ciktisi çözülür.",
+      "istek": "cinli_uretici_ciktisi için html istenir.",
+      "beklenen": "ic_maliyet.satis_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html_kaynagi",
+        "hydration",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.satis_fiyati",
+      "rol": "cinli_uretici_ciktisi",
+      "cikti": "html"
+    },
+    {
+      "id": "SZ-132",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.satis_fiyati tuzak değer taşır; rol token’dan cinli_uretici_ciktisi çözülür.",
+      "istek": "cinli_uretici_ciktisi için pdf istenir.",
+      "beklenen": "ic_maliyet.satis_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "pdf_metin_katmani",
+        "pdf_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.satis_fiyati",
+      "rol": "cinli_uretici_ciktisi",
+      "cikti": "pdf"
+    },
+    {
+      "id": "SZ-133",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.satis_fiyati tuzak değer taşır; rol token’dan cinli_uretici_ciktisi çözülür.",
+      "istek": "cinli_uretici_ciktisi için excel istenir.",
+      "beklenen": "ic_maliyet.satis_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "excel_gizli_sutun",
+        "workbook_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.satis_fiyati",
+      "rol": "cinli_uretici_ciktisi",
+      "cikti": "excel"
+    },
+    {
+      "id": "SZ-134",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.satis_fiyati tuzak değer taşır; rol token’dan cinli_uretici_ciktisi çözülür.",
+      "istek": "cinli_uretici_ciktisi için csv istenir.",
+      "beklenen": "ic_maliyet.satis_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "csv_baslik",
+        "csv_satir",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.satis_fiyati",
+      "rol": "cinli_uretici_ciktisi",
+      "cikti": "csv"
+    },
+    {
+      "id": "SZ-135",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.satis_fiyati tuzak değer taşır; rol token’dan cinli_uretici_ciktisi çözülür.",
+      "istek": "cinli_uretici_ciktisi için whatsapp-ozet istenir.",
+      "beklenen": "ic_maliyet.satis_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "ozet_metni",
+        "sablon_payloadu",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.satis_fiyati",
+      "rol": "cinli_uretici_ciktisi",
+      "cikti": "whatsapp-ozet"
+    },
+    {
+      "id": "SZ-136",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.satis_fiyati tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için html istenir.",
+      "beklenen": "ic_maliyet.satis_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html_kaynagi",
+        "hydration",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.satis_fiyati",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "html"
+    },
+    {
+      "id": "SZ-137",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.satis_fiyati tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için pdf istenir.",
+      "beklenen": "ic_maliyet.satis_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "pdf_metin_katmani",
+        "pdf_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.satis_fiyati",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "pdf"
+    },
+    {
+      "id": "SZ-138",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.satis_fiyati tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için excel istenir.",
+      "beklenen": "ic_maliyet.satis_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "excel_gizli_sutun",
+        "workbook_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.satis_fiyati",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "excel"
+    },
+    {
+      "id": "SZ-139",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.satis_fiyati tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için csv istenir.",
+      "beklenen": "ic_maliyet.satis_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "csv_baslik",
+        "csv_satir",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.satis_fiyati",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "csv"
+    },
+    {
+      "id": "SZ-140",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.satis_fiyati tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için whatsapp-ozet istenir.",
+      "beklenen": "ic_maliyet.satis_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "ozet_metni",
+        "sablon_payloadu",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.satis_fiyati",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "whatsapp-ozet"
+    },
+    {
+      "id": "SZ-141",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.yurtici_referans_fiyati tuzak değer taşır; rol token’dan ithalatci çözülür.",
+      "istek": "ithalatci için html istenir.",
+      "beklenen": "ic_maliyet.yurtici_referans_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html_kaynagi",
+        "hydration",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.yurtici_referans_fiyati",
+      "rol": "ithalatci",
+      "cikti": "html"
+    },
+    {
+      "id": "SZ-142",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.yurtici_referans_fiyati tuzak değer taşır; rol token’dan ithalatci çözülür.",
+      "istek": "ithalatci için pdf istenir.",
+      "beklenen": "ic_maliyet.yurtici_referans_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "pdf_metin_katmani",
+        "pdf_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.yurtici_referans_fiyati",
+      "rol": "ithalatci",
+      "cikti": "pdf"
+    },
+    {
+      "id": "SZ-143",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.yurtici_referans_fiyati tuzak değer taşır; rol token’dan ithalatci çözülür.",
+      "istek": "ithalatci için excel istenir.",
+      "beklenen": "ic_maliyet.yurtici_referans_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "excel_gizli_sutun",
+        "workbook_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.yurtici_referans_fiyati",
+      "rol": "ithalatci",
+      "cikti": "excel"
+    },
+    {
+      "id": "SZ-144",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.yurtici_referans_fiyati tuzak değer taşır; rol token’dan ithalatci çözülür.",
+      "istek": "ithalatci için csv istenir.",
+      "beklenen": "ic_maliyet.yurtici_referans_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "csv_baslik",
+        "csv_satir",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.yurtici_referans_fiyati",
+      "rol": "ithalatci",
+      "cikti": "csv"
+    },
+    {
+      "id": "SZ-145",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.yurtici_referans_fiyati tuzak değer taşır; rol token’dan ithalatci çözülür.",
+      "istek": "ithalatci için whatsapp-ozet istenir.",
+      "beklenen": "ic_maliyet.yurtici_referans_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "ozet_metni",
+        "sablon_payloadu",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.yurtici_referans_fiyati",
+      "rol": "ithalatci",
+      "cikti": "whatsapp-ozet"
+    },
+    {
+      "id": "SZ-146",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.yurtici_referans_fiyati tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için html istenir.",
+      "beklenen": "ic_maliyet.yurtici_referans_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html_kaynagi",
+        "hydration",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.yurtici_referans_fiyati",
+      "rol": "musteri",
+      "cikti": "html"
+    },
+    {
+      "id": "SZ-147",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.yurtici_referans_fiyati tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için pdf istenir.",
+      "beklenen": "ic_maliyet.yurtici_referans_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "pdf_metin_katmani",
+        "pdf_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.yurtici_referans_fiyati",
+      "rol": "musteri",
+      "cikti": "pdf"
+    },
+    {
+      "id": "SZ-148",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.yurtici_referans_fiyati tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için excel istenir.",
+      "beklenen": "ic_maliyet.yurtici_referans_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "excel_gizli_sutun",
+        "workbook_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.yurtici_referans_fiyati",
+      "rol": "musteri",
+      "cikti": "excel"
+    },
+    {
+      "id": "SZ-149",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.yurtici_referans_fiyati tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için csv istenir.",
+      "beklenen": "ic_maliyet.yurtici_referans_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "csv_baslik",
+        "csv_satir",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.yurtici_referans_fiyati",
+      "rol": "musteri",
+      "cikti": "csv"
+    },
+    {
+      "id": "SZ-150",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.yurtici_referans_fiyati tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için whatsapp-ozet istenir.",
+      "beklenen": "ic_maliyet.yurtici_referans_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "ozet_metni",
+        "sablon_payloadu",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.yurtici_referans_fiyati",
+      "rol": "musteri",
+      "cikti": "whatsapp-ozet"
+    },
+    {
+      "id": "SZ-151",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.yurtici_referans_fiyati tuzak değer taşır; rol token’dan cinli_uretici_ciktisi çözülür.",
+      "istek": "cinli_uretici_ciktisi için html istenir.",
+      "beklenen": "ic_maliyet.yurtici_referans_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html_kaynagi",
+        "hydration",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.yurtici_referans_fiyati",
+      "rol": "cinli_uretici_ciktisi",
+      "cikti": "html"
+    },
+    {
+      "id": "SZ-152",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.yurtici_referans_fiyati tuzak değer taşır; rol token’dan cinli_uretici_ciktisi çözülür.",
+      "istek": "cinli_uretici_ciktisi için pdf istenir.",
+      "beklenen": "ic_maliyet.yurtici_referans_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "pdf_metin_katmani",
+        "pdf_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.yurtici_referans_fiyati",
+      "rol": "cinli_uretici_ciktisi",
+      "cikti": "pdf"
+    },
+    {
+      "id": "SZ-153",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.yurtici_referans_fiyati tuzak değer taşır; rol token’dan cinli_uretici_ciktisi çözülür.",
+      "istek": "cinli_uretici_ciktisi için excel istenir.",
+      "beklenen": "ic_maliyet.yurtici_referans_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "excel_gizli_sutun",
+        "workbook_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.yurtici_referans_fiyati",
+      "rol": "cinli_uretici_ciktisi",
+      "cikti": "excel"
+    },
+    {
+      "id": "SZ-154",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.yurtici_referans_fiyati tuzak değer taşır; rol token’dan cinli_uretici_ciktisi çözülür.",
+      "istek": "cinli_uretici_ciktisi için csv istenir.",
+      "beklenen": "ic_maliyet.yurtici_referans_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "csv_baslik",
+        "csv_satir",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.yurtici_referans_fiyati",
+      "rol": "cinli_uretici_ciktisi",
+      "cikti": "csv"
+    },
+    {
+      "id": "SZ-155",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.yurtici_referans_fiyati tuzak değer taşır; rol token’dan cinli_uretici_ciktisi çözülür.",
+      "istek": "cinli_uretici_ciktisi için whatsapp-ozet istenir.",
+      "beklenen": "ic_maliyet.yurtici_referans_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "ozet_metni",
+        "sablon_payloadu",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.yurtici_referans_fiyati",
+      "rol": "cinli_uretici_ciktisi",
+      "cikti": "whatsapp-ozet"
+    },
+    {
+      "id": "SZ-156",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.yurtici_referans_fiyati tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için html istenir.",
+      "beklenen": "ic_maliyet.yurtici_referans_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html_kaynagi",
+        "hydration",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.yurtici_referans_fiyati",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "html"
+    },
+    {
+      "id": "SZ-157",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.yurtici_referans_fiyati tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için pdf istenir.",
+      "beklenen": "ic_maliyet.yurtici_referans_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "pdf_metin_katmani",
+        "pdf_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.yurtici_referans_fiyati",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "pdf"
+    },
+    {
+      "id": "SZ-158",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.yurtici_referans_fiyati tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için excel istenir.",
+      "beklenen": "ic_maliyet.yurtici_referans_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "excel_gizli_sutun",
+        "workbook_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.yurtici_referans_fiyati",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "excel"
+    },
+    {
+      "id": "SZ-159",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.yurtici_referans_fiyati tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için csv istenir.",
+      "beklenen": "ic_maliyet.yurtici_referans_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "csv_baslik",
+        "csv_satir",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.yurtici_referans_fiyati",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "csv"
+    },
+    {
+      "id": "SZ-160",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "ic_maliyet.yurtici_referans_fiyati tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için whatsapp-ozet istenir.",
+      "beklenen": "ic_maliyet.yurtici_referans_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "ozet_metni",
+        "sablon_payloadu",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.yurtici_referans_fiyati",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "whatsapp-ozet"
+    },
+    {
+      "id": "SZ-161",
+      "kategori": "kaynak_whatsapp_kapsami_negatif",
+      "on_kosul": "kaynak.ilan_no tuzak değer taşır; rol token’dan ithalatci çözülür.",
+      "istek": "ithalatci için whatsapp-ozet istenir.",
+      "beklenen": "kaynak.ilan_no adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "ozet_metni",
+        "sablon_payloadu",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.ilan_no",
+      "rol": "ithalatci",
+      "cikti": "whatsapp-ozet"
+    },
+    {
+      "id": "SZ-162",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "kaynak.ilan_no tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için html istenir.",
+      "beklenen": "kaynak.ilan_no adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html_kaynagi",
+        "hydration",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.ilan_no",
+      "rol": "musteri",
+      "cikti": "html"
+    },
+    {
+      "id": "SZ-163",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "kaynak.ilan_no tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için pdf istenir.",
+      "beklenen": "kaynak.ilan_no adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "pdf_metin_katmani",
+        "pdf_metadata",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.ilan_no",
+      "rol": "musteri",
+      "cikti": "pdf"
+    },
+    {
+      "id": "SZ-164",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "kaynak.ilan_no tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için excel istenir.",
+      "beklenen": "kaynak.ilan_no adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "excel_gizli_sutun",
+        "workbook_metadata",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.ilan_no",
+      "rol": "musteri",
+      "cikti": "excel"
+    },
+    {
+      "id": "SZ-165",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "kaynak.ilan_no tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için csv istenir.",
+      "beklenen": "kaynak.ilan_no adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "csv_baslik",
+        "csv_satir",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.ilan_no",
+      "rol": "musteri",
+      "cikti": "csv"
+    },
+    {
+      "id": "SZ-166",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "kaynak.ilan_no tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için whatsapp-ozet istenir.",
+      "beklenen": "kaynak.ilan_no adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "ozet_metni",
+        "sablon_payloadu",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.ilan_no",
+      "rol": "musteri",
+      "cikti": "whatsapp-ozet"
+    },
+    {
+      "id": "SZ-167",
+      "kategori": "cinli_panel_yok_negatif",
+      "on_kosul": "kaynak.ilan_no tuzak değer taşır; rol token’dan cinli_uretici_ciktisi çözülür.",
+      "istek": "cinli_uretici_ciktisi için html istenir.",
+      "beklenen": "kaynak.ilan_no adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html_kaynagi",
+        "hydration",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.ilan_no",
+      "rol": "cinli_uretici_ciktisi",
+      "cikti": "html"
+    },
+    {
+      "id": "SZ-168",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "kaynak.ilan_no tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için html istenir.",
+      "beklenen": "kaynak.ilan_no adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html_kaynagi",
+        "hydration",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.ilan_no",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "html"
+    },
+    {
+      "id": "SZ-169",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "kaynak.ilan_no tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için pdf istenir.",
+      "beklenen": "kaynak.ilan_no adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "pdf_metin_katmani",
+        "pdf_metadata",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.ilan_no",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "pdf"
+    },
+    {
+      "id": "SZ-170",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "kaynak.ilan_no tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için excel istenir.",
+      "beklenen": "kaynak.ilan_no adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "excel_gizli_sutun",
+        "workbook_metadata",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.ilan_no",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "excel"
+    },
+    {
+      "id": "SZ-171",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "kaynak.ilan_no tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için csv istenir.",
+      "beklenen": "kaynak.ilan_no adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "csv_baslik",
+        "csv_satir",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.ilan_no",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "csv"
+    },
+    {
+      "id": "SZ-172",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "kaynak.ilan_no tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için whatsapp-ozet istenir.",
+      "beklenen": "kaynak.ilan_no adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "ozet_metni",
+        "sablon_payloadu",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.ilan_no",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "whatsapp-ozet"
+    },
+    {
+      "id": "SZ-173",
+      "kategori": "kaynak_whatsapp_kapsami_negatif",
+      "on_kosul": "kaynak.platform tuzak değer taşır; rol token’dan ithalatci çözülür.",
+      "istek": "ithalatci için whatsapp-ozet istenir.",
+      "beklenen": "kaynak.platform adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "ozet_metni",
+        "sablon_payloadu",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.platform",
+      "rol": "ithalatci",
+      "cikti": "whatsapp-ozet"
+    },
+    {
+      "id": "SZ-174",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "kaynak.platform tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için html istenir.",
+      "beklenen": "kaynak.platform adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html_kaynagi",
+        "hydration",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.platform",
+      "rol": "musteri",
+      "cikti": "html"
+    },
+    {
+      "id": "SZ-175",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "kaynak.platform tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için pdf istenir.",
+      "beklenen": "kaynak.platform adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "pdf_metin_katmani",
+        "pdf_metadata",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.platform",
+      "rol": "musteri",
+      "cikti": "pdf"
+    },
+    {
+      "id": "SZ-176",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "kaynak.platform tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için excel istenir.",
+      "beklenen": "kaynak.platform adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "excel_gizli_sutun",
+        "workbook_metadata",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.platform",
+      "rol": "musteri",
+      "cikti": "excel"
+    },
+    {
+      "id": "SZ-177",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "kaynak.platform tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için csv istenir.",
+      "beklenen": "kaynak.platform adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "csv_baslik",
+        "csv_satir",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.platform",
+      "rol": "musteri",
+      "cikti": "csv"
+    },
+    {
+      "id": "SZ-178",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "kaynak.platform tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için whatsapp-ozet istenir.",
+      "beklenen": "kaynak.platform adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "ozet_metni",
+        "sablon_payloadu",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.platform",
+      "rol": "musteri",
+      "cikti": "whatsapp-ozet"
+    },
+    {
+      "id": "SZ-179",
+      "kategori": "cinli_panel_yok_negatif",
+      "on_kosul": "kaynak.platform tuzak değer taşır; rol token’dan cinli_uretici_ciktisi çözülür.",
+      "istek": "cinli_uretici_ciktisi için html istenir.",
+      "beklenen": "kaynak.platform adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html_kaynagi",
+        "hydration",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.platform",
+      "rol": "cinli_uretici_ciktisi",
+      "cikti": "html"
+    },
+    {
+      "id": "SZ-180",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "kaynak.platform tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için html istenir.",
+      "beklenen": "kaynak.platform adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html_kaynagi",
+        "hydration",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.platform",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "html"
+    },
+    {
+      "id": "SZ-181",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "kaynak.platform tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için pdf istenir.",
+      "beklenen": "kaynak.platform adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "pdf_metin_katmani",
+        "pdf_metadata",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.platform",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "pdf"
+    },
+    {
+      "id": "SZ-182",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "kaynak.platform tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için excel istenir.",
+      "beklenen": "kaynak.platform adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "excel_gizli_sutun",
+        "workbook_metadata",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.platform",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "excel"
+    },
+    {
+      "id": "SZ-183",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "kaynak.platform tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için csv istenir.",
+      "beklenen": "kaynak.platform adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "csv_baslik",
+        "csv_satir",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.platform",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "csv"
+    },
+    {
+      "id": "SZ-184",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "kaynak.platform tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için whatsapp-ozet istenir.",
+      "beklenen": "kaynak.platform adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "ozet_metni",
+        "sablon_payloadu",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.platform",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "whatsapp-ozet"
+    },
+    {
+      "id": "SZ-185",
+      "kategori": "kaynak_whatsapp_kapsami_negatif",
+      "on_kosul": "kaynak.tedarikci_kimligi tuzak değer taşır; rol token’dan ithalatci çözülür.",
+      "istek": "ithalatci için whatsapp-ozet istenir.",
+      "beklenen": "kaynak.tedarikci_kimligi adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "ozet_metni",
+        "sablon_payloadu",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.tedarikci_kimligi",
+      "rol": "ithalatci",
+      "cikti": "whatsapp-ozet"
+    },
+    {
+      "id": "SZ-186",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "kaynak.tedarikci_kimligi tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için html istenir.",
+      "beklenen": "kaynak.tedarikci_kimligi adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html_kaynagi",
+        "hydration",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.tedarikci_kimligi",
+      "rol": "musteri",
+      "cikti": "html"
+    },
+    {
+      "id": "SZ-187",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "kaynak.tedarikci_kimligi tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için pdf istenir.",
+      "beklenen": "kaynak.tedarikci_kimligi adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "pdf_metin_katmani",
+        "pdf_metadata",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.tedarikci_kimligi",
+      "rol": "musteri",
+      "cikti": "pdf"
+    },
+    {
+      "id": "SZ-188",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "kaynak.tedarikci_kimligi tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için excel istenir.",
+      "beklenen": "kaynak.tedarikci_kimligi adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "excel_gizli_sutun",
+        "workbook_metadata",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.tedarikci_kimligi",
+      "rol": "musteri",
+      "cikti": "excel"
+    },
+    {
+      "id": "SZ-189",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "kaynak.tedarikci_kimligi tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için csv istenir.",
+      "beklenen": "kaynak.tedarikci_kimligi adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "csv_baslik",
+        "csv_satir",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.tedarikci_kimligi",
+      "rol": "musteri",
+      "cikti": "csv"
+    },
+    {
+      "id": "SZ-190",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "kaynak.tedarikci_kimligi tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için whatsapp-ozet istenir.",
+      "beklenen": "kaynak.tedarikci_kimligi adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "ozet_metni",
+        "sablon_payloadu",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.tedarikci_kimligi",
+      "rol": "musteri",
+      "cikti": "whatsapp-ozet"
+    },
+    {
+      "id": "SZ-191",
+      "kategori": "cinli_rakip_tedarikci_negatif",
+      "on_kosul": "kaynak.tedarikci_kimligi tuzak değer taşır; rol token’dan cinli_uretici_ciktisi çözülür.",
+      "istek": "cinli_uretici_ciktisi için html istenir.",
+      "beklenen": "kaynak.tedarikci_kimligi adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html_kaynagi",
+        "hydration",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.tedarikci_kimligi",
+      "rol": "cinli_uretici_ciktisi",
+      "cikti": "html"
+    },
+    {
+      "id": "SZ-192",
+      "kategori": "cinli_rakip_tedarikci_negatif",
+      "on_kosul": "kaynak.tedarikci_kimligi tuzak değer taşır; rol token’dan cinli_uretici_ciktisi çözülür.",
+      "istek": "cinli_uretici_ciktisi için pdf istenir.",
+      "beklenen": "kaynak.tedarikci_kimligi adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "pdf_metin_katmani",
+        "pdf_metadata",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.tedarikci_kimligi",
+      "rol": "cinli_uretici_ciktisi",
+      "cikti": "pdf"
+    },
+    {
+      "id": "SZ-193",
+      "kategori": "cinli_rakip_tedarikci_negatif",
+      "on_kosul": "kaynak.tedarikci_kimligi tuzak değer taşır; rol token’dan cinli_uretici_ciktisi çözülür.",
+      "istek": "cinli_uretici_ciktisi için excel istenir.",
+      "beklenen": "kaynak.tedarikci_kimligi adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "excel_gizli_sutun",
+        "workbook_metadata",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.tedarikci_kimligi",
+      "rol": "cinli_uretici_ciktisi",
+      "cikti": "excel"
+    },
+    {
+      "id": "SZ-194",
+      "kategori": "cinli_rakip_tedarikci_negatif",
+      "on_kosul": "kaynak.tedarikci_kimligi tuzak değer taşır; rol token’dan cinli_uretici_ciktisi çözülür.",
+      "istek": "cinli_uretici_ciktisi için csv istenir.",
+      "beklenen": "kaynak.tedarikci_kimligi adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "csv_baslik",
+        "csv_satir",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.tedarikci_kimligi",
+      "rol": "cinli_uretici_ciktisi",
+      "cikti": "csv"
+    },
+    {
+      "id": "SZ-195",
+      "kategori": "cinli_rakip_tedarikci_negatif",
+      "on_kosul": "kaynak.tedarikci_kimligi tuzak değer taşır; rol token’dan cinli_uretici_ciktisi çözülür.",
+      "istek": "cinli_uretici_ciktisi için whatsapp-ozet istenir.",
+      "beklenen": "kaynak.tedarikci_kimligi adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "ozet_metni",
+        "sablon_payloadu",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.tedarikci_kimligi",
+      "rol": "cinli_uretici_ciktisi",
+      "cikti": "whatsapp-ozet"
+    },
+    {
+      "id": "SZ-196",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "kaynak.tedarikci_kimligi tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için html istenir.",
+      "beklenen": "kaynak.tedarikci_kimligi adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html_kaynagi",
+        "hydration",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.tedarikci_kimligi",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "html"
+    },
+    {
+      "id": "SZ-197",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "kaynak.tedarikci_kimligi tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için pdf istenir.",
+      "beklenen": "kaynak.tedarikci_kimligi adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "pdf_metin_katmani",
+        "pdf_metadata",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.tedarikci_kimligi",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "pdf"
+    },
+    {
+      "id": "SZ-198",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "kaynak.tedarikci_kimligi tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için excel istenir.",
+      "beklenen": "kaynak.tedarikci_kimligi adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "excel_gizli_sutun",
+        "workbook_metadata",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.tedarikci_kimligi",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "excel"
+    },
+    {
+      "id": "SZ-199",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "kaynak.tedarikci_kimligi tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için csv istenir.",
+      "beklenen": "kaynak.tedarikci_kimligi adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "csv_baslik",
+        "csv_satir",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.tedarikci_kimligi",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "csv"
+    },
+    {
+      "id": "SZ-200",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "kaynak.tedarikci_kimligi tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için whatsapp-ozet istenir.",
+      "beklenen": "kaynak.tedarikci_kimligi adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "ozet_metni",
+        "sablon_payloadu",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.tedarikci_kimligi",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "whatsapp-ozet"
+    },
+    {
+      "id": "SZ-201",
+      "kategori": "kaynak_whatsapp_kapsami_negatif",
+      "on_kosul": "kaynak.tedarikci_linki tuzak değer taşır; rol token’dan ithalatci çözülür.",
+      "istek": "ithalatci için whatsapp-ozet istenir.",
+      "beklenen": "kaynak.tedarikci_linki adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "ozet_metni",
+        "sablon_payloadu",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.tedarikci_linki",
+      "rol": "ithalatci",
+      "cikti": "whatsapp-ozet"
+    },
+    {
+      "id": "SZ-202",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "kaynak.tedarikci_linki tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için html istenir.",
+      "beklenen": "kaynak.tedarikci_linki adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html_kaynagi",
+        "hydration",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.tedarikci_linki",
+      "rol": "musteri",
+      "cikti": "html"
+    },
+    {
+      "id": "SZ-203",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "kaynak.tedarikci_linki tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için pdf istenir.",
+      "beklenen": "kaynak.tedarikci_linki adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "pdf_metin_katmani",
+        "pdf_metadata",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.tedarikci_linki",
+      "rol": "musteri",
+      "cikti": "pdf"
+    },
+    {
+      "id": "SZ-204",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "kaynak.tedarikci_linki tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için excel istenir.",
+      "beklenen": "kaynak.tedarikci_linki adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "excel_gizli_sutun",
+        "workbook_metadata",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.tedarikci_linki",
+      "rol": "musteri",
+      "cikti": "excel"
+    },
+    {
+      "id": "SZ-205",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "kaynak.tedarikci_linki tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için csv istenir.",
+      "beklenen": "kaynak.tedarikci_linki adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "csv_baslik",
+        "csv_satir",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.tedarikci_linki",
+      "rol": "musteri",
+      "cikti": "csv"
+    },
+    {
+      "id": "SZ-206",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "kaynak.tedarikci_linki tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için whatsapp-ozet istenir.",
+      "beklenen": "kaynak.tedarikci_linki adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "ozet_metni",
+        "sablon_payloadu",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.tedarikci_linki",
+      "rol": "musteri",
+      "cikti": "whatsapp-ozet"
+    },
+    {
+      "id": "SZ-207",
+      "kategori": "cinli_rakip_tedarikci_negatif",
+      "on_kosul": "kaynak.tedarikci_linki tuzak değer taşır; rol token’dan cinli_uretici_ciktisi çözülür.",
+      "istek": "cinli_uretici_ciktisi için html istenir.",
+      "beklenen": "kaynak.tedarikci_linki adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html_kaynagi",
+        "hydration",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.tedarikci_linki",
+      "rol": "cinli_uretici_ciktisi",
+      "cikti": "html"
+    },
+    {
+      "id": "SZ-208",
+      "kategori": "cinli_rakip_tedarikci_negatif",
+      "on_kosul": "kaynak.tedarikci_linki tuzak değer taşır; rol token’dan cinli_uretici_ciktisi çözülür.",
+      "istek": "cinli_uretici_ciktisi için pdf istenir.",
+      "beklenen": "kaynak.tedarikci_linki adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "pdf_metin_katmani",
+        "pdf_metadata",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.tedarikci_linki",
+      "rol": "cinli_uretici_ciktisi",
+      "cikti": "pdf"
+    },
+    {
+      "id": "SZ-209",
+      "kategori": "cinli_rakip_tedarikci_negatif",
+      "on_kosul": "kaynak.tedarikci_linki tuzak değer taşır; rol token’dan cinli_uretici_ciktisi çözülür.",
+      "istek": "cinli_uretici_ciktisi için excel istenir.",
+      "beklenen": "kaynak.tedarikci_linki adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "excel_gizli_sutun",
+        "workbook_metadata",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.tedarikci_linki",
+      "rol": "cinli_uretici_ciktisi",
+      "cikti": "excel"
+    },
+    {
+      "id": "SZ-210",
+      "kategori": "cinli_rakip_tedarikci_negatif",
+      "on_kosul": "kaynak.tedarikci_linki tuzak değer taşır; rol token’dan cinli_uretici_ciktisi çözülür.",
+      "istek": "cinli_uretici_ciktisi için csv istenir.",
+      "beklenen": "kaynak.tedarikci_linki adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "csv_baslik",
+        "csv_satir",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.tedarikci_linki",
+      "rol": "cinli_uretici_ciktisi",
+      "cikti": "csv"
+    },
+    {
+      "id": "SZ-211",
+      "kategori": "cinli_rakip_tedarikci_negatif",
+      "on_kosul": "kaynak.tedarikci_linki tuzak değer taşır; rol token’dan cinli_uretici_ciktisi çözülür.",
+      "istek": "cinli_uretici_ciktisi için whatsapp-ozet istenir.",
+      "beklenen": "kaynak.tedarikci_linki adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "ozet_metni",
+        "sablon_payloadu",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.tedarikci_linki",
+      "rol": "cinli_uretici_ciktisi",
+      "cikti": "whatsapp-ozet"
+    },
+    {
+      "id": "SZ-212",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "kaynak.tedarikci_linki tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için html istenir.",
+      "beklenen": "kaynak.tedarikci_linki adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html_kaynagi",
+        "hydration",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.tedarikci_linki",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "html"
+    },
+    {
+      "id": "SZ-213",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "kaynak.tedarikci_linki tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için pdf istenir.",
+      "beklenen": "kaynak.tedarikci_linki adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "pdf_metin_katmani",
+        "pdf_metadata",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.tedarikci_linki",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "pdf"
+    },
+    {
+      "id": "SZ-214",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "kaynak.tedarikci_linki tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için excel istenir.",
+      "beklenen": "kaynak.tedarikci_linki adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "excel_gizli_sutun",
+        "workbook_metadata",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.tedarikci_linki",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "excel"
+    },
+    {
+      "id": "SZ-215",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "kaynak.tedarikci_linki tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için csv istenir.",
+      "beklenen": "kaynak.tedarikci_linki adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "csv_baslik",
+        "csv_satir",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.tedarikci_linki",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "csv"
+    },
+    {
+      "id": "SZ-216",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "kaynak.tedarikci_linki tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için whatsapp-ozet istenir.",
+      "beklenen": "kaynak.tedarikci_linki adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "ozet_metni",
+        "sablon_payloadu",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.tedarikci_linki",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "whatsapp-ozet"
+    },
+    {
+      "id": "SZ-217",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "kaynak.url tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için html istenir.",
+      "beklenen": "kaynak.url adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html_kaynagi",
+        "hydration",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.url",
+      "rol": "musteri",
+      "cikti": "html"
+    },
+    {
+      "id": "SZ-218",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "kaynak.url tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için pdf istenir.",
+      "beklenen": "kaynak.url adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "pdf_metin_katmani",
+        "pdf_metadata",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.url",
+      "rol": "musteri",
+      "cikti": "pdf"
+    },
+    {
+      "id": "SZ-219",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "kaynak.url tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için excel istenir.",
+      "beklenen": "kaynak.url adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "excel_gizli_sutun",
+        "workbook_metadata",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.url",
+      "rol": "musteri",
+      "cikti": "excel"
+    },
+    {
+      "id": "SZ-220",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "kaynak.url tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için csv istenir.",
+      "beklenen": "kaynak.url adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "csv_baslik",
+        "csv_satir",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.url",
+      "rol": "musteri",
+      "cikti": "csv"
+    },
+    {
+      "id": "SZ-221",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "kaynak.url tuzak değer taşır; rol token’dan musteri çözülür.",
+      "istek": "musteri için whatsapp-ozet istenir.",
+      "beklenen": "kaynak.url adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "ozet_metni",
+        "sablon_payloadu",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.url",
+      "rol": "musteri",
+      "cikti": "whatsapp-ozet"
+    },
+    {
+      "id": "SZ-222",
+      "kategori": "cinli_panel_yok_negatif",
+      "on_kosul": "kaynak.url tuzak değer taşır; rol token’dan cinli_uretici_ciktisi çözülür.",
+      "istek": "cinli_uretici_ciktisi için html istenir.",
+      "beklenen": "kaynak.url adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html_kaynagi",
+        "hydration",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.url",
+      "rol": "cinli_uretici_ciktisi",
+      "cikti": "html"
+    },
+    {
+      "id": "SZ-223",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "kaynak.url tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için html istenir.",
+      "beklenen": "kaynak.url adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html_kaynagi",
+        "hydration",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.url",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "html"
+    },
+    {
+      "id": "SZ-224",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "kaynak.url tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için pdf istenir.",
+      "beklenen": "kaynak.url adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "pdf_metin_katmani",
+        "pdf_metadata",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.url",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "pdf"
+    },
+    {
+      "id": "SZ-225",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "kaynak.url tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için excel istenir.",
+      "beklenen": "kaynak.url adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "excel_gizli_sutun",
+        "workbook_metadata",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.url",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "excel"
+    },
+    {
+      "id": "SZ-226",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "kaynak.url tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için csv istenir.",
+      "beklenen": "kaynak.url adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "csv_baslik",
+        "csv_satir",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.url",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "csv"
+    },
+    {
+      "id": "SZ-227",
+      "kategori": "kirmizi_cizgi_negatif",
+      "on_kosul": "kaynak.url tuzak değer taşır; rol token’dan anonim_anahtarsiz_iskelet çözülür.",
+      "istek": "anonim_anahtarsiz_iskelet için whatsapp-ozet istenir.",
+      "beklenen": "kaynak.url adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "ozet_metni",
+        "sablon_payloadu",
+        "onbellek"
+      ],
+      "alan_id": "kaynak.url",
+      "rol": "anonim_anahtarsiz_iskelet",
+      "cikti": "whatsapp-ozet"
+    },
+    {
+      "id": "SZ-228",
+      "kategori": "operator_kisitli_ic_maliyet_negatif",
+      "on_kosul": "ic_maliyet.kaynak_birim_fiyat tuzak değer taşır; rol token'dan sahip_operator çözülür.",
+      "istek": "sahip_operator için html istenir.",
+      "beklenen": "ic_maliyet.kaynak_birim_fiyat adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html_kaynagi",
+        "hydration",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kaynak_birim_fiyat",
+      "rol": "sahip_operator",
+      "cikti": "html"
+    },
+    {
+      "id": "SZ-229",
+      "kategori": "operator_kisitli_ic_maliyet_negatif",
+      "on_kosul": "ic_maliyet.kaynak_birim_fiyat tuzak değer taşır; rol token'dan sahip_operator çözülür.",
+      "istek": "sahip_operator için pdf istenir.",
+      "beklenen": "ic_maliyet.kaynak_birim_fiyat adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "pdf_metin_katmani",
+        "pdf_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kaynak_birim_fiyat",
+      "rol": "sahip_operator",
+      "cikti": "pdf"
+    },
+    {
+      "id": "SZ-230",
+      "kategori": "operator_kisitli_ic_maliyet_negatif",
+      "on_kosul": "ic_maliyet.kaynak_birim_fiyat tuzak değer taşır; rol token'dan sahip_operator çözülür.",
+      "istek": "sahip_operator için excel istenir.",
+      "beklenen": "ic_maliyet.kaynak_birim_fiyat adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "excel_gizli_sutun",
+        "workbook_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kaynak_birim_fiyat",
+      "rol": "sahip_operator",
+      "cikti": "excel"
+    },
+    {
+      "id": "SZ-231",
+      "kategori": "operator_kisitli_ic_maliyet_negatif",
+      "on_kosul": "ic_maliyet.kaynak_birim_fiyat tuzak değer taşır; rol token'dan sahip_operator çözülür.",
+      "istek": "sahip_operator için csv istenir.",
+      "beklenen": "ic_maliyet.kaynak_birim_fiyat adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "csv_baslik",
+        "csv_satir",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kaynak_birim_fiyat",
+      "rol": "sahip_operator",
+      "cikti": "csv"
+    },
+    {
+      "id": "SZ-232",
+      "kategori": "operator_kisitli_ic_maliyet_negatif",
+      "on_kosul": "ic_maliyet.ddp_birim_maliyet tuzak değer taşır; rol token'dan sahip_operator çözülür.",
+      "istek": "sahip_operator için html istenir.",
+      "beklenen": "ic_maliyet.ddp_birim_maliyet adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html_kaynagi",
+        "hydration",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.ddp_birim_maliyet",
+      "rol": "sahip_operator",
+      "cikti": "html"
+    },
+    {
+      "id": "SZ-233",
+      "kategori": "operator_kisitli_ic_maliyet_negatif",
+      "on_kosul": "ic_maliyet.ddp_birim_maliyet tuzak değer taşır; rol token'dan sahip_operator çözülür.",
+      "istek": "sahip_operator için pdf istenir.",
+      "beklenen": "ic_maliyet.ddp_birim_maliyet adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "pdf_metin_katmani",
+        "pdf_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.ddp_birim_maliyet",
+      "rol": "sahip_operator",
+      "cikti": "pdf"
+    },
+    {
+      "id": "SZ-234",
+      "kategori": "operator_kisitli_ic_maliyet_negatif",
+      "on_kosul": "ic_maliyet.ddp_birim_maliyet tuzak değer taşır; rol token'dan sahip_operator çözülür.",
+      "istek": "sahip_operator için excel istenir.",
+      "beklenen": "ic_maliyet.ddp_birim_maliyet adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "excel_gizli_sutun",
+        "workbook_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.ddp_birim_maliyet",
+      "rol": "sahip_operator",
+      "cikti": "excel"
+    },
+    {
+      "id": "SZ-235",
+      "kategori": "operator_kisitli_ic_maliyet_negatif",
+      "on_kosul": "ic_maliyet.ddp_birim_maliyet tuzak değer taşır; rol token'dan sahip_operator çözülür.",
+      "istek": "sahip_operator için csv istenir.",
+      "beklenen": "ic_maliyet.ddp_birim_maliyet adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "csv_baslik",
+        "csv_satir",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.ddp_birim_maliyet",
+      "rol": "sahip_operator",
+      "cikti": "csv"
+    },
+    {
+      "id": "SZ-236",
+      "kategori": "operator_kisitli_ic_maliyet_negatif",
+      "on_kosul": "ic_maliyet.ddp_toplam_maliyet tuzak değer taşır; rol token'dan sahip_operator çözülür.",
+      "istek": "sahip_operator için html istenir.",
+      "beklenen": "ic_maliyet.ddp_toplam_maliyet adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html_kaynagi",
+        "hydration",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.ddp_toplam_maliyet",
+      "rol": "sahip_operator",
+      "cikti": "html"
+    },
+    {
+      "id": "SZ-237",
+      "kategori": "operator_kisitli_ic_maliyet_negatif",
+      "on_kosul": "ic_maliyet.ddp_toplam_maliyet tuzak değer taşır; rol token'dan sahip_operator çözülür.",
+      "istek": "sahip_operator için pdf istenir.",
+      "beklenen": "ic_maliyet.ddp_toplam_maliyet adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "pdf_metin_katmani",
+        "pdf_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.ddp_toplam_maliyet",
+      "rol": "sahip_operator",
+      "cikti": "pdf"
+    },
+    {
+      "id": "SZ-238",
+      "kategori": "operator_kisitli_ic_maliyet_negatif",
+      "on_kosul": "ic_maliyet.ddp_toplam_maliyet tuzak değer taşır; rol token'dan sahip_operator çözülür.",
+      "istek": "sahip_operator için excel istenir.",
+      "beklenen": "ic_maliyet.ddp_toplam_maliyet adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "excel_gizli_sutun",
+        "workbook_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.ddp_toplam_maliyet",
+      "rol": "sahip_operator",
+      "cikti": "excel"
+    },
+    {
+      "id": "SZ-239",
+      "kategori": "operator_kisitli_ic_maliyet_negatif",
+      "on_kosul": "ic_maliyet.ddp_toplam_maliyet tuzak değer taşır; rol token'dan sahip_operator çözülür.",
+      "istek": "sahip_operator için csv istenir.",
+      "beklenen": "ic_maliyet.ddp_toplam_maliyet adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "csv_baslik",
+        "csv_satir",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.ddp_toplam_maliyet",
+      "rol": "sahip_operator",
+      "cikti": "csv"
+    },
+    {
+      "id": "SZ-240",
+      "kategori": "operator_kisitli_ic_maliyet_negatif",
+      "on_kosul": "ic_maliyet.kar_tutari tuzak değer taşır; rol token'dan sahip_operator çözülür.",
+      "istek": "sahip_operator için html istenir.",
+      "beklenen": "ic_maliyet.kar_tutari adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html_kaynagi",
+        "hydration",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kar_tutari",
+      "rol": "sahip_operator",
+      "cikti": "html"
+    },
+    {
+      "id": "SZ-241",
+      "kategori": "operator_kisitli_ic_maliyet_negatif",
+      "on_kosul": "ic_maliyet.kar_tutari tuzak değer taşır; rol token'dan sahip_operator çözülür.",
+      "istek": "sahip_operator için pdf istenir.",
+      "beklenen": "ic_maliyet.kar_tutari adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "pdf_metin_katmani",
+        "pdf_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kar_tutari",
+      "rol": "sahip_operator",
+      "cikti": "pdf"
+    },
+    {
+      "id": "SZ-242",
+      "kategori": "operator_kisitli_ic_maliyet_negatif",
+      "on_kosul": "ic_maliyet.kar_tutari tuzak değer taşır; rol token'dan sahip_operator çözülür.",
+      "istek": "sahip_operator için excel istenir.",
+      "beklenen": "ic_maliyet.kar_tutari adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "excel_gizli_sutun",
+        "workbook_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kar_tutari",
+      "rol": "sahip_operator",
+      "cikti": "excel"
+    },
+    {
+      "id": "SZ-243",
+      "kategori": "operator_kisitli_ic_maliyet_negatif",
+      "on_kosul": "ic_maliyet.kar_tutari tuzak değer taşır; rol token'dan sahip_operator çözülür.",
+      "istek": "sahip_operator için csv istenir.",
+      "beklenen": "ic_maliyet.kar_tutari adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "csv_baslik",
+        "csv_satir",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kar_tutari",
+      "rol": "sahip_operator",
+      "cikti": "csv"
+    },
+    {
+      "id": "SZ-244",
+      "kategori": "operator_kisitli_ic_maliyet_negatif",
+      "on_kosul": "ic_maliyet.kar_marji tuzak değer taşır; rol token'dan sahip_operator çözülür.",
+      "istek": "sahip_operator için html istenir.",
+      "beklenen": "ic_maliyet.kar_marji adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html_kaynagi",
+        "hydration",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kar_marji",
+      "rol": "sahip_operator",
+      "cikti": "html"
+    },
+    {
+      "id": "SZ-245",
+      "kategori": "operator_kisitli_ic_maliyet_negatif",
+      "on_kosul": "ic_maliyet.kar_marji tuzak değer taşır; rol token'dan sahip_operator çözülür.",
+      "istek": "sahip_operator için pdf istenir.",
+      "beklenen": "ic_maliyet.kar_marji adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "pdf_metin_katmani",
+        "pdf_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kar_marji",
+      "rol": "sahip_operator",
+      "cikti": "pdf"
+    },
+    {
+      "id": "SZ-246",
+      "kategori": "operator_kisitli_ic_maliyet_negatif",
+      "on_kosul": "ic_maliyet.kar_marji tuzak değer taşır; rol token'dan sahip_operator çözülür.",
+      "istek": "sahip_operator için excel istenir.",
+      "beklenen": "ic_maliyet.kar_marji adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "excel_gizli_sutun",
+        "workbook_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kar_marji",
+      "rol": "sahip_operator",
+      "cikti": "excel"
+    },
+    {
+      "id": "SZ-247",
+      "kategori": "operator_kisitli_ic_maliyet_negatif",
+      "on_kosul": "ic_maliyet.kar_marji tuzak değer taşır; rol token'dan sahip_operator çözülür.",
+      "istek": "sahip_operator için csv istenir.",
+      "beklenen": "ic_maliyet.kar_marji adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "csv_baslik",
+        "csv_satir",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.kar_marji",
+      "rol": "sahip_operator",
+      "cikti": "csv"
+    },
+    {
+      "id": "SZ-248",
+      "kategori": "operator_kisitli_ic_maliyet_negatif",
+      "on_kosul": "ic_maliyet.hedef_satis_fiyati tuzak değer taşır; rol token'dan sahip_operator çözülür.",
+      "istek": "sahip_operator için html istenir.",
+      "beklenen": "ic_maliyet.hedef_satis_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html_kaynagi",
+        "hydration",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.hedef_satis_fiyati",
+      "rol": "sahip_operator",
+      "cikti": "html"
+    },
+    {
+      "id": "SZ-249",
+      "kategori": "operator_kisitli_ic_maliyet_negatif",
+      "on_kosul": "ic_maliyet.hedef_satis_fiyati tuzak değer taşır; rol token'dan sahip_operator çözülür.",
+      "istek": "sahip_operator için pdf istenir.",
+      "beklenen": "ic_maliyet.hedef_satis_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "pdf_metin_katmani",
+        "pdf_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.hedef_satis_fiyati",
+      "rol": "sahip_operator",
+      "cikti": "pdf"
+    },
+    {
+      "id": "SZ-250",
+      "kategori": "operator_kisitli_ic_maliyet_negatif",
+      "on_kosul": "ic_maliyet.hedef_satis_fiyati tuzak değer taşır; rol token'dan sahip_operator çözülür.",
+      "istek": "sahip_operator için excel istenir.",
+      "beklenen": "ic_maliyet.hedef_satis_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "excel_gizli_sutun",
+        "workbook_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.hedef_satis_fiyati",
+      "rol": "sahip_operator",
+      "cikti": "excel"
+    },
+    {
+      "id": "SZ-251",
+      "kategori": "operator_kisitli_ic_maliyet_negatif",
+      "on_kosul": "ic_maliyet.hedef_satis_fiyati tuzak değer taşır; rol token'dan sahip_operator çözülür.",
+      "istek": "sahip_operator için csv istenir.",
+      "beklenen": "ic_maliyet.hedef_satis_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "csv_baslik",
+        "csv_satir",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.hedef_satis_fiyati",
+      "rol": "sahip_operator",
+      "cikti": "csv"
+    },
+    {
+      "id": "SZ-252",
+      "kategori": "operator_kisitli_ic_maliyet_negatif",
+      "on_kosul": "ic_maliyet.satis_fiyati tuzak değer taşır; rol token'dan sahip_operator çözülür.",
+      "istek": "sahip_operator için html istenir.",
+      "beklenen": "ic_maliyet.satis_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html_kaynagi",
+        "hydration",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.satis_fiyati",
+      "rol": "sahip_operator",
+      "cikti": "html"
+    },
+    {
+      "id": "SZ-253",
+      "kategori": "operator_kisitli_ic_maliyet_negatif",
+      "on_kosul": "ic_maliyet.satis_fiyati tuzak değer taşır; rol token'dan sahip_operator çözülür.",
+      "istek": "sahip_operator için pdf istenir.",
+      "beklenen": "ic_maliyet.satis_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "pdf_metin_katmani",
+        "pdf_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.satis_fiyati",
+      "rol": "sahip_operator",
+      "cikti": "pdf"
+    },
+    {
+      "id": "SZ-254",
+      "kategori": "operator_kisitli_ic_maliyet_negatif",
+      "on_kosul": "ic_maliyet.satis_fiyati tuzak değer taşır; rol token'dan sahip_operator çözülür.",
+      "istek": "sahip_operator için excel istenir.",
+      "beklenen": "ic_maliyet.satis_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "excel_gizli_sutun",
+        "workbook_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.satis_fiyati",
+      "rol": "sahip_operator",
+      "cikti": "excel"
+    },
+    {
+      "id": "SZ-255",
+      "kategori": "operator_kisitli_ic_maliyet_negatif",
+      "on_kosul": "ic_maliyet.satis_fiyati tuzak değer taşır; rol token'dan sahip_operator çözülür.",
+      "istek": "sahip_operator için csv istenir.",
+      "beklenen": "ic_maliyet.satis_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "csv_baslik",
+        "csv_satir",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.satis_fiyati",
+      "rol": "sahip_operator",
+      "cikti": "csv"
+    },
+    {
+      "id": "SZ-256",
+      "kategori": "operator_kisitli_ic_maliyet_negatif",
+      "on_kosul": "ic_maliyet.yurtici_referans_fiyati tuzak değer taşır; rol token'dan sahip_operator çözülür.",
+      "istek": "sahip_operator için html istenir.",
+      "beklenen": "ic_maliyet.yurtici_referans_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html_kaynagi",
+        "hydration",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.yurtici_referans_fiyati",
+      "rol": "sahip_operator",
+      "cikti": "html"
+    },
+    {
+      "id": "SZ-257",
+      "kategori": "operator_kisitli_ic_maliyet_negatif",
+      "on_kosul": "ic_maliyet.yurtici_referans_fiyati tuzak değer taşır; rol token'dan sahip_operator çözülür.",
+      "istek": "sahip_operator için pdf istenir.",
+      "beklenen": "ic_maliyet.yurtici_referans_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "pdf_metin_katmani",
+        "pdf_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.yurtici_referans_fiyati",
+      "rol": "sahip_operator",
+      "cikti": "pdf"
+    },
+    {
+      "id": "SZ-258",
+      "kategori": "operator_kisitli_ic_maliyet_negatif",
+      "on_kosul": "ic_maliyet.yurtici_referans_fiyati tuzak değer taşır; rol token'dan sahip_operator çözülür.",
+      "istek": "sahip_operator için excel istenir.",
+      "beklenen": "ic_maliyet.yurtici_referans_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "excel_gizli_sutun",
+        "workbook_metadata",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.yurtici_referans_fiyati",
+      "rol": "sahip_operator",
+      "cikti": "excel"
+    },
+    {
+      "id": "SZ-259",
+      "kategori": "operator_kisitli_ic_maliyet_negatif",
+      "on_kosul": "ic_maliyet.yurtici_referans_fiyati tuzak değer taşır; rol token'dan sahip_operator çözülür.",
+      "istek": "sahip_operator için csv istenir.",
+      "beklenen": "ic_maliyet.yurtici_referans_fiyati adı/değeri; “—”, null, başlık, metadata veya gizli sütun olarak dahi yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "csv_baslik",
+        "csv_satir",
+        "onbellek"
+      ],
+      "alan_id": "ic_maliyet.yurtici_referans_fiyati",
+      "rol": "sahip_operator",
+      "cikti": "csv"
+    },
+    {
+      "id": "SZ-260",
+      "kategori": "rol_yukseltme",
+      "on_kosul": "Aktif ticari kayıt vardır.",
+      "istek": "Müşteri tokenıyla ithalatçı ucu",
+      "beklenen": "Rol yükselmez; ithalatçı alanı yok.",
+      "katmanlar": [
+        "token",
+        "yetkilendirme",
+        "serializer_json",
+        "onbellek"
+      ]
+    },
+    {
+      "id": "SZ-261",
+      "kategori": "anahtarsiz_iskelet",
+      "on_kosul": "Aktif ticari kayıt vardır.",
+      "istek": "Anahtarsız iskelet",
+      "beklenen": "Ticari içerik yok.",
+      "katmanlar": [
+        "token",
+        "yetkilendirme",
+        "serializer_json",
+        "onbellek"
+      ]
+    },
+    {
+      "id": "SZ-262",
+      "kategori": "suresi_dolmus_link",
+      "on_kosul": "Aktif ticari kayıt vardır.",
+      "istek": "Süresi dolmuş link",
+      "beklenen": "Eski içerik dönmez.",
+      "katmanlar": [
+        "token",
+        "yetkilendirme",
+        "serializer_json",
+        "onbellek"
+      ]
+    },
+    {
+      "id": "SZ-263",
+      "kategori": "revoke_sonrasi_onbellek",
+      "on_kosul": "Aktif ticari kayıt vardır.",
+      "istek": "Revoke sonrası önbellek",
+      "beklenen": "Önbellek ticari gövde döndürmez.",
+      "katmanlar": [
+        "token",
+        "yetkilendirme",
+        "serializer_json",
+        "onbellek"
+      ]
+    },
+    {
+      "id": "SZ-264",
+      "kategori": "ozel_alan_varsayilan_gizli",
+      "on_kosul": "Özel metin alanı whitelist’e eklenmemiştir.",
+      "istek": "Tüm dış roller ve çıktılar istenir.",
+      "beklenen": "Etiket, değer ve yer tutucu yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html",
+        "pdf",
+        "excel",
+        "csv",
+        "ozet",
+        "onbellek"
+      ],
+      "alan_id": "ozel_alan.varsayilan.metin",
+      "rol": "tum_dis_roller",
+      "cikti": "tum_ciktilar"
+    },
+    {
+      "id": "SZ-265",
+      "kategori": "ozel_alan_varsayilan_gizli",
+      "on_kosul": "Özel sayi alanı whitelist’e eklenmemiştir.",
+      "istek": "Tüm dış roller ve çıktılar istenir.",
+      "beklenen": "Etiket, değer ve yer tutucu yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html",
+        "pdf",
+        "excel",
+        "csv",
+        "ozet",
+        "onbellek"
+      ],
+      "alan_id": "ozel_alan.varsayilan.sayi",
+      "rol": "tum_dis_roller",
+      "cikti": "tum_ciktilar"
+    },
+    {
+      "id": "SZ-266",
+      "kategori": "ozel_alan_varsayilan_gizli",
+      "on_kosul": "Özel tarih alanı whitelist’e eklenmemiştir.",
+      "istek": "Tüm dış roller ve çıktılar istenir.",
+      "beklenen": "Etiket, değer ve yer tutucu yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html",
+        "pdf",
+        "excel",
+        "csv",
+        "ozet",
+        "onbellek"
+      ],
+      "alan_id": "ozel_alan.varsayilan.tarih",
+      "rol": "tum_dis_roller",
+      "cikti": "tum_ciktilar"
+    },
+    {
+      "id": "SZ-267",
+      "kategori": "ozel_alan_varsayilan_gizli",
+      "on_kosul": "Özel secim_listesi alanı whitelist’e eklenmemiştir.",
+      "istek": "Tüm dış roller ve çıktılar istenir.",
+      "beklenen": "Etiket, değer ve yer tutucu yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html",
+        "pdf",
+        "excel",
+        "csv",
+        "ozet",
+        "onbellek"
+      ],
+      "alan_id": "ozel_alan.varsayilan.secim_listesi",
+      "rol": "tum_dis_roller",
+      "cikti": "tum_ciktilar"
+    },
+    {
+      "id": "SZ-268",
+      "kategori": "ozel_alan_varsayilan_gizli",
+      "on_kosul": "Özel evet_hayir alanı whitelist’e eklenmemiştir.",
+      "istek": "Tüm dış roller ve çıktılar istenir.",
+      "beklenen": "Etiket, değer ve yer tutucu yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html",
+        "pdf",
+        "excel",
+        "csv",
+        "ozet",
+        "onbellek"
+      ],
+      "alan_id": "ozel_alan.varsayilan.evet_hayir",
+      "rol": "tum_dis_roller",
+      "cikti": "tum_ciktilar"
+    },
+    {
+      "id": "SZ-269",
+      "kategori": "ozel_alan_varsayilan_gizli",
+      "on_kosul": "Özel dosya alanı whitelist’e eklenmemiştir.",
+      "istek": "Tüm dış roller ve çıktılar istenir.",
+      "beklenen": "Etiket, değer ve yer tutucu yoktur.",
+      "katmanlar": [
+        "serializer_json",
+        "html",
+        "pdf",
+        "excel",
+        "csv",
+        "ozet",
+        "onbellek"
+      ],
+      "alan_id": "ozel_alan.varsayilan.dosya",
+      "rol": "tum_dis_roller",
+      "cikti": "tum_ciktilar"
+    },
+    {
+      "id": "SZ-270",
+      "kategori": "k14_kor_toplu_gonderim",
+      "on_kosul": "A ve B müşterilerine ayrı listeler atanmıştır.",
+      "istek": "Kör toplu gönderim tüm çıktıları üretir.",
+      "beklenen": "Her müşteri yalnız kendi kayıtlarını ve alıcı kapsamını görür.",
+      "katmanlar": [
+        "toplu_is",
+        "serializer_json",
+        "alici_listesi",
+        "onbellek"
+      ],
+      "rol": "musteri",
+      "cikti": "tum_ciktilar"
+    },
+    {
+      "id": "SZ-271",
+      "kategori": "rol_parametresi_yoksayma",
+      "on_kosul": "Geçerli dış token vardır.",
+      "istek": "URL/header içinde sahip rolü istenir.",
+      "beklenen": "Rol token’dan çözülür ve genişlemez.",
+      "katmanlar": [
+        "token",
+        "yetkilendirme",
+        "serializer_json"
+      ]
+    },
+    {
+      "id": "SZ-272",
+      "kategori": "dogrudan_cikti_adresi",
+      "on_kosul": "Başka firmaya ait dosya adresi tahmin edilir.",
+      "istek": "PDF/Excel/CSV adresi doğrudan istenir.",
+      "beklenen": "Dosya adı, boyutu, metadata ve içerik sızmaz.",
+      "katmanlar": [
+        "yetkilendirme",
+        "dosya_servisi",
+        "onbellek"
+      ]
+    },
+    {
+      "id": "SZ-273",
+      "kategori": "operator_rol_yukseltme",
+      "on_kosul": "sahip_operator tokenı ve sekiz ic_maliyet alanında tuzak değer vardır.",
+      "istek": "sahip_operator tokenıyla sahip_ic_kopya çıktısı istenir.",
+      "beklenen": "403; rol yükselmez ve sekiz ic_maliyet alanının adı/değeri yanıtta, dosyada, metadata'da veya önbellekte bulunmaz.",
+      "katmanlar": [
+        "token",
+        "yetkilendirme",
+        "serializer_json",
+        "dosya_servisi",
+        "onbellek"
+      ],
+      "rol": "sahip_operator",
+      "cikti": "sahip_ic_kopya"
+    }
+  ]
+}
