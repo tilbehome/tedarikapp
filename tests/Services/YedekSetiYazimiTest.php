@@ -177,4 +177,27 @@ final class YedekSetiYazimiTest extends TestCase
         self::assertCount(2, $setler);
         self::assertStringContainsString('20260902', $setler[0], 'En yeni set BAŞTA olmalı.');
     }
+
+    public function testAYNISANIYEDEIKIYEDEKCAKISMAZ(): void
+    {
+        // GERÇEK SENARYO, test artefaktı değil: damga saniye çözünürlüklüdür.
+        // Cron gece koşusu ile kullanıcının elle aldığı yedek aynı saniyeye
+        // denk gelirse ikincisi — hazırlığı tamamlanmış olmasına rağmen —
+        // KAYBOLURDU. Yedek almanın en olası anı, birinin "önce bir yedek
+        // alayım" dediği andır ve o an cron saatine denk gelebilir.
+        $yazici = $this->yazici();
+
+        $yollar = [];
+        foreach ([1, 2] as $_) {
+            $set = $yazici->baslat('20260903-080904');
+            $yazici->parcaEkle($set, 'veritabani.sql.enc', 'sql', 'DUMP');
+            $yazici->parcaEkle($set, 'ayarlar.files.enc', 'config', 'CONFIG');
+            $yollar[] = $yazici->tamamla($set);
+        }
+
+        self::assertNotSame($yollar[0], $yollar[1], 'İkinci set AYRI bir dizine gitmeli.');
+        self::assertDirectoryExists($yollar[0]);
+        self::assertDirectoryExists($yollar[1]);
+        self::assertCount(2, $yazici->setler(), 'İki set de listede olmalı.');
+    }
 }

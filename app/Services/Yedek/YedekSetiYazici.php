@@ -121,12 +121,34 @@ final class YedekSetiYazici
         }
         @chmod($manifestYolu, 0o600);
 
-        $nihai = $this->kokDizin . '/' . self::SET_ONEKI . $set['damga'];
+        $nihai = $this->benzersizNihaiAd($set['damga'], $set['set_id']);
         if (!@rename($set['hazirlik'], $nihai)) {
             throw new RuntimeException('Yedek seti nihai adına taşınamadı: ' . $nihai);
         }
 
         return $nihai;
+    }
+
+    /**
+     * Nihai dizin adı — AYNI SANİYEDE İKİ YEDEK ÇAKIŞMAZ.
+     *
+     * Damga saniye çözünürlüklüdür. Cron gece koşusu ile kullanıcının elle
+     * aldığı yedek aynı saniyeye denk gelirse `rename()` başarısız olur ve
+     * ikinci yedek — hazırlığı tamamlanmış olmasına rağmen — KAYBOLUR.
+     * Nadir ama gerçek: yedek almanın en olası anı, birinin "önce bir yedek
+     * alayım" dediği andır ve o an cron saatine denk gelebilir.
+     *
+     * Çakışmada set kimliğinin ilk altı hanesi eklenir: ad okunur kalır
+     * (`set-20260903-080904-a1b2c3`) ve tekilliği kimlik garanti eder.
+     */
+    private function benzersizNihaiAd(string $damga, string $setId): string
+    {
+        $taban = $this->kokDizin . '/' . self::SET_ONEKI . $damga;
+        if (!file_exists($taban)) {
+            return $taban;
+        }
+
+        return $taban . '-' . substr(str_replace('-', '', $setId), 0, 6);
     }
 
     /**

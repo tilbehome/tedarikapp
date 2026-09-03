@@ -46,32 +46,56 @@ try {
     $connection = Connection::fromCallable(static fn (): PDO => Database::connect($config));
     $now = SystemClock::fromConfig($config)->now();
 
-    $yedek = static function () use ($config, $basePath): string {
-        $service = new BackupService($config, $basePath);
-        $backup = $service->create();
-        $satir = sprintf('%s (%.1f KB)', $backup['name'], $backup['size'] / 1024);
-        printf("YEDEK ALINDI  %s sha256 %s...\n", $satir, substr($backup['sha256'], 0, 12));
+    $yedek = static function () use ($config, $basePath, $connection): string {
+        // v1.2.2 B1: yedek artık bir SET — tek dizin, tek manifest, atomik.
+        // Migration defteri manifeste girer: geri yüklerken "bu yedek hangi
+        // şemaya ait?" sorusunun tek cevabı odur.
+        $defter = [];
 
-        // İE#22 E4 (F-03): medya yedeği AYRI satırda raporlanır. Sessiz kalmak,
-        // "yedek alındı" cümlesini yine eksik bırakırdı.
-        if ($backup['media_manifest'] !== null) {
+        try {
+            $statement = $connection->pdo()->query('SELECT name FROM migrations ORDER BY name');
+            $defter = $statement === false ? [] : array_map('strval', $statement->fetchAll(PDO::FETCH_COLUMN));
+        } catch (Throwable) {
+            // Defter okunamıyorsa yedek yine alınır; manifest boş defterle
+            // yazılır ve prova bunu "karşılaştırma yapılmadı" diye gösterir.
+            // Yedeği defter yüzünden hiç almamak, orantısız olurdu.
+        }
+
+        $service = new BackupService($config, $basePath, migrationDefteri: $defter);
+        $backup = $service->create();
+
+        $setAdi = basename($backup['set_dizini']);
+        $satir = sprintf('%s (%.1f KB, %d parça)', $setAdi, $backup['toplam_bayt'] / 1024, $backup['parca_sayisi']);
+        printf("YEDEK SETI    %s\n", $satir);
+
+        if ($backup['media_files'] > 0) {
             printf(
-                "MEDYA         %d dosya · %.1f MB · manifest %s · arsiv %s" . PHP_EOL,
+                "MEDYA         %d dosya · %.1f MB%s" . PHP_EOL,
                 $backup['media_files'],
                 $backup['media_bytes'] / 1048576,
-                $backup['media_manifest'],
-                $backup['media_archive'] ?? 'ATLANDI (boyut siniri — BACKUP_MEDIA_MAX_MB)',
-            );
-            $satir .= sprintf(
-                ', medya %d dosya%s',
-                $backup['media_files'],
-                $backup['media_skipped'] ? ' (arsiv atlandi)' : '',
+                $backup['medya_atlandi'] ? ' · BAZI DOSYALAR ATLANDI (tek başına boyut sınırını aşıyor)' : '',
             );
         } else {
             echo "MEDYA         yedeklenecek gorsel yok." . PHP_EOL;
         }
 
-        $offsite = (new BackupOffsite($config))->send((string) $service->pathFor($backup['name']), $backup['name']);
+        // GERİ YÜKLEME PROVASI HER GECE (B3): yedeği almak yetmez, geri
+        // yüklenebilir olduğunu da bilmek gerekir. Prova yıkıcı değildir —
+        // manifest ile diskin tutarlılığını okur.
+        $prova = (new App\Services\Yedek\YedekProvasi())->dogrula($backup['set_dizini'], $defter);
+        echo (new App\Services\Yedek\YedekProvasi())->rapor($prova) . PHP_EOL;
+        if (!$prova['gecerli']) {
+            throw new RuntimeException('Yedek seti provayı GEÇEMEDİ — set kullanılamaz.');
+        }
+
+        // Off-site gönderim e-posta ekiyle çalışır ve bir DİZİN gönderemez;
+        // SQL parçası gönderilir (eski davranışın birebir karşılığı). Tam setin
+        // uzak hedefe gönderimi B5'te TANIMLANDI, uygulaması V3-G.
+        $sqlParcasi = $service->parcaYolu($setAdi, 'veritabani.sql.enc');
+        $offsite = $sqlParcasi === null
+            ? ['attempted' => false, 'sent' => false, 'via' => null, 'error' => null]
+            : (new BackupOffsite($config))->send($sqlParcasi, $setAdi . '-veritabani.sql.enc');
+
         if (!$offsite['attempted']) {
             echo "OFF-SITE: yapılandırılmadı (BACKUP_FTP_* veya BACKUP_SMTP_* girilirse otomatik gönderilir).\n";
 

@@ -91,8 +91,15 @@ final class SystemController
             return Response::error($response, 'BACKUP_FAILED', $e->getMessage(), 500);
         }
 
-        $offsite = (new \App\Services\BackupOffsite($this->appConfig))
-            ->send((string) $service->pathFor($backup['name']), $backup['name']);
+        // v1.2.2 B1: yedek artık bir SET (dizin). Off-site gönderim e-posta
+        // ekiyle çalışıyor ve bir DİZİN gönderemez; SQL parçası gönderilir —
+        // eski davranışın birebir karşılığı. Tam setin uzak hedefe gönderimi
+        // B5 kapsamında TANIMLANDI, uygulaması V3-G'ye bırakıldı.
+        $setAdi = basename($backup['set_dizini']);
+        $sqlParcasi = $service->parcaYolu($setAdi, 'veritabani.sql.enc');
+        $offsite = $sqlParcasi === null
+            ? ['attempted' => false, 'sent' => false, 'via' => null]
+            : (new \App\Services\BackupOffsite($this->appConfig))->send($sqlParcasi, $setAdi . '-veritabani.sql.enc');
 
         // İE#11 EK-2: saklama — eskiler silinir (en yeni 5 her koşulda kalır).
         $pruned = $service->prune($this->appConfig->getPositiveInt('BACKUP_RETENTION_DAYS', 14));
@@ -104,8 +111,8 @@ final class SystemController
             sprintf(
                 '%s: %s (%.1f KB) · off-site: %s',
                 $user->email,
-                $backup['name'],
-                $backup['size'] / 1024,
+                $setAdi,
+                $backup['toplam_bayt'] / 1024,
                 $offsite['attempted'] ? ($offsite['sent'] ? 'gönderildi (' . $offsite['via'] . ')' : 'BAŞARISIZ') : 'yapılandırılmadı',
             ) . ($pruned === [] ? '' : sprintf(' · %d eski yedek silindi', count($pruned))),
             ClientIp::from($request),
@@ -153,9 +160,21 @@ final class SystemController
             return Response::error($response, 'SERVER_ERROR', 'Yapılandırma erişilemiyor.', 500);
         }
 
-        $path = (new \App\Services\BackupService($this->appConfig, $this->basePath))->pathFor((string) ($args['name'] ?? ''));
+        // v1.2.2 B1: yedek artık bir SET (dizin) ve HTTP bir dizin indiremez.
+        // Parça adı verilmezse SQL parçası inar — "yedeği indir" düğmesinin
+        // en olası kastı odur (elde tek dosya, geri dönüşün çekirdeği).
+        //
+        // TAM SETİ TEK ZIP OLARAK İNDİRMEK BİLİNÇLİ OLARAK YOK: paylaşımlı
+        // hostingde gigabaytlarca medyayı geçici bir arşive yazmak, medyayı
+        // parçalara bölmemizin sebebini geri getirirdi. Panel parçaları tek tek
+        // sunar; manifest hangilerinin gerektiğini söyler.
+        $servis = new \App\Services\BackupService($this->appConfig, $this->basePath);
+        $setAdi = (string) ($args['name'] ?? '');
+        $parcaAdi = (string) ($request->getQueryParams()['parca'] ?? 'veritabani.sql.enc');
+
+        $path = $servis->parcaYolu($setAdi, $parcaAdi);
         if ($path === null) {
-            return Response::error($response, 'NOT_FOUND', 'Yedek bulunamadı.', 404);
+            return Response::error($response, 'NOT_FOUND', 'Yedek parçası bulunamadı.', 404);
         }
 
         // İE#11 EK-2 (3): akışla oku — büyük yedek indirmesi belleği şişirmez.
@@ -170,6 +189,58 @@ final class SystemController
             ->withHeader('Content-Length', (string) filesize($path))
             ->withHeader('Content-Disposition', 'attachment; filename="' . basename($path) . '"')
             ->withHeader('Cache-Control', 'no-store');
+    }
+
+    /**
+     * POST /api/system/backups/{name}/verify — YEDEĞİ DOĞRULA (v1.2.2 B4).
+     *
+     * GERİ YÜKLEME YAPMAZ. Manifesti okur, her parçanın diskteki SHA-256'sını
+     * karşılaştırır, migration defterini bugünkü şemayla kıyaslar.
+     *
+     * NEDEN AYRI BİR DÜĞME: "yedeğim var" ile "geri dönebilirim" aynı şey
+     * değildir ve aradaki farkı ancak bakarak öğrenirsiniz. Bakmanın yıkıcı
+     * olmaması, kullanıcının bunu ne zaman isterse yapabilmesi demektir —
+     * felaket anını beklemeden.
+     *
+     * @param array<string, string> $args
+     */
+    public function backupVerify(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    {
+        $this->authenticatedUser($request);
+        if ($this->appConfig === null) {
+            return Response::error($response, 'SERVER_ERROR', 'Yapılandırma erişilemiyor.', 500);
+        }
+
+        $servis = new \App\Services\BackupService($this->appConfig, $this->basePath);
+        $dizin = $servis->pathFor((string) ($args['name'] ?? ''));
+        if ($dizin === null) {
+            return Response::error($response, 'NOT_FOUND', 'Yedek seti bulunamadı.', 404);
+        }
+
+        $prova = new \App\Services\Yedek\YedekProvasi();
+        $sonuc = $prova->dogrula($dizin, $this->uygulanmisMigrationlar());
+
+        return Response::success($response, $sonuc + ['rapor' => $prova->rapor($sonuc)]);
+    }
+
+    /**
+     * Bugünkü uygulanmış migration defteri — yedek provası kıyaslaması için.
+     *
+     * Okunamıyorsa BOŞ döner: prova bunu "karşılaştırma yapılmadı" diye ele
+     * alır. Boşu "hiç migration yok" saymak, her yedeği ileri sürüm gibi
+     * gösterirdi.
+     *
+     * @return list<string>
+     */
+    private function uygulanmisMigrationlar(): array
+    {
+        try {
+            $statement = $this->connection->pdo()->query('SELECT name FROM migrations ORDER BY name');
+
+            return $statement === false ? [] : array_map('strval', $statement->fetchAll(\PDO::FETCH_COLUMN));
+        } catch (Throwable) {
+            return [];
+        }
     }
 
     /**

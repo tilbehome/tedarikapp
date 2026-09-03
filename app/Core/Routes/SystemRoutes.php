@@ -58,6 +58,8 @@ final class SystemRoutes
             $group->post('/backup', [$system, 'backupCreate']);
             $group->get('/backups', [$system, 'backupList']);
             $group->get('/backups/{name}/file', [$system, 'backupDownload']);
+            // v1.2.2 B4: yedeği DOĞRULA — geri yükleme yapmaz, bakar.
+            $group->post('/backups/{name}/verify', [$system, 'backupVerify']);
         })
             ->add(new Csrf($services->session, $responseFactory))
             ->add(new Auth($services, $responseFactory));
