@@ -30,10 +30,13 @@ final class YedekSetiManifestTest extends TestCase
     /** @return array<string, mixed> */
     private function ornekParcalar(): array
     {
+        // `sira` + `toplam_parca`: parçaları birbirine BAĞLAYAN alanlar
+        // (PM ara hükmü, 3 Eyl). Gerçek bir sette her zaman bulunurlar;
+        // fikstür de bu yüzden onlarsız kurulmaz.
         return [
-            ['ad' => 'veritabani.sql.enc', 'tur' => 'sql', 'boyut' => 4096, 'sha256' => str_repeat('a', 64)],
-            ['ad' => 'ayarlar.files.enc', 'tur' => 'config', 'boyut' => 512, 'sha256' => str_repeat('b', 64)],
-            ['ad' => 'medya-001.zip.enc', 'tur' => 'medya', 'boyut' => 8192, 'sha256' => str_repeat('c', 64)],
+            ['ad' => 'veritabani.sql.enc', 'tur' => 'sql', 'sira' => 1, 'boyut' => 4096, 'sha256' => str_repeat('a', 64)],
+            ['ad' => 'ayarlar.files.enc', 'tur' => 'config', 'sira' => 2, 'boyut' => 512, 'sha256' => str_repeat('b', 64)],
+            ['ad' => 'medya-001.zip.enc', 'tur' => 'medya', 'sira' => 3, 'boyut' => 8192, 'sha256' => str_repeat('c', 64)],
         ];
     }
 
@@ -45,6 +48,7 @@ final class YedekSetiManifestTest extends TestCase
             'surum' => '1.2.2',
             'sifreleme' => 'aes-256-gcm',
             'parcalar' => $this->ornekParcalar(),
+            'toplam_parca' => count($this->ornekParcalar()),
             'migration_defteri' => ['0035_bildirimler', '0036_paylasim_anahtari_sifreli_alan'],
             'zorunlu_turler' => ['sql', 'config'],
         ], $ustyaz));
@@ -73,10 +77,13 @@ final class YedekSetiManifestTest extends TestCase
     {
         // Medya arşivi boyut sınırını aşabilir; o hâlde set "kısmi" olur ama
         // BAŞARISIZ olmaz — DB ve ayarlar geri yüklenebilir durumdadır.
-        $medyasiz = $this->manifest(['parcalar' => [
-            ['ad' => 'veritabani.sql.enc', 'tur' => 'sql', 'boyut' => 4096, 'sha256' => str_repeat('a', 64)],
-            ['ad' => 'ayarlar.files.enc', 'tur' => 'config', 'boyut' => 512, 'sha256' => str_repeat('b', 64)],
-        ]]);
+        $medyasiz = $this->manifest([
+            'parcalar' => [
+                ['ad' => 'veritabani.sql.enc', 'tur' => 'sql', 'sira' => 1, 'boyut' => 4096, 'sha256' => str_repeat('a', 64)],
+                ['ad' => 'ayarlar.files.enc', 'tur' => 'config', 'sira' => 2, 'boyut' => 512, 'sha256' => str_repeat('b', 64)],
+            ],
+            'toplam_parca' => 2,
+        ]);
 
         self::assertTrue($medyasiz->tamMi());
         self::assertTrue($medyasiz->kismiMi(), 'Medyasız set KISMİ olarak işaretlenmeli.');

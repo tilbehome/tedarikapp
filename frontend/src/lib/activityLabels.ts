@@ -66,6 +66,8 @@ const labels: Record<string, string> = {
   // hatta doğru bile değil ("Ceviri urun" bir eylem adı gibi durmuyor).
   // Yedek bir NEZAKET katmanıdır; kalıcı çözüm değildir.
   migrate_baseline: 'Veritabanı defteri gerçeğe eşitlendi',
+  app_key_revealed: 'Kurtarma anahtarı görüntülendi',
+  app_key_reveal_failed: 'Kurtarma anahtarı: şifre doğrulanamadı',
   backup_created: 'Yedek alındı',
   media_migrate: 'Görseller arşive taşındı',
   media_check: 'Görsel bütünlüğü denetlendi',

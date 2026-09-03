@@ -15,6 +15,10 @@ use PHPUnit\Framework\TestCase;
  * yedek değildir." Akış: verili tabloları yedekle → şifreyi çöz → BOŞ veritabanına
  * geri yükle → tablo ve satırların birebir geldiğini doğrula (smoke).
  *
+ * v1.2.2 B1: yedek artık DOSYA değil SET. Bu dosya ŞİFRELEME kanıtını taşımaya
+ * devam eder (düz metin sızmıyor, yanlış anahtar çözemiyor); uçtan uca geri
+ * yükleme provası — çok parçalı vaka dahil — YedekSetiGeriYuklemeTest'tedir.
+ *
  * @group mysql
  */
 #[Group('mysql')]
@@ -33,6 +37,12 @@ final class BackupRestoreTest extends TestCase
         $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         $this->scratchDir = sys_get_temp_dir() . '/yedek-' . bin2hex(random_bytes(4));
         mkdir($this->scratchDir . '/storage/backups', 0775, true);
+        // v1.2.2 B1: `config` zorunlu parçadır — ayarlarsız bir dökümden geri
+        // dönmek "veriler geldi ama uygulama açılmıyor" demektir. Gerçek
+        // kurulumda bu dosya her zaman bulunur.
+        file_put_contents($this->scratchDir . '/config.php', "<?php
+return ['APP_KEY' => 'prova'];
+");
     }
 
     protected function tearDown(): void
@@ -40,9 +50,13 @@ final class BackupRestoreTest extends TestCase
         foreach (['restore_kaynak', 'tedarikapp_restore_hedef'] as $db) {
             $this->pdo?->exec('DROP DATABASE IF EXISTS ' . $db);
         }
-        foreach (glob($this->scratchDir . '/storage/backups/*') ?: [] as $file) {
-            @unlink($file);
+        foreach (glob($this->scratchDir . '/storage/backups/*') ?: [] as $yol) {
+            foreach (glob($yol . '/*') ?: [] as $parca) {
+                @unlink($parca);
+            }
+            is_dir($yol) ? @rmdir($yol) : @unlink($yol);
         }
+        @unlink($this->scratchDir . '/config.php');
         parent::tearDown();
     }
 
@@ -60,13 +74,22 @@ final class BackupRestoreTest extends TestCase
 
         // ── 2) Yedekle (şifreli) ──
         $backup = $service->create();
-        self::assertGreaterThan(0, $backup['size']);
-        $path = $service->pathFor($backup['name']);
+        self::assertGreaterThan(0, $backup['toplam_bayt']);
+        $path = $service->parcaYolu(basename($backup['set_dizini']), 'veritabani.sql.enc');
         self::assertNotNull($path);
         $encrypted = (string) file_get_contents((string) $path);
         self::assertStringStartsWith('TDKBK1', $encrypted, 'Dosya imzalı şifreli biçimde olmalı.');
         self::assertStringNotContainsString('Termos', $encrypted, 'Düz metin SIZMAMALI — şifreleme kanıtı.');
-        self::assertSame($backup['sha256'], hash('sha256', $encrypted), 'Özet dosyayla eşleşmeli.');
+        // Özet artık SETİN MANİFESTİNDE durur: parçayı tarif eden şey, yanında
+        // duran bir alan değil, ait olduğu setin kaydıdır.
+        $manifest = \App\Services\Yedek\YedekManifesti::jsondan(
+            (string) file_get_contents($backup['set_dizini'] . '/MANIFEST.json'),
+        );
+        $sqlParcasi = array_values(array_filter(
+            $manifest->parcalar(),
+            static fn (array $p): bool => $p['tur'] === 'sql',
+        ))[0];
+        self::assertSame($sqlParcasi['sha256'], hash('sha256', $encrypted), 'Özet dosyayla eşleşmeli.');
 
         // ── 3) Çöz + BOŞ hedefe geri yükle ──
         $sql = $service->decrypt($encrypted);
@@ -94,7 +117,9 @@ final class BackupRestoreTest extends TestCase
 
         $service = new BackupService($this->configFor('restore_kaynak'), $this->scratchDir);
         $backup = $service->create();
-        $encrypted = (string) file_get_contents((string) $service->pathFor($backup['name']));
+        $encrypted = (string) file_get_contents(
+            (string) $service->parcaYolu(basename($backup['set_dizini']), 'veritabani.sql.enc'),
+        );
 
         $wrongKey = new BackupService($this->configFor('restore_kaynak', str_repeat('ab', 32)), $this->scratchDir);
 

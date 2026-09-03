@@ -226,6 +226,8 @@ final class AppBuilder
             $katalogDurumu,
             // A6-EK: "Yeniden çevir" düğmesi ürünleri MEVCUT çeviri kuyruğuna alır.
             $kuyruk,
+            // v1.2.2 B2: APP_KEY emaneti için şifre yeniden doğrulaması.
+            $services->passwords,
             $logger,
         );
         Routes\SystemRoutes::register($app, $system, $services, $responseFactory);

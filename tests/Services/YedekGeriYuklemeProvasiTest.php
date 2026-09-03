@@ -52,6 +52,9 @@ final class YedekGeriYuklemeProvasiTest extends TestCase
             $parcalar[] = [
                 'ad' => $ad,
                 'tur' => $tur,
+                // Parçaları bağlayan sıra (PM ara hükmü, 3 Eyl): gerçek yazıcı
+                // bunu eklenme anında sabitler, fikstür de aynısını yapar.
+                'sira' => count($parcalar) + 1,
                 'boyut' => strlen($icerik),
                 'sha256' => hash('sha256', $icerik),
             ];
@@ -64,6 +67,7 @@ final class YedekGeriYuklemeProvasiTest extends TestCase
                 'surum' => '1.2.2',
                 'sifreleme' => 'aes-256-gcm',
                 'parcalar' => $parcalar,
+                'toplam_parca' => count($parcalar),
                 'migration_defteri' => ['0035_bildirimler', '0036_paylasim_anahtari_sifreli_alan'],
             ], $ustyaz));
             file_put_contents($dizin . '/MANIFEST.json', $manifest->jsonOlarak());

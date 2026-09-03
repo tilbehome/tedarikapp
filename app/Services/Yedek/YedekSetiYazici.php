@@ -49,7 +49,7 @@ final class YedekSetiYazici
     /**
      * Yeni set açar (hazırlık dizini).
      *
-     * @return array{set_id: string, damga: string, hazirlik: string, parcalar: list<array{ad: string, tur: string, boyut: int, sha256: string}>}
+     * @return array{set_id: string, damga: string, hazirlik: string, parcalar: list<array{ad: string, tur: string, sira: int, boyut: int, sha256: string}>}
      */
     public function baslat(string $damga): array
     {
@@ -69,7 +69,7 @@ final class YedekSetiYazici
      * ÖZET GERÇEK İÇERİKTEN hesaplanır, çağırandan alınmaz: çağıranın verdiği
      * bir özet, yazım sırasında bozulan içeriği yakalayamazdı.
      *
-     * @param array{set_id: string, damga: string, hazirlik: string, parcalar: list<array{ad: string, tur: string, boyut: int, sha256: string}>} $set
+     * @param array{set_id: string, damga: string, hazirlik: string, parcalar: list<array{ad: string, tur: string, sira: int, boyut: int, sha256: string}>} $set
      */
     public function parcaEkle(array &$set, string $ad, string $tur, string $icerik): void
     {
@@ -79,9 +79,13 @@ final class YedekSetiYazici
         }
         @chmod($yol, 0o600);
 
+        // SIRA EKLENME ANINDA SABİTLENİR: parçalar zaten geri yükleme
+        // sırasında ekleniyor (sql → config → medya 001, 002...). Sırayı sonra
+        // dosya adından türetmek, adlandırma değişince sessizce bozulurdu.
         $set['parcalar'][] = [
             'ad' => $ad,
             'tur' => $tur,
+            'sira' => count($set['parcalar']) + 1,
             'boyut' => (int) filesize($yol),
             'sha256' => (string) hash_file('sha256', $yol),
         ];
@@ -93,7 +97,7 @@ final class YedekSetiYazici
      * DOĞRULAMA ÖNCE: zorunlu parçası olmayan bir set nihai ada HİÇ ulaşmaz.
      * Yarım seti "indirilebilir" yapmak, olmayan bir güvenceyi satmaktır.
      *
-     * @param  array{set_id: string, damga: string, hazirlik: string, parcalar: list<array{ad: string, tur: string, boyut: int, sha256: string}>} $set
+     * @param  array{set_id: string, damga: string, hazirlik: string, parcalar: list<array{ad: string, tur: string, sira: int, boyut: int, sha256: string}>} $set
      * @return string nihai dizin yolu
      */
     public function tamamla(array $set): string
@@ -104,6 +108,7 @@ final class YedekSetiYazici
             'surum' => $this->surum,
             'sifreleme' => $this->sifrelemeAdi,
             'parcalar' => $set['parcalar'],
+            'toplam_parca' => count($set['parcalar']),
             'migration_defteri' => $this->migrationDefteri,
         ]);
 

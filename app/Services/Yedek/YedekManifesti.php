@@ -26,6 +26,20 @@ use RuntimeException;
  * KISMİ ≠ BAŞARISIZ: medya arşivi boyut sınırını aşabilir. O hâlde set kısmi
  * olur ama başarısız olmaz; DB ve ayarlar geri yüklenebilir durumdadır.
  * İkisini aynı kefeye koymak, kullanılabilir bir yedeği çöpe attırırdı.
+ *
+ * PARÇALAR BİRBİRİNE BAĞLIDIR (PM ara hükmü, 3 Eyl): tam seti tek zip olarak
+ * indirmek YOK — panel parçaları tek tek sunuyor. O hâlde parçaları bir arada
+ * TUTAN şey manifest olmak zorundadır, yoksa kullanıcı beş parçanın üçünü
+ * indirir, geri yükler ve eksikliği ancak veriye baktığında fark eder. Bağlar:
+ *
+ *   • `sira`         — parçanın açılma sırası (medya 002, 001'den sonra),
+ *   • `toplam_parca` — sette KAÇ parça olduğu,
+ *   • `sha256`       — her parçanın kimliği.
+ *
+ * `toplam_parca` neden ayrı yazılır, elde olanı saymak niye yetmez: eksik olan
+ * parça manifestteki LİSTEDEN de düşmüş olabilir (manifest yazılırken hata,
+ * elle düzenleme, aktarımda bozulma). Beklenen sayı bağımsız bir tanık olarak
+ * durur; listeyi saymak yalnız listenin kendi kendisiyle tutarlılığını ölçer.
  */
 final class YedekManifesti
 {
@@ -46,8 +60,9 @@ final class YedekManifesti
      *     olusturuldu: string,
      *     surum: string,
      *     sifreleme: string,
-     *     parcalar: list<array{ad: string, tur: string, boyut: int, sha256: string}>,
+     *     parcalar: list<array{ad: string, tur: string, sira?: int, boyut: int, sha256: string}>,
      *     migration_defteri: list<string>,
+     *     toplam_parca?: int,
      *     zorunlu_turler?: list<string>
      * } $veri
      */
@@ -66,10 +81,39 @@ final class YedekManifesti
         return $this->veri['migration_defteri'];
     }
 
-    /** @return list<array{ad: string, tur: string, boyut: int, sha256: string}> */
+    /** @return list<array{ad: string, tur: string, sira?: int, boyut: int, sha256: string}> */
     public function parcalar(): array
     {
         return $this->veri['parcalar'];
+    }
+
+    /**
+     * Sette OLMASI GEREKEN parça sayısı.
+     *
+     * Manifest bunu yazmıyorsa 0 döner ve `eksikler()` seti reddeder — sayıyı
+     * listeden türetmek, bu alanın var oluş sebebini yok ederdi.
+     */
+    public function toplamParca(): int
+    {
+        return (int) ($this->veri['toplam_parca'] ?? 0);
+    }
+
+    /**
+     * Parçalar AÇILMA SIRASINDA.
+     *
+     * Geri yükleme bu sırayı izler: önce şema/veri (sql), sonra ayarlar, sonra
+     * medya arşivleri 001'den itibaren. Medyada sıra önemlidir — parçalar aynı
+     * ada sahip bir dosyanın farklı sürümlerini taşıyabilir ve sonuncusu
+     * kazanmalıdır.
+     *
+     * @return list<array{ad: string, tur: string, sira?: int, boyut: int, sha256: string}>
+     */
+    public function siraliParcalar(): array
+    {
+        $parcalar = $this->parcalar();
+        usort($parcalar, static fn (array $a, array $b): int => ($a['sira'] ?? 0) <=> ($b['sira'] ?? 0));
+
+        return $parcalar;
     }
 
     /**
@@ -104,10 +148,75 @@ final class YedekManifesti
             }
         }
 
+        foreach ($this->parcaBaglari() as $sorun) {
+            $sorunlar[] = $sorun;
+        }
+
         /** @var list<string> $tekil */
         $tekil = array_values(array_unique($sorunlar));
 
         return $tekil;
+    }
+
+    /**
+     * PARÇALARI BAĞLAYAN denetimler: sayı, sıra, boşluk.
+     *
+     * Hepsi FAIL-CLOSED'dur. Bir sette bu bağlardan biri kurulamıyorsa set
+     * "belki tamdır" değil, GEÇERSİZDİR: geri yüklenebilirliğinden emin
+     * olamadığımız bir yedeği geri yüklenebilir saymak, yedeğin olmamasından
+     * daha tehlikelidir — çünkü ona güvenip başka önlem almazsınız.
+     *
+     * @return list<string>
+     */
+    private function parcaBaglari(): array
+    {
+        $sorunlar = [];
+        $parcalar = $this->parcalar();
+        $beklenen = $this->toplamParca();
+
+        if ($beklenen <= 0) {
+            return ['toplam parça sayısı manifestte yok'];
+        }
+        if ($beklenen !== count($parcalar)) {
+            $sorunlar[] = sprintf(
+                'toplam parça uyuşmuyor (manifest %d diyor, listede %d parça var)',
+                $beklenen,
+                count($parcalar),
+            );
+        }
+
+        $siralar = [];
+        foreach ($parcalar as $parca) {
+            if (!isset($parca['sira'])) {
+                // Sırasız parça, bu bağdan ÖNCE yazılmış bir setten gelir.
+                // Sessizce kabul etmek, sıralamanın hiç garanti edilmediği bir
+                // seti geri yüklenebilir saymak olurdu.
+                $sorunlar[] = $parca['ad'] . ' (sıra numarası yok)';
+
+                continue;
+            }
+            $siralar[] = (int) $parca['sira'];
+        }
+
+        if (count($siralar) !== count(array_unique($siralar))) {
+            $sorunlar[] = 'sıra numarası tekrarlanıyor';
+        }
+        // 1..N kesintisiz olmalı: 1,2,3,5 dizisi dört dosyayla da oluşabilir
+        // ve dosya SAYMAK bunu yakalayamaz — dördüncü parça eksiktir.
+        if ($siralar !== [] && $this->kesintisizDegil($siralar, $beklenen)) {
+            $sorunlar[] = 'parça sıraları 1..' . $beklenen . ' aralığında kesintisiz değil';
+        }
+
+        return $sorunlar;
+    }
+
+    /** @param list<int> $siralar */
+    private function kesintisizDegil(array $siralar, int $beklenen): bool
+    {
+        $benzersiz = array_values(array_unique($siralar));
+        sort($benzersiz);
+
+        return $benzersiz !== range(1, count($benzersiz)) || count($benzersiz) !== $beklenen;
     }
 
     public function tamMi(): bool

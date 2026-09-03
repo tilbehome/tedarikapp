@@ -60,6 +60,8 @@ final class SystemRoutes
             $group->get('/backups/{name}/file', [$system, 'backupDownload']);
             // v1.2.2 B4: yedeği DOĞRULA — geri yükleme yapmaz, bakar.
             $group->post('/backups/{name}/verify', [$system, 'backupVerify']);
+            // v1.2.2 B2: APP_KEY emaneti — şifre yeniden istenir (uçta doğrulanır).
+            $group->post('/app-key/reveal', [$system, 'appKeyReveal']);
         })
             ->add(new Csrf($services->session, $responseFactory))
             ->add(new Auth($services, $responseFactory));

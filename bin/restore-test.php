@@ -6,7 +6,7 @@ declare(strict_types=1);
  * GERİ YÜKLEME TATBİKATI (İE#14 D2) — yalnızca CLI.
  *
  * "Yedek alınıyor" demek "geri yüklenebiliyor" demek DEĞİLDİR. Bu betik bunu
- * kanıtlar: şifreli bir `.sql.enc` yedeğini çözer, GEÇİCİ bir veritabanına yükler,
+ * kanıtlar: bir yedek SETİNİ provadan geçirir, GEÇİCİ bir veritabanına yükler,
  * tablo ve satır sayılarını raporlar, sonra o geçici veritabanını DÜŞÜRÜR.
  *
  * CANLI VERİTABANINA DOKUNMAZ — bu bir güvenlik şartıdır, tercih değil:
@@ -16,7 +16,7 @@ declare(strict_types=1);
  *
  * Kullanım:
  *   php bin/restore-test.php                       → en yeni yedeği dener
- *   php bin/restore-test.php yedek-20260821-030004.sql.enc
+ *   php bin/restore-test.php set-20260821-030004
  *   php bin/restore-test.php --tut                 → geçici veritabanını SİLMEZ (inceleme)
  *
  * Çıkış kodu: 0 tatbikat başarılı · 1 başarısız (yedek bozuk/erişilemez/yükleme hatası).
@@ -25,6 +25,7 @@ declare(strict_types=1);
 use App\Core\Config;
 use App\Core\Database;
 use App\Services\BackupService;
+use App\Services\Yedek\YedekGeriYukleyici;
 
 if (PHP_SAPI !== 'cli') {
     http_response_code(403);
@@ -66,24 +67,28 @@ try {
 
     $service = new BackupService($config, $basePath);
 
-    // ── 1) Yedek dosyasını seç
+    // ── 1) Yedek SETİNİ seç (v1.2.2 B1: yedek artık dosya değil, set)
     $liste = $service->list();
     if ($liste === []) {
         throw new RuntimeException('storage/backups altında yedek yok — önce `php bin/backup.php` koşun.');
     }
-    $ad = $istenenAd ?? (string) $liste[0]['name'];
-    $path = $service->pathFor($ad);
-    if ($path === null || !is_file($path)) {
-        throw new RuntimeException('Yedek bulunamadı: ' . $ad);
+    $setAdi = $istenenAd ?? (string) $liste[0]['name'];
+    $setDizini = $service->pathFor($setAdi);
+    if ($setDizini === null || !is_dir($setDizini)) {
+        throw new RuntimeException('Yedek seti bulunamadı: ' . $setAdi);
     }
-    echo 'YEDEK  : ' . $ad . ' (' . number_format((int) filesize($path) / 1048576, 2) . " MB)\n";
 
-    // ── 2) Çöz (APP_KEY yanlışsa burada patlar — tatbikatın ilk kazanımı budur)
-    $sql = $service->decrypt((string) file_get_contents($path));
-    if (trim($sql) === '') {
-        throw new RuntimeException('Yedek çözüldü ama İÇİ BOŞ — bu yedek işe yaramaz.');
-    }
-    echo 'ÇÖZÜM  : tamam (' . number_format(strlen($sql) / 1048576, 2) . " MB SQL)\n";
+    // ── 2) KAPI: prova geçmeden tek parça bile açılmaz
+    // Tatbikat geçici bir veritabanına yazsa da kapı aynıdır: kısmi bir set
+    // "tatbikat başarılı" raporu üretirse o rapor yalan söyler ve asıl
+    // felaket gününde ona güvenilir. APP_KEY yanlışsa da burada patlar —
+    // tatbikatın ilk kazanımı hep buydu.
+    $geriYukleyici = new YedekGeriYukleyici($service);
+    $manifest = $geriYukleyici->kapiyiAc($setDizini);
+    $ozet = $manifest->ozet();
+    echo 'SET    : ' . $setAdi . ' (' . $ozet['parca_sayisi'] . ' parça, '
+        . number_format($ozet['toplam_bayt'] / 1048576, 2) . " MB)" . PHP_EOL;
+    echo "PROVA  : manifest ve parça özetleri tuttu." . PHP_EOL;
 
     // ── 3) Geçici veritabanı adı — canlıya ASLA eşit olamaz
     $canliAd = (string) $config->get('DB_NAME', '');
@@ -101,27 +106,23 @@ try {
     $pdo->exec('USE `' . $geciciAd . '`');
     echo 'HEDEF  : ' . $geciciAd . " (geçici, koşu sonunda düşürülür)\n";
 
-    // ── 4) Dökümü yükle
+    // ── 4) Dökümü yükle — CANLIYLA AYNI KOD YOLU
+    // Tatbikat, gerçek geri yüklemeden başka bir yoldan yükleseydi neyi
+    // provaya çektiğimiz belirsizleşirdi: yeşil bir tatbikat, kırmızı bir
+    // gerçek geri yüklemeyi gizleyebilirdi.
     $baslangic = microtime(true);
-    $pdo->exec($sql);
+    $sayim = $geriYukleyici->veritabaniniYukle($pdo, $setDizini, $manifest);
     $sure = microtime(true) - $baslangic;
 
     // ── 5) Tablo ve satır sayıları — "yüklendi" demek yetmez, İÇİNDE NE VAR?
-    $tablolar = $pdo->query('SHOW TABLES')->fetchAll(PDO::FETCH_COLUMN) ?: [];
-    if ($tablolar === []) {
+    if ($sayim['tablo_sayisi'] === 0) {
         throw new RuntimeException('Yükleme bitti ama TABLO YOK — yedek kullanılamaz.');
     }
 
-    $toplamSatir = 0;
+    $toplamSatir = $sayim['satir_sayisi'];
     $rapor = [];
-    foreach ($tablolar as $tablo) {
-        $tablo = (string) $tablo;
-        if (!preg_match('/^[A-Za-z0-9_]+$/', $tablo)) {
-            continue; // beklenmeyen ad — sayma, sorguya da sokma
-        }
-        $sayi = (int) $pdo->query('SELECT COUNT(*) FROM `' . $tablo . '`')->fetchColumn();
-        $toplamSatir += $sayi;
-        $rapor[] = ['tablo' => $tablo, 'satir' => $sayi];
+    foreach ($sayim['tablolar'] as $tablo => $satir) {
+        $rapor[] = ['tablo' => (string) $tablo, 'satir' => $satir];
     }
 
     echo "\nTABLOLAR (" . count($rapor) . "):\n";

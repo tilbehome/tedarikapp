@@ -33,6 +33,7 @@
             <exclude>tests/Http</exclude>
         </testsuite>
         <testsuite name="http-1">
+            <file>tests/Http/AppKeyEmanetiTest.php</file>
             <file>tests/Http/DataLayerEndpointsTest.php</file>
             <file>tests/Http/HealthEndpointTest.php</file>
             <file>tests/Http/ListDuplicateNamingTest.php</file>

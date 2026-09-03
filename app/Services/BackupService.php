@@ -202,7 +202,7 @@ final class BackupService
      * sınırı aşan bir görsel) o dosya atlanır ve durum raporlanır — sessizce
      * kaybolmaz.
      *
-     * @param array{set_id: string, damga: string, hazirlik: string, parcalar: list<array{ad: string, tur: string, boyut: int, sha256: string}>} $set
+     * @param array{set_id: string, damga: string, hazirlik: string, parcalar: list<array{ad: string, tur: string, sira: int, boyut: int, sha256: string}>} $set
      * @return array{dosya_sayisi: int, toplam_bayt: int, atlandi: bool}
      */
     private function medyaParcalari(array &$set, \App\Services\Yedek\YedekSetiYazici $yazici): array
@@ -378,7 +378,7 @@ final class BackupService
      * Yarım setler (`.hazirlik-*`) BURADA GÖRÜNMEZ: listede yer alan her satır,
      * kullanıcının "yedeğim var" diye güvendiği bir şeydir.
      *
-     * @return list<array{name: string, set_id: string, size: int, created_at: string, tam: bool, kismi: bool, parca_sayisi: int}>
+     * @return list<array{name: string, set_id: string, size: int, created_at: string, tam: bool, kismi: bool, parca_sayisi: int, parcalar: list<array{ad: string, tur: string, sira?: int, boyut: int, sha256: string}>}>
      */
     public function list(): array
     {
@@ -407,6 +407,11 @@ final class BackupService
                 'tam' => $ozet['tam'],
                 'kismi' => $ozet['kismi'],
                 'parca_sayisi' => $ozet['parca_sayisi'],
+                // B4: parçalar SIRALI ve SHA'lariyla birlikte gider.
+                // "Tümünü zip indir" düğmesi olmadığına göre, hangi dosyaları
+                // indirmesi gerektiği ve indirdiğinin sağlam olup olmadığı artık
+                // KULLANICININ sorusudur; panel bu soruyu yanıtlayabilmeli.
+                'parcalar' => $manifest->siraliParcalar(),
             ];
         }
 

@@ -47,6 +47,10 @@ final class SystemController
         // kuyruğa alır. Kuyruk yoksa kart yalnız SAYIYI gösterir — düğme
         // olmayan bir kuyruğa iş atmaz.
         private readonly ?\App\Services\Kuyruk\JobQueue $kuyruk = null,
+        // v1.2.2 B2: APP_KEY emaneti ŞİFRE YENİDEN sorar — girişli oturum tek
+        // başına yetmez. Doğrulayıcı dışarıdan verilir; controller'ın kendi
+        // karşılaştırmasını yazması, iki farklı doğrulama yolu demek olurdu.
+        private readonly ?\App\Auth\PasswordHasher $passwords = null,
         /** C4/F: gizlenen hataların ayrıntısı yalnız günlüğe. */
         private readonly ?\Psr\Log\LoggerInterface $logger = null,
     ) {
@@ -221,6 +225,105 @@ final class SystemController
         $sonuc = $prova->dogrula($dizin, $this->uygulanmisMigrationlar());
 
         return Response::success($response, $sonuc + ['rapor' => $prova->rapor($sonuc)]);
+    }
+
+    /**
+     * POST /api/system/app-key/reveal — APP_KEY EMANETİ (v1.2.2 B2).
+     *
+     * NEDEN VAR: yedekler APP_KEY ile şifrelenir ve anahtar sunucuda durur.
+     * Sunucu tamamen giderse elinizde açılamayan şifreli dosyalar kalır —
+     * yedeğin var olması hiçbir şey ifade etmez. Anahtarın sunucu DIŞINDA bir
+     * kopyası olmadan "yedeğim var" cümlesi eksiktir.
+     *
+     * NEDEN ŞİFRE YENİDEN SORULUR: bu uç yıkıcı değil, SIZDIRICIDIR. Anahtarı
+     * gören kişi bütün yedekleri açabilir. Açık bir oturumu ele geçiren biri
+     * (paylaşılan bilgisayar, çalınan çerez) şifreyi bilmez; ikinci kapı tam
+     * olarak bu boşluğu kapatır.
+     *
+     * HATA MESAJI SABİTTİR (K51): "şifre yanlış" ile "kullanıcı bulunamadı"
+     * arasındaki fark, saldırgana bilgi verir.
+     */
+    public function appKeyReveal(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        $user = $this->authenticatedUser($request);
+        if ($this->appConfig === null || $this->passwords === null) {
+            return Response::error($response, 'SERVER_ERROR', 'Yapılandırma erişilemiyor.', 500);
+        }
+
+        /** @var array<string, mixed> $body */
+        $body = (array) ($request->getParsedBody() ?? []);
+        $sifre = is_string($body['password'] ?? null) ? $body['password'] : '';
+        if ($sifre === '') {
+            return Response::error($response, 'VALIDATION', 'Doğrulama hatası', 422, [
+                'password' => 'Anahtarı görmek için şifrenizi yeniden girin.',
+            ]);
+        }
+
+        $ip = ClientIp::from($request);
+        $simdi = $this->clock->now();
+
+        if (!$this->passwords->verify($sifre, $user->passwordHash)) {
+            (new ActivityLog($this->connection))->record(
+                'system',
+                null,
+                ActivityLog::APP_KEY_REVEAL_FAILED,
+                $user->email . ': şifre doğrulanamadı',
+                $ip,
+                $simdi,
+                ActivityLog::ACTOR_ADMIN,
+                $user->id,
+            );
+
+            return Response::error($response, 'UNAUTHENTICATED', 'Şifre doğrulanamadı.', 401);
+        }
+
+        (new ActivityLog($this->connection))->record(
+            'system',
+            null,
+            ActivityLog::APP_KEY_REVEALED,
+            $user->email . ': kurtarma anahtarı görüntülendi',
+            $ip,
+            $simdi,
+            ActivityLog::ACTOR_ADMIN,
+            $user->id,
+        );
+
+        return Response::success($response, [
+            'app_key' => (string) $this->appConfig->get('APP_KEY'),
+            'kurtarma_metni' => $this->kurtarmaMetni(),
+        ]);
+    }
+
+    /**
+     * Anahtarla BİRLİKTE giden kurtarma yönergesi.
+     *
+     * Anahtarı bir kasaya koyup yönergeyi başka yerde bırakmak, felaket
+     * gününde yönergeye bakılmayacağı anlamına gelir. İkisi tek metin olarak
+     * iner; anahtarı saklayan, onunla ne yapacağını da saklamış olur.
+     */
+    private function kurtarmaMetni(): string
+    {
+        return implode(PHP_EOL, [
+            'TEDARIKAPP — KURTARMA ANAHTARI VE YÖNERGESİ',
+            '',
+            'Bu anahtar yedek setlerinizi açan tek şeydir. Sunucu tamamen',
+            'kaybolursa (hesap kapanması, disk arızası, sağlayıcı değişikliği)',
+            'yedekleriniz bu anahtar olmadan AÇILAMAZ.',
+            '',
+            'SAKLAMA: bu metni sunucudan BAŞKA bir yerde tutun — parola',
+            'yöneticisi, kasa ya da basılı kopya. Aynı sunucuda tutmak, hiç',
+            'saklamamakla aynı kapıya çıkar.',
+            '',
+            'GERİ YÜKLEME:',
+            '  1. Uygulamayı yeni sunucuya kurun.',
+            '  2. config.php içindeki APP_KEY değerini bu anahtarla değiştirin.',
+            '  3. Yedek setini storage/backups altına kopyalayın.',
+            '  4. php bin/restore.php <set-adi>            (kuru koşu, yazmaz)',
+            '  5. php bin/restore.php <set-adi> --onayla   (gerçek geri yükleme)',
+            '',
+            'Set bozuk ya da eksik parçalıysa geri yükleme BAŞLAMADAN durur;',
+            'yarım bir yedek sağlam veritabanının üstüne yazılmaz.',
+        ]);
     }
 
     /**

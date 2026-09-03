@@ -37,6 +37,11 @@ final class ActivityLog
     public const REMEMBER_REVOKED = 'remember_revoked';
     public const USER_CREATED = 'user_created';
 
+    // v1.2.2 B2 — APP_KEY emaneti. Başarılı ve BAŞARISIZ deneme ayrı ayrı
+    // yazılır: anahtarı almaya çalışan birinin izi, alanınki kadar değerlidir.
+    public const APP_KEY_REVEALED = 'app_key_revealed';
+    public const APP_KEY_REVEAL_FAILED = 'app_key_reveal_failed';
+
     public function __construct(
         private readonly Connection $connection,
         private readonly ?RequestContext $requestContext = null,
