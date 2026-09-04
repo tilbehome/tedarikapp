@@ -157,6 +157,19 @@ final class AppBuilder
         // ölü rafına atardı.
         // A3: HTTP kompozisyonunda da SAAT taşınır — panel ziyaretinde açılan
         // tur da uzun sürebilir ve her geçiş kendi anını okumalıdır.
+        // D1: MedyaService kuyruk işleyicilerinden ÖNCE kurulur — medya işi
+        // kompoze servisi (ve testte sahte indiriciyi) kullanır.
+        $allowedHosts = array_map('trim', explode(',', $config->get('MEDIA_ALLOWED_HOSTS', 'alicdn.com,1688.com')));
+        $urlGuard = new UrlGuard($allowedHosts);
+        $mediaService ??= new MediaService(
+            $basePath,
+            $urlGuard,
+            $mediaFetcher ?? new CurlMediaFetcher($urlGuard, $config->getPositiveInt('MEDIA_DOWNLOAD_TIMEOUT', 25)),
+            $settingsRepository,
+            $config->getPositiveInt('MEDIA_MAX_MB', 8) * 1024 * 1024,
+            $config->get('MEDIA_PATH', 'public/media'),
+        );
+
         $kuyruk = new \App\Services\Kuyruk\JobQueue($connection, $services->bildirim);
         // D6: devre kesici — tür bazlı, ayarlar tablosunda; panel turu da cron
         // turu da AYNI kesiciyi görür (süreç belleğinde olsaydı her tur sıfırlanırdı).
@@ -180,6 +193,7 @@ final class AppBuilder
             $basePath,
             $services->clock,
             $services->bildirim,
+            medyaServisi: $mediaService,
         );
         $kuyrukTetikleyici = new \App\Services\Kuyruk\KuyrukTetikleyici(
             $kuyrukKosucusu,
@@ -210,17 +224,6 @@ final class AppBuilder
         $validator = new InputValidator($money);
         $stateMachine = new StateMachine();
         $mutationPolicy = new ListMutationPolicy();
-
-        $allowedHosts = array_map('trim', explode(',', $config->get('MEDIA_ALLOWED_HOSTS', 'alicdn.com,1688.com')));
-        $urlGuard = new UrlGuard($allowedHosts);
-        $mediaService ??= new MediaService(
-            $basePath,
-            $urlGuard,
-            $mediaFetcher ?? new CurlMediaFetcher($urlGuard, $config->getPositiveInt('MEDIA_DOWNLOAD_TIMEOUT', 25)),
-            $settingsRepository,
-            $config->getPositiveInt('MEDIA_MAX_MB', 8) * 1024 * 1024,
-            $config->get('MEDIA_PATH', 'public/media'),
-        );
 
         // Güncelleme yolu (İE#5 §12): kurulum kilitlendikten sonra migration koşmanın
         // kimlik doğrulamalı yolu. Yazma ucu ayrıca CSRF ister.
