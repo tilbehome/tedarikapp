@@ -20,6 +20,11 @@ const labels: Record<string, string> = {
   remember_login: 'Hatırlanan cihazdan giriş',
   remember_theft: 'Şüpheli hatırlama kaydı iptal edildi',
   remember_revoked: 'Cihaz oturumu kapatıldı',
+  round_drafted: 'Teklif turu taslağı açıldı',
+  round_sent: 'Teklif turu firmaya gönderildi',
+  round_approved: 'Teklif onaylandı',
+  round_abandoned: 'Teklif turundan vazgeçildi',
+  round_revision_requested: 'Teklif için revizyon istendi',
   user_created: 'Kullanıcı oluşturuldu',
 
   list_created: 'Liste oluşturuldu',

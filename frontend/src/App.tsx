@@ -11,6 +11,7 @@ import LoginScreen from './screens/LoginScreen';
 import HomeScreen from './screens/HomeScreen';
 import ListsScreen from './screens/ListsScreen';
 import ListDetailScreen from './screens/ListDetailScreen';
+import TekliflerScreen from './screens/TekliflerScreen';
 import ProductFormScreen from './screens/ProductFormScreen';
 import SettingsScreen from './screens/SettingsScreen';
 import CategoriesScreen from './screens/CategoriesScreen';
@@ -85,6 +86,7 @@ export default function App() {
         <Route path="/kesif" element={<KesifScreen />} />
         <Route path="/listeler" element={<ListsScreen />} />
         <Route path="/listeler/:id" element={<ListDetailScreen />} />
+        <Route path="/teklifler" element={<TekliflerScreen />} />
         <Route path="/listeler/:id/urun/yeni" element={<ProductFormScreen />} />
         <Route path="/listeler/:id/urun/:productId" element={<ProductFormScreen />} />
         <Route path="/ayarlar" element={<SettingsScreen />} />

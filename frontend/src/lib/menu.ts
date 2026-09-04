@@ -72,7 +72,7 @@ const tumGruplar: MenuGrubu[] = [
   {
     baslik: 'TEDARİK',
     ogeler: [
-      { to: '/teklifler', label: 'Teklifler', icon: FileText, hazir: false, bolum: 'Tedarik' },
+      { to: '/teklifler', label: 'Teklifler', icon: FileText, hazir: true, bolum: 'Tedarik' },
       { to: '/siparisler', label: 'Siparişler', icon: ShoppingCart, hazir: false, bolum: 'Tedarik' },
       { to: '/sevkiyat', label: 'Sevkiyat', icon: Truck, hazir: false, bolum: 'Tedarik' },
     ],

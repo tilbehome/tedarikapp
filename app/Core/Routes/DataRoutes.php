@@ -63,6 +63,8 @@ final class DataRoutes
         \App\Controllers\SurumNotuController $surumNotuController,
         // V3-B F2: panel içi günlük görüntüleyici (Ayarlar > 16).
         \App\Controllers\GunlukController $gunlukController,
+        // V3-C Aşama 2.1: teklif turu + firma uçları (sahip tarafı).
+        ?\App\Controllers\TeklifTuruController $teklifTuru = null,
     ): void {
         // İE#19 G7 — AKTİVİTE DEFTERİ BİLEREK KAPI DIŞINDA.
         //
@@ -145,7 +147,24 @@ final class DataRoutes
             // güncelleme olduğunu anlayamıyordu.
             ->add(new MigrationGuard($connection, $migrationsDir, $responseFactory));
 
-        $app->group('/api', static function (RouteCollectorProxy $group) use ($listController, $productController, $trashController, $exportController, $shareController, $inboxController, $translationController): void {
+        $app->group('/api', static function (RouteCollectorProxy $group) use ($listController, $productController, $trashController, $exportController, $shareController, $inboxController, $translationController, $teklifTuru): void {
+            // V3-C Aşama 2.1 — TEKLİF TURU (liste × firma × tur, K103). Her geçiş
+            // kendi eylem ucudur; sahibin elle durum yazma yolu YOKTUR (VIEWED
+            // bir gözlemdir). Tam token + anahtar yalnız gönderim yanıtında.
+            if ($teklifTuru !== null) {
+                $group->get('/firmalar', [$teklifTuru, 'firmalar']);
+                $group->post('/firmalar', [$teklifTuru, 'firmaOlustur']);
+                $group->get('/teklifler', [$teklifTuru, 'teklifler']);
+                $group->get('/lists/{id}/turlar', [$teklifTuru, 'listeninTurlari']);
+                $group->post('/lists/{id}/turlar', [$teklifTuru, 'ac']);
+                $group->get('/lists/{id}/gonderim-gunlugu', [$teklifTuru, 'gonderimGunlugu']);
+                $group->get('/turlar/{id}', [$teklifTuru, 'goster']);
+                $group->post('/turlar/{id}/gonder', [$teklifTuru, 'gonder']);
+                $group->post('/turlar/{id}/onayla', [$teklifTuru, 'onayla']);
+                $group->post('/turlar/{id}/vazgec', [$teklifTuru, 'vazgec']);
+                $group->post('/turlar/{id}/revizyon', [$teklifTuru, 'revizyon']);
+            }
+
             $group->get('/lists', [$listController, 'index']);
             $group->post('/lists', [$listController, 'store']);
             $group->get('/lists/{id}', [$listController, 'show']);

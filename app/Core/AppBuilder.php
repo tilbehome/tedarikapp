@@ -313,6 +313,32 @@ final class AppBuilder
             $shareDepo,
         );
 
+        // V3-C Aşama 2.1: teklif turu servisi — snapshot + kur dörtlüsü + tur paylaşımı.
+        $teklifTuruDepo = new \App\Models\TeklifTuruRepository($connection);
+        $firmaDepo = new \App\Models\FirmaRepository($connection);
+        $teklifTuruController = new \App\Controllers\TeklifTuruController(
+            new \App\Services\Tur\TeklifTuruServisi(
+                $connection,
+                $teklifTuruDepo,
+                $firmaDepo,
+                $lists,
+                $products,
+                $shareDepo,
+                new \App\Services\Share\ShareKeyService($shareDepo, (string) $config->get('APP_KEY', '')),
+                $settingsRepository,
+                new \App\Models\RateSnapshotRepository($connection),
+                $services->activity,
+                new \App\Services\Tur\TurDurumMakinesi(),
+                $adCozumleyici,
+                $services->bildirim,
+            ),
+            $teklifTuruDepo,
+            $firmaDepo,
+            $shareDepo,
+            $services->clock,
+            $config,
+        );
+
         // İE#11 Faz 3: eklenti uçları — Bearer + CORS allowlist + hız sınırı (ExtensionAuth).
         $inboxRepository = new \App\Models\InboxRepository($connection);
         $captureService = new \App\Services\CaptureService($connection, $lists, $products, $mediaService, $validator);
@@ -483,6 +509,8 @@ final class AppBuilder
             ),
             new \App\Controllers\SurumNotuController($settingsRepository, $basePath),
             new \App\Controllers\GunlukController($connection, $services->timezone),
+            // V3-C Aşama 2.1: teklif turu uçları.
+            $teklifTuruController,
         );
 
         // Panel (İE#8 §5): Vite çıktısı public/panel/ altındadır. Var olan dosyaları

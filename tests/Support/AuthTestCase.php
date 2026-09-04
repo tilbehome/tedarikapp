@@ -525,6 +525,10 @@ abstract class AuthTestCase extends TestCase
             // düğmesi iş yazar; iş yazılamıyorsa uç test edilmiş sayılmaz.
             '0024_create_jobs',
             '0028_kuyruk_sertlestirme',
+            // V3-C Aşama 2.1: firma × tur tabloları (0036) ve belgeler/şablonlar
+            // (0039) — teklif turu uçları her HTTP testinde bu şemayı bulmalı.
+            '0036_firmalar_ve_turlar',
+            '0039_belgeler_ve_sablonlar',
         ] as $ad) {
             /** @var \App\Core\Migration $migration */
             $migration = require dirname(__DIR__, 2) . '/migrations/' . $ad . '.php';

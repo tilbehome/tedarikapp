@@ -295,3 +295,79 @@ export interface Paginated<T> {
   per_page: number;
   total: number;
 }
+
+/** V3-C Aşama 2.1 — teklif turu durumları (#15 §2; tur numarası ayrı taşınır). */
+export type TeklifTuruDurumu =
+  | 'DRAFT'
+  | 'SENT'
+  | 'VIEWED'
+  | 'PRICING'
+  | 'RESPONDED'
+  | 'REVISION_REQUESTED'
+  | 'APPROVED'
+  | 'ABANDONED'
+  | 'EXPIRED'
+  | 'REVOKED';
+
+/** Firma (suppliers) — çekirdek; Firmalar & Kişiler modülü ilerideki fazda. */
+export interface Firma {
+  id: number;
+  ad: string;
+  varsayilan_dil: 'tr' | 'en' | 'zh';
+  tip?: string;
+  ulke?: string | null;
+  platform?: string | null;
+  varsayilan_gecerlilik_gun?: number | null;
+  whatsapp?: string | null;
+  eposta?: string | null;
+  notlar?: string | null;
+  created_at?: string;
+}
+
+/**
+ * Teklif turu — birim `liste × firma × tur` (K103). `etiket` sunucuda
+ * birleştirilir ("R2 gönderildi"); `kur` KOPYADIR, referans değil (K104).
+ */
+export interface TeklifTuru {
+  id: number;
+  list_id: number;
+  liste_adi: string;
+  supplier_id: number;
+  firma_adi: string;
+  tur_no: number;
+  parent_round_id: number | null;
+  state: TeklifTuruDurumu;
+  etiket: string;
+  cikti_terimi: string;
+  nihai: boolean;
+  state_reason: string | null;
+  rfq_snapshot_id: number | null;
+  rate_snapshot_id: number | null;
+  rate_policy: 'inherit' | 'refresh';
+  kur: { para_birimi: string | null; deger: string | null; kaynak: string | null; kilit_at: string | null };
+  share_id: number | null;
+  gecerlilik_gun: number | null;
+  valid_until: string | null;
+  portal_dili: string;
+  /** Firma link'i en az bir kez açtı mı — sahip bunu YAZAMAZ, gözlemdir. */
+  goruntulendi: boolean;
+  /** Gönderimden bu yana geçen gün; nihai/gönderilmemiş turda null. */
+  bekleme_gun: number | null;
+  drafted_at: string | null;
+  sent_at: string | null;
+  first_viewed_at: string | null;
+  responded_at: string | null;
+  approved_at: string | null;
+  revision_requested_at: string | null;
+  partial_submission_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+/** Gönderim yanıtı: tam token + 6 haneli anahtar YALNIZ burada döner (K51). */
+export interface TurGonderimSonucu extends TeklifTuru {
+  share_url: string;
+  share_token: string;
+  erisim_anahtari: string;
+  satir_sayisi: number;
+}

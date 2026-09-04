@@ -250,7 +250,7 @@ final class ShareRepository
     {
         $limit = max(1, min(200, $limit));
         $statement = $this->connection->pdo()->prepare(
-            'SELECT d.id, d.kanal, d.alici, d.dil, d.not_metni, d.created_at, s.token_prefix
+            'SELECT d.id, d.supplier_round_id, d.kanal, d.alici, d.dil, d.not_metni, d.created_at, s.token_prefix
              FROM share_dispatch_log d
              JOIN shares s ON s.id = d.share_id
              WHERE s.list_id = :liste

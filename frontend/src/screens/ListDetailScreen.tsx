@@ -11,6 +11,7 @@ import UrunCekmecesi from './liste/UrunCekmecesi';
 import PaylasPenceresi from './liste/PaylasPenceresi';
 import TopluEylemCubugu from './liste/TopluEylemCubugu';
 import TabloDenetimleri from './liste/TabloDenetimleri';
+import TeklifTurlari from './liste/TeklifTurlari';
 import { tercihOku, tercihYaz, type TabloTercihi } from '../lib/tabloTercihi';
 import { type EksikAlan, eksikAlanlar } from '../lib/eksikler';
 import { useSuzgecSecimi } from '../lib/secim';
@@ -288,6 +289,10 @@ export default function ListDetailScreen() {
       )}
 
       <OzetSeridi liste={list} urunler={tumUrunler} />
+
+      {/* V3-C Aşama 2.1: teklif turları — liste × firma × tur. Yol haritası
+          §7.4 sekmeler ("Teklif turları"); ilk adımda bölüm olarak durur. */}
+      <TeklifTurlari listId={listId} listeKapali={list.status === 'completed' || list.status === 'cancelled'} />
 
       <UyariCipleri
         urunler={tumUrunler}

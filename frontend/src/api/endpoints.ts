@@ -14,6 +14,9 @@ import type {
   User,
   UrunCekmecesiVerisi,
   Visibility,
+  TeklifTuru,
+  TurGonderimSonucu,
+  Firma,
 } from './types';
 
 /**
@@ -452,6 +455,31 @@ export const system = {
   migrateBaseline: () =>
     api.post<{ recorded: string[]; skipped: { name: string; reason: string }[]; pending_count: number }>(
       '/api/system/migrate-baseline',
+    ),
+};
+
+/**
+ * V3-C Aşama 2.1 — teklif turları (sahip tarafı). Her geçiş KENDİ ucudur;
+ * sahibin elle durum yazma yolu yoktur (VIEWED bir gözlemdir).
+ */
+export const teklifler = {
+  hepsi: () => api.get<{ acik: TeklifTuru[]; gecmis: TeklifTuru[] }>('/api/teklifler'),
+  listeninTurlari: (listId: number) => api.get<TeklifTuru[]>(`/api/lists/${listId}/turlar`),
+  firmalar: () => api.get<Firma[]>('/api/firmalar'),
+  firmaOlustur: (body: { ad: string; varsayilan_dil?: 'tr' | 'en' | 'zh' }) => api.post<Firma>('/api/firmalar', body),
+  ac: (listId: number, body: { firma_id: number; gecerlilik_gun?: number; portal_dili?: 'tr' | 'en' | 'zh' }) =>
+    api.post<TeklifTuru>(`/api/lists/${listId}/turlar`, body),
+  goster: (turId: number) => api.get<TeklifTuru & { rfq_satirlari?: unknown[] }>(`/api/turlar/${turId}`),
+  /** Geri alınamaz: RFQ donar, kur kilitlenir, link + anahtar üretilir. */
+  gonder: (turId: number, body: { gecerlilik_gun?: number; kanal?: 'whatsapp' | 'eposta' | 'panel' | 'diger'; alici?: string }) =>
+    api.post<TurGonderimSonucu>(`/api/turlar/${turId}/gonder`, body),
+  onayla: (turId: number) => api.post<TeklifTuru>(`/api/turlar/${turId}/onayla`, {}),
+  revizyon: (turId: number, body: { sebep: string; rate_policy?: 'inherit' | 'refresh' }) =>
+    api.post<TeklifTuru>(`/api/turlar/${turId}/revizyon`, body),
+  vazgec: (turId: number, body: { sebep?: string } = {}) => api.post<TeklifTuru>(`/api/turlar/${turId}/vazgec`, body),
+  gonderimGunlugu: (listId: number) =>
+    api.get<{ id: number; supplier_round_id: number | null; kanal: string; alici: string | null; dil: string | null; token_prefix: string; created_at: string }[]>(
+      `/api/lists/${listId}/gonderim-gunlugu`,
     ),
 };
 
