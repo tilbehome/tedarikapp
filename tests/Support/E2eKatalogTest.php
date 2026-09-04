@@ -78,7 +78,7 @@ final class E2eKatalogTest extends TestCase
         self::assertCount(35, $this->katalogKimlikleri(self::EKLENTI_KATALOG));
     }
 
-    public function testPANELKATALOGU67SENARYO(): void
+    public function testPANELKATALOGU73SENARYO(): void
     {
         // 62 → 67 (v1.2.0, Ayarlar yeniden tasarımı): sol dikey gezinme, arama,
         // KPI şeridi, dar ekran ve sürüm rozeti beş senaryo daha doğurdu.
@@ -88,7 +88,10 @@ final class E2eKatalogTest extends TestCase
         // yazıldı; ikisi (anlık kartın modal olmaması, tema kalıcılığı) GERÇEK
         // TARAYICI ister ve "bekliyor" olarak duruyor — jsdom odak tuzağını da
         // `prefers-color-scheme` emülasyonunu da doğru taklit etmez.
-        self::assertCount(67, $this->katalogKimlikleri(self::PANEL_KATALOG));
+        // 67 → 73 (V3-C, 4 Eyl 2026): Listeler merkezi (Blok E: sekme çipleri, K105 menü/
+        // seçim/klavye, şablonlar) dört; firma yanıtı (Aşama 2.2: yapıştır-ayrıştır,
+        // Excel gel-git) iki senaryo doğurdu — PNL-68..73. Altısı Vitest ile kapsandı.
+        self::assertCount(73, $this->katalogKimlikleri(self::PANEL_KATALOG));
     }
 
     public function testHERSENARYODEFTERDEVAR(): void

@@ -67,6 +67,9 @@ final class DataRoutes
         ?\App\Controllers\TeklifTuruController $teklifTuru = null,
         // V3-C Aşama 2.2: firma yanıtı (yapıştır-ayrıştır + Excel gel-git).
         ?\App\Controllers\TurYanitController $turYanit = null,
+        // V3-C Blok E: liste şablonları + ekran başına kaydedilmiş görünümler.
+        ?\App\Controllers\SablonController $sablon = null,
+        ?\App\Controllers\GorunumController $gorunum = null,
     ): void {
         // İE#19 G7 — AKTİVİTE DEFTERİ BİLEREK KAPI DIŞINDA.
         //
@@ -149,7 +152,7 @@ final class DataRoutes
             // güncelleme olduğunu anlayamıyordu.
             ->add(new MigrationGuard($connection, $migrationsDir, $responseFactory));
 
-        $app->group('/api', static function (RouteCollectorProxy $group) use ($listController, $productController, $trashController, $exportController, $shareController, $inboxController, $translationController, $teklifTuru, $turYanit): void {
+        $app->group('/api', static function (RouteCollectorProxy $group) use ($listController, $productController, $trashController, $exportController, $shareController, $inboxController, $translationController, $teklifTuru, $turYanit, $sablon, $gorunum): void {
             // V3-C Aşama 2.1 — TEKLİF TURU (liste × firma × tur, K103). Her geçiş
             // kendi eylem ucudur; sahibin elle durum yazma yolu YOKTUR (VIEWED
             // bir gözlemdir). Tam token + anahtar yalnız gönderim yanıtında.
@@ -178,6 +181,20 @@ final class DataRoutes
                 $group->post('/turlar/{id}/excel-sablon', [$turYanit, 'excelSablon']);
                 $group->post('/turlar/{id}/excel-ice-aktar', [$turYanit, 'excelIceAktar']);
                 $group->post('/turlar/{id}/excel-sonuc', [$turYanit, 'excelSonuc']);
+            }
+
+            // V3-C Blok E — liste şablonları (0039 list_templates) + kaydedilmiş görünümler.
+            if ($sablon !== null) {
+                $group->get('/sablonlar', [$sablon, 'index']);
+                $group->post('/lists/{id}/sablon', [$sablon, 'listedenOlustur']);
+                $group->post('/sablonlar/{id}/liste', [$sablon, 'listeOlustur']);
+                $group->patch('/sablonlar/{id}', [$sablon, 'guncelle']);
+                $group->delete('/sablonlar/{id}', [$sablon, 'sil']);
+            }
+            if ($gorunum !== null) {
+                $group->get('/gorunumler/{ekran}', [$gorunum, 'index']);
+                $group->post('/gorunumler/{ekran}', [$gorunum, 'kaydet']);
+                $group->delete('/gorunumler/{ekran}/{ad}', [$gorunum, 'sil']);
             }
 
             $group->get('/lists', [$listController, 'index']);

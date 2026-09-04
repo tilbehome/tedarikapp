@@ -35,6 +35,8 @@ final class ListPresenter
         private readonly ?\App\Services\Translation\AdCozumleyici $adCozumleyici = null,
         // K103: paylaşım kaydı `shares` tablosunda.
         private readonly ?\App\Models\ShareRepository $shares = null,
+        // V3-C Blok E: teklif turları — sekme türetimi ve "18/25 fiyatlandı" çubuğu.
+        private readonly ?\App\Models\TeklifTuruRepository $turlar = null,
     ) {
     }
 
@@ -107,6 +109,126 @@ final class ListPresenter
             'updated_at' => Dates::toIso((string) $row['updated_at'], $this->timezone),
             'archived_at' => $this->nullableDate($row['archived_at']),
             'deleted_at' => $this->nullableDate($row['deleted_at']),
+        ] + $this->blokE($row, $productRows, $lastExport !== null && (int) $lastExport['list_revision'] !== $revision);
+    }
+
+    /**
+     * V3-C BLOK E — Listeler merkezi alanları (docs/v3 §7.4 · onaylı prototip).
+     *
+     * `sekme` LİSTE DURUMUNDAN ve TURLARDAN türetilir, saklanmaz; durum makinesi
+     * (K37) değişmez: draft→hazirlaniyor · sent→fiyat_bekleniyor / degerlendirmede
+     * (RESPONDED tur var) / onayli (APPROVED tur var) · ordered→onayli ·
+     * completed→tamamlandi · cancelled→iptal.
+     *
+     * `fiyatlama` "18/25 fiyatlandı" çubuğudur: gönderilmiş son turun taslak
+     * yanıtındaki fiyatlı satır / snapshot satırı. Tur yoksa (V3-C öncesi veri)
+     * ürünlerin `price_ddp_usd` alanı sayılır — iki kaynak, tek anlam.
+     *
+     * `saglik` bayrakları prototipteki "Liste sağlığı" kartını besler: fiyat
+     * bekleyen (açık tur), kur sapması (kilitli kur ile güncel ayar arasında
+     * ≥ %2, bcmath string karşılaştırma), teklif süresi (48 saat içinde doluyor).
+     *
+     * @param  array<string, mixed>       $row
+     * @param  list<array<string, mixed>> $productRows
+     * @return array<string, mixed>
+     */
+    private function blokE(array $row, array $productRows, bool $ciktiBayat): array
+    {
+        $listId = (int) $row['id'];
+        $status = (string) $row['status'];
+        $turlar = $this->turlar?->listeninTurlari($listId) ?? [];
+
+        $acik = null;
+        $responded = false;
+        $approved = false;
+        foreach ($turlar as $t) {
+            $state = (string) $t['state'];
+            if ($state === 'RESPONDED') {
+                $responded = true;
+            }
+            if ($state === 'APPROVED') {
+                $approved = true;
+            }
+            if ($acik === null && in_array($state, ['SENT', 'VIEWED', 'PRICING', 'RESPONDED'], true)) {
+                $acik = $t;
+            }
+        }
+
+        // Turlar önce gelir: liste durumu 'draft' kalsa da firmaya gönderilmiş açık tur
+        // "fiyat bekleniyor" demektir (tur gönderimi liste durumunu yazmaz — K37 sahibin kararı).
+        $sekme = match (true) {
+            $status === 'completed' => 'tamamlandi',
+            $status === 'cancelled' => 'iptal',
+            $status === 'ordered' => 'onayli',
+            $responded => 'degerlendirmede',
+            $approved => 'onayli',
+            $acik !== null => 'fiyat_bekleniyor',
+            $status === 'sent' => 'fiyat_bekleniyor',
+            default => 'hazirlaniyor',
+        };
+
+        // Fiyatlama: gönderilmiş son tur (snapshot'ı olan en yüksek tur_no) — yoksa ürün DDP alanı.
+        $sonTur = null;
+        foreach ($turlar as $t) {
+            if ($t['rfq_snapshot_id'] !== null && ($sonTur === null || (int) $t['tur_no'] >= (int) $sonTur['tur_no'])) {
+                $sonTur = $t;
+            }
+        }
+        if ($sonTur !== null && $this->turlar !== null) {
+            $ozet = $this->turlar->fiyatlamaOzeti((int) $sonTur['id'], (int) $sonTur['rfq_snapshot_id']);
+            $toplam = $ozet['toplam'];
+            $fiyatlanan = $ozet['fiyatlanan'];
+            $kaynak = 'tur';
+        } else {
+            $toplam = count($productRows);
+            $fiyatlanan = count(array_filter($productRows, static fn (array $p): bool => $p['price_ddp_usd'] !== null && preg_match('/^\d+(\.\d+)?$/', (string) $p['price_ddp_usd']) === 1 && bccomp((string) $p['price_ddp_usd'], '0', 2) === 1));
+            $kaynak = 'urun';
+        }
+
+        $saglik = [];
+        if ($acik !== null && in_array((string) $acik['state'], ['SENT', 'VIEWED', 'PRICING'], true)) {
+            $saglik[] = 'fiyat_bekleyen';
+        }
+        if ($ciktiBayat) {
+            $saglik[] = 'cikti_guncel_degil';
+        }
+        if ($row['rate_locked_at'] !== null && $this->settings !== null) {
+            $kilitli = (string) $row['yuan_rate'];
+            $guncel = $this->settings->yuanRate();
+            if (bccomp($kilitli, '0', 4) === 1 && bccomp($guncel, '0', 4) === 1) {
+                $mutlakFark = bccomp($guncel, $kilitli, 4) >= 0 ? bcsub($guncel, $kilitli, 4) : bcsub($kilitli, $guncel, 4);
+                $fark = bcdiv(bcmul($mutlakFark, '100', 4), $kilitli, 2);
+                if (bccomp($fark, '2', 2) >= 0) {
+                    $saglik[] = 'kur_sapmasi';
+                }
+            }
+        }
+        if ($acik !== null && $acik['valid_until'] !== null && !in_array((string) $acik['state'], ['APPROVED', 'ABANDONED', 'REVOKED', 'EXPIRED'], true)) {
+            $son = new \DateTimeImmutable((string) $acik['valid_until'], new \DateTimeZone('UTC'));
+            $simdi = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+            if (($son->getTimestamp() - $simdi->getTimestamp()) / 3600 <= 48) {
+                $saglik[] = 'teklif_suresi';
+            }
+        }
+
+        return [
+            'sekme' => $sekme,
+            'fiyatlama' => [
+                'fiyatlanan' => $fiyatlanan,
+                'toplam' => $toplam,
+                'yuzde' => $toplam === 0 ? 0 : (int) floor($fiyatlanan * 100 / $toplam),
+                'kaynak' => $kaynak,
+            ],
+            'tur_ozeti' => $acik === null ? null : [
+                'id' => (int) $acik['id'],
+                'tur_no' => (int) $acik['tur_no'],
+                'state' => (string) $acik['state'],
+                'sent_at' => $this->nullableDate($acik['sent_at']),
+                'first_viewed_at' => $this->nullableDate($acik['first_viewed_at']),
+                'responded_at' => $this->nullableDate($acik['responded_at']),
+                'valid_until' => $this->nullableDate($acik['valid_until']),
+            ],
+            'saglik' => $saglik,
         ];
     }
 

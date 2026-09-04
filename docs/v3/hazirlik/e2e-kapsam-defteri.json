@@ -620,6 +620,48 @@
       "durum": "kapsandi",
       "dosya": "e2e/tests/09-ayarlar-gorunum.spec.ts",
       "test": "E2E-PNL-67"
+    },
+    "E2E-PNL-68": {
+      "baslik": "Listeler merkezi: sekme çipleri sunucu sayımlarını basar, filtre URL'de",
+      "durum": "kapsandi",
+      "dosya": "frontend/src/screens/ListsScreen.test.tsx",
+      "test": "sekme çipleri sunucu sayımlarını basar; çip tıklanınca ?sekme= ile yeniden ister; fiyatlama çubuğu görünür",
+      "k105": "kapsandi"
+    },
+    "E2E-PNL-69": {
+      "baslik": "K105: ⋯ ve sağ tık aynı menüyü açar; çöpe atma onay sormaz, geri alınabilir",
+      "durum": "kapsandi",
+      "dosya": "frontend/src/screens/ListsScreen.test.tsx",
+      "test": "K105: ⋯ ve sağ tık aynı menüyü açar; çöpe atma onay sormaz, geri alınabilir toast verir",
+      "k105": "kapsandi"
+    },
+    "E2E-PNL-70": {
+      "baslik": "K105: çoklu seçim alt çubuğu ve klavye",
+      "durum": "kapsandi",
+      "dosya": "frontend/src/screens/ListsScreen.test.tsx",
+      "test": "K105: çoklu seçimde alt çubuk sayfa/eşleşen ayrımıyla çıkar; / aramaya odaklar",
+      "k105": "kapsandi"
+    },
+    "E2E-PNL-71": {
+      "baslik": "Liste şablonları: şablondan taslak, ertelenmiş silme",
+      "durum": "kapsandi",
+      "dosya": "frontend/src/screens/ListsScreen.test.tsx",
+      "test": "şablon paneli: şablondan liste açar; silme ertelenmiştir — geri al basılınca uç hiç çağrılmaz",
+      "k105": "kapsandi"
+    },
+    "E2E-PNL-72": {
+      "baslik": "Yapıştır-ayrıştır: önizleme yazmaz, belirsiz parça seçilemez",
+      "durum": "kapsandi",
+      "dosya": "frontend/src/screens/liste/TurYanitPaneli.test.tsx",
+      "test": "ayrıştır yalnız önizler; belirsiz parça seçilemez ve nedeni görünür; uygula parmak iziyle gider",
+      "k105": "kapsandi"
+    },
+    "E2E-PNL-73": {
+      "baslik": "Excel gel-git: şablon indir, dolu dosyayı yükle, gruplu önizleme, uygula",
+      "durum": "kapsandi",
+      "dosya": "frontend/src/screens/liste/TurYanitPaneli.test.tsx",
+      "test": "şablon indirilir; yüklenen dosya gruplu önizlenir; yalnız uygulanabilir olan varsayılan seçilidir",
+      "k105": "kapsandi"
     }
   }
 }

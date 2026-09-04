@@ -61,6 +61,41 @@ export interface SupplyList {
   updated_at: string;
   archived_at: string | null;
   deleted_at: string | null;
+  /** V3-C Blok E — durum + turlardan TÜRETİLİR (saklanmaz). */
+  sekme: ListeSekmesi;
+  /** "18/25 fiyatlandı": tur varsa snapshot/yanıt, yoksa ürün DDP alanı. */
+  fiyatlama: { fiyatlanan: number; toplam: number; yuzde: number; kaynak: 'tur' | 'urun' };
+  tur_ozeti: { id: number; tur_no: number; state: TeklifTuruDurumu; sent_at: string | null; first_viewed_at: string | null; responded_at: string | null; valid_until: string | null } | null;
+  saglik: ListeSaglikBayragi[];
+}
+
+export type ListeSekmesi = 'hazirlaniyor' | 'fiyat_bekleniyor' | 'degerlendirmede' | 'onayli' | 'tamamlandi' | 'iptal';
+export type ListeSaglikBayragi = 'fiyat_bekleyen' | 'cikti_guncel_degil' | 'kur_sapmasi' | 'teklif_suresi';
+
+export interface ListelerMeta {
+  sayimlar: Partial<Record<ListeSekmesi | 'tumu', number>>;
+  kpi: { fiyat_bekleyen_liste: number; karar_bekleyen_liste: number; suresi_dolan_teklif: number; fiyatlanmayan_satir: number };
+}
+
+/** Liste şablonu (0039 list_templates): dondurulmuş ürün kümesi; listeye bağlı değil. */
+export interface ListeSablonu {
+  id: number;
+  ad: string;
+  aciklama: string | null;
+  urun_sayisi: number;
+  ornek_urunler: string[];
+  kaynak_list_id: number | null;
+  kullanim_sayisi: number;
+  son_kullanim_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/** Ekran başına kaydedilmiş görünüm (K105 §2.3). */
+export interface KayitliGorunum {
+  ad: string;
+  sorgu: Record<string, string>;
+  varsayilan: boolean;
 }
 
 export interface ProductImage {

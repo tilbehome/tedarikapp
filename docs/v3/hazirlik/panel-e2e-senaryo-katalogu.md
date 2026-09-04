@@ -1326,6 +1326,111 @@ Bu katalog şu bağlayıcı sözleşmeleri otomasyona indirger:
 
 **Otomasyon notu:** Playwright; `data-testid="surum-rozeti"`.
 
+### E2E-PNL-68 — Listeler merkezi: sekme çipleri sunucu sayımlarını basar, filtre URL'de
+
+**Amaç:** Sekme türetiminin SUNUCUDA olduğunu ve panelin yalnız gösterdiğini kanıtlamak (V3-C Blok E; `sekme` liste durumu + teklif turlarından türetilir).
+
+**Sınıf:** A — Otomatik / sahte veri
+**Ekran:** Listeler
+
+**Ön koşul / hazırlık:** `GET /api/lists` üç liste döner: `hazirlaniyor`, `fiyat_bekleniyor` (18/25 fiyatlandı, 6 gündür bekliyor, açılmadı), `degerlendirmede`.
+
+**Adımlar:**
+
+1. Listeler ekranını aç.
+2. Durum çiplerini oku; "Fiyat bekleniyor" çipini tıkla.
+
+**Beklenen sonuç:** Çipler `meta.sayimlar`ı basar; tıklayınca istek `?sekme=fiyat_bekleniyor` ile atılır ve URL'de görünür; satırda "18/25, %72" çubuğu, "6 gündür bekliyor" ve "Firma hatırlatılmalı" uyarısı; değerlendirmedeki satırda "Karar ver" düğmesi.
+
+**Otomasyon notu:** Vitest; `data-testid="fiyatlama-{id}"`, `role="tablist" aria-label="Durum"`.
+
+### E2E-PNL-69 — K105: ⋯ ve sağ tık aynı menüyü açar; çöpe atma onay sormaz, geri alınabilir
+
+**Amaç:** K105 §2.1 (tek menü tanımı) ve §2.6 (önce geri alınabilir yol) kurallarının Listeler ekranında yaşadığını kanıtlamak.
+
+**Sınıf:** A — Otomatik / sahte veri
+**Ekran:** Listeler
+
+**Ön koşul / hazırlık:** En az bir liste.
+
+**Adımlar:**
+
+1. Satırın `⋯` düğmesine bas; menüyü `Esc` ile kapat.
+2. Aynı satıra SAĞ TIK yap.
+3. "Çöpe at (geri alınabilir)" öğesini seç.
+4. Toast'taki "Geri al"a bas.
+
+**Beklenen sonuç:** İki yol aynı `role="menu"`yu açar; sağ tıkta tarayıcı menüsü bastırılır; silmede "Emin misin?" YOKTUR — `DELETE /api/lists/{id}` hemen gider ve 5 sn toast belirir; "Geri al" `POST /api/trash/lists/{id}/restore` çağırır.
+
+**Otomasyon notu:** Vitest; `SatirEylemMenusu` + `GeriAlToast` ortak bileşenleri.
+
+### E2E-PNL-70 — K105: çoklu seçim alt çubuğu ve klavye
+
+**Amaç:** §2.1 çoklu seçim ve §2.3 klavye kurallarını kanıtlamak.
+
+**Sınıf:** A — Otomatik / sahte veri
+**Ekran:** Listeler
+
+**Adımlar:**
+
+1. İki satırın onay kutusunu işaretle.
+2. `Esc` bas.
+3. `/` bas.
+
+**Beklenen sonuç:** Alt çubuk "Bu sayfada 2 liste seçili" der (sayfa/eşleşen ayrımı açık); `Esc` seçimi temizler; `/` arama kutusuna odaklar; `J/K/Enter/Space` satırlarda gezer/açar/seçer; `?` kısayol kartını açar.
+
+**Otomasyon notu:** Vitest; `data-testid="secim-cubugu"`.
+
+### E2E-PNL-71 — Liste şablonları: şablondan taslak, ertelenmiş silme
+
+**Amaç:** `list_templates` (0039) akışının panelde doğru bağlandığını ve şablon silmenin ERTELENMİŞ geri alma kipinde olduğunu (çöp kutusu yok) kanıtlamak.
+
+**Sınıf:** A — Otomatik / sahte veri
+**Ekran:** Listeler
+
+**Adımlar:**
+
+1. "Şablonlar" panelini aç.
+2. "Bu şablondan liste aç"a bas.
+3. Şablonda "Sil"e bas; toast'ta "Geri al"a bas.
+
+**Beklenen sonuç:** `POST /api/sablonlar/{id}/liste` çağrılır ve yeni taslağa gidilir; silmede `DELETE` toast kapanmadan ÇAĞRILMAZ; "Geri al" sonrası hiç çağrılmaz ("hiçbir şey silinmedi").
+
+**Otomasyon notu:** Vitest; `useGeriAl().ertelenmis`.
+
+### E2E-PNL-72 — Yapıştır-ayrıştır: önizleme yazmaz, belirsiz parça seçilemez
+
+**Amaç:** Firma cevabının panelden işlenmesinde altın set kuralının (belirsiz ürün/para birimi otomatik bağlanmaz) arayüzde de yaşadığını kanıtlamak (V3-C Aşama 2.2).
+
+**Sınıf:** A — Otomatik / sahte veri
+**Ekran:** Liste detay › Teklif turları › Firma yanıtını işle
+
+**Adımlar:**
+
+1. Gönderilmiş turda "Firma yanıtını işle"yi aç; metni yapıştır; "Ayrıştır (yazmaz)"a bas.
+2. Önizlemede belirsiz parçayı ve hatalı satırı gör.
+3. "Seçili 1 satırı uygula"ya bas.
+
+**Beklenen sonuç:** Ayrıştır yalnız `POST /yapistir-ayristir` çağırır (uygula ucu çağrılmaz); belirsiz parça nedeni ve YASAK işlemi ile listelenir, satırı seçilemez; hatalı satırın kutusu kapalı; uygula gövdesi önizlemenin parmak izini ve yalnız seçili satırları taşır.
+
+**Otomasyon notu:** Vitest; `TurYanitPaneli`.
+
+### E2E-PNL-73 — Excel gel-git: şablon indir, dolu dosyayı yükle, gruplu önizleme, uygula
+
+**Amaç:** Excel kanalının aynı önizle→uygula akışından geçtiğini; varsayılan seçimin yalnız "uygulanabilir" olduğunu kanıtlamak (spec §9).
+
+**Sınıf:** A — Otomatik / sahte veri
+**Ekran:** Liste detay › Teklif turları › Firma yanıtını işle › Excel
+
+**Adımlar:**
+
+1. "Şablonu indir"e bas.
+2. Dolu `.xlsx` yükle.
+3. Uyarılı satırı elle seç; "Seçili 2 satırı uygula"ya bas.
+
+**Beklenen sonuç:** Şablon POST ile indirilir; önizleme grupları (uygulanabilir/uyarılı/hatalı/belirsiz/değişiklik yok) sayılarıyla görünür; yalnız uygulanabilir satır önceden seçilidir; uygula gövdesi `kaynak=excel` ve dosya parmak izini taşır.
+
+**Otomasyon notu:** Vitest; `TurYanitPaneli` Excel sekmesi. Sunucu tarafı (imza, makro reddi, başka tur) `tests/Services/ExcelGelGitTest` + `tests/Http/TurYanitTest`.
 ## 9. Uygulama notları
 
 - A senaryoları tekil/parametrik Vitest veya yerel Playwright component testlerine; B senaryoları Playwright testlerine ve gerektiğinde API/DB yardımcı assertion'larına çevrilmelidir.

@@ -111,7 +111,38 @@ final class ListController extends ApiController
             $filters['q'] = $q;
         }
 
-        return Response::success($response, $this->presenter->lists($this->lists->all($filters)));
+        $sunum = $this->presenter->lists($this->lists->all($filters));
+
+        // V3-C Blok E: sekme sayımları ve KPI kartları FİLTRESİZ kümeden (sekme
+        // filtresi uygulanmadan) hesaplanır ki çipteki sayı tıklayınca değişmesin.
+        $sayimlar = ['tumu' => count($sunum)];
+        $kpi = ['fiyat_bekleyen_liste' => 0, 'karar_bekleyen_liste' => 0, 'suresi_dolan_teklif' => 0, 'fiyatlanmayan_satir' => 0];
+        foreach ($sunum as $liste) {
+            $sayimlar[$liste['sekme']] = ($sayimlar[$liste['sekme']] ?? 0) + 1;
+            if (in_array('fiyat_bekleyen', $liste['saglik'], true)) {
+                $kpi['fiyat_bekleyen_liste']++;
+            }
+            if ($liste['sekme'] === 'degerlendirmede') {
+                $kpi['karar_bekleyen_liste']++;
+            }
+            if (in_array('teklif_suresi', $liste['saglik'], true)) {
+                $kpi['suresi_dolan_teklif']++;
+            }
+            if ($liste['sekme'] === 'fiyat_bekleniyor') {
+                $kpi['fiyatlanmayan_satir'] += max(0, (int) $liste['fiyatlama']['toplam'] - (int) $liste['fiyatlama']['fiyatlanan']);
+            }
+        }
+
+        $sekme = $this->query($request, 'sekme');
+        if ($sekme !== '') {
+            $error = $this->validator->enum($sekme, ['hazirlaniyor', 'fiyat_bekleniyor', 'degerlendirmede', 'onayli', 'tamamlandi', 'iptal'], 'Sekme');
+            if ($error !== null) {
+                return Response::error($response, 'VALIDATION', 'Doğrulama hatası', 422, ['sekme' => $error]);
+            }
+            $sunum = array_values(array_filter($sunum, static fn (array $l): bool => $l['sekme'] === $sekme));
+        }
+
+        return Response::success($response, $sunum, ['sayimlar' => $sayimlar, 'kpi' => $kpi]);
     }
 
     /**

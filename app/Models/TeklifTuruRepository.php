@@ -279,6 +279,30 @@ final class TeklifTuruRepository
         return $satirlar;
     }
 
+    /**
+     * Turun kısmi fiyatlama sayacı (Blok E "18/25 fiyatlandı"): snapshot'taki
+     * satır sayısı ve taslak yanıtta FİYATI OLAN satır sayısı. Fiyat = `found`
+     * ya da `alternative_available` durumunda dolu `ddp_birim_fiyat`; bulunamadı
+     * satırı "fiyatlandı" sayılmaz (K67: bilinmeyen ≠ sıfır).
+     *
+     * @return array{toplam: int, fiyatlanan: int}
+     */
+    public function fiyatlamaOzeti(int $turId, int $snapshotId): array
+    {
+        $pdo = $this->connection->pdo();
+        $toplam = $pdo->prepare('SELECT COUNT(*) FROM rfq_lines WHERE rfq_snapshot_id = :s');
+        $toplam->execute(['s' => $snapshotId]);
+        $fiyatlanan = $pdo->prepare(
+            "SELECT COUNT(*) FROM quote_lines ql
+             JOIN quote_responses qr ON qr.id = ql.quote_response_id
+             WHERE qr.supplier_round_id = :tur AND ql.ddp_birim_fiyat IS NOT NULL
+               AND ql.yanit_durumu IN ('found', 'alternative_available')",
+        );
+        $fiyatlanan->execute(['tur' => $turId]);
+
+        return ['toplam' => (int) $toplam->fetchColumn(), 'fiyatlanan' => (int) $fiyatlanan->fetchColumn()];
+    }
+
     /** @return list<array<string, mixed>> */
     private function turlar(string $kosul, string $sira, ?int $limit = null): array
     {

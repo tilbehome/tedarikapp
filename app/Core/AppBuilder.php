@@ -193,6 +193,9 @@ final class AppBuilder
             $services->timezone,
             $settingsRepository,
             $adCozumleyici,
+            null,
+            // V3-C Blok E: sekme türetimi + "18/25 fiyatlandı" turlardan okunur.
+            new \App\Models\TeklifTuruRepository($connection),
         );
         // K103: paylasim kaydinin tek erisim noktasi.
         $shareDepo = new \App\Models\ShareRepository($connection);
@@ -350,6 +353,20 @@ final class AppBuilder
             new \App\Services\Yanit\ExcelSonucDosyasi(),
             $services->clock,
         );
+
+        // V3-C Blok E: liste şablonları + kaydedilmiş görünümler (ekran başına).
+        $sablonController = new \App\Controllers\SablonController(
+            $connection,
+            new \App\Models\SablonRepository($connection),
+            $lists,
+            $products,
+            $settingsRepository,
+            $presenter,
+            $services->activity,
+            $services->clock,
+            $services->timezone,
+        );
+        $gorunumController = new \App\Controllers\GorunumController($settingsRepository);
 
         // İE#11 Faz 3: eklenti uçları — Bearer + CORS allowlist + hız sınırı (ExtensionAuth).
         $inboxRepository = new \App\Models\InboxRepository($connection);
@@ -525,6 +542,9 @@ final class AppBuilder
             $teklifTuruController,
             // V3-C Aşama 2.2: firma yanıtı uçları.
             $turYanitController,
+            // V3-C Blok E: şablonlar + görünümler.
+            $sablonController,
+            $gorunumController,
         );
 
         // Panel (İE#8 §5): Vite çıktısı public/panel/ altındadır. Var olan dosyaları

@@ -22,6 +22,9 @@ import type {
   YapistirOnizleme,
   YanitUygulamaSonucu,
   ExcelOnizleme,
+  ListelerMeta,
+  ListeSablonu,
+  KayitliGorunum,
 } from './types';
 
 /**
@@ -43,13 +46,25 @@ export const auth = {
 };
 
 export const lists = {
-  all: (params: { visibility?: Visibility; status?: string; q?: string } = {}, signal?: AbortSignal) => {
+  all: (params: { visibility?: Visibility; status?: string; q?: string; sekme?: string } = {}, signal?: AbortSignal) => {
     const query = new URLSearchParams();
     if (params.visibility) query.set('visibility', params.visibility);
     if (params.status) query.set('status', params.status);
     if (params.q) query.set('q', params.q);
+    if (params.sekme) query.set('sekme', params.sekme);
     const suffix = query.toString();
     return api.get<SupplyList[]>(`/api/lists${suffix ? `?${suffix}` : ''}`, { signal });
+  },
+  /** V3-C Blok E: zarfın `meta`sı (sekme sayımları + KPI) ile birlikte. */
+  allWithMeta: (params: { visibility?: Visibility; q?: string; sekme?: string } = {}, signal?: AbortSignal) => {
+    const query = new URLSearchParams();
+    if (params.visibility) query.set('visibility', params.visibility);
+    if (params.q) query.set('q', params.q);
+    if (params.sekme) query.set('sekme', params.sekme);
+    const suffix = query.toString();
+    return api
+      .getWithMeta<SupplyList[]>(`/api/lists${suffix ? `?${suffix}` : ''}`, { signal })
+      .then((zarf) => ({ data: zarf.data, meta: zarf.meta as unknown as ListelerMeta }));
   },
   find: (id: number) => api.get<SupplyList>(`/api/lists/${id}`),
   create: (body: { name: string; period?: string; supplier_name?: string; note?: string }) =>
@@ -58,6 +73,24 @@ export const lists = {
   remove: (id: number) => api.delete<void>(`/api/lists/${id}`),
   duplicate: (id: number, name?: string) =>
     api.post<SupplyList>(`/api/lists/${id}/duplicate`, name ? { name } : {}),
+};
+
+/** V3-C Blok E — liste şablonları (0039). Silme kalıcıdır; geri alma penceresi panelde (GeriAlToast ertelenmiş kip). */
+export const sablonlar = {
+  hepsi: () => api.get<ListeSablonu[]>('/api/sablonlar'),
+  listedenOlustur: (listId: number, body: { ad: string; aciklama?: string }) => api.post<ListeSablonu>(`/api/lists/${listId}/sablon`, body),
+  listeOlustur: (sablonId: number, body: { name?: string; period?: string; supplier_name?: string } = {}) =>
+    api.post<SupplyList>(`/api/sablonlar/${sablonId}/liste`, body),
+  guncelle: (sablonId: number, body: { ad?: string; aciklama?: string | null }) => api.patch<ListeSablonu>(`/api/sablonlar/${sablonId}`, body),
+  sil: (sablonId: number) => api.delete<void>(`/api/sablonlar/${sablonId}`),
+};
+
+/** K105 §2.3 — ekran başına kaydedilmiş görünümler (kesif.gorunumler deseni, genel uç). */
+export const gorunumler = {
+  hepsi: (ekran: string) => api.get<{ gorunumler: KayitliGorunum[] }>(`/api/gorunumler/${ekran}`),
+  kaydet: (ekran: string, body: { ad: string; sorgu: Record<string, string>; varsayilan?: boolean }) =>
+    api.post<{ gorunumler: KayitliGorunum[] }>(`/api/gorunumler/${ekran}`, body),
+  sil: (ekran: string, ad: string) => api.delete<{ gorunumler: KayitliGorunum[] }>(`/api/gorunumler/${ekran}/${encodeURIComponent(ad)}`),
 };
 
 export const products = {
