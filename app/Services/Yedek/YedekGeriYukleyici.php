@@ -42,23 +42,42 @@ final class YedekGeriYukleyici
     /**
      * Seti doğrular ve manifesti döner.
      *
+     * İKİ KAPI, İKİ AYRI SORU:
+     *   1. Set SAĞLAM mı? (prova: parçalar var, SHA'lar tutuyor, bağ kurulu)
+     *      Sağlam değilse hiçbir bayrak açmaz — bozuk set yüklenmez.
+     *   2. Set TAM mı? (H1: config bilerek alınamamış olabilir)
+     *      KISMİ set `$kismiKabul` olmadan yüklenmez: operatör "ayarları elle
+     *      gireceğim" demeden, ayarsız bir kurulumun sessizce oluşmasına izin
+     *      vermeyiz. Bayrak, bu kararın verildiğinin kaydıdır.
+     *
      * @param  list<string>     $beklenenMigrationlar
      * @throws RuntimeException set geri yüklenemez durumdaysa
      */
-    public function kapiyiAc(string $setDizini, array $beklenenMigrationlar = []): YedekManifesti
+    public function kapiyiAc(string $setDizini, array $beklenenMigrationlar = [], bool $kismiKabul = false): YedekManifesti
     {
         $sonuc = $this->prova->dogrula($setDizini, $beklenenMigrationlar);
         if (!$sonuc['gecerli']) {
             throw new RuntimeException(
                 'GERİ YÜKLEME DURDURULDU — set provayı geçemedi:' . PHP_EOL
                 . '  · ' . implode(PHP_EOL . '  · ', $sonuc['sorunlar']) . PHP_EOL
-                . 'Kısmi bir seti yüklemek, sağlam veritabanının üstüne eksik veri yazmak olurdu.',
+                . 'Eksik parçalı bir seti yüklemek, sağlam veritabanının üstüne eksik veri yazmak olurdu.',
             );
         }
 
-        return YedekManifesti::jsondan(
+        $manifest = YedekManifesti::jsondan(
             (string) file_get_contents($setDizini . '/' . YedekProvasi::MANIFEST_ADI),
         );
+
+        if ($manifest->durum() === YedekManifesti::DURUM_KISMI && !$kismiKabul) {
+            throw new RuntimeException(
+                'GERİ YÜKLEME DURDURULDU — set KISMİ (eksik: '
+                . implode(', ', $manifest->eksikBilesenler()) . ')'
+                . ($manifest->sebep() !== null ? ' — ' . $manifest->sebep() : '') . '.' . PHP_EOL
+                . 'Eksik bileşeni elle tamamlayacağınızı kabul ediyorsanız --kismi-kabul ile yeniden koşun.',
+            );
+        }
+
+        return $manifest;
     }
 
     /**

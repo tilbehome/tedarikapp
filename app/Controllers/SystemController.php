@@ -108,6 +108,16 @@ final class SystemController
         // İE#11 EK-2: saklama — eskiler silinir (en yeni 5 her koşulda kalır).
         $pruned = $service->prune($this->appConfig->getPositiveInt('BACKUP_RETENTION_DAYS', 14));
 
+        // H1: KISMİ set app_logs'a UYARI olarak düşer — elle alınan yedekte de.
+        $kismiNotu = '';
+        if ($backup['durum'] === \App\Services\Yedek\YedekManifesti::DURUM_KISMI) {
+            $kismiNotu = ' · KISMİ (' . implode(', ', $backup['eksik']) . ' eksik)';
+            $this->logger?->warning('Elle alınan yedek seti KISMİ: ' . implode(', ', $backup['eksik']) . ' alınamadı.', [
+                'set' => $setAdi,
+                'sebep' => $backup['sebep'],
+            ]);
+        }
+
         (new ActivityLog($this->connection))->record(
             'system',
             null,
@@ -118,7 +128,7 @@ final class SystemController
                 $setAdi,
                 $backup['toplam_bayt'] / 1024,
                 $offsite['attempted'] ? ($offsite['sent'] ? 'gönderildi (' . $offsite['via'] . ')' : 'BAŞARISIZ') : 'yapılandırılmadı',
-            ) . ($pruned === [] ? '' : sprintf(' · %d eski yedek silindi', count($pruned))),
+            ) . $kismiNotu . ($pruned === [] ? '' : sprintf(' · %d eski yedek silindi', count($pruned))),
             ClientIp::from($request),
             $this->clock->now(),
             ActivityLog::ACTOR_ADMIN,

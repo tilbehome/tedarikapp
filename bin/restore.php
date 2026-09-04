@@ -25,6 +25,12 @@ declare(strict_types=1);
  *   php bin/restore.php                          → en yeni seti ANLATIR (yazmaz)
  *   php bin/restore.php set-20260903-030000 --onayla
  *   php bin/restore.php --onayla --medyasiz      → yalnız veritabanı
+ *   php bin/restore.php <set> --onayla --kismi-kabul
+ *                                                → KISMİ seti (config eksik) kabul et
+ *
+ * KISMİ SET (H1): config alınamamış bir set, `--kismi-kabul` olmadan
+ * YÜKLENMEZ — kuru koşuda da uyarı basılır. Bayrak, "ayarları elle
+ * gireceğim" kararının kaydıdır; onsuz ayarsız bir kurulum sessizce oluşurdu.
  *
  * Çıkış kodu: 0 başarılı · 1 başarısız (set bozuk, kapı kapalı, yükleme hatası).
  */
@@ -45,6 +51,7 @@ $basePath = dirname(__DIR__);
 $argumanlar = array_slice($argv ?? [], 1);
 $onayli = in_array('--onayla', $argumanlar, true);
 $medyasiz = in_array('--medyasiz', $argumanlar, true);
+$kismiKabul = in_array('--kismi-kabul', $argumanlar, true);
 $istenenSet = null;
 foreach ($argumanlar as $arguman) {
     if (!str_starts_with($arguman, '--')) {
@@ -74,8 +81,8 @@ try {
         throw new RuntimeException('Yedek seti bulunamadı: ' . $setAdi);
     }
 
-    // ── 2) KAPI: prova geçmeden hiçbir parça açılmaz
-    $manifest = $geriYukleyici->kapiyiAc($setDizini);
+    // ── 2) KAPI: prova geçmeden hiçbir parça açılmaz; KISMİ set bayrak ister
+    $manifest = $geriYukleyici->kapiyiAc($setDizini, [], $kismiKabul);
     $ozet = $manifest->ozet();
 
     $hedefAd = (string) $config->get('DB_NAME', '');
@@ -88,6 +95,12 @@ try {
         . number_format($ozet['toplam_bayt'] / 1048576, 2) . ' MB' . PHP_EOL;
     echo 'HEDEF DB : ' . $hedefAd . PHP_EOL;
     echo 'MİGRATION: ' . count($manifest->migrationDefteri()) . ' kayıt (yedek alındığı andaki defter)' . PHP_EOL;
+    if ($ozet['durum'] === App\Services\Yedek\YedekManifesti::DURUM_KISMI) {
+        // Kuru koşuda da görünür: operatör "--onayla" demeden önce bilmeli.
+        echo 'DURUM    : KISMİ — eksik: ' . implode(', ', $ozet['eksik'])
+            . ($ozet['sebep'] !== null ? ' (' . $ozet['sebep'] . ')' : '') . PHP_EOL;
+        echo '           --kismi-kabul verildi: eksik bileşen GERİ YÜKLENMEYECEK, elle girilecek.' . PHP_EOL;
+    }
 
     if (!$onayli) {
         echo PHP_EOL . 'KURU KOŞU — hiçbir şey yazılmadı.' . PHP_EOL;
@@ -124,12 +137,19 @@ try {
     // ── 5) Ayarlar: yalnız gösterilir
     $ayarlar = [];
 
-    try {
-        $ayarlar = $geriYukleyici->ayarlariCoz($setDizini, $manifest);
-    } catch (Throwable $ayarHatasi) {
-        echo 'AYARLAR  : okunamadı (' . $ayarHatasi->getMessage() . ')' . PHP_EOL;
+    if (!in_array('config', $ozet['eksik'], true)) {
+        try {
+            $ayarlar = $geriYukleyici->ayarlariCoz($setDizini, $manifest);
+        } catch (Throwable $ayarHatasi) {
+            echo 'AYARLAR  : okunamadı (' . $ayarHatasi->getMessage() . ')' . PHP_EOL;
+        }
     }
-    if ($ayarlar !== []) {
+    if (in_array('config', $ozet['eksik'], true)) {
+        echo 'AYARLAR  : config geri yüklenmedi, elle girilecek — sette ayar parçası yok'
+            . ($ozet['sebep'] !== null ? ' (' . $ozet['sebep'] . ')' : '') . '.' . PHP_EOL;
+        echo '           config.php\'yi kurulum sihirbazıyla ya da elle oluşturun; APP_KEY' . PHP_EOL;
+        echo '           için kurtarma anahtarı emanetinizi kullanın.' . PHP_EOL;
+    } elseif ($ayarlar !== []) {
         echo 'AYARLAR  : GERİ YAZILMADI — sette şu dosyalar var: '
             . implode(', ', array_keys($ayarlar)) . PHP_EOL;
         echo '           İçlerinde APP_KEY ve DB parolası bulunur; hangisini geri' . PHP_EOL;

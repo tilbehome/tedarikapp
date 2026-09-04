@@ -447,6 +447,9 @@ export const system = {
         toplam_bayt: number;
         media_files: number;
         medya_atlandi: boolean;
+        durum: 'TAM' | 'KISMI';
+        eksik: string[];
+        sebep: string | null;
       };
       offsite: { attempted: boolean; sent: boolean; via: string | null; error: string | null };
     }>('/api/system/backup'),
@@ -458,7 +461,14 @@ export const system = {
         size: number;
         created_at: string;
         tam: boolean;
-        kismi: boolean;
+        /**
+         * H1: TAM | KISMI. KISMI = bir bileşen (örn. config) BİLEREK alınamadı;
+         * `eksik` hangisi, `sebep` neden. Rozet KALICIDIR.
+         */
+        durum: 'TAM' | 'KISMI';
+        eksik: string[];
+        sebep: string | null;
+        medyasiz: boolean;
         parca_sayisi: number;
         /**
          * v1.2.2 B4: parcalar SIRALI gelir ve her biri SHA-256'sini tasir.

@@ -100,7 +100,7 @@ final class BackupService
      * Yedek SETİ üretir (v1.2.2 B1): dump + ayarlar + medya → tek paket, tek
      * manifest, atomik tamamlanma.
      *
-     * @return array{set_id: string, set_dizini: string, created_at: string, parca_sayisi: int, toplam_bayt: int, files_included: list<string>, media_files: int, media_bytes: int, medya_atlandi: bool}
+     * @return array{set_id: string, set_dizini: string, created_at: string, parca_sayisi: int, toplam_bayt: int, files_included: list<string>, media_files: int, media_bytes: int, medya_atlandi: bool, durum: string, eksik: list<string>, sebep: string|null}
      */
     public function create(): array
     {
@@ -126,10 +126,14 @@ final class BackupService
         $yazici->parcaEkle($set, 'veritabani.sql.enc', 'sql', $this->encrypt($dump));
         unset($dump); // düz metin bellekte gereksiz durmasın
 
-        // 2) AYARLAR + KULLANICI SÖZLÜKLERİ — zorunlu parça.
+        // 2) AYARLAR + KULLANICI SÖZLÜKLERİ — H1: zorunlu DEĞİL. Okunamazsa
+        //    set KISMİ olur, SQL yine yazılır; manifest eksiği ve sebebini
+        //    taşır. Ayarlar yeniden girilebilir, veritabanı girilemez.
         $ayarlar = $this->ayarPaketi();
         if ($ayarlar !== null) {
             $yazici->parcaEkle($set, 'ayarlar.files.enc', 'config', $this->encrypt($ayarlar['govde']));
+        } else {
+            $yazici->eksikBildir($set, 'config', $this->ayarEksikSebebi());
         }
 
         // 3) MEDYA — isteğe bağlı; sınır aşılırsa set KISMİ olur, başarısız olmaz.
@@ -150,7 +154,31 @@ final class BackupService
             'media_files' => $medya['dosya_sayisi'],
             'media_bytes' => $medya['toplam_bayt'],
             'medya_atlandi' => $medya['atlandi'],
+            'durum' => $set['eksik'] === [] ? \App\Services\Yedek\YedekManifesti::DURUM_TAM : \App\Services\Yedek\YedekManifesti::DURUM_KISMI,
+            'eksik' => $set['eksik'],
+            'sebep' => $set['sebep'],
         ];
+    }
+
+    /**
+     * Ayar paketi alınamadığında manifeste yazılacak KISA sebep (H1).
+     *
+     * "Dosya yok" ile "dosya var ama okunamıyor" ayrı teşhislerdir ve
+     * operatörün yapacağı iş farklıdır (ilkinde kurulum eksik, ikincisinde
+     * izin bozuk). Sebep bunu söyler; bir yığın izi değil, tek satırdır.
+     */
+    private function ayarEksikSebebi(): string
+    {
+        foreach (['config.php', '.env'] as $ayar) {
+            $yol = $this->basePath . '/' . $ayar;
+            if (file_exists($yol)) {
+                return is_readable($yol)
+                    ? $ayar . ' okundu ama içerik alınamadı'
+                    : $ayar . ' okunamadı: izin reddedildi';
+            }
+        }
+
+        return 'config.php bulunamadı';
     }
 
     /**
@@ -202,7 +230,7 @@ final class BackupService
      * sınırı aşan bir görsel) o dosya atlanır ve durum raporlanır — sessizce
      * kaybolmaz.
      *
-     * @param array{set_id: string, damga: string, hazirlik: string, parcalar: list<array{ad: string, tur: string, sira: int, boyut: int, sha256: string}>} $set
+     * @param array{set_id: string, damga: string, hazirlik: string, parcalar: list<array{ad: string, tur: string, sira: int, boyut: int, sha256: string}>, eksik: list<string>, sebep: string|null} $set
      * @return array{dosya_sayisi: int, toplam_bayt: int, atlandi: bool}
      */
     private function medyaParcalari(array &$set, \App\Services\Yedek\YedekSetiYazici $yazici): array
@@ -378,7 +406,7 @@ final class BackupService
      * Yarım setler (`.hazirlik-*`) BURADA GÖRÜNMEZ: listede yer alan her satır,
      * kullanıcının "yedeğim var" diye güvendiği bir şeydir.
      *
-     * @return list<array{name: string, set_id: string, size: int, created_at: string, tam: bool, kismi: bool, parca_sayisi: int, parcalar: list<array{ad: string, tur: string, sira?: int, boyut: int, sha256: string}>}>
+     * @return list<array{name: string, set_id: string, size: int, created_at: string, tam: bool, durum: string, eksik: list<string>, sebep: string|null, medyasiz: bool, parca_sayisi: int, parcalar: list<array{ad: string, tur: string, sira?: int, boyut: int, sha256: string}>}>
      */
     public function list(): array
     {
@@ -405,7 +433,12 @@ final class BackupService
                 'size' => $ozet['toplam_bayt'],
                 'created_at' => date(DATE_ATOM, (int) filemtime($dizin)),
                 'tam' => $ozet['tam'],
-                'kismi' => $ozet['kismi'],
+                // H1: durum + eksik + sebep — panel rozeti buradan beslenir ve
+                // rozet KALICIDIR ("0'da gizle" kuralı sayaçlar içindir).
+                'durum' => $ozet['durum'],
+                'eksik' => $ozet['eksik'],
+                'sebep' => $ozet['sebep'],
+                'medyasiz' => $ozet['medyasiz'],
                 'parca_sayisi' => $ozet['parca_sayisi'],
                 // B4: parçalar SIRALI ve SHA'lariyla birlikte gider.
                 // "Tümünü zip indir" düğmesi olmadığına göre, hangi dosyaları

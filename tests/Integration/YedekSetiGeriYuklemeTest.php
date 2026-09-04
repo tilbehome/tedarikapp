@@ -57,10 +57,9 @@ final class YedekSetiGeriYuklemeTest extends TestCase
         mkdir($this->kok . '/storage/backups', 0o775, true);
         mkdir($this->kok . '/public/media', 0o775, true);
 
-        // GERÇEK KURULUMUN İKİZİ: `config` zorunlu parçadır, çünkü ayarlarsız
-        // bir dökümden geri dönmek "veriler geldi ama uygulama açılmıyor"
-        // demektir. Kurulumda bu dosya HER ZAMAN vardır; fikstürün onsuz
-        // kurulması gerçeği değil, eksikliği taklit ederdi.
+        // GERÇEK KURULUMUN İKİZİ: kurulumda config.php her zaman vardır ve
+        // TAM set üreten vakalar onunla koşar. H1'in KISMİ vakası bu dosyayı
+        // bilerek siler — "config alınamadı" durumunun test eşdeğeri.
         file_put_contents(
             $this->kok . '/config.php',
             "<?php\nreturn ['APP_KEY' => 'prova'];\n",
@@ -173,6 +172,42 @@ final class YedekSetiGeriYuklemeTest extends TestCase
             $geriYukleyici->sayim($this->pdo())['tablolar'],
             'Kapı kapalıyken veritabanına DOKUNULMAMALI.',
         );
+    }
+
+    /**
+     * H1 (e) — KISMİ VAKA: config yokken alınan set, bayrakla BİREBİR geri gelir.
+     *
+     * Bayraksız kapı kapalı (veritabanına dokunulmaz); `kismiKabul` ile
+     * satır sayıları birebir. Kural değişikliğinin canlıdaki anlamı tam olarak
+     * budur: izin kazası olan gece de veritabanı yedeklenmiş olur.
+     */
+    public function testKISMISETBAYRAKLABIREBIRGERIYUKLENIR(): void
+    {
+        $servis = $this->kaynagiKur(medyaDosyaSayisi: 2, medyaBayt: 1024, sinirMb: 200);
+        unlink($this->kok . '/config.php'); // config alınamaz
+        $geriYukleyici = new YedekGeriYukleyici($servis);
+
+        $oncekiSayim = $this->satirSayimi();
+        $set = $servis->create();
+
+        self::assertSame(\App\Services\Yedek\YedekManifesti::DURUM_KISMI, $set['durum']);
+        self::assertFileExists($set['set_dizini'] . '/veritabani.sql.enc');
+
+        // Bayraksız: kapı kapalı, veritabanına dokunulmadı.
+        try {
+            $geriYukleyici->kapiyiAc($set['set_dizini']);
+            self::fail('KISMİ set bayraksız kapıyı AÇMAMALIYDI.');
+        } catch (\RuntimeException $hata) {
+            self::assertStringContainsString('--kismi-kabul', $hata->getMessage());
+        }
+        self::assertSame($oncekiSayim, $geriYukleyici->sayim($this->pdo())['tablolar']);
+
+        // Bayrakla: sil → geri yükle → birebir.
+        $manifest = $geriYukleyici->kapiyiAc($set['set_dizini'], [], kismiKabul: true);
+        $geriYukleyici->hedefiTemizle($this->pdo());
+        $sonrakiSayim = $geriYukleyici->veritabaniniYukle($this->pdo(), $set['set_dizini'], $manifest);
+
+        self::assertSame($oncekiSayim, $sonrakiSayim['tablolar'], 'KISMİ setten de satır sayıları BİREBİR gelmeli.');
     }
 
     /** BOZUK PARÇA: içerik değişmişse SHA tutmaz ve kapı açılmaz. */

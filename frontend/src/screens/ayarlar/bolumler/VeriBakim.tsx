@@ -181,8 +181,11 @@ function BackupCard() {
       const medya = result.backup.medya_atlandi
         ? ' UYARI: tek başına boyut sınırını aşan bazı görseller sete girmedi.'
         : '';
+      const kismi = result.backup.durum === 'KISMI'
+        ? ` UYARI: set KISMİ — ${result.backup.eksik.join(', ')} alınamadı${result.backup.sebep ? ` (${result.backup.sebep})` : ''}.`
+        : '';
 
-      return `Yedek seti alındı: ${result.backup.parca_sayisi} parça.${offsite}${medya}`;
+      return `Yedek seti alındı: ${result.backup.parca_sayisi} parça.${offsite}${medya}${kismi}`;
     });
 
   return (
@@ -283,7 +286,10 @@ function YedekSetiSatiri({
     size: number;
     created_at: string;
     tam: boolean;
-    kismi: boolean;
+    durum: 'TAM' | 'KISMI';
+    eksik: string[];
+    sebep: string | null;
+    medyasiz: boolean;
     parca_sayisi: number;
     parcalar: { ad: string; tur: string; sira: number; boyut: number; sha256: string }[];
   };
@@ -315,8 +321,20 @@ function YedekSetiSatiri({
         >
           {acik ? '▾' : '▸'} {set.name}
         </button>
-        {set.kismi ? (
-          <span className="badge bg-warn-soft text-warn ring-warn/20" title="Görsel parçası yok — veritabanı ve ayarlar geri yüklenebilir.">
+        {/*
+          H1: KISMİ rozeti KALICIDIR — "0'da gizle" kuralı sayaçlar içindir,
+          yapılmamış bir işi (config'i elle girmek) hatırlatan uyarı için değil.
+        */}
+        {set.durum === 'KISMI' ? (
+          <span
+            className="badge bg-warn-soft text-warn ring-warn/20"
+            title={`Bu set bileşen eksik alındı${set.sebep ? `: ${set.sebep}` : ''}. Geri yüklemede eksik bileşen elle girilir.`}
+          >
+            KISMİ ({set.eksik.map((b) => PARCA_TURLERI[b]?.toLowerCase() ?? b).join(', ')} eksik)
+          </span>
+        ) : null}
+        {set.medyasiz ? (
+          <span className="badge bg-surface-2 text-ink-3" title="Görsel parçası yok — veritabanı ve ayarlar geri yüklenebilir.">
             görselsiz
           </span>
         ) : null}

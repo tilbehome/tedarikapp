@@ -18,6 +18,7 @@ declare(strict_types=1);
  *   php bin/restore-test.php                       → en yeni yedeği dener
  *   php bin/restore-test.php set-20260821-030004
  *   php bin/restore-test.php --tut                 → geçici veritabanını SİLMEZ (inceleme)
+ *   php bin/restore-test.php --kismi-kabul         → KISMİ seti (config eksik) kabul et
  *
  * Çıkış kodu: 0 tatbikat başarılı · 1 başarısız (yedek bozuk/erişilemez/yükleme hatası).
  */
@@ -37,6 +38,8 @@ require dirname(__DIR__) . '/vendor/autoload.php';
 $basePath = dirname(__DIR__);
 $argumanlar = array_slice($argv ?? [], 1);
 $tut = in_array('--tut', $argumanlar, true);
+// H1: tatbikat da KISMİ seti bayraksız reddeder — canlı geri yüklemeyle AYNI kapı.
+$kismiKabul = in_array('--kismi-kabul', $argumanlar, true);
 $istenenAd = null;
 foreach ($argumanlar as $arguman) {
     if (!str_starts_with($arguman, '--')) {
@@ -84,7 +87,10 @@ try {
     // felaket gününde ona güvenilir. APP_KEY yanlışsa da burada patlar —
     // tatbikatın ilk kazanımı hep buydu.
     $geriYukleyici = new YedekGeriYukleyici($service);
-    $manifest = $geriYukleyici->kapiyiAc($setDizini);
+    $manifest = $geriYukleyici->kapiyiAc($setDizini, [], $kismiKabul);
+    if ($manifest->durum() === App\Services\Yedek\YedekManifesti::DURUM_KISMI) {
+        echo 'DURUM  : KISMİ — eksik: ' . implode(', ', $manifest->eksikBilesenler()) . ' (elle girilecek)' . PHP_EOL;
+    }
     $ozet = $manifest->ozet();
     echo 'SET    : ' . $setAdi . ' (' . $ozet['parca_sayisi'] . ' parça, '
         . number_format($ozet['toplam_bayt'] / 1048576, 2) . " MB)" . PHP_EOL;

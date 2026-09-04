@@ -49,7 +49,7 @@ final class YedekSetiYazici
     /**
      * Yeni set açar (hazırlık dizini).
      *
-     * @return array{set_id: string, damga: string, hazirlik: string, parcalar: list<array{ad: string, tur: string, sira: int, boyut: int, sha256: string}>}
+     * @return array{set_id: string, damga: string, hazirlik: string, parcalar: list<array{ad: string, tur: string, sira: int, boyut: int, sha256: string}>, eksik: list<string>, sebep: string|null}
      */
     public function baslat(string $damga): array
     {
@@ -60,7 +60,7 @@ final class YedekSetiYazici
             throw new RuntimeException('Yedek hazırlık dizini açılamadı: ' . $hazirlik);
         }
 
-        return ['set_id' => $setId, 'damga' => $damga, 'hazirlik' => $hazirlik, 'parcalar' => []];
+        return ['set_id' => $setId, 'damga' => $damga, 'hazirlik' => $hazirlik, 'parcalar' => [], 'eksik' => [], 'sebep' => null];
     }
 
     /**
@@ -69,7 +69,7 @@ final class YedekSetiYazici
      * ÖZET GERÇEK İÇERİKTEN hesaplanır, çağırandan alınmaz: çağıranın verdiği
      * bir özet, yazım sırasında bozulan içeriği yakalayamazdı.
      *
-     * @param array{set_id: string, damga: string, hazirlik: string, parcalar: list<array{ad: string, tur: string, sira: int, boyut: int, sha256: string}>} $set
+     * @param array{set_id: string, damga: string, hazirlik: string, parcalar: list<array{ad: string, tur: string, sira: int, boyut: int, sha256: string}>, eksik: list<string>, sebep: string|null} $set
      */
     public function parcaEkle(array &$set, string $ad, string $tur, string $icerik): void
     {
@@ -92,12 +92,29 @@ final class YedekSetiYazici
     }
 
     /**
+     * Bir bileşenin BİLEREK alınamadığını sete işler (H1).
+     *
+     * Çağıran, bileşeni yakalayamadığı anda bunu bildirir; manifest KISMİ
+     * durumla ve sebeple yazılır. Bildirmemek, kısmiliği sessizleştirmek
+     * olurdu — ve sessiz kısmi set, geri yükleme gününe kadar tam görünür.
+     *
+     * @param array{set_id: string, damga: string, hazirlik: string, parcalar: list<array{ad: string, tur: string, sira: int, boyut: int, sha256: string}>, eksik: list<string>, sebep: string|null} $set
+     */
+    public function eksikBildir(array &$set, string $bilesen, string $sebep): void
+    {
+        if (!in_array($bilesen, $set['eksik'], true)) {
+            $set['eksik'][] = $bilesen;
+        }
+        $set['sebep'] = $set['sebep'] === null ? $sebep : $set['sebep'] . ' · ' . $sebep;
+    }
+
+    /**
      * Manifesti yazar ve seti nihai adına TAŞIR.
      *
      * DOĞRULAMA ÖNCE: zorunlu parçası olmayan bir set nihai ada HİÇ ulaşmaz.
      * Yarım seti "indirilebilir" yapmak, olmayan bir güvenceyi satmaktır.
      *
-     * @param  array{set_id: string, damga: string, hazirlik: string, parcalar: list<array{ad: string, tur: string, sira: int, boyut: int, sha256: string}>} $set
+     * @param  array{set_id: string, damga: string, hazirlik: string, parcalar: list<array{ad: string, tur: string, sira: int, boyut: int, sha256: string}>, eksik: list<string>, sebep: string|null} $set
      * @return string nihai dizin yolu
      */
     public function tamamla(array $set): string
@@ -108,8 +125,12 @@ final class YedekSetiYazici
             'surum' => $this->surum,
             'sifreleme' => $this->sifrelemeAdi,
             'parcalar' => $set['parcalar'],
+            // Config'siz sette de BEKLENEN sayı budur: kısmilik parça bağını
+            // gevşetmez, liste kendi içinde tam olmak zorundadır.
             'toplam_parca' => count($set['parcalar']),
             'migration_defteri' => $this->migrationDefteri,
+            'eksik' => $set['eksik'],
+            'sebep' => $set['sebep'],
         ]);
 
         if (!$manifest->tamMi()) {

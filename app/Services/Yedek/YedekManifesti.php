@@ -51,8 +51,29 @@ final class YedekManifesti
      */
     public const BICIM = 1;
 
-    /** Bu türler olmadan set BAŞARISIZDIR. */
-    private const ZORUNLU_TURLER = ['sql', 'config'];
+    /**
+     * Bu türler olmadan set BAŞARISIZDIR.
+     *
+     * H1 (PM hükmü, 4 Eyl): yalnız `sql`. Eskiden `config` de zorunluydu ve
+     * `config.php` üstünde bir gecelik izin kazası, o gece VERİTABANI
+     * yedeğinin de alınmaması demekti. Ayarlar yeniden girilebilir,
+     * veritabanı girilemez — kaybı en büyük parçayı, kaybı en küçük parça
+     * yüzünden düşürmek orantısızdı. Config eksikse set KISMİ olur (aşağıda),
+     * reddedilmez.
+     */
+    private const ZORUNLU_TURLER = ['sql'];
+
+    /** Set durumu: bütün bileşenler alındı. */
+    public const DURUM_TAM = 'TAM';
+
+    /**
+     * Set durumu: bir bileşen BİLEREK alınamadı (`eksik` listesi söyler,
+     * `sebep` neden olduğunu söyler). KISMİ ≠ eksik parça: kısmi set "daha
+     * az parçayla bilinçli tamamlanmış" settir; parçası kaybolmuş set ise
+     * GEÇERSİZDİR ve parça bağı (sira / toplam_parca) onu kısmi sette de
+     * yakalar.
+     */
+    public const DURUM_KISMI = 'KISMI';
 
     /**
      * @param array{
@@ -63,6 +84,8 @@ final class YedekManifesti
      *     parcalar: list<array{ad: string, tur: string, sira?: int, boyut: int, sha256: string}>,
      *     migration_defteri: list<string>,
      *     toplam_parca?: int,
+     *     eksik?: list<string>,
+     *     sebep?: string|null,
      *     zorunlu_turler?: list<string>
      * } $veri
      */
@@ -224,13 +247,41 @@ final class YedekManifesti
         return $this->eksikler() === [];
     }
 
-    /** Medya parçası olmayan set KISMİ'dir — başarısız değil. */
-    public function kismiMi(): bool
+    /**
+     * BİLEREK alınamayan bileşenler (H1): örn. `['config']`.
+     *
+     * Yazıcı bunu, bileşeni yakalayamadığı anda kaydeder. Listeden türetilmez:
+     * "config parçası yok" ile "config parçası alınamadı" aynı şey değildir
+     * ve ikisini ayıran tek tanık, yazıcının o an yazdığı bu alandır.
+     *
+     * @return list<string>
+     */
+    public function eksikBilesenler(): array
+    {
+        return array_map('strval', $this->veri['eksik'] ?? []);
+    }
+
+    /** Eksik bileşenin KISA sebebi — insan okur, karar verir. */
+    public function sebep(): ?string
+    {
+        $sebep = $this->veri['sebep'] ?? null;
+
+        return is_string($sebep) && $sebep !== '' ? $sebep : null;
+    }
+
+    /** TAM ya da KISMI — geçerlilikten bağımsız bir eksen (bkz. DURUM_KISMI). */
+    public function durum(): string
+    {
+        return $this->eksikBilesenler() === [] ? self::DURUM_TAM : self::DURUM_KISMI;
+    }
+
+    /** Medya parçası olmayan set — panel "görselsiz" rozeti için. */
+    public function medyasizMi(): bool
     {
         return !in_array('medya', array_column($this->parcalar(), 'tur'), true);
     }
 
-    /** @return array{parca_sayisi: int, medya_parca_sayisi: int, toplam_bayt: int, tam: bool, kismi: bool} */
+    /** @return array{parca_sayisi: int, medya_parca_sayisi: int, toplam_bayt: int, tam: bool, durum: string, eksik: list<string>, sebep: string|null, medyasiz: bool} */
     public function ozet(): array
     {
         $parcalar = $this->parcalar();
@@ -243,7 +294,10 @@ final class YedekManifesti
             )),
             'toplam_bayt' => array_sum(array_map(static fn (array $p): int => (int) $p['boyut'], $parcalar)),
             'tam' => $this->tamMi(),
-            'kismi' => $this->kismiMi(),
+            'durum' => $this->durum(),
+            'eksik' => $this->eksikBilesenler(),
+            'sebep' => $this->sebep(),
+            'medyasiz' => $this->medyasizMi(),
         ];
     }
 
@@ -274,7 +328,7 @@ final class YedekManifesti
 
         unset($veri['bicim']);
 
-        /** @var array{set_id: string, olusturuldu: string, surum: string, sifreleme: string, parcalar: list<array{ad: string, tur: string, boyut: int, sha256: string}>, migration_defteri: list<string>, zorunlu_turler?: list<string>} $veri */
+        /** @var array{set_id: string, olusturuldu: string, surum: string, sifreleme: string, parcalar: list<array{ad: string, tur: string, sira?: int, boyut: int, sha256: string}>, migration_defteri: list<string>, toplam_parca?: int, eksik?: list<string>, sebep?: string|null, zorunlu_turler?: list<string>} $veri */
         return new self($veri);
     }
 }

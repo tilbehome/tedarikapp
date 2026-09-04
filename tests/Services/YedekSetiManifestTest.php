@@ -86,12 +86,14 @@ final class YedekSetiManifestTest extends TestCase
         ]);
 
         self::assertTrue($medyasiz->tamMi());
-        self::assertTrue($medyasiz->kismiMi(), 'Medyasız set KISMİ olarak işaretlenmeli.');
+        self::assertTrue($medyasiz->medyasizMi(), 'Medyasız set işaretlenmeli.');
+        // H1: medyasızlık DURUM eksenini değiştirmez — config alındıysa set TAM'dır.
+        self::assertSame(\App\Services\Yedek\YedekManifesti::DURUM_TAM, $medyasiz->durum());
     }
 
     public function testMEDYALISETKISMIDEGIL(): void
     {
-        self::assertFalse($this->manifest()->kismiMi());
+        self::assertFalse($this->manifest()->medyasizMi());
     }
 
     public function testBOZUKSHAREDDEDILIR(): void

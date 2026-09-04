@@ -46,7 +46,11 @@ try {
     $connection = Connection::fromCallable(static fn (): PDO => Database::connect($config));
     $now = SystemClock::fromConfig($config)->now();
 
-    $yedek = static function () use ($config, $basePath, $connection): string {
+    // H1: KISMİ set uyarısı — cron özetine düşer ve app_logs'a AYRI bir uyarı
+    // satırı yazılır. Koşum başarılıdır (SQL alındı) ama sessiz kalmaz.
+    $kismiUyari = null;
+
+    $yedek = static function () use ($config, $basePath, $connection, &$kismiUyari): string {
         // v1.2.2 B1: yedek artık bir SET — tek dizin, tek manifest, atomik.
         // Migration defteri manifeste girer: geri yüklerken "bu yedek hangi
         // şemaya ait?" sorusunun tek cevabı odur.
@@ -66,6 +70,15 @@ try {
 
         $setAdi = basename($backup['set_dizini']);
         $satir = sprintf('%s (%.1f KB, %d parça)', $setAdi, $backup['toplam_bayt'] / 1024, $backup['parca_sayisi']);
+        if ($backup['durum'] === App\Services\Yedek\YedekManifesti::DURUM_KISMI) {
+            $kismiUyari = sprintf(
+                'Yedek seti KISMİ: %s alınamadı (%s). Veritabanı yedeklendi; eksik bileşen geri yüklemede elle girilecek.',
+                implode(', ', $backup['eksik']),
+                $backup['sebep'] ?? 'sebep yok',
+            );
+            $satir .= ' · KISMİ (' . implode(', ', $backup['eksik']) . ' eksik)';
+            echo 'UYARI         ' . $kismiUyari . PHP_EOL;
+        }
         printf("YEDEK SETI    %s\n", $satir);
 
         if ($backup['media_files'] > 0) {
@@ -133,11 +146,14 @@ try {
 
     // TEK birleşik özet satırı — seviye Info'ya sabitlenmiş kayıtçı (LOG_LEVEL=warning
     // olsa bile gecelik koşunun izi app_logs'ta durmalı).
-    Logger::createForMaintenance($config, $basePath, $connection)
-        ->log($sonuc['ok'] ? 'info' : 'warning', $sonuc['summary'], [
-            'yedek_ok' => $sonuc['backup']['ok'],
-            'bakim_ok' => $sonuc['maintenance']['ok'],
-        ]);
+    $kayitci = Logger::createForMaintenance($config, $basePath, $connection);
+    $kayitci->log($sonuc['ok'] ? 'info' : 'warning', $sonuc['summary'], [
+        'yedek_ok' => $sonuc['backup']['ok'],
+        'bakim_ok' => $sonuc['maintenance']['ok'],
+    ]);
+    if ($kismiUyari !== null) {
+        $kayitci->warning($kismiUyari, ['yedek_durum' => 'KISMI']);
+    }
 
     echo $sonuc['summary'] . "\n";
     exit($sonuc['ok'] ? 0 : 2);
