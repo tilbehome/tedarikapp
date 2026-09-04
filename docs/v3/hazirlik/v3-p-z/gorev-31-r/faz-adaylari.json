@@ -1,0 +1,242 @@
+[
+  {
+    "harf": "P",
+    "ad": "Operatör Hızı & Sayfa Olgunluğu",
+    "amac": "Yoğun veri ekranlarını tek operatörün hızlı, hataya dayanıklı ve geri alınabilir biçimde işlettiği olgun yüzeylere dönüştürmek.",
+    "kapsam": [
+      "Tablo ve kartlarda satır içi düzenleme; alan tipine göre doğrulama ve kaydetme durumu",
+      "Çoklu seçim, aralık seçimi, tüm görünürleri seçme ve kapsamı açık toplu eylemler",
+      "Satır ve seçili grup için bağlama duyarlı sağ tık menüleri",
+      "Komut paleti, ekran bazlı klavye kısayolları ve keşfedilebilir kısayol yardımcısı",
+      "Kayıtlı görünümler, favoriler, sütun setleri, filtre-sıralama-gruplama ve kişisel yoğunluk ayarı",
+      "Tip güvenli akıllı yapıştırma; Excel/WhatsApp metninden önizlemeli sütun eşleme ve hata hücreleri",
+      "Sürükle-bırakla öncelik/sıra değiştirme ve görsel-belgeyi doğru kayda bırakma",
+      "Toplu işlemlerde etki özeti, geri al bağlantısı, kısmi başarısızlık raporu ve yeniden deneme",
+      "Odak korunumu, önceki/sonraki kayıt gezintisi ve URL ile paylaşılabilir görünüm durumu",
+      "Her etkileşim için masaüstü/PWA, erişilebilirlik ve büyük veri seti performans testleri"
+    ],
+    "tur": "tam",
+    "sira": 1,
+    "bagli_faz": null,
+    "tetik": null,
+    "boy": "L"
+  },
+  {
+    "harf": "Q",
+    "ad": "Şartname Stüdyosu",
+    "amac": "Çin ekibinin yanlış ürünü bulmaması için beklenti, ölçü ve malzeme şartlarını RFQ içinde açık ve sürümlü taşımak.",
+    "kapsam": [
+      "Kategoriye göre tekrar kullanılabilir beklenti ve şartname şablonları",
+      "Zorunlu, tercih edilen ve kabul edilemez koşulların ayrılması",
+      "Ölçü, malzeme, renk, set içeriği ve tolerans alanları",
+      "MOQ hedefi, hedef termin ve kullanıcı hedefi olarak işaretli DDP aralığı",
+      "Referans ürün, görsel, video, açıklama ve 同款 bağlantıları",
+      "Eksik, çelişkili veya ölçülemeyen şartlar için hazırlık kontrolü",
+      "Firmaya gönderilen şartname sürümünün dondurulması ve alan farkı",
+      "Firma yanıtının şartname maddesine uygun/kısmi/uygun değil biçiminde bağlanması",
+      "Alternatif ürün sapmasının zorunlu gerekçeyle gösterilmesi",
+      "TR/EN/ZH terimlerinin mevcut tek kaynak dil hattından üretilmesi"
+    ],
+    "tur": "blok",
+    "sira": null,
+    "bagli_faz": "V3-C/N — RFQ bloğu / beklenti-ölçü-malzeme şartı",
+    "tetik": null,
+    "boy": "M"
+  },
+  {
+    "harf": "R",
+    "ad": "Senaryo & Karar Laboratuvarı",
+    "amac": "Aynı ürün veya sepeti birden çok ithalatçı arasında elle bölerek DDP, CBM, termin ve koşul etkisini göstermek; kararı kullanıcıda bırakmak.",
+    "kapsam": [
+      "Teklif satırlarını paket/adet birimine ve onaylı kur snapshot'ına göre normalleştirme",
+      "Kademeli fiyat, MOQ, termin, teklif geçerliliği ve veri eksikliği için karşılaştırılabilir kolonlar",
+      "Miktarı bir veya birden çok ithalatçı firma/teklif arasında kullanıcı tarafından elle bölme",
+      "Sepet düzeyinde bütçe üst sınırı, minimum sipariş, hedef adet ve CBM kısıtları",
+      "Fiyat, termin, şartname uyumu, veri tamlığı ve kalite kanıtını açıklanabilir gösterme",
+      "Yalnız öneri niteliğinde en ucuz, en erken, en az eksik veri ve dengeli görünümler",
+      "Senaryolar arasında toplam DDP, landed cost, CBM, termin ve karşılanmayan koşul farkı",
+      "Teklif turu değişince bayatlık işareti ve insan onaylı yeniden hesaplama önizlemesi",
+      "Seçim, kısmi seçim veya ret için görünür karar gerekçesi",
+      "Otomatik optimum, otomatik kazanan, otomatik sipariş ve platformdan alım üretmeme"
+    ],
+    "tur": "tam",
+    "sira": 4,
+    "bagli_faz": null,
+    "tetik": null,
+    "boy": "M"
+  },
+  {
+    "harf": "S",
+    "ad": "Ekip & Karar Defteri",
+    "amac": "İkinci hesap açıldığında hesap yaşam döngüsünü, görev dağılımını, görünürlük sınırını ve karar/kanıt hafızasını tek kaynaktan yönetmek.",
+    "kapsam": [
+      "İkinci hesap için davet ve kabul yaşam döngüsü",
+      "Hesabı askıya alma, yeniden etkinleştirme ve erişimi sonlandırma",
+      "Şifre ve 2FA politikası",
+      "Görevi kişiye atama, vade, durum ve tamamlanma kanıtı",
+      "Panorama içinde 'sana atananlar' görünümü",
+      "Operatör görünürlük sınırını G'deki izin matrisiyle tek kaynaktan kullanma",
+      "Seç, beklet, reddet, alternatif iste ve siparişe geçir kararları için kısa gerekçe",
+      "Karar anındaki ürün, şartname, teklif, kur ve landed cost snapshot bağlantıları",
+      "Varsayım, belirsizlik, güven, kanıt kökeni ve bayatlık kaydı",
+      "Teknik olay günlüğü ile iş karar günlüğünü ayrı fakat bağlantılı gösterme"
+    ],
+    "tur": "tetikli",
+    "sira": null,
+    "bagli_faz": null,
+    "tetik": "İkinci hesap fiilen açılır.",
+    "boy": "M"
+  },
+  {
+    "harf": "T",
+    "ad": "Ambalaj & Yük Mühendisliği",
+    "amac": "Konteyner doluluk/yerleşim sorununu ve koli ölçüsünün teklif, numune ve mal kabul arasında değişmesini kademeli fiziksel planla yönetmek.",
+    "kapsam": [
+      "T1: birim, iç kutu, ana koli ve set için ölçü-ağırlık-seviye modeli",
+      "T1: tedarikçi beyanı, numune ölçümü ve mal kabul ölçümünü yan yana karşılaştırma",
+      "T1: ambalaj sürümü, koli içi adet ve CBM/landed cost etki hesabı",
+      "T1: ölçü veya koli içi adet değişikliğinin teklif ve sipariş etkisini gösterme",
+      "T2: yön, kırılganlık, istif ve ağırlık kısıtlı 2B/katman yerleşimi",
+      "T2: elle sabitleme, döndürme, hariç tutma ve yerleşemeyen koli nedeni",
+      "T2: hacim, ağırlık, kullanılmayan alan ve doluluk raporu",
+      "T3: ihtiyaç kanıtlanırsa gelişmiş 3B yük planı",
+      "T3: yazdırılabilir/paylaşılabilir plan ve gerçekleşen sevkiyat sapması",
+      "Kademeler arasında doğrulanabilir kabul kanıtı olmadan sonraki kademeye geçmeme"
+    ],
+    "tur": "tam",
+    "sira": 2,
+    "bagli_faz": null,
+    "tetik": null,
+    "boy": "L"
+  },
+  {
+    "harf": "U",
+    "ad": "Kalite Güvence & CAPA",
+    "amac": "Kalite kanıtını yalnız mal kabulden alarak kusur, karar, düzeltici faaliyet ve kapanış zincirini V3-D içinde yönetmek.",
+    "kapsam": [
+      "Kategori/ürün bazlı mal kabul kontrol listeleri",
+      "Kritik, majör ve minör kusur sözlüğü; görsel örnek ve kabul limiti",
+      "Mal kabul sırasında fotoğraf, video, belge, ölçüm ve açıklama toplama",
+      "Mevcut onaylı referans varsa mal kabul bulgusunu madde bazında karşılaştırma",
+      "Geçti, şartlı geçti, kaldı ve yeniden kontrol gerekli kayıtları",
+      "'Geçti' kararını yalnız Ürün Sahibi'nin verebilmesi",
+      "Kök neden, düzeltici faaliyet, sorumlu taraf, hedef tarih ve kanıt kapanışı",
+      "Yeniden işleme, değişim, fiyat indirimi, rücu veya bekletme karar kaydı",
+      "Tekrarlayan kusur ve önceki sipariş dersini ürün hafızasına aktarma",
+      "Numune süreci veya tedarikçi risk puanı üretmeme"
+    ],
+    "tur": "blok",
+    "sira": null,
+    "bagli_faz": "V3-D — mal kabul bloğu",
+    "tetik": null,
+    "boy": "L"
+  },
+  {
+    "harf": "V",
+    "ad": "Sipariş Değişiklik Kontrolü + İstisna & Müdahale Merkezi",
+    "amac": "Sipariş değişikliklerini ve normal akıştan sapmaları tek revizyon-vaka zincirinde görünür, etkisi hesaplanmış ve kanıtla kapatılmış biçimde yönetmek.",
+    "kapsam": [
+      "Satır düzeyinde değişiklik talebi; eski-yeni değer, gerekçe, öneren taraf ve tarih",
+      "Kabul, ret, karşı öneri, kısmi kabul ile firma teyidi/iç onay ayrımı",
+      "Bölünmüş sevkiyat ve değişikliğin CBM, maliyet, termin, kalite ve ambalaj etkisi",
+      "Kabul edilen değişiklikten değişmez sipariş revizyonu üretme",
+      "WhatsApp/Excel köprüsünden gelen değişikliği yalnız insan onaylı taslak alma",
+      "İstisna türü, önem, yaş, etkilenen tutar/adet ve bekleyen taraf",
+      "Panorama/Gelen Kutusu içinde vaka kuyruğu; sahip, sıradaki eylem ve hedef tarih",
+      "Müdahale oyun kitapları, bağlantılı kayıtlar ve etki analizi",
+      "Çözüm kanıtı, kapanış nedeni, yeniden açma ve yanlış pozitif işareti",
+      "Ana durum makinesini ve 5B status.* tek kaynağını değiştirmeme"
+    ],
+    "tur": "tam",
+    "sira": 5,
+    "bagli_faz": null,
+    "tetik": null,
+    "boy": "L"
+  },
+  {
+    "harf": "W",
+    "ad": "Mobil Saha Akışları",
+    "amac": "Mal kabulde telefon ihtiyacı fiilen doğduğunda fotoğraf, sayım, ölçüm ve fark kaydını doğru sipariş satırına hızlıca bağlamak.",
+    "kapsam": [
+      "Telefonda mal kabul kaydını ve ilgili sipariş satırını açma",
+      "Barkod, ürün veya sipariş satırıyla hızlı kayıt bulma",
+      "Fotoğrafı doğru kontrol maddesi ve kusur kaydına bağlama",
+      "Koli/adet sayımı ve beklenen-gerçekleşen farkı",
+      "Ölçüm, kısa not ve kusur sınıfı girişi",
+      "Bağlantı kesintisinde yerel taslak ve yeniden bağlanınca açık eşitleme",
+      "Eşzamanlı değişiklikte görünür çakışma çözümü",
+      "Tetik gerçekleşmezse mobilde yalnız inceleme sunma"
+    ],
+    "tur": "tetikli",
+    "sira": null,
+    "bagli_faz": null,
+    "tetik": "Mal kabulde telefon ihtiyacı fiilen doğar.",
+    "boy": "M"
+  },
+  {
+    "harf": "X",
+    "ad": "Tekrar Sipariş & Ürün Hafızası",
+    "amac": "Önceki doğrulanmış ürünü, değişiklikleri yeniden teyit ederek güvenli bir yeni sipariş adayına dönüştürmek.",
+    "kapsam": [
+      "Tamamlanmış siparişten değişmez known-good ürün dosyası üretme",
+      "Son onaylı şartname, varyant, ambalaj, etiket, golden sample ve kalite sonucu bağlantıları",
+      "Önceki DDP, MOQ, kur snapshot'ı, termin, koli ölçüsü, CBM ve gerçekleşen landed cost özeti",
+      "Tekrar sipariş taslağında aynen kullan, yeniden doğrula ve değiştirilmiş olarak işaretle seçenekleri",
+      "Yeni teklif ile son alım arasında fiyat, termin, MOQ, şartname ve ambalaj farkı",
+      "Önceki istisna, kusur, rücu ve düzeltici faaliyet derslerinin görünür uyarısı",
+      "Eski ürün sayfası kaybolmuşsa kanonik görsel ve şartname üzerinden yeniden 同款 arama başlangıcı",
+      "Tekrar sipariş kontrol listesi ve zorunlu yeniden teyit tarihleri",
+      "Bir siparişten yeni siparişe belge kopyalamak yerine sürümlü referans verme",
+      "Stok seviyesi, satış API'si veya otomatik replenishment önerisi üretmeme"
+    ],
+    "tur": "tam",
+    "sira": 3,
+    "bagli_faz": null,
+    "tetik": null,
+    "boy": "M"
+  },
+  {
+    "harf": "Y",
+    "ad": "Kural/Otomasyon Atölyesi + panel içi AI asistanı",
+    "amac": "En az üç ay düzenli tekrar ettiği kanıtlanan iç işleri whitelist eylemlerle otomatikleştirmek ve panel içi AI yardımıyla taslak/öneri üretmek.",
+    "kapsam": [
+      "Olay-koşul-eylem biçiminde kural oluşturucu",
+      "Teklif süresi, kilometre taşı, veri tamlığı, kalite sonucu ve istisna yaşı tetikleyicileri",
+      "Yalnız whitelist içindeki görev, taslak, alan önerisi, kuyruğa ekleme ve işaretleme eylemleri",
+      "Çalıştırmadan önce örnek kayıtlarla etki önizlemesi ve dry-run",
+      "İnsan onayı gerektiren eylemler ile güvenli otomatik eylemlerin ayrımı",
+      "Aynı olayın iki kez işlenmesini önleyen idempotency anahtarı",
+      "Kural sürümü, çalışma günlüğü ve başarı/kısmi hata/atlandı sonuçları",
+      "Kuralı duraklatma, geri alma, yeniden çalıştırma ve geçmiş sürüme dönme",
+      "Panel içi AI asistanının aynı whitelist üzerinden açıklama, taslak ve öneri üretmesi",
+      "Serbest kod, webhook, dış bildirim, resmî platform çağrısı veya otomatik sipariş sunmama"
+    ],
+    "tur": "tetikli",
+    "sira": null,
+    "bagli_faz": null,
+    "tetik": "Aynı elle işlemin en az 3 ay düzenli tekrarı kanıtlanır.",
+    "boy": "L"
+  },
+  {
+    "harf": "Z",
+    "ad": "Özel Alanlar & Uyarlanabilir Veri Katmanı",
+    "amac": "Ürün, liste, firma ve sipariş kayıtlarına yalnız bilgi taşıyan kontrollü özel alanlar eklemek ve son blokta V3'ü sağlamlaştırarak kapatmak.",
+    "kapsam": [
+      "Ürün, liste, firma ve sipariş kayıtlarında metin, sayı, tarih, seçim listesi, evet/hayır ve dosya tipli özel alan",
+      "Özel alan grubu ve alan sırası",
+      "Varsayılan değer ve zorunluluk ayarı",
+      "Keşif ve listelerde özel alanı sütun, filtre ve sıralama olarak kullanma",
+      "Özel alanı Excel, PDF ve paylaşım çıktılarına dahil etme",
+      "V3-N rol görünürlük whitelist matrisine bağlı alan görünürlüğü",
+      "Excel gel-git sırasında özel alan eşleşmesi ve doğrulama",
+      "Alan adı ve seçim değerlerini K56 çeviri hattından geçirme",
+      "Eklentide sayfa alanını özel alana eşleme",
+      "Özel alanı ana durum, kur/fiyat hesabı veya skora sokmama; ardından sağlamlaştırma, belge ve V4 vizyonundan oluşan V3 Kapanış bloğunu yürütme"
+    ],
+    "tur": "tam",
+    "sira": 6,
+    "bagli_faz": null,
+    "tetik": null,
+    "boy": "L"
+  }
+]

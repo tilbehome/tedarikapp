@@ -106,6 +106,27 @@ export default function SistemDurumu() {
           </div>
         ) : null}
 
+        {/* D6: devre kesici AÇIK — o türde yeni iş alınmıyor. Kapalıyken satır
+            yok: "kapalı" diye bir satır, bir süre sonra okunmaz olurdu. */}
+        {statusState.data?.kuyruk_devre_kesici ? (
+          <div
+            className="mt-3 rounded-lg border border-warn/40 bg-warn-soft p-3 text-sm"
+            data-testid="devre-kesici"
+          >
+            <b className="text-warn">
+              Devre kesici açık: {statusState.data.kuyruk_devre_kesici.tur} işleri duraklatıldı
+            </b>
+            <p className="mt-0.5 text-xs text-ink-2">
+              Art arda {statusState.data.kuyruk_devre_kesici.esik} geçici hata alındı; kaynak site ya da ağ
+              erişimi sorunlu olabilir. Kesici{' '}
+              {statusState.data.kuyruk_devre_kesici.kapanma_at
+                ? `${statusState.data.kuyruk_devre_kesici.kapanma_at} anında`
+                : `${statusState.data.kuyruk_devre_kesici.dakika} dakika içinde`}{' '}
+              kendiliğinden kapanır; bekleyen işler o zaman sürer.
+            </p>
+          </div>
+        ) : null}
+
         {/* A6-EK: boş sözlükle çevrilmiş ürünler. SIFIRDA GİZLİ — sıfır
             gösteren bir uyarı bir süre sonra okunmaz hâle gelir ve gerçek
             uyarıyı da görünmez kılar. */}

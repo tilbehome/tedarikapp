@@ -8,6 +8,7 @@ use App\Core\Config;
 use Ifsnop\Mysqldump\Mysqldump;
 use RuntimeException;
 use SensitiveParameter;
+use Throwable;
 
 /**
  * Veritabanı yedekleme (İE#10.5 Blok 1 — dış inceleme, PM onaylı).
@@ -29,13 +30,45 @@ final class BackupService
     private const TAG_LENGTH = 16;
     private const MAGIC = 'TDKBK1'; // dosya başı imzası + sürüm
     private const KEY_INFO = 'tedarikapp:backup:v1';
-    /** Sunucu-üretimi yedek adı deseni — indirme/silme yalnız bu desenle çalışır. */
-    private const NAME_PATTERN = '/^yedek-\d{8}-\d{6}\.sql\.enc$/';
+    /**
+     * Sunucu-üretimi yedek SETİ adı deseni — indirme/silme yalnız bu desenle
+     * çalışır (path traversal kalkanı).
+     */
+    private const SET_PATTERN = '/^set-\d{8}-\d{6}(-[0-9a-f]{6})?$/';
 
     public function __construct(
         private readonly Config $config,
         private readonly string $basePath,
+        /**
+         * v1.2.2 B1 — DUMP ÜRETİCİSİ enjekte edilebilir.
+         *
+         * Set üretiminin kendisi (parçalar, manifest, atomik taşıma) gerçek bir
+         * veritabanı olmadan sınanabilmeli: sınanan şey SQL'in içeriği değil,
+         * PAKETİN bütünlüğü. Verilmezse gerçek `mysqldump` yolu kullanılır.
+         *
+         * @var (callable(): string)|null
+         */
+        private $dumpUretici = null,
+        /**
+         * Yedeğin alındığı andaki uygulanmış migration listesi. Manifest'e
+         * girer ve geri yüklerken "bu yedek hangi şemaya ait?" sorusunu
+         * yanıtlar. Verilmezse boş kalır (eski çağrılar kırılmaz).
+         *
+         * @var list<string>
+         */
+        private readonly array $migrationDefteri = [],
     ) {
+    }
+
+    /** v1.2.2 B1: set yazıcısı — atomik paketleme buradan geçer. */
+    private function setYazici(): \App\Services\Yedek\YedekSetiYazici
+    {
+        return new \App\Services\Yedek\YedekSetiYazici(
+            $this->directory(),
+            \App\Core\AppVersion::VALUE,
+            $this->migrationDefteri,
+            self::CIPHER,
+        );
     }
 
     public function directory(): string
@@ -64,9 +97,10 @@ final class BackupService
     }
 
     /**
-     * Yedek üretir: dump → şifrele → storage/backups'a yaz.
+     * Yedek SETİ üretir (v1.2.2 B1): dump + ayarlar + medya → tek paket, tek
+     * manifest, atomik tamamlanma.
      *
-     * @return array{name: string, size: int, sha256: string, created_at: string, files_name: string|null, files_included: list<string>, media_manifest: string|null, media_archive: string|null, media_files: int, media_bytes: int, media_skipped: bool}
+     * @return array{set_id: string, set_dizini: string, created_at: string, parca_sayisi: int, toplam_bayt: int, files_included: list<string>, media_files: int, media_bytes: int, medya_atlandi: bool, durum: string, eksik: list<string>, sebep: string|null}
      */
     public function create(): array
     {
@@ -78,38 +112,73 @@ final class BackupService
         }
         $this->ensureHtaccess();
 
-        $dump = $this->dumpDatabase();
-        $encrypted = $this->encrypt($dump);
-        // Dump düz metni bellekte gereksiz tutulmasın.
-        unset($dump);
+        $yazici = $this->setYazici();
+
+        // Yarım kalmış önceki koşumları TEMİZLE: yeni set açmadan önce, çünkü
+        // hazırlık dizinleri birikirse disk sessizce dolar.
+        $yazici->yarimlariTemizle();
 
         $damga = date('Ymd-His');
-        $name = 'yedek-' . $damga . '.sql.enc';
-        $path = $this->directory() . '/' . $name;
-        if (@file_put_contents($path, $encrypted) === false) {
-            throw new RuntimeException('Yedek dosyası yazılamadı: storage/backups izinlerini denetleyin.');
-        }
-        @chmod($path, 0600);
+        $set = $yazici->baslat($damga);
 
-        $dosyalar = $this->dosyaYedegiYaz($damga);
-        // İE#22 E4 (F-03): görseller de yedeğe girer.
-        $medya = $this->medyaYedegiYaz($damga);
+        // 1) VERİTABANI — zorunlu parça.
+        $dump = ($this->dumpUretici ?? fn (): string => $this->dumpDatabase())();
+        $yazici->parcaEkle($set, 'veritabani.sql.enc', 'sql', $this->encrypt($dump));
+        unset($dump); // düz metin bellekte gereksiz durmasın
+
+        // 2) AYARLAR + KULLANICI SÖZLÜKLERİ — H1: zorunlu DEĞİL. Okunamazsa
+        //    set KISMİ olur, SQL yine yazılır; manifest eksiği ve sebebini
+        //    taşır. Ayarlar yeniden girilebilir, veritabanı girilemez.
+        $ayarlar = $this->ayarPaketi();
+        if ($ayarlar !== null) {
+            $yazici->parcaEkle($set, 'ayarlar.files.enc', 'config', $this->encrypt($ayarlar['govde']));
+        } else {
+            $yazici->eksikBildir($set, 'config', $this->ayarEksikSebebi());
+        }
+
+        // 3) MEDYA — isteğe bağlı; sınır aşılırsa set KISMİ olur, başarısız olmaz.
+        $medya = $this->medyaParcalari($set, $yazici);
+
+        $setDizini = $yazici->tamamla($set);
 
         return [
-            'name' => $name,
-            'size' => strlen($encrypted),
-            'sha256' => hash('sha256', $encrypted),
+            'set_id' => $set['set_id'],
+            'set_dizini' => $setDizini,
             'created_at' => date(DATE_ATOM),
-            'files_name' => $dosyalar['name'],
-            'files_included' => $dosyalar['included'],
-            // İE#22 E4: medya yedeğinin sonucu ÇAĞIRANA taşınır — gece koşusu
-            // özetinde görünsün diye. Arşiv atlandıysa bu da raporlanır.
-            'media_manifest' => $medya['manifest'],
-            'media_archive' => $medya['arsiv'],
+            'parca_sayisi' => count($set['parcalar']),
+            'toplam_bayt' => array_sum(array_map(
+                static fn (array $p): int => (int) $p['boyut'],
+                $set['parcalar'],
+            )),
+            'files_included' => $ayarlar['iceren'] ?? [],
             'media_files' => $medya['dosya_sayisi'],
             'media_bytes' => $medya['toplam_bayt'],
-            'media_skipped' => $medya['atlandi'],
+            'medya_atlandi' => $medya['atlandi'],
+            'durum' => $set['eksik'] === [] ? \App\Services\Yedek\YedekManifesti::DURUM_TAM : \App\Services\Yedek\YedekManifesti::DURUM_KISMI,
+            'eksik' => $set['eksik'],
+            'sebep' => $set['sebep'],
         ];
+    }
+
+    /**
+     * Ayar paketi alınamadığında manifeste yazılacak KISA sebep (H1).
+     *
+     * "Dosya yok" ile "dosya var ama okunamıyor" ayrı teşhislerdir ve
+     * operatörün yapacağı iş farklıdır (ilkinde kurulum eksik, ikincisinde
+     * izin bozuk). Sebep bunu söyler; bir yığın izi değil, tek satırdır.
+     */
+    private function ayarEksikSebebi(): string
+    {
+        foreach (['config.php', '.env'] as $ayar) {
+            $yol = $this->basePath . '/' . $ayar;
+            if (file_exists($yol)) {
+                return is_readable($yol)
+                    ? $ayar . ' okundu ama içerik alınamadı'
+                    : $ayar . ' okunamadı: izin reddedildi';
+            }
+        }
+
+        return 'config.php bulunamadı';
     }
 
     /**
@@ -149,79 +218,103 @@ final class BackupService
      *
      * @return array{manifest: string|null, arsiv: string|null, dosya_sayisi: int, toplam_bayt: int, atlandi: bool}
      */
-    private function medyaYedegiYaz(string $damga): array
+    /**
+     * MEDYA PARÇALARI (v1.2.2 B1 — sınır aşımında BÖLÜNÜR, atlanmaz).
+     *
+     * ESKİ HÂL: `BACKUP_MEDIA_MAX_MB` aşılırsa arşiv TAMAMEN atlanıyordu.
+     * Büyük medya klasörü olan bir kurulum görsellerini hiç yedekleyemiyordu
+     * ve bunu yalnız gece koşusunun özet satırından öğrenebiliyordunuz.
+     *
+     * YENİ HÂL: dosyalar sınır kadar parçalara BÖLÜNÜR ve hepsi TEK manifest
+     * altında toplanır. Bölünemeyecek kadar büyük TEK dosya varsa (tek başına
+     * sınırı aşan bir görsel) o dosya atlanır ve durum raporlanır — sessizce
+     * kaybolmaz.
+     *
+     * @param array{set_id: string, damga: string, hazirlik: string, parcalar: list<array{ad: string, tur: string, sira: int, boyut: int, sha256: string}>, eksik: list<string>, sebep: string|null} $set
+     * @return array{dosya_sayisi: int, toplam_bayt: int, atlandi: bool}
+     */
+    private function medyaParcalari(array &$set, \App\Services\Yedek\YedekSetiYazici $yazici): array
     {
-        $medyaKok = $this->basePath . '/public/media';
-        $bos = ['manifest' => null, 'arsiv' => null, 'dosya_sayisi' => 0, 'toplam_bayt' => 0, 'atlandi' => false];
-        if (!is_dir($medyaKok)) {
-            return $bos;
+        $medyaDizini = $this->basePath . '/public/media';
+        if (!is_dir($medyaDizini) || !class_exists(\ZipArchive::class)) {
+            return ['dosya_sayisi' => 0, 'toplam_bayt' => 0, 'atlandi' => true];
         }
 
-        $dosyalar = array_values(array_filter(
-            glob($medyaKok . '/*') ?: [],
-            static fn (string $yol): bool => is_file($yol) && !str_ends_with($yol, '.htaccess'),
-        ));
+        $dosyalar = [];
+        foreach (glob($medyaDizini . '/*') ?: [] as $yol) {
+            if (is_file($yol)) {
+                $dosyalar[] = $yol;
+            }
+        }
         if ($dosyalar === []) {
-            return $bos;
+            return ['dosya_sayisi' => 0, 'toplam_bayt' => 0, 'atlandi' => false];
         }
 
-        $satirlar = [];
-        $toplam = 0;
+        $sinirBayt = $this->config->getPositiveInt('BACKUP_MEDIA_MAX_MB', 200) * 1024 * 1024;
+        $toplamBayt = 0;
+        $atlandi = false;
+        $parcaNo = 0;
+        $grup = [];
+        $grupBayt = 0;
+
+        $grubuYaz = function (array $grup, int $no) use (&$set, $yazici): void {
+            if ($grup === []) {
+                return;
+            }
+            $gecici = $set['hazirlik'] . '/.medya-' . $no . '.zip';
+            $zip = new \ZipArchive();
+            if ($zip->open($gecici, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
+                return;
+            }
+            foreach ($grup as $yol) {
+                $zip->addFile($yol, 'media/' . basename($yol));
+            }
+            $zip->close();
+
+            $icerik = (string) file_get_contents($gecici);
+            @unlink($gecici);
+            $yazici->parcaEkle($set, sprintf('medya-%03d.zip.enc', $no), 'medya', $this->encrypt($icerik));
+        };
+
         foreach ($dosyalar as $yol) {
-            $boyut = (int) @filesize($yol);
-            $toplam += $boyut;
-            $satirlar[] = sprintf('%s  %d  %s', hash_file('sha256', $yol) ?: '-', $boyut, basename($yol));
-        }
+            $boyut = (int) filesize($yol);
 
-        $manifestAdi = 'yedek-' . $damga . '.media-manifest.txt';
-        @file_put_contents(
-            $this->directory() . '/' . $manifestAdi,
-            "# tedarikapp medya manifesti
-# sha256  bayt  dosya
-" . implode("
-", $satirlar) . "
-",
-        );
+            // TEK BAŞINA sınırı aşan dosya bölünemez: atlanır ve RAPORLANIR.
+            if ($boyut > $sinirBayt) {
+                $atlandi = true;
 
-        $sinirMb = $this->config->getPositiveInt('BACKUP_MEDIA_MAX_MB', 200);
-        if ($toplam > $sinirMb * 1024 * 1024 || !class_exists(\ZipArchive::class)) {
-            return [
-                'manifest' => $manifestAdi,
-                'arsiv' => null,
-                'dosya_sayisi' => count($dosyalar),
-                'toplam_bayt' => $toplam,
-                'atlandi' => true,
-            ];
-        }
+                continue;
+            }
 
-        $arsivAdi = 'yedek-' . $damga . '.media.zip';
-        $zip = new \ZipArchive();
-        if ($zip->open($this->directory() . '/' . $arsivAdi, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
-            return [
-                'manifest' => $manifestAdi,
-                'arsiv' => null,
-                'dosya_sayisi' => count($dosyalar),
-                'toplam_bayt' => $toplam,
-                'atlandi' => true,
-            ];
+            if ($grupBayt + $boyut > $sinirBayt && $grup !== []) {
+                $grubuYaz($grup, ++$parcaNo);
+                $grup = [];
+                $grupBayt = 0;
+            }
+
+            $grup[] = $yol;
+            $grupBayt += $boyut;
+            $toplamBayt += $boyut;
         }
-        foreach ($dosyalar as $yol) {
-            $zip->addFile($yol, 'media/' . basename($yol));
-        }
-        $zip->close();
-        @chmod($this->directory() . '/' . $arsivAdi, 0600);
+        $grubuYaz($grup, ++$parcaNo);
 
         return [
-            'manifest' => $manifestAdi,
-            'arsiv' => $arsivAdi,
-            'dosya_sayisi' => count($dosyalar),
-            'toplam_bayt' => $toplam,
-            'atlandi' => false,
+            'dosya_sayisi' => count($dosyalar) - ($atlandi ? 1 : 0),
+            'toplam_bayt' => $toplamBayt,
+            'atlandi' => $atlandi,
         ];
     }
 
-    /** @return array{name: string|null, included: list<string>} */
-    private function dosyaYedegiYaz(string $damga): array
+    /**
+     * AYAR PAKETİ — `config.php` (yoksa legacy `.env`) + `storage/sozluk-*.php`.
+     *
+     * Veritabanı TEK BAŞINA yeterli değildir: dökümü geri yüklemek için DB
+     * bilgileri gerekir ve APP_KEY olmadan dökümün kendisi de ÇÖZÜLEMEZ.
+     * Kullanıcının aylarca biriktirdiği sözlük düzeltmeleri de buradadır.
+     *
+     * @return array{govde: string, iceren: list<string>}|null
+     */
+    private function ayarPaketi(): ?array
     {
         $adaylar = [];
         foreach (['config.php', '.env'] as $ayar) {
@@ -235,10 +328,6 @@ final class BackupService
             $adaylar[] = 'storage/' . basename($sozluk);
         }
 
-        if ($adaylar === []) {
-            return ['name' => null, 'included' => []];
-        }
-
         $paket = [];
         $iceren = [];
         foreach ($adaylar as $goreli) {
@@ -250,22 +339,16 @@ final class BackupService
             $iceren[] = $goreli;
         }
         if ($paket === []) {
-            return ['name' => null, 'included' => []];
+            return null;
         }
 
-        $govde = json_encode(
-            ['surum' => 1, 'uretim' => date(DATE_ATOM), 'dosyalar' => $paket],
-            JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR,
-        );
-
-        $ad = 'yedek-' . $damga . '.files.enc';
-        $yol = $this->directory() . '/' . $ad;
-        if (@file_put_contents($yol, $this->encrypt($govde)) === false) {
-            return ['name' => null, 'included' => []];
-        }
-        @chmod($yol, 0600);
-
-        return ['name' => $ad, 'included' => $iceren];
+        return [
+            'govde' => json_encode(
+                ['surum' => 1, 'uretim' => date(DATE_ATOM), 'dosyalar' => $paket],
+                JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR,
+            ),
+            'iceren' => $iceren,
+        ];
     }
 
     /**
@@ -294,15 +377,22 @@ final class BackupService
         return $sonuc;
     }
 
-    /** SQL yedeğinin yanındaki dosya yedeğinin tam yolu (varsa). */
-    public function filesPathFor(string $sqlName): ?string
+    /**
+     * Setteki bir parçanın tam yolu (v1.2.2 B1).
+     *
+     * Eskiden "SQL yedeğinin YANINDAKİ dosya yedeği" diye tarif ediliyordu ve
+     * bağ yalnız ad benzerliğiydi. Artık parça, ait olduğu SETİN içinde durur:
+     * hangi parçanın hangi yedeğe ait olduğu soru olmaktan çıkar.
+     */
+    public function parcaYolu(string $setAdi, string $parcaAdi): ?string
     {
-        if (preg_match(self::NAME_PATTERN, $sqlName) !== 1) {
+        $dizin = $this->pathFor($setAdi);
+        if ($dizin === null || preg_match('/^[a-z0-9._-]+$/i', $parcaAdi) !== 1) {
             return null;
         }
-        $path = $this->directory() . '/' . str_replace('.sql.enc', '.files.enc', $sqlName);
+        $yol = $dizin . '/' . $parcaAdi;
 
-        return is_file($path) ? $path : null;
+        return is_file($yol) ? $yol : null;
     }
 
     /**
@@ -310,21 +400,53 @@ final class BackupService
      *
      * @return list<array{name: string, size: int, created_at: string}>
      */
+    /**
+     * Tamamlanmış yedek SETLERİ — yeniden eskiye (v1.2.2 B1).
+     *
+     * Yarım setler (`.hazirlik-*`) BURADA GÖRÜNMEZ: listede yer alan her satır,
+     * kullanıcının "yedeğim var" diye güvendiği bir şeydir.
+     *
+     * @return list<array{name: string, set_id: string, size: int, created_at: string, tam: bool, durum: string, eksik: list<string>, sebep: string|null, medyasiz: bool, parca_sayisi: int, parcalar: list<array{ad: string, tur: string, sira?: int, boyut: int, sha256: string}>}>
+     */
     public function list(): array
     {
         $entries = [];
-        foreach (glob($this->directory() . '/yedek-*.sql.enc') ?: [] as $file) {
-            $name = basename($file);
-            if (preg_match(self::NAME_PATTERN, $name) !== 1) {
-                continue;
+
+        foreach ($this->setYazici()->setler() as $dizin) {
+            $manifestYolu = $dizin . '/' . \App\Services\Yedek\YedekProvasi::MANIFEST_ADI;
+            if (!is_file($manifestYolu)) {
+                continue; // manifest yoksa set tamamlanmamıştır
             }
+
+            try {
+                $manifest = \App\Services\Yedek\YedekManifesti::jsondan(
+                    (string) file_get_contents($manifestYolu),
+                );
+            } catch (Throwable) {
+                continue; // okunamayan manifest = güvenilmez set
+            }
+
+            $ozet = $manifest->ozet();
             $entries[] = [
-                'name' => $name,
-                'size' => (int) filesize($file),
-                'created_at' => date(DATE_ATOM, (int) filemtime($file)),
+                'name' => basename($dizin),
+                'set_id' => $manifest->setId(),
+                'size' => $ozet['toplam_bayt'],
+                'created_at' => date(DATE_ATOM, (int) filemtime($dizin)),
+                'tam' => $ozet['tam'],
+                // H1: durum + eksik + sebep — panel rozeti buradan beslenir ve
+                // rozet KALICIDIR ("0'da gizle" kuralı sayaçlar içindir).
+                'durum' => $ozet['durum'],
+                'eksik' => $ozet['eksik'],
+                'sebep' => $ozet['sebep'],
+                'medyasiz' => $ozet['medyasiz'],
+                'parca_sayisi' => $ozet['parca_sayisi'],
+                // B4: parçalar SIRALI ve SHA'lariyla birlikte gider.
+                // "Tümünü zip indir" düğmesi olmadığına göre, hangi dosyaları
+                // indirmesi gerektiği ve indirdiğinin sağlam olup olmadığı artık
+                // KULLANICININ sorusudur; panel bu soruyu yanıtlayabilmeli.
+                'parcalar' => $manifest->siraliParcalar(),
             ];
         }
-        usort($entries, static fn (array $a, array $b): int => strcmp($b['name'], $a['name']));
 
         return $entries;
     }
@@ -340,27 +462,30 @@ final class BackupService
         return max(0, time() - (int) strtotime($entries[0]['created_at']));
     }
 
-    /** İndirme için doğrulanmış tam yol — desen dışı ad reddedilir (path traversal kalkanı). */
+    /**
+     * İndirme için doğrulanmış SET DİZİNİ — desen dışı ad reddedilir
+     * (path traversal kalkanı).
+     */
     public function pathFor(string $name): ?string
     {
-        if (preg_match(self::NAME_PATTERN, $name) !== 1) {
+        if (preg_match(self::SET_PATTERN, $name) !== 1) {
             return null;
         }
         $path = $this->directory() . '/' . $name;
 
-        return is_file($path) ? $path : null;
+        return is_dir($path) ? $path : null;
     }
 
     /**
      * Yedek saklama (İE#11 EK-2 REV2): BACKUP_RETENTION_DAYS'ten eski dosyalar silinir;
-     * her koşulda EN YENİ 5 dosya korunur; yalnız NAME_PATTERN eşleşenlere dokunulur
-     * (yedek-*.sql.enc dışındaki hiçbir dosya silinemez — .htaccess dahil).
+     * her koşulda EN YENİ 5 SET korunur; yalnız SET_PATTERN eşleşen dizinlere
+     * dokunulur (`.htaccess` ve desen dışı hiçbir şey silinemez).
      *
      * @return list<string> silinen dosya adları
      */
     public function prune(int $retentionDays): array
     {
-        $entries = $this->list(); // yeniden → eskiye sıralı, yalnız desen eşleşenler
+        $entries = $this->list(); // yeniden → eskiye, yalnız TAMAMLANMIŞ setler
         $keep = 5;
         $threshold = time() - max(1, $retentionDays) * 86400;
 
@@ -369,14 +494,18 @@ final class BackupService
             if ((int) strtotime($entry['created_at']) >= $threshold) {
                 continue;
             }
-            $path = $this->pathFor($entry['name']);
-            if ($path !== null && @unlink($path)) {
+            $dizin = $this->pathFor($entry['name']);
+            if ($dizin === null) {
+                continue;
+            }
+
+            // SET BÜTÜN OLARAK GİDER: parçalarından biri kalırsa, kalan dosya
+            // manifestsiz bir yetim olur ve kimse ne olduğunu bilemez.
+            foreach (glob($dizin . '/*') ?: [] as $parca) {
+                @unlink($parca);
+            }
+            if (@rmdir($dizin)) {
                 $deleted[] = $entry['name'];
-                // G8: dosya yedeği SQL yedeğiyle birlikte yaşar, birlikte düşer.
-                $dosyaYolu = $this->directory() . '/' . str_replace('.sql.enc', '.files.enc', $entry['name']);
-                if (is_file($dosyaYolu)) {
-                    @unlink($dosyaYolu);
-                }
             }
         }
 

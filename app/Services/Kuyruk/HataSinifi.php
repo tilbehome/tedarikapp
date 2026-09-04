@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Kuyruk;
 
+use App\Services\MedyaEksik;
 use Throwable;
 
 /**
@@ -38,6 +39,14 @@ final class HataSinifi
     /** @return array{sinif: string, bekleme: int|null} bekleme: sağlayıcının istediği saniye */
     public static function siniflandir(Throwable $hata): array
     {
+        // v1.2.2 D6: KALICILIK TİPTEN OKUNUR (A8 ilkesi kuyruk katına uzanır).
+        // `MedyaEksik` kalıcı olup olmadığını kendisi söyler; mesajdaki
+        // "kalıcı hata" sözcükleri aşağıdaki listede yoktur ve kalıcı bir
+        // medya reddi üç kez boşuna denenirdi.
+        if ($hata instanceof MedyaEksik) {
+            return ['sinif' => $hata->kalici ? self::KALICI : self::GECICI, 'bekleme' => null];
+        }
+
         $mesaj = mb_strtolower($hata->getMessage());
 
         // 1) HIZ SINIRI — sağlayıcı ne kadar bekleyeceğimizi söylüyorsa ona uyulur.

@@ -106,6 +106,19 @@ final class UretimProfiliTest extends AuthTestCase
             // İE#10.5: yedekler storage/backups'a yazılır (web'den deny; şifreli; K44 istisnası
             // gerekçeli — yedek diske yazılmadan var olamaz; storage yazılamıyorsa net hata döner).
             'app/Services/BackupService.php',
+            // v1.2.2 B1: yedek SETİ atomik yazılır — parçalar önce `.hazirlik-<set>`
+            // dizinine, manifest en sonda, sonra tek `rename()`. Yazım storage/backups
+            // ALTINDADIR (BackupService ile aynı bölge, aynı gerekçe): yedek diske
+            // yazılmadan var olamaz. Ayrı sınıf olmasının sebebi ATOMİKLİK: yarım
+            // kalan koşum "tam yedek" gibi görünmesin.
+            'app/Services/Yedek/YedekSetiYazici.php',
+            // v1.2.2 B3: geri yükleme medya parçalarını public/media altına açar —
+            // MediaService ile AYNI bölge, aynı gerekçe: görsellerin yaşadığı yer
+            // orasıdır ve geri yükleme onları başka bir yere koyarsa geri gelmiş
+            // sayılmaz. Yazım yolu CLI'dan (`bin/restore.php`) tetiklenir; ZIP
+            // girdileri `basename()` ile sınırlanır, yani hedef dizinin dışına
+            // çıkılamaz (zip-slip kalkanı).
+            'app/Services/Yedek/YedekGeriYukleyici.php',
             // BackupOffsite: fwrite hedefi php://temp BELLEK akışıdır (SMTP gövdesi) — diske yazmaz.
             'app/Services/BackupOffsite.php',
             // İE#14 D1: gecelik koşunun izi storage/logs/cron.log'a yazılır. Gerekçe:

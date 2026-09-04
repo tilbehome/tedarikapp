@@ -338,6 +338,14 @@ final class CaptureApplier
 
         $this->medyayiSonlandir($media, !$sonuc['idempotent_replay'], $now, $sonuc['product_id']);
 
+        // D1: Gelen Kutusu'ndan taşınan ürün de medya işini alır. Eskiden yalnız
+        // doğrudan-liste yolu kuyruğa yazıyordu; taşınan ürünün galerisi uzak
+        // kalıyordu. Yakalama artık ana görseli de indirmediği için bu boşluk
+        // "görselsiz ürün" demek olurdu.
+        if (!$sonuc['idempotent_replay']) {
+            $this->medyaIsiYaz($sonuc['product_id'], $now);
+        }
+
         return $sonuc;
     }
 

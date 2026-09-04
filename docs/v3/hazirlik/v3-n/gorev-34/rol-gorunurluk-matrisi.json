@@ -1,0 +1,6094 @@
+{
+  "belge_adi": "V3-N Rol Görünürlük Matrisi",
+  "surum": "34-R-v2",
+  "durum": "oneri",
+  "yonetisim_notu": "PM denetler; Ürün Sahibi kırmızı çizgileri onaylar.",
+  "ilke": "Whitelist tek kaynaktır; rol sunucuda token’dan çözülür; tüm çıktılar aynı rol serializer’ından beslenir; blacklist yasaktır.",
+  "roller": [
+    {
+      "id": "sahip_ic_kopya",
+      "tur": "ic",
+      "not": ""
+    },
+    {
+      "id": "sahip_operator",
+      "tur": "ic",
+      "not": "İç rol ancak 21 Ağustos yetki modeline göre kısıtlıdır: sekiz ic_maliyet alanını ve gelecekteki ödeme/sipariş toplam tutarı alanlarını göremez; ithalatci_yaniti.* alanlarını görür. Operatör ödeme tutarı alanları V3-D'de matrise eklenir. Bu kısıttaki sızıntı dış rol sızıntısıyla aynı ciddiyettedir."
+    },
+    {
+      "id": "ithalatci",
+      "tur": "dis",
+      "not": ""
+    },
+    {
+      "id": "musteri",
+      "tur": "dis",
+      "not": ""
+    },
+    {
+      "id": "cinli_uretici_ciktisi",
+      "tur": "dis",
+      "not": "K15: panel değildir; yalnız çıktı setidir."
+    },
+    {
+      "id": "anonim_anahtarsiz_iskelet",
+      "tur": "dis",
+      "not": ""
+    }
+  ],
+  "cikti_turleri": [
+    "html",
+    "pdf",
+    "excel",
+    "csv",
+    "whatsapp-ozet"
+  ],
+  "hucre_semasi": {
+    "karar_deseni": "^(goster|gizle|maskele\\([^()]+\\))$",
+    "izinli_anlamlar": [
+      "goster",
+      "gizle",
+      "maskele(<kural>)"
+    ],
+    "goster_kurali": "goster hücresinde en az bir izinli çıktı bulunur.",
+    "gizle_kurali": "gizle hücresinin çıktıları boştur."
+  },
+  "kendini_dogrulama_kurallari": [
+    {
+      "id": "MTR-01",
+      "kural": "Her alan altı rol hücresi taşır."
+    },
+    {
+      "id": "MTR-02",
+      "kural": "Kırmızı çizgi alanı, kirmizi_cizgi_alanlari kaydında listelenen rol hücrelerinde goster olamaz."
+    },
+    {
+      "id": "MTR-03",
+      "kural": "Özel alan tip varsayılanı dış rollerde gizlidir."
+    },
+    {
+      "id": "MTR-04",
+      "kural": "Durum etiketi 5B status.* kaynağından çözülür."
+    },
+    {
+      "id": "MTR-05",
+      "kural": "sahip_operator için sekiz ic_maliyet alanı gizlidir; bu sızıntı dış rol sızıntısıyla aynı ciddiyettedir."
+    },
+    {
+      "id": "MTR-06",
+      "kural": "sahip_operator için matristeki tüm ithalatci_yaniti.* alanları goster olmalıdır."
+    },
+    {
+      "id": "MTR-07",
+      "kural": "Beş kaynak alanı ithalatçıya HTML/PDF/Excel/CSV'de gösterilir; WhatsApp özetinde yalnız kaynak.url gösterilir. Çinli üretici çıktısında kaynak.platform, kaynak.url ve kaynak.ilan_no gösterilir; tedarikçi kimliği ile bağlantısı gizlenir. Müşteri ve anonim iskelette beş kaynak alanının tamamı gizlidir."
+    }
+  ],
+  "kirmizi_cizgi_alanlari": [
+    {
+      "alan_id": "ic_maliyet.kaynak_birim_fiyat",
+      "roller": [
+        "ithalatci",
+        "musteri",
+        "cinli_uretici_ciktisi",
+        "anonim_anahtarsiz_iskelet"
+      ],
+      "gerekce": "İç maliyet alanı tüm dış roller için kırmızı çizgidir."
+    },
+    {
+      "alan_id": "ic_maliyet.ddp_birim_maliyet",
+      "roller": [
+        "ithalatci",
+        "musteri",
+        "cinli_uretici_ciktisi",
+        "anonim_anahtarsiz_iskelet"
+      ],
+      "gerekce": "İç maliyet alanı tüm dış roller için kırmızı çizgidir."
+    },
+    {
+      "alan_id": "ic_maliyet.ddp_toplam_maliyet",
+      "roller": [
+        "ithalatci",
+        "musteri",
+        "cinli_uretici_ciktisi",
+        "anonim_anahtarsiz_iskelet"
+      ],
+      "gerekce": "İç maliyet alanı tüm dış roller için kırmızı çizgidir."
+    },
+    {
+      "alan_id": "ic_maliyet.kar_tutari",
+      "roller": [
+        "ithalatci",
+        "musteri",
+        "cinli_uretici_ciktisi",
+        "anonim_anahtarsiz_iskelet"
+      ],
+      "gerekce": "İç maliyet alanı tüm dış roller için kırmızı çizgidir."
+    },
+    {
+      "alan_id": "ic_maliyet.kar_marji",
+      "roller": [
+        "ithalatci",
+        "musteri",
+        "cinli_uretici_ciktisi",
+        "anonim_anahtarsiz_iskelet"
+      ],
+      "gerekce": "İç maliyet alanı tüm dış roller için kırmızı çizgidir."
+    },
+    {
+      "alan_id": "ic_maliyet.hedef_satis_fiyati",
+      "roller": [
+        "ithalatci",
+        "musteri",
+        "cinli_uretici_ciktisi",
+        "anonim_anahtarsiz_iskelet"
+      ],
+      "gerekce": "İç maliyet alanı tüm dış roller için kırmızı çizgidir."
+    },
+    {
+      "alan_id": "ic_maliyet.satis_fiyati",
+      "roller": [
+        "ithalatci",
+        "musteri",
+        "cinli_uretici_ciktisi",
+        "anonim_anahtarsiz_iskelet"
+      ],
+      "gerekce": "İç maliyet alanı tüm dış roller için kırmızı çizgidir."
+    },
+    {
+      "alan_id": "ic_maliyet.yurtici_referans_fiyati",
+      "roller": [
+        "ithalatci",
+        "musteri",
+        "cinli_uretici_ciktisi",
+        "anonim_anahtarsiz_iskelet"
+      ],
+      "gerekce": "İç maliyet alanı tüm dış roller için kırmızı çizgidir."
+    },
+    {
+      "alan_id": "kaynak.platform",
+      "roller": [
+        "musteri",
+        "anonim_anahtarsiz_iskelet"
+      ],
+      "gerekce": "Kaynak alanı yalnız müşteri ve anonim anahtarsız iskelet için kırmızı çizgidir."
+    },
+    {
+      "alan_id": "kaynak.url",
+      "roller": [
+        "musteri",
+        "anonim_anahtarsiz_iskelet"
+      ],
+      "gerekce": "Kaynak alanı yalnız müşteri ve anonim anahtarsız iskelet için kırmızı çizgidir."
+    },
+    {
+      "alan_id": "kaynak.ilan_no",
+      "roller": [
+        "musteri",
+        "anonim_anahtarsiz_iskelet"
+      ],
+      "gerekce": "Kaynak alanı yalnız müşteri ve anonim anahtarsız iskelet için kırmızı çizgidir."
+    },
+    {
+      "alan_id": "kaynak.tedarikci_kimligi",
+      "roller": [
+        "musteri",
+        "anonim_anahtarsiz_iskelet"
+      ],
+      "gerekce": "Kaynak alanı yalnız müşteri ve anonim anahtarsız iskelet için kırmızı çizgidir."
+    },
+    {
+      "alan_id": "kaynak.tedarikci_linki",
+      "roller": [
+        "musteri",
+        "anonim_anahtarsiz_iskelet"
+      ],
+      "gerekce": "Kaynak alanı yalnız müşteri ve anonim anahtarsız iskelet için kırmızı çizgidir."
+    }
+  ],
+  "alanlar": [
+    {
+      "alan_id": "urun.id",
+      "nesne": "urun",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "urun.kod",
+      "nesne": "urun",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "musteri": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "goster",
+          "ciktilar": [
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "urun.ad",
+      "nesne": "urun",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "musteri": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "goster",
+          "ciktilar": [
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "urun.orijinal_ad",
+      "nesne": "urun",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "goster",
+          "ciktilar": [
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "urun.ticari_aciklama",
+      "nesne": "urun",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "musteri": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "goster",
+          "ciktilar": [
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "urun.teknik_ozet",
+      "nesne": "urun",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "musteri": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "goster",
+          "ciktilar": [
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "urun.ana_gorsel",
+      "nesne": "urun",
+      "tip": "file",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "musteri": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "goster",
+          "ciktilar": [
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "urun.video",
+      "nesne": "urun",
+      "tip": "file",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "goster",
+          "ciktilar": [
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "urun.talep_edilen_varyant",
+      "nesne": "urun",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "musteri": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "goster",
+          "ciktilar": [
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "urun.talep_miktari",
+      "nesne": "urun",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "musteri": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "goster",
+          "ciktilar": [
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "urun.mense",
+      "nesne": "urun",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "goster",
+          "ciktilar": [
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "urun.sevk_ulkesi",
+      "nesne": "urun",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "urun.malzeme",
+      "nesne": "urun",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "goster",
+          "ciktilar": [
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "urun.kalite_beklentisi",
+      "nesne": "urun",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "goster",
+          "ciktilar": [
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "urun.logo_ambalaj_talebi",
+      "nesne": "urun",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "goster",
+          "ciktilar": [
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "urun.garanti_belge_ozeti",
+      "nesne": "urun",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "musteri": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "goster",
+          "ciktilar": [
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "urun.durum",
+      "nesne": "urun",
+      "tip": "term_key",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "musteri": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "goster",
+          "ciktilar": [
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      },
+      "not": "Etiket elle yazılmaz; 5B status.* terim anahtarından çözülür."
+    },
+    {
+      "alan_id": "kaynak.platform",
+      "nesne": "kaynak",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": true,
+      "neden_bu_rol_gormez": "Müşteri ve anonim anahtarsız iskelet, Çin kaynak/satıcı bilgisinin ticari gizliliği nedeniyle bu alanı görmez. İthalatçı Çin ekibinin ürünü bulması, Çinli üretici çıktısının aynı ürünü tanımlaması için alan rol bazlı gösterilir; Çinli rolünde HTML paneli K15 gereği yoktur.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "goster",
+          "ciktilar": [
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "kaynak.url",
+      "nesne": "kaynak",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": true,
+      "neden_bu_rol_gormez": "Müşteri ve anonim anahtarsız iskelet, Çin kaynak/satıcı bilgisinin ticari gizliliği nedeniyle bu alanı görmez. İthalatçı Çin ekibinin ürünü bulması, Çinli üretici çıktısının aynı ürünü tanımlaması için alan rol bazlı gösterilir; Çinli rolünde HTML paneli K15 gereği yoktur.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "goster",
+          "ciktilar": [
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "kaynak.ilan_no",
+      "nesne": "kaynak",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": true,
+      "neden_bu_rol_gormez": "Müşteri ve anonim anahtarsız iskelet, Çin kaynak/satıcı bilgisinin ticari gizliliği nedeniyle bu alanı görmez. İthalatçı Çin ekibinin ürünü bulması, Çinli üretici çıktısının aynı ürünü tanımlaması için alan rol bazlı gösterilir; Çinli rolünde HTML paneli K15 gereği yoktur.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "goster",
+          "ciktilar": [
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "kaynak.tedarikci_kimligi",
+      "nesne": "kaynak",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": true,
+      "neden_bu_rol_gormez": "Müşteri ve anonim anahtarsız iskelet Çin kaynak/satıcı bilgisinin ticari gizliliği nedeniyle bu alanı görmez. Çinli üretici çıktısında rakip satıcı kimliği ve bağlantısı paylaşılmaz; ithalatçı Çin ekibinin tedarik çalışması için alanı görür.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "kaynak.tedarikci_linki",
+      "nesne": "kaynak",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": true,
+      "neden_bu_rol_gormez": "Müşteri ve anonim anahtarsız iskelet Çin kaynak/satıcı bilgisinin ticari gizliliği nedeniyle bu alanı görmez. Çinli üretici çıktısında rakip satıcı kimliği ve bağlantısı paylaşılmaz; ithalatçı Çin ekibinin tedarik çalışması için alanı görür.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "ic_maliyet.kaynak_birim_fiyat",
+      "nesne": "ic_maliyet",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": true,
+      "neden_bu_rol_gormez": "Sahip operatör iç rol olsa da 21 Ağustos yetki modeline göre bu iç maliyet alanını görmez; adı, değeri ve yer tutucusu serializer'a girmez. Alan tüm dış roller için de kırmızı çizgidir.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "ithalatci": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "ic_maliyet.ddp_birim_maliyet",
+      "nesne": "ic_maliyet",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": true,
+      "neden_bu_rol_gormez": "Sahip operatör iç rol olsa da 21 Ağustos yetki modeline göre bu iç maliyet alanını görmez; adı, değeri ve yer tutucusu serializer'a girmez. Alan tüm dış roller için de kırmızı çizgidir.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "ithalatci": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "ic_maliyet.ddp_toplam_maliyet",
+      "nesne": "ic_maliyet",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": true,
+      "neden_bu_rol_gormez": "Sahip operatör iç rol olsa da 21 Ağustos yetki modeline göre bu iç maliyet alanını görmez; adı, değeri ve yer tutucusu serializer'a girmez. Alan tüm dış roller için de kırmızı çizgidir.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "ithalatci": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "ic_maliyet.kar_tutari",
+      "nesne": "ic_maliyet",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": true,
+      "neden_bu_rol_gormez": "Sahip operatör iç rol olsa da 21 Ağustos yetki modeline göre bu iç maliyet alanını görmez; adı, değeri ve yer tutucusu serializer'a girmez. Alan tüm dış roller için de kırmızı çizgidir.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "ithalatci": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "ic_maliyet.kar_marji",
+      "nesne": "ic_maliyet",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": true,
+      "neden_bu_rol_gormez": "Sahip operatör iç rol olsa da 21 Ağustos yetki modeline göre bu iç maliyet alanını görmez; adı, değeri ve yer tutucusu serializer'a girmez. Alan tüm dış roller için de kırmızı çizgidir.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "ithalatci": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "ic_maliyet.hedef_satis_fiyati",
+      "nesne": "ic_maliyet",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": true,
+      "neden_bu_rol_gormez": "Sahip operatör iç rol olsa da 21 Ağustos yetki modeline göre bu iç maliyet alanını görmez; adı, değeri ve yer tutucusu serializer'a girmez. Alan tüm dış roller için de kırmızı çizgidir.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "ithalatci": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "ic_maliyet.satis_fiyati",
+      "nesne": "ic_maliyet",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": true,
+      "neden_bu_rol_gormez": "Sahip operatör iç rol olsa da 21 Ağustos yetki modeline göre bu iç maliyet alanını görmez; adı, değeri ve yer tutucusu serializer'a girmez. Alan tüm dış roller için de kırmızı çizgidir.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "ithalatci": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "ic_maliyet.yurtici_referans_fiyati",
+      "nesne": "ic_maliyet",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": true,
+      "neden_bu_rol_gormez": "Sahip operatör iç rol olsa da 21 Ağustos yetki modeline göre bu iç maliyet alanını görmez; adı, değeri ve yer tutucusu serializer'a girmez. Alan tüm dış roller için de kırmızı çizgidir.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "ithalatci": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "ic_analiz.kaynak_skoru",
+      "nesne": "ic_analiz",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "ic_analiz.skor_bilesenleri",
+      "nesne": "ic_analiz",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "liste.id",
+      "nesne": "liste",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "liste.referans",
+      "nesne": "liste",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "musteri": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "goster",
+          "ciktilar": [
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "liste.ad",
+      "nesne": "liste",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "musteri": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "goster",
+          "ciktilar": [
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "liste.donem",
+      "nesne": "liste",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "liste.durum",
+      "nesne": "liste",
+      "tip": "term_key",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "musteri": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "goster",
+          "ciktilar": [
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      },
+      "not": "Etiket elle yazılmaz; 5B status.* terim anahtarından çözülür."
+    },
+    {
+      "alan_id": "liste.not",
+      "nesne": "liste",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "liste.para_birimi",
+      "nesne": "liste",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "liste.kdv_sunumu",
+      "nesne": "liste",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "liste.teklif_tarihi",
+      "nesne": "liste",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "musteri": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "goster",
+          "ciktilar": [
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "liste.son_yanit_tarihi",
+      "nesne": "liste",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "musteri": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "goster",
+          "ciktilar": [
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "liste.gecerlilik_tarihi",
+      "nesne": "liste",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "musteri": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "goster",
+          "ciktilar": [
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "liste.teslim_noktasi",
+      "nesne": "liste",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "goster",
+          "ciktilar": [
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "liste.incoterm_kosulu",
+      "nesne": "liste",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "goster",
+          "ciktilar": [
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "liste.revizyon_no",
+      "nesne": "liste",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "musteri": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "goster",
+          "ciktilar": [
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "liste.kur_snapshot_referansi",
+      "nesne": "liste",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "liste.urun_sayisi",
+      "nesne": "liste",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "musteri": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "goster",
+          "ciktilar": [
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "liste.yanitlanan_sayisi",
+      "nesne": "liste",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "musteri": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "goster",
+          "ciktilar": [
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "satir.id",
+      "nesne": "satir",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "musteri": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "goster",
+          "ciktilar": [
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "satir.sira_no",
+      "nesne": "satir",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "musteri": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "goster",
+          "ciktilar": [
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "satir.musteri_minimum_miktar",
+      "nesne": "satir",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "musteri": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "musteri_teklifi.birim_satis_fiyati",
+      "nesne": "musteri_teklifi",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "musteri": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "musteri_teklifi.satir_toplami",
+      "nesne": "musteri_teklifi",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "musteri": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "musteri_teklifi.tahmini_toplam",
+      "nesne": "musteri_teklifi",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "musteri": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "musteri_yaniti.niyet",
+      "nesne": "musteri_yaniti",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "musteri": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "musteri_yaniti.tahmini_miktar",
+      "nesne": "musteri_yaniti",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "musteri": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "musteri_yaniti.not",
+      "nesne": "musteri_yaniti",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "musteri": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "musteri_yaniti.beyan_onayi",
+      "nesne": "musteri_yaniti",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "musteri": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "ithalatci_yaniti.durum",
+      "nesne": "ithalatci_yaniti",
+      "tip": "term_key",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      },
+      "not": "Etiket elle yazılmaz; 5B status.* terim anahtarından çözülür."
+    },
+    {
+      "alan_id": "ithalatci_yaniti.ddp_birim_fiyat_kdv_dahil",
+      "nesne": "ithalatci_yaniti",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "ithalatci_yaniti.ddp_toplam_fiyat",
+      "nesne": "ithalatci_yaniti",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "ithalatci_yaniti.para_birimi",
+      "nesne": "ithalatci_yaniti",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "ithalatci_yaniti.kdv_dahil_onayi",
+      "nesne": "ithalatci_yaniti",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "ithalatci_yaniti.kur",
+      "nesne": "ithalatci_yaniti",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "ithalatci_yaniti.kur_tarihi",
+      "nesne": "ithalatci_yaniti",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "ithalatci_yaniti.teslim_suresi",
+      "nesne": "ithalatci_yaniti",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "ithalatci_yaniti.gecerlilik_tarihi",
+      "nesne": "ithalatci_yaniti",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "ithalatci_yaniti.kapsanan_giderler",
+      "nesne": "ithalatci_yaniti",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "ithalatci_yaniti.haric_giderler",
+      "nesne": "ithalatci_yaniti",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "ithalatci_yaniti.uygunluk_notu",
+      "nesne": "ithalatci_yaniti",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "ithalatci_yaniti.firma_notu",
+      "nesne": "ithalatci_yaniti",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "uretim_rfq.alici_satir_notu",
+      "nesne": "uretim_rfq",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "goster",
+          "ciktilar": [
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "uretim_rfq.termin_baslangici",
+      "nesne": "uretim_rfq",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "goster",
+          "ciktilar": [
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "uretim_yaniti.yanit_durumu",
+      "nesne": "uretim_yaniti",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "goster",
+          "ciktilar": [
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "uretim_yaniti.moq",
+      "nesne": "uretim_yaniti",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "goster",
+          "ciktilar": [
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "uretim_yaniti.kademeli_fiyatlar",
+      "nesne": "uretim_yaniti",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "goster",
+          "ciktilar": [
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "uretim_yaniti.termin_suresi",
+      "nesne": "uretim_yaniti",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "goster",
+          "ciktilar": [
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "uretim_yaniti.koli_ici_adet",
+      "nesne": "uretim_yaniti",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "goster",
+          "ciktilar": [
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "uretim_yaniti.koli_olculeri",
+      "nesne": "uretim_yaniti",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "goster",
+          "ciktilar": [
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "uretim_yaniti.koli_cbm",
+      "nesne": "uretim_yaniti",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "goster",
+          "ciktilar": [
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "uretim_yaniti.koli_brut_kg",
+      "nesne": "uretim_yaniti",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "goster",
+          "ciktilar": [
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "uretim_yaniti.koli_net_kg",
+      "nesne": "uretim_yaniti",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "goster",
+          "ciktilar": [
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "uretim_yaniti.ambalaj",
+      "nesne": "uretim_yaniti",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "goster",
+          "ciktilar": [
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "uretim_yaniti.alternatif_urun_baglantisi",
+      "nesne": "uretim_yaniti",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "goster",
+          "ciktilar": [
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "uretim_yaniti.firma_notu",
+      "nesne": "uretim_yaniti",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "goster",
+          "ciktilar": [
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "siparis.teyit_referansi",
+      "nesne": "siparis",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "siparis.onayli_urun",
+      "nesne": "siparis",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "siparis.onayli_varyant",
+      "nesne": "siparis",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "siparis.onayli_miktar",
+      "nesne": "siparis",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "siparis.onayli_fiyat",
+      "nesne": "siparis",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "firma.ticari_unvan",
+      "nesne": "firma",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "maskele(yalniz_tokena_bagli_kendi_kaydi)",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "musteri": {
+          "karar": "maskele(yalniz_tokena_bagli_kendi_kaydi)",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "maskele(yalniz_tokena_bagli_kendi_kaydi)",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "firma.vergi_numarasi",
+      "nesne": "firma",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "firma.vergi_dairesi",
+      "nesne": "firma",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "firma.sehir",
+      "nesne": "firma",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "firma.yetkili_ad_soyad",
+      "nesne": "firma",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "firma.is_epostasi",
+      "nesne": "firma",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "firma.telefon",
+      "nesne": "firma",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "belge.tur",
+      "nesne": "belge",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "musteri": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "goster",
+          "ciktilar": [
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "belge.referans",
+      "nesne": "belge",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "musteri": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "goster",
+          "ciktilar": [
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "belge.tarih_saat",
+      "nesne": "belge",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "musteri": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "goster",
+          "ciktilar": [
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "belge.dil",
+      "nesne": "belge",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "musteri": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "goster",
+          "ciktilar": [
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "belge.muhatap_firma",
+      "nesne": "belge",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "maskele(yalniz_tokena_bagli_kendi_kaydi)",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "musteri": {
+          "karar": "maskele(yalniz_tokena_bagli_kendi_kaydi)",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "maskele(yalniz_tokena_bagli_kendi_kaydi)",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "belge.dipnot",
+      "nesne": "belge",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "musteri": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "goster",
+          "ciktilar": [
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "belge.dosya",
+      "nesne": "belge",
+      "tip": "file",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "maskele(yalniz_tokena_bagli_kendi_kaydi)",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "musteri": {
+          "karar": "maskele(yalniz_tokena_bagli_kendi_kaydi)",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "maskele(yalniz_tokena_bagli_kendi_kaydi)",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "belge.snapshot_referansi",
+      "nesne": "belge",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "belge.antet_markasi",
+      "nesne": "belge",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "goster",
+          "ciktilar": [
+            "html"
+          ]
+        }
+      }
+    },
+    {
+      "alan_id": "ozel_alan.varsayilan.metin",
+      "nesne": "ozel_alan",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "ozel_alan.varsayilan.sayi",
+      "nesne": "ozel_alan",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "ozel_alan.varsayilan.tarih",
+      "nesne": "ozel_alan",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "ozel_alan.varsayilan.secim_listesi",
+      "nesne": "ozel_alan",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "ozel_alan.varsayilan.evet_hayir",
+      "nesne": "ozel_alan",
+      "tip": "string|number|date",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    },
+    {
+      "alan_id": "ozel_alan.varsayilan.dosya",
+      "nesne": "ozel_alan",
+      "tip": "file",
+      "kaynak": "V3-N mimari + Görev 25/26/27 + V3-C RFQ sözleşmesi",
+      "kirmizi_cizgi": false,
+      "neden_bu_rol_gormez": "Alan bu rolün açık whitelist’inde değilse adı, değeri ve yer tutucusu serializer’a girmez.",
+      "roller": {
+        "sahip_ic_kopya": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv",
+            "whatsapp-ozet"
+          ]
+        },
+        "sahip_operator": {
+          "karar": "goster",
+          "ciktilar": [
+            "html",
+            "pdf",
+            "excel",
+            "csv"
+          ]
+        },
+        "ithalatci": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "musteri": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "cinli_uretici_ciktisi": {
+          "karar": "gizle",
+          "ciktilar": []
+        },
+        "anonim_anahtarsiz_iskelet": {
+          "karar": "gizle",
+          "ciktilar": []
+        }
+      }
+    }
+  ]
+}

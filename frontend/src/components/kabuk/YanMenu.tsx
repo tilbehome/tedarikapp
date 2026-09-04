@@ -82,10 +82,10 @@ export default function YanMenu({
           type="button"
           className="flex min-h-10 w-full items-center justify-center gap-2 rounded-xl bg-navy text-base font-semibold text-white transition-colors hover:bg-navy-2"
           onClick={onKomut}
-          title="Yeni (Ctrl+K)"
+          title="Hızlı işlem (Ctrl+K)"
         >
           <Plus size={17} aria-hidden />
-          {!daraltilmis && <span>Yeni</span>}
+          {!daraltilmis && <span>Hızlı işlem</span>}
         </button>
       </div>
 

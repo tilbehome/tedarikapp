@@ -204,6 +204,10 @@ export interface KuyrukDurumuVerisi {
   saatlik_olen?: number;
   hata_orani_yuzde?: number;
   yeniden_denenen?: number;
+  /** v1.2.2 D6: bütçe/koşul yüzünden sonraki tura kalan işler — hata DEĞİL. */
+  ertelenen?: number;
+  /** v1.2.2 D6: açık devre kesici (varsa). */
+  devre_kesici?: { tur: string; kapanma_at: string | null; esik: number; dakika: number } | null;
   olu_isler: {
     id: number;
     tur: string;
@@ -439,12 +443,47 @@ export const system = {
   /** İE#10.5: yedekleme — elle al (+ yapılandırılmışsa off-site), listele, indir. */
   backupCreate: () =>
     api.post<{
-      backup: { name: string; size: number; sha256: string; created_at: string };
+      backup: {
+        set_id: string;
+        set_dizini: string;
+        created_at: string;
+        parca_sayisi: number;
+        toplam_bayt: number;
+        media_files: number;
+        medya_atlandi: boolean;
+        durum: 'TAM' | 'KISMI';
+        eksik: string[];
+        sebep: string | null;
+      };
       offsite: { attempted: boolean; sent: boolean; via: string | null; error: string | null };
     }>('/api/system/backup'),
   backupList: () =>
     api.get<{
-      backups: { name: string; size: number; created_at: string }[];
+      backups: {
+        name: string;
+        set_id: string;
+        size: number;
+        created_at: string;
+        tam: boolean;
+        /**
+         * H1: TAM | KISMI. KISMI = bir bileşen (örn. config) BİLEREK alınamadı;
+         * `eksik` hangisi, `sebep` neden. Rozet KALICIDIR.
+         */
+        durum: 'TAM' | 'KISMI';
+        eksik: string[];
+        sebep: string | null;
+        medyasiz: boolean;
+        parca_sayisi: number;
+        /**
+         * v1.2.2 B4: parcalar SIRALI gelir ve her biri SHA-256'sini tasir.
+         * "Tumunu zip indir" dugmesi BILINCLI OLARAK YOK (PM karari, 3 Eyl):
+         * paylasimli hostingde gigabaytlarca medyayi gecici bir arsive yazmak,
+         * medyayi parcalara bolmemizin sebebini geri getirirdi. Bunun bedeli,
+         * kullanicinin hangi dosyalari indirecegini ve indirdiginin saglam olup
+         * olmadigini GORMESI gerektigidir.
+         */
+        parcalar: { ad: string; tur: string; sira: number; boyut: number; sha256: string }[];
+      }[];
       writable: boolean;
       last_age_seconds: number | null;
       stale: boolean;
@@ -454,7 +493,24 @@ export const system = {
       cron: { line: string; ok: boolean; at: string; age_seconds: number } | null;
       offsite_configured: boolean;
     }>('/api/system/backups'),
-  backupFileUrl: (name: string) => `/api/system/backups/${encodeURIComponent(name)}/file`,
+  /** Bir SET PARCASINI indirir; parca verilmezse SQL parcasi iner. */
+  backupFileUrl: (name: string, parca?: string) =>
+    `/api/system/backups/${encodeURIComponent(name)}/file` +
+    (parca === undefined ? '' : `?parca=${encodeURIComponent(parca)}`),
+  /** Yedegi DOGRULAR — geri yukleme YAPMAZ (v1.2.2 B4). */
+  backupVerify: (name: string) =>
+    api.post<{
+      gecerli: boolean;
+      sorunlar: string[];
+      parca_sayisi: number;
+      rapor: string;
+    }>(`/api/system/backups/${encodeURIComponent(name)}/verify`),
+  /**
+   * v1.2.2 B2: APP_KEY emaneti — ŞIFRE YENİDEN istenir.
+   * Açık oturum tek başına yetmez: anahtarı gören bütün yedekleri açabilir.
+   */
+  appKeyReveal: (password: string) =>
+    api.post<{ app_key: string; kurtarma_metni: string }>('/api/system/app-key/reveal', { password }),
   /** K49: migration defterini gerçeğe eşitler — DDL koşmaz, idempotent. */
   migrateBaseline: () =>
     api.post<{ recorded: string[]; skipped: { name: string; reason: string }[]; pending_count: number }>(

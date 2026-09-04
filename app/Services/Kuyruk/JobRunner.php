@@ -40,7 +40,23 @@ final class JobRunner
          * geçişinde YENİDEN okunur. Verilmezse sistem saati.
          */
         private readonly ?Clock $saat = null,
+        /**
+         * v1.2.2 D6 — DEVRE KESİCİ. Verilmezse kesici yoktur (eski davranış).
+         * Geçici hatalar kesiciyi besler, başarı sıfırlar; açıkken o tür
+         * sahiplenmede ATLANIR.
+         */
+        private readonly ?DevreKesici $devreKesici = null,
     ) {
+    }
+
+    /**
+     * Kesici türlerini bilebilmek için kayıtlı işleyici türleri.
+     *
+     * @return list<string>
+     */
+    private function turler(): array
+    {
+        return array_keys($this->isleyiciler);
     }
 
     /**
@@ -171,7 +187,7 @@ final class JobRunner
     /**
      * Bir cron turu koşar.
      *
-     * @return array{islenen: int, basarili: int, basarisiz: int, sure: float, durma_nedeni: string}
+     * @return array{islenen: int, basarili: int, basarisiz: int, ertelenen: int, atlanan_turler: list<string>, sure: float, bellek_zirve_mb: float, durma_nedeni: string}
      */
     public function kos(?DateTimeImmutable $now = null, ?string $isleyiciKimligi = null, ?int $sureSiniri = null): array
     {
@@ -189,7 +205,10 @@ final class JobRunner
         $islenen = 0;
         $basarili = 0;
         $basarisiz = 0;
+        $ertelenen = 0;
         $durmaNedeni = 'kuyruk boş';
+        // D6: kesicisi açık türler bu turda hiç alınmaz; rapora yazılır.
+        $atlananTurler = $this->devreKesici?->acikTurler($this->turler()) ?? [];
 
         while (true) {
             if ($islenen >= $this->isSiniri) {
@@ -205,7 +224,7 @@ final class JobRunner
 
             // Her tur adımı KENDİ anını okur: kira, alınma anından başlar.
             $now = $this->simdi($dondurulmus);
-            $is = $this->kuyruk->sahiplen($kimlik, $now);
+            $is = $this->kuyruk->sahiplen($kimlik, $now, $atlananTurler);
             if ($is === null) {
                 // D9: "kuyruk boş" YALNIZ gerçekten boşken söylenir. Sahada
                 // panel "5 bekleyen" derken günlük her turda "kuyruk boş"
@@ -218,6 +237,9 @@ final class JobRunner
                 $durmaNedeni = $this->kuyruk->sonSecimNedeni() === JobQueue::SECIM_YARIS
                     ? 'çekişme: adaylar başka işleyicilerce alındı (kuyruk BOŞ değil)'
                     : $this->neden($now);
+                if ($atlananTurler !== []) {
+                    $durmaNedeni .= ' · devre kesici açık: ' . implode(', ', $atlananTurler);
+                }
 
                 break;
             }
@@ -273,9 +295,25 @@ final class JobRunner
                 // hâlâ çalışıyor; "bitti" saymak turun raporunu yalancı yapar.
                 if ($yazildi) {
                     $basarili++;
+                    $this->devreKesici?->basari($tur);
                 } else {
                     $basarisiz++;
                 }
+            } catch (IsErtelendi $erteleme) {
+                // D6: ERTELEME HATA DEĞİLDİR. Deneme hakkı yakılmaz, ölü rafı yok,
+                // bildirim yok; iş `saniye` sonra yeniden alınabilir.
+                $erteleAni = $this->simdi($dondurulmus);
+                $this->sonucYaz((int) $is['id'], function () use ($is, $erteleme, $erteleAni, $token): void {
+                    $this->kuyruk->ertele((int) $is['id'], $token, $erteleAni, $erteleme->getMessage(), $erteleme->saniye);
+                });
+                $this->askidaki = null;
+                $ertelenen++;
+                $this->logger->info('Kuyruk işi ertelendi', [
+                    'tur' => $tur,
+                    'id' => (int) $is['id'],
+                    'saniye' => $erteleme->saniye,
+                    'sebep' => $erteleme->getMessage(),
+                ]);
             } catch (Throwable $hata) {
                 // B11: hata SINIFLANDIRILIR — kalıcı hata tekrar denenmez, hız
                 // sınırında sağlayıcının istediği süre beklenir, geçici hatada
@@ -307,6 +345,18 @@ final class JobRunner
                     'sinif' => $sinif,
                     'hata' => $hata->getMessage(),
                 ]);
+
+                // D6: yalnız GEÇİCİ hata kesiciyi besler — kalıcı hata tek işin
+                // sorunudur, ortak kaynağın değil. Kesici bu hatayla AÇILDIYSA
+                // tur o türü bırakır ve olay bir kez duyurulur.
+                if ($sinif !== HataSinifi::KALICI && $this->devreKesici?->geciciHata($tur) === true) {
+                    $atlananTurler[] = $tur;
+                    $this->logger->critical('Devre kesici AÇILDI: art arda geçici hatalar', [
+                        'tur' => $tur,
+                        'durum' => $this->devreKesici->durum($tur),
+                    ]);
+                    $this->kuyruk->devreKesiciAcildi($tur, $this->devreKesici->durum($tur), $this->simdi($dondurulmus));
+                }
             }
         }
 
@@ -314,7 +364,13 @@ final class JobRunner
             'islenen' => $islenen,
             'basarili' => $basarili,
             'basarisiz' => $basarisiz,
+            // D6: ertelenenler AYRI sayılır; raporda "başarısız" görünmezler.
+            'ertelenen' => $ertelenen,
+            'atlanan_turler' => array_values(array_unique($atlananTurler)),
             'sure' => round(microtime(true) - $baslangic, 2),
+            // D6: zirve bellek — bütçenin doğru ayarlanıp ayarlanmadığı ancak
+            // ölçülürse bilinir.
+            'bellek_zirve_mb' => round(memory_get_peak_usage(true) / (1024 * 1024), 1),
             'durma_nedeni' => $durmaNedeni,
         ];
     }

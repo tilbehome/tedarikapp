@@ -105,6 +105,8 @@ final class KuyrukTetikleyici
                 'islenen' => $ozet['islenen'],
                 'basarili' => $ozet['basarili'],
                 'basarisiz' => $ozet['basarisiz'],
+                'ertelenen' => $ozet['ertelenen'],
+                'bellek_zirve_mb' => $ozet['bellek_zirve_mb'],
                 'neden' => $ozet['durma_nedeni'],
                 'arkaplan' => $baglantiKapali,
             ], JSON_UNESCAPED_UNICODE) ?: '');

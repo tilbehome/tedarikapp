@@ -11,6 +11,10 @@ use PHPUnit\Framework\TestCase;
 /**
  * İE#11 EK-2 (1) — yedek saklama: eskiler silinir, EN YENİ 5 her koşulda kalır,
  * desen dışı dosyalara ASLA dokunulmaz.
+ *
+ * v1.2.2 B1: saklama birimi artık DOSYA değil SET. Kural aynı, taşıdığı şey
+ * değişti: bir set bütün olarak gider — parçalarından biri kalırsa manifestsiz
+ * bir yetim olur ve kimse ne olduğunu bilemez.
  */
 final class BackupPruneTest extends TestCase
 {
@@ -24,8 +28,16 @@ final class BackupPruneTest extends TestCase
 
     protected function tearDown(): void
     {
-        foreach (glob($this->root . '/storage/backups/*') ?: [] as $file) {
-            @unlink($file);
+        foreach (glob($this->root . '/storage/backups/*') ?: [] as $yol) {
+            if (is_dir($yol)) {
+                foreach (glob($yol . '/*') ?: [] as $parca) {
+                    @unlink($parca);
+                }
+                @rmdir($yol);
+
+                continue;
+            }
+            @unlink($yol);
         }
         parent::tearDown();
     }
@@ -38,21 +50,36 @@ final class BackupPruneTest extends TestCase
         ]), $this->root);
     }
 
-    private function seed(string $name, int $daysOld): void
+    /**
+     * Diskte GERÇEK bir set kurar: parçalar + manifest.
+     *
+     * Elle uydurulmuş bir dizin, `list()` manifest okuyamadığı için görünmez
+     * olurdu ve test hiçbir şey sınamazdı — bu yüzden set gerçek yazıcıyla
+     * üretilir.
+     */
+    private function seed(string $damga, int $daysOld): void
     {
-        $path = $this->root . '/storage/backups/' . $name;
-        file_put_contents($path, 'x');
-        touch($path, time() - $daysOld * 86400);
+        $yazici = new \App\Services\Yedek\YedekSetiYazici(
+            $this->root . '/storage/backups',
+            '1.2.2',
+            ['0035_bildirimler'],
+        );
+        $set = $yazici->baslat($damga);
+        $yazici->parcaEkle($set, 'veritabani.sql.enc', 'sql', 'DUMP-' . $damga);
+        $yazici->parcaEkle($set, 'ayarlar.files.enc', 'config', 'CONFIG');
+        $dizin = $yazici->tamamla($set);
+
+        touch($dizin, time() - $daysOld * 86400);
     }
 
     public function testEskilerSilinirEnYeniBesKalir(): void
     {
         // 8 yedek: 3 taze + 5 eski (30 gün) — saklama 14 gün.
         for ($i = 1; $i <= 3; $i++) {
-            $this->seed(sprintf('yedek-2026081%d-1200%02d.sql.enc', $i, $i), 1);
+            $this->seed(sprintf('2026081%d-1200%02d', $i, $i), 1);
         }
         for ($i = 1; $i <= 5; $i++) {
-            $this->seed(sprintf('yedek-2026070%d-1200%02d.sql.enc', $i, $i), 30);
+            $this->seed(sprintf('2026070%d-1200%02d', $i, $i), 30);
         }
 
         $deleted = $this->service()->prune(14);
@@ -65,11 +92,29 @@ final class BackupPruneTest extends TestCase
     public function testBesVeyaDahaAzYedekVarkenHicbirSeySilinmez(): void
     {
         for ($i = 1; $i <= 5; $i++) {
-            $this->seed(sprintf('yedek-2026060%d-120000.sql.enc', $i), 90);
+            $this->seed(sprintf('2026060%d-120000', $i), 90);
         }
 
         self::assertSame([], $this->service()->prune(14), 'EN YENİ 5 her koşulda korunur.');
         self::assertCount(5, $this->service()->list());
+    }
+
+    public function testSETBUTUNOLARAKSILINIR(): void
+    {
+        // Parçalardan biri kalırsa manifestsiz bir yetim olur: dosya orada
+        // durur, neye ait olduğu bilinemez, disk sessizce dolar.
+        for ($i = 1; $i <= 6; $i++) {
+            $this->seed(sprintf('2026040%d-120000', $i), 200);
+        }
+
+        $this->service()->prune(14);
+
+        self::assertSame(
+            [],
+            glob($this->root . '/storage/backups/set-20260401-120000/*') ?: [],
+            'Silinen setin parçaları da gitmeli.',
+        );
+        self::assertDirectoryDoesNotExist($this->root . '/storage/backups/set-20260401-120000');
     }
 
     public function testDesenDisiDosyalaraDokunulmaz(): void
@@ -77,7 +122,7 @@ final class BackupPruneTest extends TestCase
         file_put_contents($this->root . '/storage/backups/.htaccess', "Require all denied\n");
         file_put_contents($this->root . '/storage/backups/notlar.txt', 'dokunma');
         for ($i = 1; $i <= 6; $i++) {
-            $this->seed(sprintf('yedek-2026050%d-120000.sql.enc', $i), 120);
+            $this->seed(sprintf('2026050%d-120000', $i), 120);
         }
 
         $this->service()->prune(14);

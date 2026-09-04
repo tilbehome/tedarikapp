@@ -1,0 +1,500 @@
+{
+  "schema_version": "2.0.0",
+  "sozlesme_adi": "TedarikApp V3-C RFQ ve Firma Yanıt Alan Sözleşmesi",
+  "kapsam": "Hesapsız firmanın link ve 6 haneli erişim anahtarıyla açtığı tek bir liste-firma-teklif turundaki salt okunur RFQ verisi ile firma yanıtı.",
+  "guven_siniri": {
+    "hesap": "Firma hesabı yoktur.",
+    "erisim": "Link ve 6 haneli anahtar ayrı kanallardan iletilir; anahtar veya erişim tokenı bu sözleşmedeki iş alanlarına yazılmaz.",
+    "tur_kilidi": "Gönderilmiş tur değiştirilemez; revizyon yeni tur kimliği açar.",
+    "veri_sahipligi": "İç taraf Ürün Sahibi, dış taraf firmadır; firma yalnız kendisine açılan turu görür."
+  },
+  "durum_eslemeleri": [
+    {
+      "kod": "unanswered",
+      "portal_anahtari": "portal.status.unanswered",
+      "status_anahtari": "status.waiting_supplier",
+      "kullanim": "Yalnız taslak/satır henüz yanıtlanmadı durumu; nihai firma cevabı değildir."
+    },
+    {
+      "kod": "found",
+      "portal_anahtari": "portal.status.found",
+      "status_anahtari": "status.found",
+      "kullanim": "İstenen ürün veya kabul edilen eşdeğer varyant bulundu."
+    },
+    {
+      "kod": "not_found",
+      "portal_anahtari": "portal.status.not_found",
+      "status_anahtari": "status.not_found",
+      "kullanim": "İstenen ürün bulunamadı; kısa açıklama zorunludur."
+    }
+  ],
+  "rfq_satir_alanlari": [
+    {
+      "ad": "rfq_satir_id",
+      "tip": "uuid|string",
+      "zorunluluk": "Her satırda zorunlu; sistem üretir ve firma değiştiremez.",
+      "dogrulama": "Tur içinde benzersiz; 1-80 karakter; içe aktarımın birincil eşleştirme anahtarıdır.",
+      "birim": null,
+      "portal_anahtar_bagi": [
+        "portal.field.source_product",
+        "portal.instruction.source_readonly"
+      ]
+    },
+    {
+      "ad": "urun_kodu",
+      "tip": "string",
+      "zorunluluk": "Her satırda zorunlu; firma için görünür ve salt okunur.",
+      "dogrulama": "1-64 karakter; tur içinde benzersiz; baştaki/sondaki boşluk atılır, büyük-küçük harf kimliği değiştirmez.",
+      "birim": null,
+      "portal_anahtar_bagi": [
+        "portal.field.source_product"
+      ]
+    },
+    {
+      "ad": "urun_adi",
+      "tip": "localized_string{tr,en,zh,source}",
+      "zorunluluk": "En az kaynak dilde zorunlu; firma değiştiremez.",
+      "dogrulama": "Her dil 1-500 karakter; HTML/çalıştırılabilir içerik kabul edilmez; kaynak metin korunur.",
+      "birim": null,
+      "portal_anahtar_bagi": [
+        "portal.field.source_product"
+      ]
+    },
+    {
+      "ad": "kaynak_urun",
+      "tip": "object{url:string,gorsel_url?:string,platform?:string}",
+      "zorunluluk": "Kaynak URL zorunlu; görsel ve platform isteğe bağlı; firma değiştiremez.",
+      "dogrulama": "Yalnız https URL; desteklenen kaynak alan adı; javascript/data/file şemaları reddedilir; URL en çok 2048 karakter.",
+      "birim": null,
+      "portal_anahtar_bagi": [
+        "portal.field.source_product",
+        "portal.action.open_source",
+        "portal.instruction.source_readonly"
+      ]
+    },
+    {
+      "ad": "talep_edilen_varyant",
+      "tip": "localized_string{tr,en,zh,source}|null",
+      "zorunluluk": "Ürün varyantlıysa zorunlu; varyantsızsa null; firma değiştiremez.",
+      "dogrulama": "Her dil en çok 300 karakter; renk/ölçü/model kaynak değeri kaybedilmez.",
+      "birim": null,
+      "portal_anahtar_bagi": [
+        "portal.field.source_variation",
+        "portal.instruction.source_readonly"
+      ]
+    },
+    {
+      "ad": "talep_miktari",
+      "tip": "quantity{deger:decimal,birim:string}",
+      "zorunluluk": "Her satırda zorunlu; firma değiştiremez.",
+      "dogrulama": "deger > 0 ve <= 100000000; en çok 3 ondalık; birim 1-24 karakter ve izinli birim sözlüğünde olmalı.",
+      "birim": "adet|set|paket|koli|kg|m|m2|ozel",
+      "portal_anahtar_bagi": [
+        "portal.field.requested_quantity",
+        "portal.instruction.source_readonly",
+        "portal.validation.quantity_below_moq"
+      ]
+    },
+    {
+      "ad": "alici_satir_notu",
+      "tip": "localized_string{tr,en,zh,source}|null",
+      "zorunluluk": "İsteğe bağlı; iç taraf gönderir, firma değiştiremez.",
+      "dogrulama": "Her dil en çok 2000 karakter; token, iç maliyet, hedef satış fiyatı veya başka firmaya ait bilgi içeremez.",
+      "birim": null,
+      "portal_anahtar_bagi": [
+        "portal.instruction.source_readonly",
+        "portal.instruction.confidential"
+      ]
+    }
+  ],
+  "rfq_dipnotlari": [
+    {
+      "ad": "incoterm_ve_teslim_yeri",
+      "tip": "object{incoterm:enum,yer:string,ddp_turkiye_kdv_dahil:boolean}",
+      "zorunluluk": "Her turda zorunlu; varsayılan incoterm DDP ise teslim yeri ve Türkiye KDV dahil beyanı true olmalı.",
+      "dogrulama": "Incoterm 2020 kod sözlüğünden seçilir; yer 3-300 karakter; DDP fiyatı için yer belirsiz bırakılamaz.",
+      "birim": null,
+      "portal_anahtar_bagi": [
+        "portal.instruction.summary",
+        "portal.field.ddp_unit_price_vat_included",
+        "portal.submit.ddp_checkbox"
+      ]
+    },
+    {
+      "ad": "termin_baslangic_tanimi",
+      "tip": "object{varsayilan_kod:enum,aciklama:string}",
+      "zorunluluk": "Her turda zorunlu; firma satırda farklı başlangıç seçerse açıkça belirtir.",
+      "dogrulama": "Kod order_confirmation|deposit_received|sample_approval|artwork_approval|custom; custom ise 3-300 karakter açıklama zorunlu.",
+      "birim": null,
+      "portal_anahtar_bagi": [
+        "portal.field.lead_time",
+        "portal.field.lead_time_start",
+        "portal.field.lead_time_unit"
+      ]
+    },
+    {
+      "ad": "teklif_gecerliligi_ve_kur_kilidi",
+      "tip": "object{gecerlilik_gun:int,kur_snapshot_id:string,kur_tarihi:date,karsilastirma_para_birimi:string}",
+      "zorunluluk": "Her turda zorunlu; gönderim anında snapshot alınır.",
+      "dogrulama": "gecerlilik_gun 1-180; kur snapshot kimliği değişmez; firma ham teklif para birimi ve fiyatı hiçbir zaman kur çevrimiyle üzerine yazılmaz.",
+      "birim": "gün",
+      "portal_anahtar_bagi": [
+        "portal.submit.validity_checkbox"
+      ]
+    }
+  ],
+  "firma_yanit_alanlari": [
+    {
+      "ad": "yanit_durumu",
+      "tip": "enum{unanswered,found,not_found}",
+      "zorunluluk": "Kayıt gönderilirken zorunlu; taslakta unanswered olabilir.",
+      "dogrulama": "Yalnız durum_eslemeleri kodlarından biri; nihai gönderimde unanswered yasaktır. Alternatif varlığı bu alana yazılmaz.",
+      "birim": null,
+      "portal_anahtar_bagi": [
+        "portal.field.response_status",
+        "portal.validation.status_required",
+        "portal.status.unanswered",
+        "portal.status.found",
+        "portal.status.not_found"
+      ]
+    },
+    {
+      "ad": "ddp_birim_fiyat_kdv_dahil",
+      "tip": "decimal|null",
+      "zorunluluk": "found ise zorunlu; not_found ise null.",
+      "dogrulama": "0'dan büyük ve <= 100000000; en çok 6 ondalık; sayı ve para birimi ayrı alanlardır.",
+      "birim": "para_birimi/talep_birimi",
+      "portal_anahtar_bagi": [
+        "portal.field.ddp_unit_price_vat_included",
+        "portal.validation.found_price_required",
+        "portal.validation.positive_number"
+      ]
+    },
+    {
+      "ad": "para_birimi",
+      "tip": "enum{USD,CNY,TRY,EUR}|null",
+      "zorunluluk": "Fiyat veya kademeli fiyat varsa zorunlu.",
+      "dogrulama": "ISO 4217 kodu; tur içindeki bir satırın ana fiyatı ve kademeleri aynı para biriminde olmalı.",
+      "birim": null,
+      "portal_anahtar_bagi": [
+        "portal.field.currency",
+        "portal.validation.currency_required"
+      ]
+    },
+    {
+      "ad": "ddp_turkiye_kdv_dahil_onayi",
+      "tip": "boolean|null",
+      "zorunluluk": "Fiyat girilen her satırda true zorunlu.",
+      "dogrulama": "false veya null iken satır tamamlandı sayılamaz ve gönderilemez.",
+      "birim": null,
+      "portal_anahtar_bagi": [
+        "portal.validation.ddp_vat_confirmation_required",
+        "portal.submit.ddp_checkbox"
+      ]
+    },
+    {
+      "ad": "kademeli_fiyatlar",
+      "tip": "array<kademeli_fiyat>|null",
+      "zorunluluk": "İsteğe bağlı; varsa bütün alt alanlar sözleşmeye uymalı.",
+      "dogrulama": "En çok 20 kademe; min miktarlar kesin artar; aralıklar çakışmaz; fiyatlar > 0; aynı para birimi kullanılır.",
+      "birim": null,
+      "portal_anahtar_bagi": [
+        "portal.field.tier_pricing",
+        "portal.action.add_tier",
+        "portal.validation.tier_incomplete",
+        "portal.validation.tier_order",
+        "portal.validation.tier_overlap"
+      ]
+    },
+    {
+      "ad": "moq",
+      "tip": "quantity{deger:decimal,birim:string}|null",
+      "zorunluluk": "found ise zorunlu.",
+      "dogrulama": "deger >= 1 ve <= 100000000; en çok 3 ondalık; birim talep birimiyle farklıysa açık birim zorunlu; yüksek MOQ tek başına hata veya ceza değildir.",
+      "birim": "adet|set|paket|koli|kg|m|m2|ozel",
+      "portal_anahtar_bagi": [
+        "portal.field.moq",
+        "portal.validation.found_moq_required",
+        "portal.validation.quantity_below_moq"
+      ]
+    },
+    {
+      "ad": "termin_baslangici",
+      "tip": "enum{order_confirmation,deposit_received,sample_approval,artwork_approval,custom}|null",
+      "zorunluluk": "found ise zorunlu.",
+      "dogrulama": "custom seçilirse termin_baslangici_aciklamasi zorunlu.",
+      "birim": null,
+      "portal_anahtar_bagi": [
+        "portal.field.lead_time_start"
+      ]
+    },
+    {
+      "ad": "termin_baslangici_aciklamasi",
+      "tip": "string|null",
+      "zorunluluk": "termin_baslangici=custom ise zorunlu; diğer seçimlerde isteğe bağlı.",
+      "dogrulama": "3-300 karakter; belirsiz 'sonra' ifadesi tek başına kabul edilmez.",
+      "birim": null,
+      "portal_anahtar_bagi": [
+        "portal.field.lead_time_start"
+      ]
+    },
+    {
+      "ad": "termin_suresi",
+      "tip": "integer|null",
+      "zorunluluk": "found ise zorunlu.",
+      "dogrulama": "1-365 tam sayı; takvim/iş günü ayrımı termin_birimi alanında açık olmalı.",
+      "birim": "termin_birimi",
+      "portal_anahtar_bagi": [
+        "portal.field.lead_time",
+        "portal.validation.found_lead_time_required",
+        "portal.validation.positive_number"
+      ]
+    },
+    {
+      "ad": "termin_birimi",
+      "tip": "enum{calendar_day,working_day,week}|null",
+      "zorunluluk": "termin_suresi varsa zorunlu.",
+      "dogrulama": "week seçimi normalize edilirken 7 takvim günü kabul edilir fakat kaynak değer korunur.",
+      "birim": null,
+      "portal_anahtar_bagi": [
+        "portal.field.lead_time_unit"
+      ]
+    },
+    {
+      "ad": "koli_ici_adet",
+      "tip": "integer|null",
+      "zorunluluk": "Bulunabiliyorsa girilir; nihai gönderimde eksikse uyarı, engel değil.",
+      "dogrulama": "1-1000000 tam sayı.",
+      "birim": "adet/koli",
+      "portal_anahtar_bagi": [
+        "portal.field.units_per_carton",
+        "portal.validation.positive_number"
+      ]
+    },
+    {
+      "ad": "koli_olculeri",
+      "tip": "object{uzunluk_cm:decimal,genislik_cm:decimal,yukseklik_cm:decimal}|null",
+      "zorunluluk": "Bir boyut girilirse üç boyut birlikte zorunlu.",
+      "dogrulama": "Her boyut > 0 ve <= 1000 cm; en çok 2 ondalık.",
+      "birim": "cm",
+      "portal_anahtar_bagi": [
+        "portal.field.carton_dimensions",
+        "portal.field.carton_length_cm",
+        "portal.field.carton_width_cm",
+        "portal.field.carton_height_cm",
+        "portal.validation.carton_dimensions_together"
+      ]
+    },
+    {
+      "ad": "koli_cbm",
+      "tip": "decimal|null",
+      "zorunluluk": "İsteğe bağlı; ölçüler varsa sistem de hesaplar.",
+      "dogrulama": "0 < CBM <= 100; en çok 6 ondalık; ölçülerden hesaplanan CBM ile fark > %5 ise uyarı ve teyit gerekir.",
+      "birim": "m3/koli",
+      "portal_anahtar_bagi": [
+        "portal.field.carton_cbm",
+        "portal.validation.positive_number"
+      ]
+    },
+    {
+      "ad": "koli_brut_kg",
+      "tip": "decimal|null",
+      "zorunluluk": "İsteğe bağlı; net ağırlık varsa brüt ağırlık zorunlu.",
+      "dogrulama": "0 < değer <= 10000; en çok 3 ondalık; brüt >= net olmalı.",
+      "birim": "kg/koli",
+      "portal_anahtar_bagi": [
+        "portal.field.carton_gross_weight_kg",
+        "portal.validation.positive_number"
+      ]
+    },
+    {
+      "ad": "koli_net_kg",
+      "tip": "decimal|null",
+      "zorunluluk": "İsteğe bağlı.",
+      "dogrulama": "0 < değer <= 10000; en çok 3 ondalık; net <= brüt olmalı.",
+      "birim": "kg/koli",
+      "portal_anahtar_bagi": [
+        "portal.field.carton_net_weight_kg",
+        "portal.validation.positive_number"
+      ]
+    },
+    {
+      "ad": "ambalaj",
+      "tip": "string|null",
+      "zorunluluk": "İsteğe bağlı; özel üretim/özel ambalaj isteniyorsa zorunlu hale getirilebilir.",
+      "dogrulama": "En çok 1000 karakter; HTML veya formül çalıştırılmaz.",
+      "birim": null,
+      "portal_anahtar_bagi": [
+        "portal.field.packaging"
+      ]
+    },
+    {
+      "ad": "firma_notu",
+      "tip": "string|null",
+      "zorunluluk": "not_found ise zorunlu; diğer durumlarda isteğe bağlı.",
+      "dogrulama": "not_found için 3-2000, diğer durumlar için en çok 5000 karakter.",
+      "birim": null,
+      "portal_anahtar_bagi": [
+        "portal.field.note",
+        "portal.validation.not_found_note_required"
+      ]
+    }
+  ],
+  "kademeli_fiyat_alt_semasi": {
+    "alanlar": [
+      {
+        "ad": "min_adet",
+        "tip": "decimal",
+        "zorunluluk": "Her kademede zorunlu.",
+        "dogrulama": ">= 1; önceki kademenin min_adet değerinden büyük; en çok 3 ondalık.",
+        "birim": "moq.birim",
+        "portal_anahtar_bagi": [
+          "portal.field.tier_min_quantity"
+        ]
+      },
+      {
+        "ad": "max_adet",
+        "tip": "decimal|null",
+        "zorunluluk": "Son kademe için boş olabilir; diğer kademelerde önerilir.",
+        "dogrulama": ">= min_adet; sonraki kademenin min_adet değerinden küçük; aralık çakışamaz.",
+        "birim": "moq.birim",
+        "portal_anahtar_bagi": [
+          "portal.field.tier_max_quantity"
+        ]
+      },
+      {
+        "ad": "birim_fiyat",
+        "tip": "decimal",
+        "zorunluluk": "Her kademede zorunlu.",
+        "dogrulama": "> 0 ve <= 100000000; en çok 6 ondalık.",
+        "birim": "para_birimi/moq.birim",
+        "portal_anahtar_bagi": [
+          "portal.field.tier_unit_price"
+        ]
+      }
+    ],
+    "siraya_koyma": "min_adet artan sıra; kullanıcı girişi farklı sıradaysa önizlemede sıralama önerilir, sessizce anlam değiştirilmez.",
+    "akil_kurali": "Daha yüksek miktarda fiyat yükselirse engel değil uyarı üretilir; firma özel koşul açıklayabilir."
+  },
+  "capraz_akil_kontrolleri": [
+    "Fiyat 0 veya negatif olamaz.",
+    "MOQ 1'den küçük olamaz; yüksek MOQ tek başına hata veya skor cezası değildir.",
+    "Talep miktarı MOQ altında ise uyarı çıkar, firma yanıtı kaybolmaz.",
+    "Termin 365 günü aşamaz; aşan değer alan hatasıdır.",
+    "Brüt ağırlık net ağırlıktan küçük olamaz.",
+    "Üç koli boyutu birlikte girilir.",
+    "CBM ile L×W×H/1000000 farkı %5'i aşarsa teyit uyarısı çıkar.",
+    "not_found durumundaki asıl satır cevabında fiyat, kademe ve MOQ boş olmalıdır; alternatif fiyatları yalnız bağlı ayrı alternatif cevap nesnesinde tutulur.",
+    "Nihai gönderimde bütün fiyatlı satırlarda Türkiye KDV dahil DDP onayı true olmalıdır.",
+    "Para birimi belirsiz bir sayı otomatik fiyat olarak kaydedilemez.",
+    "Kaynak satır kimliği değiştirilemez ve başka turdaki satıra taşınamaz.",
+    "Alternatif cevap nesnesi yalnız aynı turdaki not_found asıl RFQ satırına asil_rfq_satir_id ile bağlanabilir.",
+    "Alternatif cevap nesnesinde ad, kaynak, en az bir fiyat kademesi ve MOQ tamamlanmadan türetilen alternatif rozeti gösterilemez."
+  ],
+  "yeni_anahtar_onerileri": [
+    {
+      "anahtar": "portal.field.product_code",
+      "neden": "Firma kartında görünür salt-okunur ürün kodu için 7B'de özel alan etiketi yok."
+    },
+    {
+      "anahtar": "portal.field.buyer_note",
+      "neden": "Alıcının salt-okunur satır notu, portal.field.note kapsamındaki firma notundan ayrı etiketlenmelidir."
+    },
+    {
+      "anahtar": "portal.validation.lead_time_max",
+      "neden": "Termin 365 gün sınırı için 7B'de özel metin yok."
+    },
+    {
+      "anahtar": "portal.validation.gross_below_net",
+      "neden": "Brüt/net ağırlık çapraz doğrulaması için 7B'de özel metin yok."
+    },
+    {
+      "anahtar": "portal.validation.cbm_mismatch",
+      "neden": "Ölçüden hesaplanan CBM ile beyan farkı için 7B'de özel metin yok."
+    },
+    {
+      "anahtar": "portal.validation.url_invalid",
+      "neden": "Kaynak ve alternatif bağlantı URL doğrulaması için 7B'de genel metin yok."
+    }
+  ],
+  "alternatif_cevap_modeli": {
+    "kayit_tipi": "Asıl RFQ satır cevabından ayrı alternatif cevap nesnesi",
+    "asil_cevap_kurali": "Asıl satırın firma yanıtı not_found olarak korunur; alternatif nesnesi asıl cevabı found durumuna çevirmez ve üzerine yazmaz.",
+    "alanlar": [
+      {
+        "ad": "asil_rfq_satir_id",
+        "tip": "uuid|string",
+        "zorunluluk": "Her alternatif cevap nesnesinde zorunlu; mevcut RFQ satırına referans verir.",
+        "dogrulama": "Aynı teklif turunda var olan ve yanit_durumu=not_found olan rfq_satir_id ile birebir eşleşmelidir.",
+        "birim": null,
+        "portal_anahtar_bagi": [
+          "portal.field.product_code",
+          "portal.status.not_found"
+        ]
+      },
+      {
+        "ad": "ad",
+        "tip": "localized_string{tr,en,zh,source}",
+        "zorunluluk": "Her alternatif cevap nesnesinde en az kaynak dilde zorunlu.",
+        "dogrulama": "Her dil 1-500 karakter; marka, model ve ölçü kaynak değeri değiştirilmez; HTML çalıştırılmaz.",
+        "birim": null,
+        "portal_anahtar_bagi": [
+          "portal.field.alternative_proposal"
+        ]
+      },
+      {
+        "ad": "kaynak",
+        "tip": "object{url:string,gorsel_url?:string,platform?:string}",
+        "zorunluluk": "Kaynak URL zorunlu; görsel ve platform isteğe bağlı.",
+        "dogrulama": "Yalnız https URL; en çok 2048 karakter; javascript/data/file şemaları reddedilir.",
+        "birim": null,
+        "portal_anahtar_bagi": [
+          "portal.field.alternative_link",
+          "portal.validation.url_invalid"
+        ]
+      },
+      {
+        "ad": "fiyat_kademeleri",
+        "tip": "object{para_birimi:enum{USD,CNY,TRY,EUR},kademeler:array<kademeli_fiyat>}",
+        "zorunluluk": "En az bir kademe zorunlu; bütün kademeler aynı para birimindedir.",
+        "dogrulama": "kademeli_fiyat_alt_semasi uygulanır; her birim fiyat KDV dâhil DDP fiyatıdır ve ara miktar fiyatı uydurulmaz.",
+        "birim": "para_birimi/moq.birim",
+        "portal_anahtar_bagi": [
+          "portal.field.tier_pricing",
+          "portal.field.currency",
+          "portal.validation.tier_incomplete",
+          "portal.validation.tier_order",
+          "portal.validation.tier_overlap"
+        ]
+      },
+      {
+        "ad": "moq",
+        "tip": "quantity{deger:decimal,birim:string}",
+        "zorunluluk": "Her alternatif cevap nesnesinde zorunlu.",
+        "dogrulama": "deger >= 1 ve <= 100000000; en çok 3 ondalık; birim izinli miktar birimi sözlüğünde olmalıdır.",
+        "birim": "adet|set|paket|koli|kg|m|m2|ozel",
+        "portal_anahtar_bagi": [
+          "portal.field.moq",
+          "portal.validation.positive_number"
+        ]
+      },
+      {
+        "ad": "not",
+        "tip": "string|null",
+        "zorunluluk": "İsteğe bağlı.",
+        "dogrulama": "En çok 3000 karakter; alternatifin farkı veya ticari koşulu açıklanabilir; HTML çalıştırılmaz.",
+        "birim": null,
+        "portal_anahtar_bagi": [
+          "portal.field.alternative_details",
+          "portal.field.note"
+        ]
+      }
+    ],
+    "turetilen_rozet": {
+      "kosul": "Asıl RFQ satırına bağlı en az bir alternatif cevap nesnesi varsa gösterilir.",
+      "portal_anahtari": "portal.status.alternative",
+      "status_anahtari": "status.alternative_available",
+      "kalicilik": "Rozet ayrı bir alan veya firma yanıt durumu olarak kaydedilmez; ilişkiden türetilir."
+    }
+  }
+}

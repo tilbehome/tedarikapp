@@ -22,6 +22,14 @@ use DateTimeZone;
  */
 final class ListPresenter
 {
+    /**
+     * `productsOf()` süresince geçerli, tek sorguyla alınmış bekleyen kimlikleri
+     * (D1). Tek ürün sunumunda null'dur ve o zaman ürün başına sorgu yapılır.
+     *
+     * @var list<int>|null
+     */
+    private ?array $medyaBekleyenler = null;
+
     public function __construct(
         private readonly ListRepository $lists,
         private readonly ProductRepository $products,
@@ -163,6 +171,12 @@ final class ListPresenter
             'sku_selection' => $this->decodeJson($row['sku_selection']),
             'sku_matrix' => $this->decodeJson($row['sku_matrix']),
             'main_image' => $this->nullableString($row['main_image']),
+            // v1.2.2 D1/D2: ana görsel UZAK mı (kuyruk henüz indirmedi), panel
+            // onu NEREDEN çizsin (vekil), medya işi kuyrukta BEKLİYOR mu.
+            // Üçü de türetilmiş alanlardır; kolon değil (bkz. medyaBekleyenler).
+            'main_image_uzak' => $this->uzakMi($row['main_image']),
+            'main_image_gosterim' => $this->gosterimAdresi($row['main_image']),
+            'media_pending' => in_array((int) $row['id'], $this->medyaBekleyenler ?? $this->products->medyaBekleyenler([(int) $row['id']]), true),
             'video_url' => $this->nullableString($row['video_url']),
             // İE#13 F1: MOQ gibi alanlar yakalamanın RAW bloğundan okunur (uydurma kolon yok).
             'raw_attributes' => $this->nullableString($row['raw_attributes'] ?? null),
@@ -202,7 +216,37 @@ final class ListPresenter
      */
     public function productsOf(array $rows, array $listRow): array
     {
-        return array_map(fn (array $row): array => $this->product($row, $listRow), $rows);
+        // D1: bekleyen medya işleri TEK sorguda alınır; satır başına sorgu yok.
+        $this->medyaBekleyenler = $this->products->medyaBekleyenler(
+            array_map(static fn (array $row): int => (int) $row['id'], $rows),
+        );
+
+        try {
+            return array_map(fn (array $row): array => $this->product($row, $listRow), $rows);
+        } finally {
+            $this->medyaBekleyenler = null;
+        }
+    }
+
+    /** Uzak görsel: kuyruk henüz arşive almadı. */
+    private function uzakMi(mixed $adres): bool
+    {
+        return is_string($adres) && (str_starts_with($adres, 'http://') || str_starts_with($adres, 'https://'));
+    }
+
+    /**
+     * Panelin ÇİZECEĞİ adres (D2): yerelse kendisi, uzaksa K47 vekili.
+     *
+     * alicdn Referer ACL uzak adresi tarayıcıda boş kare yapar; vekil görseli
+     * sunucu üzerinden getirir. Yerel adres vekilden geçmez — gereksiz yük.
+     */
+    private function gosterimAdresi(mixed $adres): ?string
+    {
+        if (!is_string($adres) || $adres === '') {
+            return null;
+        }
+
+        return $this->uzakMi($adres) ? '/api/media/proxy?url=' . rawurlencode($adres) : $adres;
     }
 
     /**

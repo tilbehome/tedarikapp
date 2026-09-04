@@ -47,6 +47,10 @@ final class SystemController
         // kuyruğa alır. Kuyruk yoksa kart yalnız SAYIYI gösterir — düğme
         // olmayan bir kuyruğa iş atmaz.
         private readonly ?\App\Services\Kuyruk\JobQueue $kuyruk = null,
+        // v1.2.2 B2: APP_KEY emaneti ŞİFRE YENİDEN sorar — girişli oturum tek
+        // başına yetmez. Doğrulayıcı dışarıdan verilir; controller'ın kendi
+        // karşılaştırmasını yazması, iki farklı doğrulama yolu demek olurdu.
+        private readonly ?\App\Auth\PasswordHasher $passwords = null,
         /** C4/F: gizlenen hataların ayrıntısı yalnız günlüğe. */
         private readonly ?\Psr\Log\LoggerInterface $logger = null,
     ) {
@@ -91,11 +95,28 @@ final class SystemController
             return Response::error($response, 'BACKUP_FAILED', $e->getMessage(), 500);
         }
 
-        $offsite = (new \App\Services\BackupOffsite($this->appConfig))
-            ->send((string) $service->pathFor($backup['name']), $backup['name']);
+        // v1.2.2 B1: yedek artık bir SET (dizin). Off-site gönderim e-posta
+        // ekiyle çalışıyor ve bir DİZİN gönderemez; SQL parçası gönderilir —
+        // eski davranışın birebir karşılığı. Tam setin uzak hedefe gönderimi
+        // B5 kapsamında TANIMLANDI, uygulaması V3-G'ye bırakıldı.
+        $setAdi = basename($backup['set_dizini']);
+        $sqlParcasi = $service->parcaYolu($setAdi, 'veritabani.sql.enc');
+        $offsite = $sqlParcasi === null
+            ? ['attempted' => false, 'sent' => false, 'via' => null]
+            : (new \App\Services\BackupOffsite($this->appConfig))->send($sqlParcasi, $setAdi . '-veritabani.sql.enc');
 
         // İE#11 EK-2: saklama — eskiler silinir (en yeni 5 her koşulda kalır).
         $pruned = $service->prune($this->appConfig->getPositiveInt('BACKUP_RETENTION_DAYS', 14));
+
+        // H1: KISMİ set app_logs'a UYARI olarak düşer — elle alınan yedekte de.
+        $kismiNotu = '';
+        if ($backup['durum'] === \App\Services\Yedek\YedekManifesti::DURUM_KISMI) {
+            $kismiNotu = ' · KISMİ (' . implode(', ', $backup['eksik']) . ' eksik)';
+            $this->logger?->warning('Elle alınan yedek seti KISMİ: ' . implode(', ', $backup['eksik']) . ' alınamadı.', [
+                'set' => $setAdi,
+                'sebep' => $backup['sebep'],
+            ]);
+        }
 
         (new ActivityLog($this->connection))->record(
             'system',
@@ -104,10 +125,10 @@ final class SystemController
             sprintf(
                 '%s: %s (%.1f KB) · off-site: %s',
                 $user->email,
-                $backup['name'],
-                $backup['size'] / 1024,
+                $setAdi,
+                $backup['toplam_bayt'] / 1024,
                 $offsite['attempted'] ? ($offsite['sent'] ? 'gönderildi (' . $offsite['via'] . ')' : 'BAŞARISIZ') : 'yapılandırılmadı',
-            ) . ($pruned === [] ? '' : sprintf(' · %d eski yedek silindi', count($pruned))),
+            ) . $kismiNotu . ($pruned === [] ? '' : sprintf(' · %d eski yedek silindi', count($pruned))),
             ClientIp::from($request),
             $this->clock->now(),
             ActivityLog::ACTOR_ADMIN,
@@ -153,9 +174,21 @@ final class SystemController
             return Response::error($response, 'SERVER_ERROR', 'Yapılandırma erişilemiyor.', 500);
         }
 
-        $path = (new \App\Services\BackupService($this->appConfig, $this->basePath))->pathFor((string) ($args['name'] ?? ''));
+        // v1.2.2 B1: yedek artık bir SET (dizin) ve HTTP bir dizin indiremez.
+        // Parça adı verilmezse SQL parçası inar — "yedeği indir" düğmesinin
+        // en olası kastı odur (elde tek dosya, geri dönüşün çekirdeği).
+        //
+        // TAM SETİ TEK ZIP OLARAK İNDİRMEK BİLİNÇLİ OLARAK YOK: paylaşımlı
+        // hostingde gigabaytlarca medyayı geçici bir arşive yazmak, medyayı
+        // parçalara bölmemizin sebebini geri getirirdi. Panel parçaları tek tek
+        // sunar; manifest hangilerinin gerektiğini söyler.
+        $servis = new \App\Services\BackupService($this->appConfig, $this->basePath);
+        $setAdi = (string) ($args['name'] ?? '');
+        $parcaAdi = (string) ($request->getQueryParams()['parca'] ?? 'veritabani.sql.enc');
+
+        $path = $servis->parcaYolu($setAdi, $parcaAdi);
         if ($path === null) {
-            return Response::error($response, 'NOT_FOUND', 'Yedek bulunamadı.', 404);
+            return Response::error($response, 'NOT_FOUND', 'Yedek parçası bulunamadı.', 404);
         }
 
         // İE#11 EK-2 (3): akışla oku — büyük yedek indirmesi belleği şişirmez.
@@ -170,6 +203,157 @@ final class SystemController
             ->withHeader('Content-Length', (string) filesize($path))
             ->withHeader('Content-Disposition', 'attachment; filename="' . basename($path) . '"')
             ->withHeader('Cache-Control', 'no-store');
+    }
+
+    /**
+     * POST /api/system/backups/{name}/verify — YEDEĞİ DOĞRULA (v1.2.2 B4).
+     *
+     * GERİ YÜKLEME YAPMAZ. Manifesti okur, her parçanın diskteki SHA-256'sını
+     * karşılaştırır, migration defterini bugünkü şemayla kıyaslar.
+     *
+     * NEDEN AYRI BİR DÜĞME: "yedeğim var" ile "geri dönebilirim" aynı şey
+     * değildir ve aradaki farkı ancak bakarak öğrenirsiniz. Bakmanın yıkıcı
+     * olmaması, kullanıcının bunu ne zaman isterse yapabilmesi demektir —
+     * felaket anını beklemeden.
+     *
+     * @param array<string, string> $args
+     */
+    public function backupVerify(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    {
+        $this->authenticatedUser($request);
+        if ($this->appConfig === null) {
+            return Response::error($response, 'SERVER_ERROR', 'Yapılandırma erişilemiyor.', 500);
+        }
+
+        $servis = new \App\Services\BackupService($this->appConfig, $this->basePath);
+        $dizin = $servis->pathFor((string) ($args['name'] ?? ''));
+        if ($dizin === null) {
+            return Response::error($response, 'NOT_FOUND', 'Yedek seti bulunamadı.', 404);
+        }
+
+        $prova = new \App\Services\Yedek\YedekProvasi();
+        $sonuc = $prova->dogrula($dizin, $this->uygulanmisMigrationlar());
+
+        return Response::success($response, $sonuc + ['rapor' => $prova->rapor($sonuc)]);
+    }
+
+    /**
+     * POST /api/system/app-key/reveal — APP_KEY EMANETİ (v1.2.2 B2).
+     *
+     * NEDEN VAR: yedekler APP_KEY ile şifrelenir ve anahtar sunucuda durur.
+     * Sunucu tamamen giderse elinizde açılamayan şifreli dosyalar kalır —
+     * yedeğin var olması hiçbir şey ifade etmez. Anahtarın sunucu DIŞINDA bir
+     * kopyası olmadan "yedeğim var" cümlesi eksiktir.
+     *
+     * NEDEN ŞİFRE YENİDEN SORULUR: bu uç yıkıcı değil, SIZDIRICIDIR. Anahtarı
+     * gören kişi bütün yedekleri açabilir. Açık bir oturumu ele geçiren biri
+     * (paylaşılan bilgisayar, çalınan çerez) şifreyi bilmez; ikinci kapı tam
+     * olarak bu boşluğu kapatır.
+     *
+     * HATA MESAJI SABİTTİR (K51): "şifre yanlış" ile "kullanıcı bulunamadı"
+     * arasındaki fark, saldırgana bilgi verir.
+     */
+    public function appKeyReveal(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        $user = $this->authenticatedUser($request);
+        if ($this->appConfig === null || $this->passwords === null) {
+            return Response::error($response, 'SERVER_ERROR', 'Yapılandırma erişilemiyor.', 500);
+        }
+
+        /** @var array<string, mixed> $body */
+        $body = (array) ($request->getParsedBody() ?? []);
+        $sifre = is_string($body['password'] ?? null) ? $body['password'] : '';
+        if ($sifre === '') {
+            return Response::error($response, 'VALIDATION', 'Doğrulama hatası', 422, [
+                'password' => 'Anahtarı görmek için şifrenizi yeniden girin.',
+            ]);
+        }
+
+        $ip = ClientIp::from($request);
+        $simdi = $this->clock->now();
+
+        if (!$this->passwords->verify($sifre, $user->passwordHash)) {
+            (new ActivityLog($this->connection))->record(
+                'system',
+                null,
+                ActivityLog::APP_KEY_REVEAL_FAILED,
+                $user->email . ': şifre doğrulanamadı',
+                $ip,
+                $simdi,
+                ActivityLog::ACTOR_ADMIN,
+                $user->id,
+            );
+
+            return Response::error($response, 'UNAUTHENTICATED', 'Şifre doğrulanamadı.', 401);
+        }
+
+        (new ActivityLog($this->connection))->record(
+            'system',
+            null,
+            ActivityLog::APP_KEY_REVEALED,
+            $user->email . ': kurtarma anahtarı görüntülendi',
+            $ip,
+            $simdi,
+            ActivityLog::ACTOR_ADMIN,
+            $user->id,
+        );
+
+        return Response::success($response, [
+            'app_key' => (string) $this->appConfig->get('APP_KEY'),
+            'kurtarma_metni' => $this->kurtarmaMetni(),
+        ]);
+    }
+
+    /**
+     * Anahtarla BİRLİKTE giden kurtarma yönergesi.
+     *
+     * Anahtarı bir kasaya koyup yönergeyi başka yerde bırakmak, felaket
+     * gününde yönergeye bakılmayacağı anlamına gelir. İkisi tek metin olarak
+     * iner; anahtarı saklayan, onunla ne yapacağını da saklamış olur.
+     */
+    private function kurtarmaMetni(): string
+    {
+        return implode(PHP_EOL, [
+            'TEDARIKAPP — KURTARMA ANAHTARI VE YÖNERGESİ',
+            '',
+            'Bu anahtar yedek setlerinizi açan tek şeydir. Sunucu tamamen',
+            'kaybolursa (hesap kapanması, disk arızası, sağlayıcı değişikliği)',
+            'yedekleriniz bu anahtar olmadan AÇILAMAZ.',
+            '',
+            'SAKLAMA: bu metni sunucudan BAŞKA bir yerde tutun — parola',
+            'yöneticisi, kasa ya da basılı kopya. Aynı sunucuda tutmak, hiç',
+            'saklamamakla aynı kapıya çıkar.',
+            '',
+            'GERİ YÜKLEME:',
+            '  1. Uygulamayı yeni sunucuya kurun.',
+            '  2. config.php içindeki APP_KEY değerini bu anahtarla değiştirin.',
+            '  3. Yedek setini storage/backups altına kopyalayın.',
+            '  4. php bin/restore.php <set-adi>            (kuru koşu, yazmaz)',
+            '  5. php bin/restore.php <set-adi> --onayla   (gerçek geri yükleme)',
+            '',
+            'Set bozuk ya da eksik parçalıysa geri yükleme BAŞLAMADAN durur;',
+            'yarım bir yedek sağlam veritabanının üstüne yazılmaz.',
+        ]);
+    }
+
+    /**
+     * Bugünkü uygulanmış migration defteri — yedek provası kıyaslaması için.
+     *
+     * Okunamıyorsa BOŞ döner: prova bunu "karşılaştırma yapılmadı" diye ele
+     * alır. Boşu "hiç migration yok" saymak, her yedeği ileri sürüm gibi
+     * gösterirdi.
+     *
+     * @return list<string>
+     */
+    private function uygulanmisMigrationlar(): array
+    {
+        try {
+            $statement = $this->connection->pdo()->query('SELECT name FROM migrations ORDER BY name');
+
+            return $statement === false ? [] : array_map('strval', $statement->fetchAll(\PDO::FETCH_COLUMN));
+        } catch (Throwable) {
+            return [];
+        }
     }
 
     /**
@@ -426,6 +610,9 @@ final class SystemController
             'saatlik_olen' => $saglik['saatlik_olen'],
             'hata_orani_yuzde' => $saglik['hata_orani_yuzde'],
             'yeniden_denenen' => $saglik['yeniden_denenen'],
+            // D6: ertelenen (bütçe/koşul) ayrı sayı; devre kesici durumu.
+            'ertelenen' => $saglik['ertelenen'],
+            'devre_kesici' => $this->acikDevreKesici(),
             // Cron koşmuyorsa bekleyen iş yaşlanır; eşik geçilince panel uyarır.
             'uyari' => $this->kuyrukUyarisi($saglik),
         ]);
@@ -436,6 +623,17 @@ final class SystemController
      */
     private function kuyrukUyarisi(array $saglik): ?string
     {
+        // D6: kesici açıksa en önce o söylenir — diğer uyarılar onun sonucudur.
+        $kesici = $this->acikDevreKesici();
+        if ($kesici !== null) {
+            return sprintf(
+                '%s işleri için devre kesici açık: art arda %d geçici hata alındı, %s\'e kadar yeni iş alınmayacak. '
+                . 'Kaynak site ya da ağ erişimi sorunlu olabilir; kesici kendiliğinden kapanır.',
+                $kesici['tur'],
+                $kesici['esik'],
+                (string) $kesici['kapanma_at'],
+            );
+        }
         if ((int) $saglik['olu'] > 0) {
             return $saglik['olu'] . ' iş kalıcı olarak başarısız oldu (ölü raf). Hatalarını inceleyip yeniden deneyin.';
         }
@@ -689,7 +887,49 @@ final class SystemController
             // panel kartı GİZLER — sıfır gösteren uyarı bir süre sonra okunmaz
             // hâle gelir ve gerçek uyarıyı da görünmez kılar.
             'sozluksuz_ceviri' => $this->sozluksuzSayisi(),
+            // D6: devre kesici açıksa Sistem durumu'nda UYARI. Açık değilken null —
+            // "kapalı" diye bir satır göstermek, sıfır gösteren sayaç gibi bir
+            // süre sonra okunmaz olurdu.
+            'kuyruk_devre_kesici' => $this->acikDevreKesici(),
         ]);
+    }
+
+    /**
+     * Şu an AÇIK olan devre kesici (varsa) — tür + kapanış zamanı.
+     *
+     * Türler işleyici kataloğundan alınır; ayarlar tablosunda başka tür
+     * anahtarı olsa da yalnız bilinenler sorulur.
+     *
+     * @return array{tur: string, kapanma_at: string|null, esik: int, dakika: int}|null
+     */
+    private function acikDevreKesici(): ?array
+    {
+        if ($this->appConfig === null) {
+            return null;
+        }
+
+        try {
+            $kesici = new \App\Services\Kuyruk\DevreKesici(
+                new \App\Models\SettingsRepository($this->connection),
+                $this->clock,
+                esik: $this->appConfig->getPositiveInt('KUYRUK_DEVRE_KESICI_ESIK', 5),
+                dakika: $this->appConfig->getPositiveInt('KUYRUK_DEVRE_KESICI_DAKIKA', 15),
+            );
+            foreach ([
+                \App\Services\Kuyruk\KuyrukIsleyicileri::TUR_MEDYA,
+                \App\Services\Kuyruk\KuyrukIsleyicileri::TUR_CEVIRI,
+                \App\Services\Kuyruk\KuyrukIsleyicileri::TUR_SKOR,
+            ] as $tur) {
+                $durum = $kesici->durum($tur);
+                if ($durum['acik']) {
+                    return ['tur' => $tur, 'kapanma_at' => $durum['kapanma_at'], 'esik' => $durum['esik'], 'dakika' => $durum['dakika']];
+                }
+            }
+        } catch (Throwable) {
+            // Ayarlar tablosu yoksa kesici de yoktur.
+        }
+
+        return null;
     }
 
     /**

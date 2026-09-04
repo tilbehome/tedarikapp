@@ -1,0 +1,989 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="color-scheme" content="light">
+  <title>TedarikApp — Firma Teklif Portalı Prototipi</title>
+  <style>
+    :root{
+      --navy:#0F2557;--navy-2:var(--navy);--navy-3:var(--navy);--gold:#D4A017;--gold-2:var(--gold);
+      --ink:var(--navy);--muted:var(--gray-500);--line:var(--gray-100);--soft:var(--gray-100);--white:#fff;
+      --green:var(--success);--green-bg:var(--success-bg);--amber:var(--warning);--amber-bg:var(--warning-bg);
+      --red:var(--danger);--red-bg:var(--danger-bg);--blue:var(--navy);--blue-bg:var(--gray-100);
+      --shadow:0 18px 44px var(--shadow-color);--radius:18px;--safe:env(safe-area-inset-bottom,0px);
+    }
+    *{box-sizing:border-box}
+    html{font-size:16px;scroll-behavior:smooth}
+    body{margin:0;background:var(--gray-100);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Arial,"Noto Sans SC",sans-serif;line-height:1.45}
+    button,input,select,textarea{font:inherit;color:inherit}
+    button,a{touch-action:manipulation}
+    button{cursor:pointer}
+    button:disabled{cursor:not-allowed;opacity:.48}
+    :focus-visible{outline:3px solid var(--shadow-color);outline-offset:2px}
+    .app{min-height:100vh;padding-bottom:calc(88px + var(--safe))}
+    .topbar{position:sticky;top:0;z-index:50;background:linear-gradient(120deg,var(--navy-3),var(--navy) 62%,var(--navy));color:#fff;border-bottom:4px solid var(--gold)}
+    .topbar-inner{max-width:1500px;margin:auto;padding:16px 24px 13px;display:grid;grid-template-columns:minmax(270px,1.1fr) minmax(420px,1.8fr) auto;gap:22px;align-items:center}
+    .brand{display:flex;gap:13px;align-items:center;min-width:0}
+    .brand-mark{width:48px;height:48px;flex:none;border-radius:14px;display:grid;place-items:center;background:linear-gradient(145deg,var(--navy),var(--navy));box-shadow:inset 0 1px var(--shadow-color),0 8px 24px var(--shadow-color)}
+    .brand-mark svg{width:27px;height:27px}
+    .eyebrow{font-size:.72rem;font-weight:800;letter-spacing:.14em;color:var(--gray-100);text-transform:uppercase}
+    .brand h1{font-size:1.18rem;line-height:1.1;margin:3px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .context{display:grid;grid-template-columns:1.2fr 1.2fr .7fr;gap:10px}
+    .context-item{border-left:1px solid var(--shadow-color);padding-left:14px;min-width:0}
+    .context-label{font-size:.7rem;color:var(--gray-300);font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .context-value{font-size:.88rem;font-weight:800;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .top-actions{display:flex;align-items:center;gap:10px}
+    .lang{display:flex;padding:4px;background:var(--shadow-color);border:1px solid var(--shadow-color);border-radius:13px}
+    .lang button{border:0;background:transparent;color:var(--gray-100);min-width:44px;height:36px;border-radius:9px;font-weight:800;font-size:.78rem}
+    .lang button[aria-current="true"]{background:#fff;color:var(--navy);box-shadow:0 4px 14px var(--shadow-color)}
+    .connection{width:44px;height:44px;border-radius:13px;border:1px solid var(--shadow-color);background:var(--shadow-color);color:#fff;display:grid;place-items:center}
+    .connection svg{width:20px;height:20px}
+    .workflow-wrap{background:#fff;border-bottom:1px solid var(--line)}
+    .workflow{max-width:1500px;margin:auto;padding:10px 24px;display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+    .workflow button{position:relative;display:flex;align-items:center;gap:10px;text-align:left;border:1px solid transparent;background:transparent;border-radius:12px;padding:8px 10px;min-width:0}
+    .workflow button:not(:last-child)::after{content:"";position:absolute;height:1px;width:17px;background:var(--gray-100);right:-13px;top:50%}
+    .wf-dot{width:29px;height:29px;border-radius:50%;flex:none;display:grid;place-items:center;border:2px solid var(--gray-100);color:var(--navy);background:#fff;font-size:.72rem;font-weight:900}
+    .workflow button.done .wf-dot{background:var(--green);border-color:var(--green);color:#fff}
+    .workflow button.current{background:var(--amber-bg);border-color:var(--warning-bg)}
+    .workflow button.current .wf-dot{background:var(--gold);border-color:var(--gold);color:#fff;box-shadow:0 0 0 4px var(--shadow-color)}
+    .wf-text{min-width:0}
+    .wf-code{font:700 .66rem ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--navy);letter-spacing:.03em}
+    .wf-label{font-size:.77rem;font-weight:800;color:var(--navy);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .page{max-width:1500px;margin:0 auto;padding:20px 24px 0;display:grid;grid-template-columns:238px minmax(0,1fr);gap:20px}
+    .side{position:sticky;top:176px;align-self:start;background:#fff;border:1px solid var(--line);border-radius:18px;padding:10px;box-shadow:0 10px 28px var(--shadow-color)}
+    .side button{width:100%;min-height:52px;display:grid;grid-template-columns:31px minmax(0,1fr);gap:8px;align-items:center;text-align:left;border:0;background:transparent;border-radius:12px;padding:8px;color:var(--navy)}
+    .side button+button{margin-top:3px}
+    .side button.active{background:linear-gradient(100deg,var(--gray-100),var(--gray-100));color:var(--navy);box-shadow:inset 3px 0 var(--gold)}
+    .step-no{font:800 .72rem ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--navy)}
+    .side button.active .step-no{color:var(--gold)}
+    .step-label{font-size:.83rem;font-weight:800;line-height:1.25}
+    .source-proof{margin:10px 4px 2px;padding-top:10px;border-top:1px solid var(--line);font:650 .64rem/1.55 ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--navy);word-break:break-word}
+    .surface{min-width:0}
+    .screen-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin:2px 0 15px}
+    .screen-kicker{font:800 .72rem ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--gold);letter-spacing:.08em}
+    .screen-head h2{margin:4px 0 0;color:var(--navy);font-size:1.62rem;line-height:1.2;letter-spacing:-.02em}
+    .key{display:block;margin-top:4px;color:var(--navy);font:650 .64rem ui-monospace,SFMono-Regular,Consolas,monospace}
+    .save-state{min-height:36px;display:flex;align-items:center;gap:8px;padding:7px 11px;border:1px solid var(--line);background:#fff;border-radius:12px;color:var(--navy);font-size:.78rem;font-weight:750;white-space:nowrap}
+    .save-state .pulse{width:8px;height:8px;border-radius:50%;background:var(--green)}
+    .save-state.busy .pulse{background:var(--gold);animation:pulse 1s infinite}
+    .save-state.offline .pulse{background:var(--red)}
+    @keyframes pulse{50%{opacity:.25}}
+    .card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:0 10px 30px var(--shadow-color)}
+    .card-pad{padding:22px}
+    .hero{overflow:hidden;display:grid;grid-template-columns:minmax(0,1.4fr) minmax(300px,.8fr);min-height:270px}
+    .hero-main{padding:28px;background:linear-gradient(150deg,#fff 0%,var(--gray-100) 70%);position:relative}
+    .hero-main::after{content:"";position:absolute;right:-60px;bottom:-100px;width:250px;height:250px;border-radius:50%;border:45px solid var(--shadow-color)}
+    .hero h3{font-size:2rem;line-height:1.15;letter-spacing:-.035em;color:var(--navy);margin:0;max-width:720px}
+    .hero p{font-size:1.02rem;color:var(--navy);max-width:720px;margin:12px 0 22px}
+    .hero-meta{position:relative;z-index:1;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .meta-pill{padding:12px 14px;border:1px solid var(--line);border-radius:13px;background:#fff;color:var(--navy);font-size:.82rem;font-weight:750}
+    .hero-side{padding:24px;background:linear-gradient(145deg,var(--navy),var(--navy));color:#fff;display:flex;flex-direction:column;justify-content:space-between}
+    .hero-side .key{color:var(--gray-300)}
+    .instruction-title{display:flex;align-items:center;gap:9px;font-weight:900;font-size:1.02rem}
+    .instruction-list{display:grid;gap:10px;margin:17px 0 21px}
+    .instruction-item{display:grid;grid-template-columns:20px 1fr;gap:9px;align-items:start;color:var(--gray-100);font-size:.84rem}
+    .instruction-item svg{width:17px;height:17px;color:var(--gold-2);margin-top:2px}
+    .section{margin-top:14px}
+    .section-title{display:flex;justify-content:space-between;align-items:end;gap:14px;margin-bottom:11px}
+    .section-title h3{margin:0;font-size:1rem;color:var(--navy)}
+    .btn{min-height:44px;border-radius:12px;border:1px solid var(--line);background:#fff;padding:9px 15px;font-weight:850;font-size:.84rem;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none}
+    .btn svg{width:17px;height:17px}
+    .btn-primary{background:linear-gradient(140deg,var(--navy),var(--navy-2));border-color:var(--navy);color:#fff;box-shadow:0 8px 18px var(--shadow-color)}
+    .btn-gold{background:linear-gradient(140deg,var(--gold),var(--gold));border-color:var(--gold);color:var(--navy);box-shadow:0 8px 18px var(--shadow-color)}
+    .btn-soft{background:var(--gray-100);color:var(--navy)}
+    .btn-danger{color:var(--red);border-color:var(--danger-bg);background:var(--red-bg)}
+    .toolbar{padding:14px;display:grid;grid-template-columns:minmax(220px,1fr) auto;gap:12px;align-items:center}
+    .search{height:46px;border:1px solid var(--line);background:var(--gray-100);border-radius:12px;display:flex;align-items:center;padding:0 12px;gap:9px}
+    .search svg{width:19px;height:19px;color:var(--navy);flex:none}
+    .search input{min-width:0;width:100%;border:0;outline:0;background:transparent}
+    .chips{display:flex;gap:7px;overflow:auto;padding-bottom:2px}
+    .chip{border:1px solid var(--line);background:#fff;border-radius:999px;min-height:38px;padding:7px 12px;font-size:.75rem;font-weight:850;white-space:nowrap}
+    .chip.active{background:var(--navy);border-color:var(--navy);color:#fff}
+    .progress-card{padding:16px 18px;display:grid;grid-template-columns:auto minmax(140px,1fr) auto;gap:14px;align-items:center}
+    .progress-figure{font-size:1.45rem;font-weight:950;color:var(--navy);letter-spacing:-.03em}
+    .progress-track{height:10px;border-radius:99px;background:var(--gray-100);overflow:hidden}
+    .progress-fill{height:100%;width:72%;background:linear-gradient(90deg,var(--gold),var(--gold));border-radius:99px;transition:width .35s}
+    .progress-copy{font-size:.78rem;color:var(--muted);font-weight:800;text-align:right}
+    .product-list{overflow:hidden}
+    .product-list-head,.product-row{display:grid;grid-template-columns:minmax(260px,1.5fr) minmax(160px,.85fr) 125px 160px 104px;gap:0;align-items:stretch}
+    .product-list-head{background:linear-gradient(100deg,var(--navy-3),var(--navy));color:#fff;padding:0 12px}
+    .product-list-head>div{padding:12px 10px;font-size:.72rem;font-weight:850}
+    .product-row{padding:0 12px;border-top:1px solid var(--line);background:#fff}
+    .product-row:hover{background:var(--gray-100)}
+    .product-cell{padding:13px 10px;min-width:0;display:flex;align-items:center}
+    .product-main{display:grid;grid-template-columns:56px minmax(0,1fr);gap:11px;align-items:center}
+    .thumb{width:56px;height:56px;border-radius:13px;background:linear-gradient(145deg,var(--gray-100),var(--gray-100));border:1px solid var(--gray-100);display:grid;place-items:center;color:var(--navy)}
+    .thumb svg{width:30px;height:30px}
+    .product-code{font:750 .68rem ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--gray-400)}
+    .product-name{font-size:.84rem;font-weight:850;color:var(--navy);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:3px}
+    .cell-stack{display:block}
+    .cell-mobile-label{display:none;color:var(--navy);font-size:.68rem;font-weight:750;margin-bottom:3px}
+    .cell-value{font-size:.8rem;font-weight:750;color:var(--navy)}
+    .status{display:inline-flex;align-items:center;gap:7px;min-height:32px;border-radius:999px;padding:6px 10px;font-size:.72rem;font-weight:900;white-space:nowrap}
+    .status::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor;opacity:.75}
+    .status.found,.status.complete{background:var(--green-bg);color:var(--green)}
+    .status.not_found{background:var(--red-bg);color:var(--red)}
+    .status.alternative_available{background:var(--amber-bg);color:var(--amber)}
+    .status.unanswered,.status.waiting{background:var(--blue-bg);color:var(--blue)}
+    .request-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:14px}
+    .source-card{padding:18px;display:grid;grid-template-columns:76px minmax(0,1fr) auto;gap:15px;align-items:center}
+    .source-card .thumb{width:76px;height:76px}
+    .source-card .thumb svg{width:40px;height:40px}
+    .source-title{font-size:1.05rem;font-weight:900;color:var(--navy)}
+    .source-fields{display:flex;gap:18px;flex-wrap:wrap;margin-top:8px}
+    .source-field span{display:block;font-size:.68rem;color:var(--navy);font-weight:750}
+    .source-field strong{display:block;margin-top:2px;font-size:.82rem}
+    .form-card{overflow:hidden}
+    .form-section{padding:19px;border-top:1px solid var(--line)}
+    .form-section:first-child{border-top:0}
+    .form-section-head{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;margin-bottom:14px}
+    .form-section h3{margin:0;color:var(--navy);font-size:1rem}
+    .segmented{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+    .segmented button{min-height:48px;border:1px solid var(--line);border-radius:12px;background:#fff;padding:7px 10px;font-size:.78rem;font-weight:850}
+    .segmented button.selected{border-color:var(--navy);box-shadow:inset 0 0 0 1px var(--navy);background:var(--gray-100);color:var(--navy)}
+    .fields{display:grid;grid-template-columns:repeat(12,1fr);gap:12px}
+    .field{grid-column:span 4;min-width:0}
+    .field.span-2{grid-column:span 2}.field.span-3{grid-column:span 3}.field.span-6{grid-column:span 6}.field.span-8{grid-column:span 8}.field.span-12{grid-column:span 12}
+    .field label{display:block;font-size:.75rem;font-weight:850;color:var(--navy);margin-bottom:6px}
+    .field .required{color:var(--red);margin-left:3px}
+    .input,.field input,.field select,.field textarea{width:100%;min-height:44px;border:1px solid var(--gray-100);background:#fff;border-radius:11px;padding:9px 11px;outline:0}
+    .field textarea{min-height:88px;resize:vertical}
+    .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--navy);box-shadow:0 0 0 3px var(--shadow-color)}
+    .field.has-error input,.field.has-error select,.field.has-error textarea{border-color:var(--red);box-shadow:0 0 0 3px var(--shadow-color)}
+    .error{color:var(--red);font-size:.72rem;font-weight:750;margin-top:5px}
+    .check{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);background:var(--gray-100);border-radius:12px;padding:12px;min-height:48px}
+    .check input{width:18px;height:18px;accent-color:var(--navy);margin-top:2px;flex:none}
+    .check label{font-size:.79rem;font-weight:750;line-height:1.35}
+    .tier-table{display:grid;gap:8px}
+    .tier-row{display:grid;grid-template-columns:1fr 1fr 1fr 44px;gap:8px}
+    .tier-row input{width:100%;min-width:0;height:42px;border:1px solid var(--gray-100);border-radius:10px;padding:8px 10px}
+    .tier-remove{height:42px;border:1px solid var(--danger-bg);color:var(--red);background:var(--red-bg);border-radius:10px;font-weight:900}
+    .notice{border:1px solid var(--warning-bg);background:var(--amber-bg);border-radius:14px;padding:14px;color:var(--warning);font-size:.81rem;font-weight:750}
+    .notice.info{border-color:var(--gray-100);background:var(--blue-bg);color:var(--navy)}
+    .notice.success{border-color:var(--success-bg);background:var(--green-bg);color:var(--success)}
+    .notice.danger{border-color:var(--danger-bg);background:var(--red-bg);color:var(--danger)}
+    .confirm-change{margin-top:12px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .confirm-actions{display:flex;gap:8px;flex:none}
+    .boundary-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+    .boundary{border:1px solid var(--line);border-radius:14px;padding:13px;background:var(--gray-100)}
+    .chat-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+    .chat-option{min-height:48px;border:1px solid var(--line);border-radius:12px;background:#fff;text-align:left;padding:10px 12px;font-size:.77rem;font-weight:750;color:var(--navy)}
+    .chat-option:hover,.chat-option.selected{border-color:var(--navy);background:var(--blue-bg);color:var(--navy)}
+    .raw{margin-top:9px;padding:8px 9px;border-radius:9px;background:var(--gray-100);color:var(--navy);font:650 .7rem ui-monospace,SFMono-Regular,Consolas,monospace;word-break:break-word}
+    .partial-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .metric{padding:20px}
+    .metric-number{font-size:2.25rem;line-height:1;font-weight:950;color:var(--navy);letter-spacing:-.05em}
+    .metric-label{margin-top:8px;color:var(--gray-500);font-size:.83rem;font-weight:800}
+    .submit-box{max-width:820px;margin:auto;padding:24px}
+    .submit-box h3{font-size:1.35rem;color:var(--navy);margin:0}
+    .submit-box>p{color:var(--navy)}
+    .submit-checks{display:grid;gap:10px;margin:18px 0}
+    .success-hero{padding:34px;text-align:center;background:linear-gradient(145deg,#fff,var(--success-bg))}
+    .success-icon{width:76px;height:76px;margin:auto;border-radius:24px;background:var(--green-bg);color:var(--green);display:grid;place-items:center}
+    .success-icon svg{width:40px;height:40px}
+    .success-hero h3{font-size:1.65rem;color:var(--navy);margin:16px 0 5px}
+    .success-hero p{max-width:670px;margin:8px auto;color:var(--navy)}
+    .reference{display:inline-flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:16px}
+    .reference span{padding:9px 12px;border:1px solid var(--success-bg);background:#fff;border-radius:10px;color:var(--success);font-size:.79rem;font-weight:800}
+    .readonly-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+    .readonly-item{padding:14px;border:1px solid var(--line);border-radius:13px;background:var(--gray-100)}
+    .readonly-item span{display:block;font-size:.68rem;font-weight:750;color:var(--navy)}
+    .readonly-item strong{display:block;margin-top:4px;font-size:.85rem}
+    .revision-band{padding:20px;color:#fff;background:linear-gradient(115deg,var(--navy),var(--navy));display:grid;grid-template-columns:1fr auto;gap:18px;align-items:center}
+    .revision-band h3{margin:0;font-size:1.3rem}.revision-band p{margin:5px 0 0;color:var(--gray-100)}
+    .round-chip{border:1px solid var(--shadow-color);background:var(--shadow-color);border-radius:14px;padding:12px 17px;font-weight:900;font-size:1.1rem}
+    .diff-list{display:grid;gap:10px;padding:16px}
+    .diff-row{display:grid;grid-template-columns:minmax(180px,1fr) 1fr 42px 1fr;gap:10px;align-items:center;border:1px solid var(--line);border-radius:13px;padding:12px}
+    .diff-product{font-size:.82rem;font-weight:850}.diff-product small{display:block;color:var(--gray-400);margin-top:3px}
+    .diff-value{padding:9px;border-radius:9px;background:var(--gray-100);font-size:.77rem;font-weight:800}
+    .diff-value.new{background:var(--amber-bg);color:var(--warning)}
+    .arrow{display:grid;place-items:center;color:var(--navy);font-size:1.2rem}
+    .bottom{position:fixed;left:0;right:0;bottom:0;z-index:45;border-top:1px solid var(--line);background:var(--shadow-color);backdrop-filter:blur(16px);padding:12px 24px calc(12px + var(--safe))}
+    .bottom-inner{max-width:1500px;margin:auto;display:flex;justify-content:space-between;align-items:center;gap:14px;padding-left:258px}
+    .bottom-left,.bottom-right{display:flex;gap:8px;align-items:center}
+    .toast{position:fixed;z-index:80;right:22px;bottom:100px;max-width:min(430px,calc(100vw - 32px));padding:13px 15px;border-radius:13px;background:var(--navy);color:#fff;box-shadow:var(--shadow);font-size:.8rem;font-weight:800;transform:translateY(20px);opacity:0;pointer-events:none;transition:.22s}
+    .toast.show{transform:none;opacity:1}
+    .empty{padding:34px;text-align:center;color:var(--gray-500)}
+    .hidden{display:none!important}
+    @media (max-width:1120px){
+      .topbar-inner{grid-template-columns:1fr auto}.context{grid-column:1/-1;grid-row:2}.page{grid-template-columns:205px minmax(0,1fr)}
+      .bottom-inner{padding-left:225px}.product-list-head,.product-row{grid-template-columns:minmax(220px,1.35fr) minmax(145px,.8fr) 110px 145px 94px}
+      .field{grid-column:span 6}.field.span-2,.field.span-3{grid-column:span 3}.field.span-8{grid-column:span 9}
+    }
+    @media (max-width:800px){
+      .app{padding-bottom:calc(156px + var(--safe))}.topbar-inner{padding:12px 14px;grid-template-columns:minmax(0,1fr) auto;gap:10px}.brand-mark{width:42px;height:42px}.brand h1{font-size:1rem}.eyebrow{font-size:.65rem}.top-actions{gap:6px}.lang button{min-width:40px}.connection{width:40px;height:40px}.context{display:none}
+      .workflow{padding:8px 10px;gap:3px}.workflow button{justify-content:center;padding:6px 3px}.workflow button:not(:last-child)::after{width:9px;right:-6px}.wf-dot{width:27px;height:27px}.wf-text{display:none}
+      .page{display:block;padding:14px 12px 0}.side{position:static;display:flex;gap:5px;overflow:auto;padding:7px;margin-bottom:14px;border-radius:15px}.side button{width:auto;min-width:49px;min-height:44px;display:block;text-align:center;padding:7px 8px}.step-label,.source-proof{display:none}.step-no{font-size:.73rem}
+      .screen-head{margin-bottom:12px}.screen-head h2{font-size:1.25rem}.save-state{max-width:42%;font-size:0}.save-state .pulse{margin:auto}.hero{display:block}.hero-main{padding:22px}.hero h3{font-size:1.55rem}.hero-side{padding:20px}.hero-meta{grid-template-columns:1fr}
+      .toolbar{grid-template-columns:1fr}.chips{width:100%}.progress-card{grid-template-columns:auto 1fr}.progress-copy{grid-column:1/-1;text-align:left}.product-list-head{display:none}.product-row{display:block;padding:12px;border-top:1px solid var(--line)}.product-row:first-child{border-top:0}.product-cell{padding:7px 4px;justify-content:space-between;gap:12px}.product-cell:not(:first-child){border-top:1px dashed var(--gray-100)}.product-main{width:100%}.cell-mobile-label{display:block}.product-name{white-space:normal}.product-cell:last-child .btn{width:100%}
+      .request-grid{display:block}.source-card{grid-template-columns:58px minmax(0,1fr);padding:14px}.source-card .thumb{width:58px;height:58px}.source-card>.btn{grid-column:1/-1;width:100%}.source-fields{gap:10px}.segmented{grid-template-columns:1fr 1fr}.fields{gap:10px}.field,.field.span-2,.field.span-3,.field.span-6,.field.span-8,.field.span-12{grid-column:span 12}.tier-row{grid-template-columns:1fr 1fr}.tier-row .tier-remove{grid-column:2}.chat-grid,.boundary-grid,.partial-grid,.readonly-grid{grid-template-columns:1fr}.confirm-change{align-items:flex-start;display:grid}.diff-row{grid-template-columns:1fr 1fr}.diff-product{grid-column:1/-1}.arrow{display:none}.revision-band{grid-template-columns:1fr}.round-chip{justify-self:start}
+      .bottom{padding:9px 12px calc(9px + var(--safe))}.bottom-inner{padding:0;display:grid}.bottom-left,.bottom-right{width:100%}.bottom .btn{flex:1;padding-left:8px;padding-right:8px}.bottom-left .btn:first-child{display:none}.toast{right:16px;bottom:164px}
+    }
+    @media (max-width:390px){.brand .eyebrow{display:none}.lang button{min-width:36px;padding:0 6px}.screen-head h2{font-size:1.14rem}.card-pad{padding:17px}.segmented button{font-size:.72rem}.bottom .btn{font-size:.75rem}}
+
+    /* Görev #30-R — yalnız görsel katman. HTML yapısı ve JS akışları değişmez. */
+    :root{
+      --navy:#0F2557;
+      --gold:#D4A017;
+      --gray-50:#F8FAFC;
+      --gray-100:#F1F5F9;
+      --gray-200:#E2E8F0;
+      --gray-300:#CBD5E1;
+      --gray-400:#94A3B8;
+      --gray-500:#64748B;
+      --gray-600:#475569;
+      --gray-700:#334155;
+      --gray-800:#1E293B;
+      --gray-900:#0F172A;
+      --success:#166534;
+      --success-bg:#F0FDF4;
+      --warning:#854D0E;
+      --warning-bg:#FFFBEB;
+      --danger:#991B1B;
+      --danger-bg:#FEF2F2;
+      --shadow-color:rgba(15,23,42,.08);
+      --shadow:0 8px 24px var(--shadow-color);
+      --radius:12px;
+      --navy-2:var(--navy);
+      --navy-3:var(--navy);
+      --gold-2:var(--gold);
+      --ink:var(--gray-900);
+      --muted:var(--gray-500);
+      --line:var(--gray-200);
+      --soft:var(--gray-50);
+      --white:#FFFFFF;
+      --green:var(--success);
+      --green-bg:var(--success-bg);
+      --amber:var(--warning);
+      --amber-bg:var(--warning-bg);
+      --red:var(--danger);
+      --red-bg:var(--danger-bg);
+      --blue:var(--navy);
+      --blue-bg:var(--gray-100);
+    }
+    html{font-size:16px}
+    body{
+      background:var(--gray-100);
+      color:var(--gray-900);
+      font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial,"PingFang SC","Microsoft YaHei",sans-serif;
+      font-size:14px;
+      line-height:1.5;
+      -webkit-font-smoothing:antialiased;
+    }
+    button,input,select,textarea{font-family:inherit}
+    button:disabled{opacity:.48}
+    :focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+    .app{padding-bottom:calc(80px + var(--safe))}
+
+    .topbar{
+      background:var(--navy);
+      color:var(--gray-50);
+      border-bottom:2px solid var(--gold);
+    }
+    .topbar-inner{
+      max-width:1400px;
+      padding:16px 24px;
+      grid-template-columns:minmax(248px,1fr) minmax(400px,1.6fr) auto;
+      gap:24px;
+    }
+    .brand{gap:12px}
+    .brand-mark{
+      width:44px;
+      height:44px;
+      border-radius:10px;
+      background:var(--gray-50);
+      border:2px solid var(--gold);
+      color:var(--navy);
+      box-shadow:none;
+    }
+    .brand-mark svg{width:24px;height:24px}
+    .eyebrow{font-size:.68rem;font-weight:700;color:var(--gray-300)}
+    .brand h1{font-size:1.05rem;font-weight:700;margin-top:4px}
+    .context{gap:12px}
+    .context-item{border-color:var(--gray-600);padding-left:12px}
+    .context-label{font-size:.68rem;color:var(--gray-300);font-weight:600}
+    .context-value{font-size:.82rem;font-weight:700;margin-top:4px;color:var(--gray-50)}
+    .top-actions{gap:8px}
+    .lang{
+      padding:4px;
+      background:var(--gray-800);
+      border-color:var(--gray-700);
+      border-radius:10px;
+    }
+    .lang button{
+      min-width:40px;
+      height:32px;
+      border-radius:8px;
+      color:var(--gray-300);
+      font-size:.75rem;
+      font-weight:700;
+    }
+    .lang button[aria-current="true"]{
+      background:var(--gray-50);
+      color:var(--navy);
+      border-bottom:2px solid var(--gold);
+      box-shadow:none;
+    }
+    .connection{
+      width:40px;
+      height:40px;
+      border-radius:10px;
+      border-color:var(--gray-700);
+      background:var(--gray-800);
+      color:var(--gray-50);
+    }
+
+    .workflow-wrap{background:var(--white);border-color:var(--gray-200)}
+    .workflow{max-width:1400px;padding:8px 24px;gap:8px}
+    .workflow button{
+      gap:8px;
+      border-radius:8px;
+      padding:8px;
+      color:var(--gray-600);
+    }
+    .workflow button:hover{background:var(--gray-50)}
+    .workflow button:not(:last-child)::after{width:16px;right:-12px;background:var(--gray-200)}
+    .workflow button.current{background:var(--gray-50);border-color:var(--gold)}
+    .wf-dot{
+      width:28px;
+      height:28px;
+      border-color:var(--gray-300);
+      color:var(--gray-500);
+      background:var(--white);
+      font-size:.7rem;
+      font-weight:700;
+    }
+    .workflow button.done .wf-dot{
+      background:var(--white);
+      border-color:var(--gold);
+      color:var(--navy);
+    }
+    .workflow button.current .wf-dot{
+      background:var(--gold);
+      border-color:var(--gold);
+      color:var(--navy);
+      box-shadow:none;
+    }
+    .wf-code{color:var(--gray-500);font-size:.62rem;font-weight:600}
+    .wf-label{color:var(--navy);font-size:.75rem;font-weight:700}
+
+    .page{
+      max-width:1400px;
+      padding:20px 24px 0;
+      grid-template-columns:216px minmax(0,1fr);
+      gap:16px;
+    }
+    .side{
+      top:160px;
+      border-color:var(--gray-200);
+      border-radius:12px;
+      padding:8px;
+      box-shadow:var(--shadow);
+    }
+    .side button{
+      min-height:44px;
+      grid-template-columns:28px minmax(0,1fr);
+      gap:8px;
+      border-left:3px solid transparent;
+      border-radius:8px;
+      padding:8px;
+      color:var(--gray-600);
+    }
+    .side button+button{margin-top:4px}
+    .side button:hover{background:var(--gray-50);color:var(--navy)}
+    .side button.active{
+      background:var(--gray-50);
+      color:var(--navy);
+      border-left-color:var(--gold);
+      box-shadow:none;
+    }
+    .step-no{font-size:.68rem;font-weight:700;color:var(--gray-400)}
+    .side button.active .step-no{color:var(--gold)}
+    .step-label{font-size:.78rem;font-weight:700}
+    .source-proof{
+      margin:8px 4px 0;
+      padding-top:8px;
+      border-color:var(--gray-200);
+      color:var(--gray-500);
+      font-size:.6rem;
+      font-weight:600;
+    }
+
+    .screen-head{gap:16px;margin:0 0 12px}
+    .screen-kicker{color:var(--gold);font-size:.68rem;font-weight:700}
+    .screen-head h2{
+      margin-top:4px;
+      color:var(--navy);
+      font-size:1.25rem;
+      line-height:1.25;
+      font-weight:700;
+      letter-spacing:-.01em;
+    }
+    .key{margin-top:4px;color:var(--gray-400);font-size:.6rem;font-weight:600}
+    .save-state{
+      min-height:32px;
+      gap:8px;
+      padding:6px 10px;
+      border-color:var(--gray-200);
+      background:var(--white);
+      border-radius:8px;
+      color:var(--gray-600);
+      font-size:.75rem;
+      font-weight:600;
+    }
+    .save-state .pulse{background:var(--success)}
+    .save-state.busy .pulse{background:var(--gold)}
+    .save-state.offline .pulse{background:var(--danger)}
+
+    .card{
+      background:var(--white);
+      border-color:var(--gray-200);
+      border-radius:12px;
+      box-shadow:var(--shadow);
+    }
+    .card-pad{padding:20px}
+    .hero{min-height:240px;grid-template-columns:minmax(0,1.45fr) minmax(300px,.75fr)}
+    .hero-main{padding:24px;background:var(--white)}
+    .hero-main::after{display:none}
+    .hero h3{
+      margin:0;
+      max-width:680px;
+      color:var(--navy);
+      font-size:1.5rem;
+      line-height:1.2;
+      font-weight:700;
+      letter-spacing:-.02em;
+    }
+    .hero p{max-width:680px;margin:12px 0 20px;color:var(--gray-600);font-size:.94rem}
+    .hero-meta{gap:8px}
+    .meta-pill{
+      padding:12px;
+      border-color:var(--gray-200);
+      border-radius:8px;
+      background:var(--gray-50);
+      color:var(--gray-600);
+      font-size:.78rem;
+      font-weight:600;
+    }
+    .hero-side{padding:24px;background:var(--navy);color:var(--gray-50)}
+    .hero-side .key{color:var(--gray-400)}
+    .instruction-title{gap:8px;font-size:.94rem;font-weight:700}
+    .instruction-list{gap:12px;margin:16px 0 20px}
+    .instruction-item{grid-template-columns:20px 1fr;gap:8px;color:var(--gray-100);font-size:.8rem}
+    .instruction-item svg{color:var(--gold)}
+
+    .section{margin-top:16px}
+    .section-title{gap:12px;margin-bottom:8px}
+    .section-title h3{color:var(--navy);font-size:.94rem;font-weight:700}
+    .btn{
+      min-height:40px;
+      border-color:var(--gray-300);
+      border-radius:8px;
+      background:var(--white);
+      color:var(--gray-700);
+      padding:8px 12px;
+      font-size:.8rem;
+      font-weight:700;
+      box-shadow:none;
+    }
+    .btn svg{width:16px;height:16px}
+    .btn:hover{background:var(--gray-50);border-color:var(--gray-400)}
+    .btn-primary{
+      background:var(--navy);
+      border-color:var(--navy);
+      color:var(--white);
+      box-shadow:none;
+    }
+    .btn-primary:hover{background:var(--navy);border-color:var(--navy)}
+    .btn-soft{
+      background:transparent;
+      border-color:transparent;
+      color:var(--navy);
+      box-shadow:none;
+    }
+    .btn-soft:hover{background:var(--gray-100);border-color:var(--gray-100)}
+    .btn-gold{
+      background:var(--gray-50);
+      border-color:var(--gray-50);
+      color:var(--navy);
+      box-shadow:none;
+    }
+    .btn-gold:hover{background:var(--white);border-color:var(--white)}
+    .btn-danger{background:var(--white);border-color:var(--gray-300);color:var(--gray-700)}
+
+    .toolbar{padding:12px;gap:12px}
+    .search{
+      height:40px;
+      border-color:var(--gray-300);
+      background:var(--white);
+      border-radius:8px;
+      padding:0 12px;
+      gap:8px;
+    }
+    .search svg{width:16px;height:16px;color:var(--gray-500)}
+    .chips{gap:8px}
+    .chip{
+      min-height:36px;
+      padding:6px 12px;
+      border-color:var(--gray-300);
+      border-radius:8px;
+      background:var(--white);
+      color:var(--gray-600);
+      font-size:.72rem;
+      font-weight:700;
+    }
+    .chip:hover{background:var(--gray-50);color:var(--navy)}
+    .chip.active{background:var(--white);border-color:var(--gold);color:var(--navy)}
+
+    .progress-card{padding:12px 16px;gap:12px}
+    .progress-figure{color:var(--navy);font-size:1.2rem;font-weight:700}
+    .progress-track{height:6px;border-radius:8px;background:var(--gray-200)}
+    .progress-fill{background:var(--gold);border-radius:8px}
+    .progress-copy{color:var(--gray-500);font-size:.75rem;font-weight:600}
+
+    .product-list-head,.product-row{
+      grid-template-columns:minmax(260px,1.5fr) minmax(160px,.85fr) 124px 152px 104px;
+    }
+    .product-list-head{background:var(--navy);color:var(--white);padding:0 12px}
+    .product-list-head>div{
+      padding:12px 10px;
+      border-left:1px solid var(--gray-700);
+      font-size:.68rem;
+      font-weight:700;
+      letter-spacing:.03em;
+    }
+    .product-list-head>div:first-child{border-left:0}
+    .product-list-head>div:nth-child(3){text-align:right}
+    .product-row{padding:0 12px;border-color:var(--gray-200);background:var(--white)}
+    .product-row:hover{background:var(--gray-50)}
+    .product-cell{padding:12px 10px;border-left:1px solid var(--gray-100)}
+    .product-cell:first-child{border-left:0}
+    .product-row .product-cell:nth-child(3){justify-content:flex-end;text-align:right;font-variant-numeric:tabular-nums}
+    .product-row .product-cell:last-child{justify-content:flex-end}
+    .product-main{grid-template-columns:48px minmax(0,1fr);gap:12px}
+    .thumb{
+      width:48px;
+      height:48px;
+      border-radius:8px;
+      background:var(--gray-100);
+      border-color:var(--gray-200);
+      color:var(--navy);
+    }
+    .thumb svg{width:24px;height:24px}
+    .product-code{color:var(--gray-400);font-size:.64rem;font-weight:600}
+    .product-name{margin-top:4px;color:var(--gray-800);font-size:.8rem;font-weight:700}
+    .cell-mobile-label{color:var(--gray-500);font-size:.64rem;font-weight:600}
+    .cell-value{color:var(--gray-600);font-size:.78rem;font-weight:600}
+    .status{
+      min-height:28px;
+      gap:6px;
+      border-radius:8px;
+      padding:4px 8px;
+      font-size:.68rem;
+      font-weight:700;
+    }
+    .status::before{width:8px;height:8px}
+    .status.found,.status.complete{background:var(--success-bg);color:var(--success)}
+    .status.not_found{background:var(--danger-bg);color:var(--danger)}
+    .status.alternative_available{background:var(--warning-bg);color:var(--warning)}
+    .status.unanswered,.status.waiting{background:var(--gray-100);color:var(--gray-600)}
+
+    .request-grid{gap:16px}
+    .source-card{padding:16px;grid-template-columns:64px minmax(0,1fr) auto;gap:16px}
+    .source-card .thumb{width:64px;height:64px}
+    .source-card .thumb svg{width:32px;height:32px}
+    .source-title{color:var(--navy);font-size:.96rem;font-weight:700}
+    .source-fields{gap:16px;margin-top:8px}
+    .source-field span{color:var(--gray-500);font-size:.64rem;font-weight:600}
+    .source-field strong{font-size:.78rem;font-weight:700}
+    .form-section{padding:16px;border-color:var(--gray-200)}
+    .form-section-head{gap:12px;margin-bottom:12px}
+    .form-section h3{color:var(--navy);font-size:.94rem;font-weight:700}
+    .segmented{gap:8px}
+    .segmented button{
+      min-height:44px;
+      border-color:var(--gray-300);
+      border-radius:8px;
+      background:var(--white);
+      color:var(--gray-600);
+      font-size:.75rem;
+      font-weight:700;
+    }
+    .segmented button:hover{background:var(--gray-50);color:var(--navy)}
+    .segmented button.selected{
+      border-color:var(--gold);
+      background:var(--gray-50);
+      color:var(--navy);
+      box-shadow:none;
+    }
+    .fields{gap:12px}
+    .field label{margin-bottom:4px;color:var(--gray-700);font-size:.72rem;font-weight:700}
+    .field .required,.error{color:var(--danger)}
+    .input,.field input,.field select,.field textarea,.tier-row input{
+      min-height:40px;
+      border-color:var(--gray-300);
+      border-radius:8px;
+      background:var(--white);
+      padding:8px 10px;
+    }
+    .field textarea{min-height:80px}
+    .field input:focus,.field select:focus,.field textarea:focus,.tier-row input:focus{
+      border-color:var(--navy);
+      outline:2px solid var(--gold);
+      outline-offset:1px;
+      box-shadow:none;
+    }
+    .field.has-error input,.field.has-error select,.field.has-error textarea{
+      border-color:var(--danger);
+      box-shadow:none;
+    }
+    .error{margin-top:4px;font-size:.68rem;font-weight:600}
+    .check{
+      min-height:44px;
+      gap:8px;
+      padding:10px;
+      border-color:var(--gray-200);
+      border-radius:8px;
+      background:var(--gray-50);
+    }
+    .check input{width:16px;height:16px;margin-top:4px;accent-color:var(--navy)}
+    .check label{font-size:.76rem;font-weight:600}
+    .tier-table{gap:8px}
+    .tier-row{grid-template-columns:1fr 1fr 1fr 40px;gap:8px}
+    .tier-row input{height:40px}
+    .tier-remove{
+      height:40px;
+      border-color:var(--gray-300);
+      border-radius:8px;
+      background:var(--white);
+      color:var(--gray-600);
+      font-weight:700;
+    }
+    .tier-remove:hover{background:var(--gray-50);color:var(--gray-900)}
+
+    .notice{
+      border-color:var(--warning);
+      border-radius:8px;
+      background:var(--warning-bg);
+      color:var(--warning);
+      padding:12px;
+      font-size:.78rem;
+      font-weight:600;
+    }
+    .notice.info{border-color:var(--gray-300);background:var(--gray-50);color:var(--navy)}
+    .notice.success{border-color:var(--success);background:var(--success-bg);color:var(--success)}
+    .notice.danger{border-color:var(--danger);background:var(--danger-bg);color:var(--danger)}
+    [style*="margin-top:14px"]{margin-top:16px!important}
+    [style*="margin-bottom:14px"]{margin-bottom:16px!important}
+    .confirm-change{margin-top:12px;gap:12px}
+    .confirm-actions{gap:8px}
+    .boundary-grid{gap:12px}
+    .boundary{border-color:var(--gray-200);border-radius:8px;padding:12px;background:var(--gray-50)}
+    .chat-grid{gap:8px}
+    .chat-option{
+      min-height:44px;
+      border-color:var(--gray-300);
+      border-radius:8px;
+      background:var(--white);
+      color:var(--gray-600);
+      padding:10px 12px;
+      font-size:.75rem;
+      font-weight:600;
+    }
+    .chat-option:hover,.chat-option.selected{border-color:var(--gold);background:var(--gray-50);color:var(--navy)}
+    .raw{margin-top:8px;padding:8px;border-radius:8px;background:var(--gray-100);color:var(--gray-600);font-size:.68rem;font-weight:600}
+
+    .partial-grid{gap:16px}
+    .metric{padding:20px}
+    .metric-number{color:var(--navy);font-size:1.75rem;font-weight:700;letter-spacing:-.03em}
+    .metric-label{margin-top:8px;color:var(--gray-500);font-size:.8rem;font-weight:600}
+    .submit-box{max-width:800px;padding:24px}
+    .submit-box h3{color:var(--navy);font-size:1.15rem;font-weight:700}
+    .submit-box>p{color:var(--gray-600)}
+    .submit-checks{gap:8px;margin:16px 0}
+    .success-hero{padding:32px;background:var(--white)}
+    .success-icon{width:64px;height:64px;border-radius:12px;background:var(--success-bg);color:var(--success)}
+    .success-icon svg{width:32px;height:32px}
+    .success-hero h3{margin:16px 0 4px;color:var(--navy);font-size:1.3rem;font-weight:700}
+    .success-hero p{color:var(--gray-600)}
+    .reference{gap:8px;margin-top:16px}
+    .reference span{
+      padding:8px 12px;
+      border-color:var(--gray-200);
+      border-radius:8px;
+      background:var(--white);
+      color:var(--navy);
+      font-size:.76rem;
+      font-weight:600;
+    }
+    .readonly-grid{gap:8px}
+    .readonly-item{padding:12px;border-color:var(--gray-200);border-radius:8px;background:var(--gray-50)}
+    .readonly-item span{color:var(--gray-500);font-size:.64rem;font-weight:600}
+    .readonly-item strong{margin-top:4px;font-size:.8rem;font-weight:700;font-variant-numeric:tabular-nums}
+    .card>p[style*="text-align:center"]{color:var(--gray-500)!important}
+
+    .revision-band{
+      padding:20px;
+      background:var(--navy);
+      color:var(--white);
+      border-bottom:2px solid var(--gold);
+      gap:16px;
+    }
+    .revision-band h3{font-size:1.1rem;font-weight:700}
+    .revision-band p{margin-top:4px;color:var(--gray-300)}
+    .round-chip{
+      border-color:var(--gray-600);
+      background:var(--gray-800);
+      border-radius:8px;
+      padding:8px 12px;
+      color:var(--white);
+      font-size:.94rem;
+      font-weight:700;
+    }
+    .diff-list{gap:8px;padding:16px}
+    .diff-row{gap:8px;border-color:var(--gray-200);border-radius:8px;padding:12px}
+    .diff-product{font-size:.78rem;font-weight:700}
+    .diff-product small{color:var(--gray-500);margin-top:4px}
+    .diff-value{padding:8px;border-radius:8px;background:var(--gray-100);font-size:.75rem;font-weight:600;font-variant-numeric:tabular-nums}
+    .diff-value.new{background:var(--warning-bg);color:var(--warning)}
+    .arrow{color:var(--gray-400)}
+
+    .bottom{
+      border-color:var(--gray-200);
+      background:var(--white);
+      backdrop-filter:none;
+      padding:12px 24px calc(12px + var(--safe));
+    }
+    .bottom-inner{max-width:1400px;gap:12px;padding-left:232px}
+    .bottom-left,.bottom-right{gap:8px}
+    .toast{
+      right:24px;
+      bottom:88px;
+      padding:12px 16px;
+      border-radius:8px;
+      background:var(--navy);
+      color:var(--white);
+      box-shadow:var(--shadow);
+      font-size:.78rem;
+      font-weight:600;
+    }
+    .empty{padding:32px;color:var(--gray-500)}
+
+    @media (max-width:1120px){
+      .page{grid-template-columns:200px minmax(0,1fr)}
+      .bottom-inner{padding-left:216px}
+      .product-list-head,.product-row{grid-template-columns:minmax(220px,1.35fr) minmax(144px,.8fr) 108px 144px 92px}
+    }
+    @media (max-width:800px){
+      .app{padding-bottom:calc(152px + var(--safe))}
+      .topbar-inner{padding:12px 16px}
+      .brand-mark{width:40px;height:40px}
+      .page{padding:16px 12px 0}
+      .side{padding:8px;margin-bottom:16px;border-radius:12px}
+      .side button{min-width:48px;min-height:40px;border-left:0;border-bottom:2px solid transparent;border-radius:8px}
+      .side button.active{border-bottom-color:var(--gold)}
+      .screen-head h2{font-size:1.15rem}
+      .hero-main,.hero-side{padding:20px}
+      .hero h3{font-size:1.35rem}
+      .product-row{padding:12px}
+      .product-cell{padding:8px 4px;border-left:0}
+      .product-cell:not(:first-child){border-color:var(--gray-200)}
+      .source-card{grid-template-columns:56px minmax(0,1fr);padding:12px}
+      .source-card .thumb{width:56px;height:56px}
+      .fields{gap:12px}
+      .bottom{padding:8px 12px calc(8px + var(--safe))}
+      .toast{right:16px;bottom:160px}
+    }
+    @media (max-width:390px){
+      .card-pad{padding:16px}
+      .screen-head h2{font-size:1.08rem}
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script id="portal-terms" type="application/json">{"schema_version":"1.0","table_name":"TedarikApp V3-C Firma Portalı Üç Dilli Metin Çekirdeği","usage_note":"Firma portalı seçilen dilde bütünüyle TR, EN veya ZH gösterilmelidir. Kaynak ürün, varyant, talep miktarı ve kaynak ticari bilgiler salt okunurdur; firma yanıt alanları yapılandırılmış biçimde doldurulur.","review_rule":"TR, EN ve ZH metinlerdeki yer tutucular aynı anahtar içinde birebir korunur. durum=gozden_gecir olan bir terim Ürün Sahibi ve Çince ticaret dili uzmanı onayı olmadan kesin terminolojiye alınmaz.","terms":[{"anahtar":"portal.welcome.title","tr":"Firma Teklif Portalı","en":"Supplier Quotation Portal","zh":"供应商报价门户","baglam":"Karşılama","durum":"kesin","not":""},{"anahtar":"portal.welcome.subtitle","tr":"Ürün listesini inceleyin ve teklif bilgilerinizi girin.","en":"Review the product list and enter your quotation details.","zh":"请审核产品清单并填写报价信息。","baglam":"Karşılama","durum":"kesin","not":""},{"anahtar":"portal.welcome.company","tr":"Alıcı firma: {firma_adi}","en":"Recipient company: {firma_adi}","zh":"收件公司：{firma_adi}","baglam":"Karşılama","durum":"kesin","not":""},{"anahtar":"portal.welcome.list","tr":"Liste: {liste_adi}","en":"List: {liste_adi}","zh":"清单：{liste_adi}","baglam":"Karşılama","durum":"kesin","not":""},{"anahtar":"portal.instruction.title","tr":"Doldurma yönergesi","en":"Completion guide","zh":"填写说明","baglam":"Kısa yönerge bandı","durum":"kesin","not":""},{"anahtar":"portal.instruction.summary","tr":"Her ürün ve varyantı kontrol edin; KDV dâhil DDP birim fiyatı, MOQ, termin ve koli bilgilerini girin.","en":"Check each product and variant, then enter the DDP unit price including VAT, MOQ, lead time, and carton information.","zh":"请逐项核对产品及规格，并填写含土耳其增值税的DDP单价、起订量、交期及装箱信息。","baglam":"Kısa yönerge bandı","durum":"kesin","not":"DDP fiyatının Türkiye KDV'sini içerdiği üç dilde açıkça belirtilmiştir."},{"anahtar":"portal.instruction.source_readonly","tr":"Kaynak ürün, varyant, talep miktarı ve bağlantı bilgileri salt okunurdur; değiştirilemez.","en":"Source product, variant, requested quantity, and link information are read-only and cannot be changed.","zh":"原始产品、规格、需求数量及来源链接为只读内容，不可修改。","baglam":"Kısa yönerge bandı","durum":"kesin","not":""},{"anahtar":"portal.instruction.confidential","tr":"Bu liste ticari ve gizlidir. Yalnız yetkili kişilerle paylaşınız.","en":"This list is commercial and confidential. Share it only with authorized persons.","zh":"本清单属于商业机密，仅限授权人员查阅，请勿转发。","baglam":"Kısa yönerge bandı","durum":"kesin","not":""},{"anahtar":"portal.instruction.language_help","tr":"Portal dilini sağ üst köşeden değiştirebilirsiniz.","en":"You can change the portal language from the upper-right corner.","zh":"可在页面右上角切换门户语言。","baglam":"Kısa yönerge bandı","durum":"kesin","not":""},{"anahtar":"portal.action.save_draft","tr":"Taslağı kaydet","en":"Save draft","zh":"保存草稿","baglam":"Eylem","durum":"kesin","not":""},{"anahtar":"portal.action.submit_partial","tr":"Tamamlananları gönder","en":"Submit completed rows","zh":"提交已完成行","baglam":"Eylem","durum":"kesin","not":"Kısmi gönderim, tamamlanmayan satırları taslakta bırakır."},{"anahtar":"portal.action.submit_quote","tr":"Teklifi gönder","en":"Submit quotation","zh":"提交报价","baglam":"Eylem","durum":"kesin","not":""},{"anahtar":"portal.action.cancel","tr":"Vazgeç","en":"Cancel","zh":"取消","baglam":"Eylem","durum":"kesin","not":""},{"anahtar":"portal.action.continue","tr":"Devam et","en":"Continue","zh":"继续","baglam":"Eylem","durum":"kesin","not":""},{"anahtar":"portal.action.back","tr":"Geri","en":"Back","zh":"返回","baglam":"Eylem","durum":"kesin","not":""},{"anahtar":"portal.action.previous_product","tr":"Önceki ürün","en":"Previous product","zh":"上一个产品","baglam":"Eylem","durum":"kesin","not":""},{"anahtar":"portal.action.next_product","tr":"Sonraki ürün","en":"Next product","zh":"下一个产品","baglam":"Eylem","durum":"kesin","not":""},{"anahtar":"portal.action.open_source","tr":"Kaynak ürünü aç","en":"Open source product","zh":"打开原商品链接","baglam":"Eylem","durum":"kesin","not":""},{"anahtar":"portal.action.add_tier","tr":"Fiyat kademesi ekle","en":"Add price tier","zh":"添加阶梯报价","baglam":"Eylem","durum":"kesin","not":""},{"anahtar":"portal.progress.completed","tr":"{tamamlanan}/{toplam} ürün tamamlandı","en":"{tamamlanan}/{toplam} products completed","zh":"已完成 {tamamlanan}/{toplam} 个产品","baglam":"İlerleme","durum":"kesin","not":""},{"anahtar":"portal.progress.answered","tr":"Yanıtlanan","en":"Answered","zh":"已回复","baglam":"İlerleme","durum":"kesin","not":""},{"anahtar":"portal.progress.remaining","tr":"Kalan","en":"Remaining","zh":"待完成","baglam":"İlerleme","durum":"kesin","not":""},{"anahtar":"portal.progress.current","tr":"Ürün {current}/{total}","en":"Product {current}/{total}","zh":"产品 {current}/{total}","baglam":"İlerleme","durum":"kesin","not":""},{"anahtar":"portal.progress.required","tr":"Zorunlu alan","en":"Required field","zh":"必填项","baglam":"İlerleme","durum":"kesin","not":""},{"anahtar":"portal.field.source_product","tr":"Kaynak ürün","en":"Source product","zh":"原商品","baglam":"Alan etiketi","durum":"kesin","not":"Salt okunur."},{"anahtar":"portal.field.source_variation","tr":"Talep edilen varyant","en":"Requested variant","zh":"需求规格 / 款式","baglam":"Alan etiketi","durum":"kesin","not":"Salt okunur."},{"anahtar":"portal.field.requested_quantity","tr":"Talep edilen miktar","en":"Requested quantity","zh":"需求数量","baglam":"Alan etiketi","durum":"kesin","not":"Salt okunur."},{"anahtar":"portal.field.response_status","tr":"Yanıt durumu","en":"Response status","zh":"回复状态","baglam":"Alan etiketi","durum":"kesin","not":""},{"anahtar":"portal.field.ddp_unit_price_vat_included","tr":"KDV dâhil DDP birim fiyat","en":"DDP unit price including VAT","zh":"含土耳其增值税的DDP单价","baglam":"Alan etiketi","durum":"kesin","not":"ZH metin Türkiye ithalat KDV'sinin fiyata dâhil olduğunu açıkça belirtir."},{"anahtar":"portal.field.currency","tr":"Teklif para birimi","en":"Quotation currency","zh":"报价币种","baglam":"Alan etiketi","durum":"kesin","not":""},{"anahtar":"portal.field.tier_pricing","tr":"Kademeli fiyat","en":"Tiered pricing","zh":"阶梯报价","baglam":"Alan etiketi","durum":"kesin","not":""},{"anahtar":"portal.field.tier_min_quantity","tr":"Kademe başlangıç miktarı","en":"Tier minimum quantity","zh":"阶梯起订数量","baglam":"Alan etiketi","durum":"kesin","not":""},{"anahtar":"portal.field.tier_max_quantity","tr":"Kademe bitiş miktarı","en":"Tier maximum quantity","zh":"阶梯最高数量","baglam":"Alan etiketi","durum":"kesin","not":"Son kademe için boş bırakılabilir."},{"anahtar":"portal.field.tier_unit_price","tr":"Kademe birim fiyatı","en":"Tier unit price","zh":"阶梯单价","baglam":"Alan etiketi","durum":"kesin","not":""},{"anahtar":"portal.field.moq","tr":"Minimum sipariş (MOQ)","en":"Minimum order quantity (MOQ)","zh":"最小起订量（MOQ）","baglam":"Alan etiketi","durum":"kesin","not":""},{"anahtar":"portal.field.lead_time","tr":"Termin süresi","en":"Lead time","zh":"交期","baglam":"Alan etiketi","durum":"kesin","not":""},{"anahtar":"portal.field.lead_time_unit","tr":"Termin birimi","en":"Lead-time unit","zh":"交期单位","baglam":"Alan etiketi","durum":"kesin","not":""},{"anahtar":"portal.field.lead_time_start","tr":"Termin başlangıcı","en":"Lead-time starting point","zh":"交期起算点","baglam":"Alan etiketi","durum":"kesin","not":"Örnek: sipariş onayı, kapora veya numune onayı."},{"anahtar":"portal.field.units_per_carton","tr":"Koli içi adet","en":"Units per carton","zh":"每箱数量","baglam":"Alan etiketi","durum":"kesin","not":""},{"anahtar":"portal.field.carton_dimensions","tr":"Koli ölçüsü","en":"Carton dimensions","zh":"外箱尺寸","baglam":"Alan etiketi","durum":"kesin","not":""},{"anahtar":"portal.field.carton_length_cm","tr":"Koli uzunluğu (cm)","en":"Carton length (cm)","zh":"外箱长（cm）","baglam":"Alan etiketi","durum":"kesin","not":""},{"anahtar":"portal.field.carton_width_cm","tr":"Koli genişliği (cm)","en":"Carton width (cm)","zh":"外箱宽（cm）","baglam":"Alan etiketi","durum":"kesin","not":""},{"anahtar":"portal.field.carton_height_cm","tr":"Koli yüksekliği (cm)","en":"Carton height (cm)","zh":"外箱高（cm）","baglam":"Alan etiketi","durum":"kesin","not":""},{"anahtar":"portal.field.carton_cbm","tr":"Koli hacmi (CBM)","en":"Carton volume (CBM)","zh":"单箱体积（CBM）","baglam":"Alan etiketi","durum":"kesin","not":""},{"anahtar":"portal.field.carton_gross_weight_kg","tr":"Koli brüt ağırlığı (kg)","en":"Carton gross weight (kg)","zh":"单箱毛重（kg）","baglam":"Alan etiketi","durum":"kesin","not":""},{"anahtar":"portal.field.carton_net_weight_kg","tr":"Koli net ağırlığı (kg)","en":"Carton net weight (kg)","zh":"单箱净重（kg）","baglam":"Alan etiketi","durum":"kesin","not":""},{"anahtar":"portal.field.packaging","tr":"Ambalaj şekli","en":"Packaging","zh":"包装方式","baglam":"Alan etiketi","durum":"kesin","not":""},{"anahtar":"portal.field.note","tr":"Firma notu","en":"Supplier note","zh":"供应商备注","baglam":"Alan etiketi","durum":"kesin","not":""},{"anahtar":"portal.field.alternative_proposal","tr":"Alternatif öner","en":"Propose an alternative","zh":"推荐替代产品","baglam":"Alan etiketi","durum":"kesin","not":""},{"anahtar":"portal.field.alternative_link","tr":"Alternatif ürün bağlantısı","en":"Alternative product link","zh":"替代产品链接","baglam":"Alan etiketi","durum":"kesin","not":""},{"anahtar":"portal.field.alternative_details","tr":"Alternatif açıklaması","en":"Alternative details","zh":"替代方案说明","baglam":"Alan etiketi","durum":"kesin","not":"Farklı ölçü, malzeme, varyant veya ticari koşul açıkça belirtilmelidir."},{"anahtar":"portal.status.unanswered","tr":"Yanıtlanmadı","en":"Not answered","zh":"未回复","baglam":"Firma durum seçeneği","durum":"kesin","not":""},{"anahtar":"portal.status.found","tr":"Bulundu","en":"Found","zh":"已找到","baglam":"Firma durum seçeneği","durum":"kesin","not":""},{"anahtar":"portal.status.not_found","tr":"Bulunamadı","en":"Not found","zh":"未找到","baglam":"Firma durum seçeneği","durum":"kesin","not":""},{"anahtar":"portal.status.alternative","tr":"Alternatif var","en":"Alternative available","zh":"可提供替代品","baglam":"Firma durum seçeneği","durum":"kesin","not":""},{"anahtar":"portal.status.needs_information","tr":"Ek bilgi gerekli","en":"More information required","zh":"需补充信息","baglam":"Firma durum seçeneği","durum":"kesin","not":""},{"anahtar":"portal.status.complete","tr":"Tamamlandı","en":"Completed","zh":"已完成","baglam":"Firma durum seçeneği","durum":"kesin","not":""},{"anahtar":"portal.validation.status_required","tr":"Lütfen yanıt durumunu seçin.","en":"Please select a response status.","zh":"请选择回复状态。","baglam":"Doğrulama uyarısı","durum":"kesin","not":""},{"anahtar":"portal.validation.found_price_required","tr":"“Bulundu” seçtiniz; KDV dâhil DDP birim fiyatı girmelisiniz.","en":"You selected “Found”; enter the DDP unit price including VAT.","zh":"您选择了“已找到”，请填写含土耳其增值税的DDP单价。","baglam":"Doğrulama uyarısı","durum":"kesin","not":""},{"anahtar":"portal.validation.found_moq_required","tr":"“Bulundu” seçtiniz; MOQ girmelisiniz.","en":"You selected “Found”; enter the MOQ.","zh":"您选择了“已找到”，请填写最小起订量。","baglam":"Doğrulama uyarısı","durum":"kesin","not":""},{"anahtar":"portal.validation.found_lead_time_required","tr":"“Bulundu” seçtiniz; termin süresi girmelisiniz.","en":"You selected “Found”; enter the lead time.","zh":"您选择了“已找到”，请填写交期。","baglam":"Doğrulama uyarısı","durum":"kesin","not":""},{"anahtar":"portal.validation.ddp_vat_confirmation_required","tr":"DDP birim fiyatının Türkiye KDV'sini içerdiğini onaylayın.","en":"Confirm that the DDP unit price includes Turkish VAT.","zh":"请确认DDP单价已包含土耳其增值税。","baglam":"Doğrulama uyarısı","durum":"kesin","not":""},{"anahtar":"portal.validation.currency_required","tr":"Lütfen teklif para birimini seçin.","en":"Please select the quotation currency.","zh":"请选择报价币种。","baglam":"Doğrulama uyarısı","durum":"kesin","not":""},{"anahtar":"portal.validation.positive_number","tr":"Sıfırdan büyük geçerli bir değer girin.","en":"Enter a valid value greater than zero.","zh":"请输入大于0的有效数值。","baglam":"Doğrulama uyarısı","durum":"kesin","not":""},{"anahtar":"portal.validation.tier_incomplete","tr":"Bu fiyat kademesinin miktar ve birim fiyat alanlarını tamamlayın.","en":"Complete the quantity and unit-price fields for this price tier.","zh":"请完整填写该阶梯的数量和单价。","baglam":"Doğrulama uyarısı","durum":"kesin","not":""},{"anahtar":"portal.validation.tier_order","tr":"Fiyat kademeleri küçük miktardan büyük miktara sıralanmalıdır.","en":"Price tiers must be ordered from lower to higher quantity.","zh":"阶梯数量必须按从小到大排列。","baglam":"Doğrulama uyarısı","durum":"kesin","not":""},{"anahtar":"portal.validation.tier_overlap","tr":"Fiyat kademelerinin miktar aralıkları çakışamaz.","en":"The quantity ranges of price tiers cannot overlap.","zh":"报价阶梯的数量区间不得重叠。","baglam":"Doğrulama uyarısı","durum":"kesin","not":""},{"anahtar":"portal.validation.carton_dimensions_together","tr":"Koli uzunluğu, genişliği ve yüksekliğini birlikte girin.","en":"Enter carton length, width, and height together.","zh":"请同时填写外箱长、宽和高。","baglam":"Doğrulama uyarısı","durum":"kesin","not":""},{"anahtar":"portal.validation.alternative_details_required","tr":"“Alternatif var” seçtiniz; alternatif ürün bağlantısı veya açıklaması girmelisiniz.","en":"You selected “Alternative available”; enter an alternative product link or details.","zh":"您选择了“可提供替代品”，请填写替代产品链接或替代方案说明。","baglam":"Doğrulama uyarısı","durum":"kesin","not":""},{"anahtar":"portal.validation.not_found_note_required","tr":"“Bulunamadı” seçtiniz; lütfen kısa bir açıklama girin.","en":"You selected “Not found”; enter a short explanation.","zh":"您选择了“未找到”，请填写简要说明。","baglam":"Doğrulama uyarısı","durum":"kesin","not":""},{"anahtar":"portal.validation.remaining_rows","tr":"Tamamlanmamış veya hatalı {hata_sayisi} satır var.","en":"There are {hata_sayisi} incomplete or invalid rows.","zh":"仍有 {hata_sayisi} 行未完成或填写有误。","baglam":"Doğrulama uyarısı","durum":"kesin","not":""},{"anahtar":"portal.validation.quantity_below_moq","tr":"Talep edilen miktar MOQ'nun altında; lütfen kontrol edin.","en":"The requested quantity is below the MOQ; please review it.","zh":"需求数量低于最小起订量，请核对。","baglam":"Doğrulama uyarısı","durum":"kesin","not":""},{"anahtar":"portal.system.autosaving","tr":"Otomatik kaydediliyor…","en":"Saving automatically…","zh":"正在自动保存…","baglam":"Otomatik kayıt / çevrimdışı","durum":"kesin","not":""},{"anahtar":"portal.system.saved_at","tr":"{kayit_zamani} tarihinde kaydedildi","en":"Saved at {kayit_zamani}","zh":"已于 {kayit_zamani} 保存","baglam":"Otomatik kayıt / çevrimdışı","durum":"kesin","not":""},{"anahtar":"portal.system.save_failed","tr":"Otomatik kayıt başarısız. Bağlantınızı kontrol edip yeniden deneyin.","en":"Automatic save failed. Check your connection and try again.","zh":"自动保存失败，请检查网络连接后重试。","baglam":"Otomatik kayıt / çevrimdışı","durum":"kesin","not":""},{"anahtar":"portal.system.offline","tr":"Çevrimdışısınız. Girdiğiniz bilgiler bu cihazda geçici olarak saklanacak.","en":"You are offline. Your entries will be stored temporarily on this device.","zh":"当前处于离线状态，您填写的内容将暂存于本设备。","baglam":"Otomatik kayıt / çevrimdışı","durum":"kesin","not":""},{"anahtar":"portal.system.offline_queued","tr":"Çevrimdışı değişiklikler eşitleme kuyruğuna alındı.","en":"Offline changes have been added to the sync queue.","zh":"离线更改已加入同步队列。","baglam":"Otomatik kayıt / çevrimdışı","durum":"kesin","not":""},{"anahtar":"portal.system.reconnected","tr":"Bağlantı yeniden kuruldu.","en":"Connection restored.","zh":"网络连接已恢复。","baglam":"Otomatik kayıt / çevrimdışı","durum":"kesin","not":""},{"anahtar":"portal.system.syncing","tr":"Bekleyen değişiklikler eşitleniyor…","en":"Syncing pending changes…","zh":"正在同步待处理的更改…","baglam":"Otomatik kayıt / çevrimdışı","durum":"kesin","not":""},{"anahtar":"portal.system.sync_complete","tr":"Tüm değişiklikler eşitlendi.","en":"All changes have been synchronized.","zh":"所有更改已同步。","baglam":"Otomatik kayıt / çevrimdışı","durum":"kesin","not":""},{"anahtar":"portal.system.conflict","tr":"Başka bir sürümde değişiklik algılandı. Veri kaybını önlemek için sürümleri karşılaştırın.","en":"Changes from another version were detected. Compare the versions to prevent data loss.","zh":"检测到另一版本的更改。为避免数据丢失，请先比较版本。","baglam":"Otomatik kayıt / çevrimdışı","durum":"kesin","not":"Çakışma sessizce son yazan kazanır şeklinde çözülmez."},{"anahtar":"portal.partial.title","tr":"Kısmi yanıt gönder","en":"Submit a partial response","zh":"提交部分回复","baglam":"Kısmi gönderim","durum":"kesin","not":""},{"anahtar":"portal.partial.description","tr":"Yalnız tamamlanan ürün satırları gönderilir; tamamlanmayan satırlar taslak olarak kalır.","en":"Only completed product rows will be submitted; incomplete rows will remain as drafts.","zh":"仅提交已完成的产品行；未完成的行将继续保留为草稿。","baglam":"Kısmi gönderim","durum":"kesin","not":""},{"anahtar":"portal.partial.ready_count","tr":"{tamamlanan} tamamlanmış satır gönderilebilir.","en":"{tamamlanan} completed rows are ready to submit.","zh":"已有 {tamamlanan} 行完成，可提交。","baglam":"Kısmi gönderim","durum":"kesin","not":""},{"anahtar":"portal.partial.remaining_count","tr":"{kalan} satır tamamlanmayı bekliyor.","en":"{kalan} rows are still incomplete.","zh":"尚有 {kalan} 行未完成。","baglam":"Kısmi gönderim","durum":"kesin","not":""},{"anahtar":"portal.partial.button","tr":"Tamamlanan satırları gönder","en":"Submit completed rows","zh":"提交已完成行","baglam":"Kısmi gönderim","durum":"kesin","not":""},{"anahtar":"portal.partial.confirm","tr":"{tamamlanan} satır gönderilecek; {kalan} satır taslakta kalacak. Devam edilsin mi?","en":"{tamamlanan} rows will be submitted and {kalan} rows will remain as drafts. Continue?","zh":"将提交 {tamamlanan} 行，另有 {kalan} 行继续保留为草稿。是否继续？","baglam":"Kısmi gönderim","durum":"kesin","not":""},{"anahtar":"portal.partial.success","tr":"{tamamlanan} tamamlanmış satır başarıyla gönderildi. Kalan satırlara daha sonra devam edebilirsiniz.","en":"{tamamlanan} completed rows were submitted successfully. You can continue the remaining rows later.","zh":"已成功提交 {tamamlanan} 个已完成行，其余行可稍后继续填写。","baglam":"Kısmi gönderim","durum":"kesin","not":""},{"anahtar":"portal.submit.title","tr":"Teklifi gönder","en":"Submit quotation","zh":"提交报价","baglam":"Nihai gönderim","durum":"kesin","not":""},{"anahtar":"portal.submit.confirm_intro","tr":"“{liste_adi}” için nihai teklifinizi göndermek üzeresiniz. Gönderimden sonra yanıt salt okunur olacaktır.","en":"You are about to submit the final quotation for “{liste_adi}.” The response will become read-only after submission.","zh":"您即将提交“{liste_adi}”的最终报价。提交后，回复内容将变为只读。","baglam":"Nihai gönderim","durum":"kesin","not":""},{"anahtar":"portal.submit.validity_checkbox","tr":"Bu fiyatların gönderim tarihinden itibaren {gun} gün geçerli olduğunu onaylıyorum.","en":"I confirm that these prices are valid for {gun} days from the submission date.","zh":"我确认以上价格自提交之日起 {gun} 天内有效。","baglam":"Nihai gönderim","durum":"kesin","not":""},{"anahtar":"portal.submit.ddp_checkbox","tr":"Girdiğim DDP birim fiyatlarının Türkiye KDV'sini içerdiğini onaylıyorum.","en":"I confirm that the DDP unit prices entered include Turkish VAT.","zh":"我确认所填DDP单价均已包含土耳其增值税。","baglam":"Nihai gönderim","durum":"kesin","not":""},{"anahtar":"portal.submit.completeness_checkbox","tr":"Tüm ürün, varyant, MOQ, termin ve koli bilgilerini kontrol ettim.","en":"I have reviewed all product, variant, MOQ, lead-time, and carton information.","zh":"我已核对所有产品、规格、起订量、交期及装箱信息。","baglam":"Nihai gönderim","durum":"kesin","not":""},{"anahtar":"portal.submit.button","tr":"Onayla ve teklifi gönder","en":"Confirm and submit quotation","zh":"确认并提交报价","baglam":"Nihai gönderim","durum":"kesin","not":""},{"anahtar":"portal.submit.sending","tr":"Teklif gönderiliyor…","en":"Submitting quotation…","zh":"正在提交报价…","baglam":"Nihai gönderim","durum":"kesin","not":""},{"anahtar":"portal.submit.blocked_incomplete","tr":"Nihai teklifi göndermek için tüm zorunlu ürün satırlarını tamamlayın.","en":"Complete all required product rows before submitting the final quotation.","zh":"请先完成所有必填产品行，再提交最终报价。","baglam":"Nihai gönderim","durum":"kesin","not":"Kısmi gönderim ayrı akıştır; nihai teklif kapısını açmaz."},{"anahtar":"portal.chat.checking_supplier","tr":"Tedarikçiyle kontrol ediyoruz; kısa süre içinde yanıt vereceğiz.","en":"We are checking with the supplier and will respond shortly.","zh":"我们正在向供应商核实，稍后回复。","baglam":"Satır sohbeti hazır cevabı","durum":"kesin","not":""},{"anahtar":"portal.chat.price_pending","tr":"Fiyat henüz teyit edilmedi.","en":"The price is still awaiting confirmation.","zh":"价格尚待确认。","baglam":"Satır sohbeti hazır cevabı","durum":"kesin","not":""},{"anahtar":"portal.chat.need_specs","tr":"Lütfen ürün teknik özelliklerini veya ek görselleri paylaşın.","en":"Please provide the product specifications or additional images.","zh":"请补充产品规格或更多图片。","baglam":"Satır sohbeti hazır cevabı","durum":"kesin","not":""},{"anahtar":"portal.chat.unavailable","tr":"Bu ürün şu anda tedarik edilemiyor.","en":"This product is currently unavailable.","zh":"该产品目前无法供货。","baglam":"Satır sohbeti hazır cevabı","durum":"kesin","not":""},{"anahtar":"portal.chat.alternative_proposed","tr":"Alternatif ürün sunabiliriz; lütfen alternatif öneriyi inceleyin.","en":"We can offer an alternative product; please review the proposal.","zh":"我们可以提供替代产品，请查看替代方案。","baglam":"Satır sohbeti hazır cevabı","durum":"kesin","not":""},{"anahtar":"portal.chat.moq_confirmation","tr":"MOQ bilgisinin yeniden teyit edilmesi gerekiyor.","en":"The MOQ needs to be reconfirmed.","zh":"起订量需要重新确认。","baglam":"Satır sohbeti hazır cevabı","durum":"kesin","not":""},{"anahtar":"portal.chat.lead_time_confirmation","tr":"Termin süresinin yeniden teyit edilmesi gerekiyor.","en":"The lead time needs to be reconfirmed.","zh":"交期需要重新确认。","baglam":"Satır sohbeti hazır cevabı","durum":"kesin","not":""},{"anahtar":"portal.chat.carton_pending","tr":"Koli ölçüsü, ağırlık ve CBM bilgileri bekleniyor.","en":"Carton dimensions, weight, and CBM are pending.","zh":"装箱尺寸、重量及CBM信息待补充。","baglam":"Satır sohbeti hazır cevabı","durum":"kesin","not":""},{"anahtar":"portal.success.title","tr":"Teklif başarıyla gönderildi","en":"Quotation submitted successfully","zh":"报价提交成功","baglam":"Gönderim sonrası teşekkür","durum":"kesin","not":""},{"anahtar":"portal.success.body","tr":"“{liste_adi}” için teklifinizi gönderdiğiniz için teşekkür ederiz. Ekibimiz yanıtınızı değerlendirecektir.","en":"Thank you for submitting your quotation for “{liste_adi}.” Our team will review your response.","zh":"感谢贵司提交“{liste_adi}”的报价。我们的团队将对贵司回复进行审核。","baglam":"Gönderim sonrası teşekkür","durum":"kesin","not":""},{"anahtar":"portal.success.reference","tr":"Teklif referansı: {referans}","en":"Quotation reference: {referans}","zh":"报价编号：{referans}","baglam":"Gönderim sonrası teşekkür","durum":"kesin","not":""},{"anahtar":"portal.success.sent_at","tr":"Gönderim zamanı: {gonderim_zamani}","en":"Submitted at: {gonderim_zamani}","zh":"提交时间：{gonderim_zamani}","baglam":"Gönderim sonrası teşekkür","durum":"kesin","not":""},{"anahtar":"portal.success.read_only","tr":"Gönderilen teklif salt okunurdur. Değişiklik için revizyon talebi gerekir.","en":"The submitted quotation is read-only. A revision request is required for changes.","zh":"已提交的报价为只读状态；如需修改，须发起修订申请。","baglam":"Gönderim sonrası teşekkür","durum":"kesin","not":""},{"anahtar":"portal.success.revision_notice","tr":"Revizyon istenirse kayıtlı yanıtınız korunur ve yeni bir teklif turu açılır.","en":"If a revision is requested, your submitted response will be preserved and a new quotation round will open.","zh":"如需修订，系统将保留已提交的回复，并开启新一轮报价。","baglam":"Gönderim sonrası teşekkür","durum":"kesin","not":""},{"anahtar":"portal.success.close","tr":"Bu sayfayı güvenle kapatabilirsiniz.","en":"You may now close this page safely.","zh":"您现在可以安全关闭本页面。","baglam":"Gönderim sonrası teşekkür","durum":"kesin","not":""}]}</script>
+  <script id="status-terms" type="application/json">{"terms":[{"anahtar":"status.preparing","tr":"Hazırlanıyor","en":"Preparing","zh":"准备中","baglam":"Durum etiketi","durum":"kesin","not":""},{"anahtar":"status.waiting_price","tr":"Fiyat bekleniyor","en":"Awaiting Price","zh":"待报价","baglam":"Durum etiketi","durum":"kesin","not":""},{"anahtar":"status.found","tr":"Bulundu","en":"Found","zh":"已找到","baglam":"Durum etiketi","durum":"kesin","not":""},{"anahtar":"status.not_found","tr":"Bulunamadı","en":"Not Found","zh":"未找到","baglam":"Durum etiketi","durum":"kesin","not":""},{"anahtar":"status.alternative_available","tr":"Alternatif var","en":"Alternative Available","zh":"有替代品","baglam":"Durum etiketi","durum":"kesin","not":""},{"anahtar":"status.waiting_approval","tr":"Onay bekliyor","en":"Awaiting Approval","zh":"待确认","baglam":"Durum etiketi","durum":"kesin","not":""},{"anahtar":"status.approved","tr":"Onaylandı","en":"Approved","zh":"已确认","baglam":"Durum etiketi","durum":"kesin","not":""},{"anahtar":"status.rejected","tr":"Reddedildi","en":"Rejected","zh":"已拒绝","baglam":"Durum etiketi","durum":"kesin","not":""},{"anahtar":"status.ready","tr":"Siparişe hazır","en":"Ready to Order","zh":"可下单","baglam":"Durum etiketi","durum":"kesin","not":""},{"anahtar":"status.missing_data","tr":"Eksik veri","en":"Missing Data","zh":"数据不完整","baglam":"Durum etiketi","durum":"kesin","not":""},{"anahtar":"status.sent","tr":"Gönderildi","en":"Sent","zh":"已发送","baglam":"Durum etiketi","durum":"kesin","not":""},{"anahtar":"status.archived","tr":"Arşivlendi","en":"Archived","zh":"已归档","baglam":"Durum etiketi","durum":"kesin","not":""},{"anahtar":"status.cancelled","tr":"İptal edildi","en":"Cancelled","zh":"已取消","baglam":"Durum etiketi","durum":"kesin","not":""},{"anahtar":"status.waiting_supplier","tr":"Tedarikçi yanıtı bekleniyor","en":"Awaiting Supplier Response","zh":"等待供应商回复","baglam":"Durum etiketi","durum":"kesin","not":""},{"anahtar":"status.expired","tr":"Güncelliğini yitirdi","en":"Expired","zh":"已过期","baglam":"Durum etiketi","durum":"kesin","not":""}]}</script>
+  <script>
+    (()=>{
+      'use strict';
+      const portalSource=JSON.parse(document.getElementById('portal-terms').textContent);
+      const statusSource=JSON.parse(document.getElementById('status-terms').textContent);
+      const termMap=Object.fromEntries([...portalSource.terms,...statusSource.terms.filter(x=>x.anahtar.startsWith('status.'))].map(x=>[x.anahtar,x]));
+      const icon=(name)=>{
+        const paths={
+          cube:'<path d="M4 7.5 12 3l8 4.5v9L12 21l-8-4.5z"/><path d="m4 7.5 8 4.5 8-4.5M12 12v9"/>',
+          check:'<path d="m4 12 5 5L20 6"/>',
+          search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/>',
+          link:'<path d="M10 13a5 5 0 0 0 7.1.1l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1"/><path d="M14 11a5 5 0 0 0-7.1-.1l-2 2A5 5 0 0 0 12 20l1.1-1.1"/>',
+          save:'<path d="M5 3h12l2 2v16H5z"/><path d="M8 3v6h8V3M8 21v-7h8v7"/>',
+          info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/>',
+          wifi:'<path d="M3 9a14 14 0 0 1 18 0M6 13a9 9 0 0 1 12 0M9.5 16.5a4 4 0 0 1 5 0M12 20h.01"/>',
+          offline:'<path d="m3 3 18 18M8.5 8.5A14 14 0 0 1 21 9M3 9a14 14 0 0 1 2.5-1.5M9 13a9 9 0 0 1 7.5 1M9.5 16.5a4 4 0 0 1 5 0M12 20h.01"/>',
+          arrow:'<path d="M5 12h14M13 6l6 6-6 6"/>',
+          box:'<path d="M4 7h16v13H4zM3 7l3-4h12l3 4M9 7v4h6V7"/>'
+        };
+        return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name]||paths.info}</svg>`;
+      };
+      const state={lang:'tr',screen:0,workflow:'PRICING',online:true,save:'saved',savedAt:'11:42',search:'',filter:null,activeProduct:'TH-018',chatMessage:null,partialSubmitted:false,submitChecks:[false,false,false],pendingStatus:null,errors:{},form:{
+        status:'found',price:'186.50',currency:'TRY',vat:true,moq:'600',lead:'35',leadUnit:'calendar_day',leadStart:'order_confirmation',units:'48',length:'52',width:'38',height:'41',cbm:'0.081016',gross:'19.8',net:'18.3',packaging:'white_box',note:'',altLink:'',altDetails:'',tiers:[{min:'500',max:'999',price:'5.10'},{min:'1000',max:'1999',price:'4.70'},{min:'2000',max:'',price:'4.25'}]
+      }};
+      const workflow=[['SENT','status.sent'],['VIEWED','status.waiting_supplier'],['PRICING','status.waiting_price'],['RESPONDED','status.waiting_approval'],['APPROVED','status.approved']];
+      const screens=['portal.welcome.title','portal.progress.answered','portal.field.response_status','portal.partial.title','portal.submit.title','portal.success.title','portal.success.revision_notice'];
+      const coreProducts=[
+        {code:'TH-018',name:{tr:'Çift fonksiyonlu cam yağdanlık 600 ml',en:'Dual-function glass oil dispenser 600 ml',zh:'双功能玻璃油壶 600毫升'},variant:{tr:'Siyah kapak · 600 ml',en:'Black lid · 600 ml',zh:'黑盖 · 600毫升'},qty:{tr:'600 adet',en:'600 pcs',zh:'600 件'},status:'found'},
+        {code:'TH-019',name:{tr:'Mini elektrikli baharat öğütücü',en:'Mini electric spice grinder',zh:'迷你电动香料研磨机'},variant:{tr:'Model 058 · Siyah',en:'Model 058 · Black',zh:'058型 · 黑色'},qty:{tr:'1.000 adet',en:'1,000 pcs',zh:'1,000 件'},status:'unanswered'},
+        {code:'TH-020',name:{tr:'Çekmece içi düzenleyici set',en:'Drawer organizer set',zh:'抽屉收纳套装'},variant:{tr:'4 parça · Şeffaf',en:'4 pieces · Clear',zh:'4件套 · 透明'},qty:{tr:'500 set',en:'500 sets',zh:'500 套'},status:'not_found'},
+        {code:'TH-021',name:{tr:'Sensörlü kapaklı çöp kovası',en:'Sensor-lid waste bin',zh:'感应盖垃圾桶'},variant:{tr:'12 L · Beyaz',en:'12 L · White',zh:'12升 · 白色'},qty:{tr:'700 adet',en:'700 pcs',zh:'700 件'},status:'alternative_available'},
+        {code:'TH-022',name:{tr:'Silikon yağ fırçası ve spatula',en:'Silicone oil brush and spatula',zh:'硅胶油刷刮刀套装'},variant:{tr:'Pembe · 2 parça',en:'Pink · 2 pieces',zh:'粉色 · 2件'},qty:{tr:'1.200 set',en:'1,200 sets',zh:'1,200 套'},status:'found'},
+        {code:'TH-023',name:{tr:'Bambu koltuk kenarı sehpası',en:'Bamboo sofa arm tray',zh:'竹制沙发扶手托盘'},variant:{tr:'Doğal bambu',en:'Natural bamboo',zh:'天然竹色'},qty:{tr:'480 adet',en:'480 pcs',zh:'480 件'},status:'found'},
+        {code:'TH-024',name:{tr:'Vakumlu saklama poşeti',en:'Vacuum storage bag',zh:'真空收纳袋'},variant:{tr:'70 × 100 cm · 5 parça',en:'70 × 100 cm · 5 pieces',zh:'70 × 100厘米 · 5件'},qty:{tr:'900 set',en:'900 sets',zh:'900 套'},status:'unanswered'},
+        {code:'TH-025',name:{tr:'Dört modlu musluk başlığı',en:'Four-mode faucet head',zh:'四档水龙头起泡器'},variant:{tr:'Krom · Üniversal',en:'Chrome · Universal',zh:'铬色 · 通用'},qty:{tr:'750 adet',en:'750 pcs',zh:'750 件'},status:'unanswered'}
+      ];
+      const products=[...Array.from({length:17},(_,index)=>{
+        const n=index+1;const id=String(n).padStart(3,'0');
+        return {code:`TH-${id}`,name:{tr:`RFQ ürünü ${id}`,en:`RFQ product ${id}`,zh:`询价产品 ${id}`},variant:{tr:'Standart varyant',en:'Standard variant',zh:'标准规格'},qty:{tr:`${400+n*20} adet`,en:`${400+n*20} pcs`,zh:`${400+n*20} 件`},status:n<=13?'found':'unanswered'};
+      }),...coreProducts];
+      const vars={firma_adi:'Tilbe Home',liste_adi:{tr:'Mutfak Ürünleri — Eylül 2026',en:'Kitchen Products — September 2026',zh:'厨房用品 — 2026年9月'},tamamlanan:'18',toplam:'25',kalan:'7',hata_sayisi:'7',current:'18',total:'25',gun:'15',referans:'V3C-2026-0042-R1',gonderim_zamani:'03.09.2026 · 11:42',kayit_zamani:'11:42'};
+      const esc=s=>String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+      const value=v=>typeof v==='object'&&v? v[state.lang]||v.source||Object.values(v)[0] : v;
+      const unit=(n,kind='pcs')=>{const labels=kind==='set'?{tr:'set',en:'sets',zh:'套'}:{tr:'adet',en:'pcs',zh:'件'};return `${Number(n).toLocaleString(state.lang==='tr'?'tr-TR':state.lang==='zh'?'zh-CN':'en-GB')} ${labels[state.lang]}`};
+      const t=(key,more={})=>{
+        const row=termMap[key];
+        if(!row) return key;
+        let out=row[state.lang]||row.tr||key;
+        const all={...vars,...more};
+        Object.keys(all).forEach(k=>{out=out.replaceAll(`{${k}}`,value(all[k]))});
+        return out;
+      };
+      const keyline=key=>`<span class="key">${esc(key)}</span>`;
+      const completed=()=>['RESPONDED','APPROVED'].includes(state.workflow)?25:18;
+      const showToast=msg=>{const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(showToast.timer);showToast.timer=setTimeout(()=>el.classList.remove('show'),2500)};
+      const statusKey=s=>({unanswered:'portal.status.unanswered',found:'portal.status.found',not_found:'portal.status.not_found',alternative_available:'portal.status.alternative'}[s]||'portal.status.unanswered');
+      const statusPill=s=>`<span class="status ${esc(s)}">${esc(t(statusKey(s)))}</span>`;
+      const currentProduct=()=>products.find(p=>p.code===state.activeProduct)||coreProducts[0];
+      const refreshSaveState=()=>{const old=document.querySelector('.screen-head .save-state');if(!old)return;const wrap=document.createElement('div');wrap.innerHTML=saveState();old.replaceWith(wrap.firstElementChild)};
+      const scheduleSave=(rerender=false)=>{state.save='saving';if(rerender)render();else refreshSaveState();clearTimeout(scheduleSave.timer);scheduleSave.timer=setTimeout(()=>{state.save='saved';state.savedAt=new Date().toLocaleTimeString(state.lang==='tr'?'tr-TR':state.lang==='zh'?'zh-CN':'en-GB',{hour:'2-digit',minute:'2-digit'});vars.kayit_zamani=state.savedAt;refreshSaveState();},750)};
+      const saveState=()=>{
+        if(!state.online)return `<div class="save-state offline"><span class="pulse"></span>${esc(t('portal.system.offline'))}</div>`;
+        if(state.save==='saving')return `<div class="save-state busy"><span class="pulse"></span>${esc(t('portal.system.autosaving'))}</div>`;
+        return `<div class="save-state"><span class="pulse"></span>${esc(t('portal.system.saved_at',{kayit_zamani:state.savedAt}))}</div>`;
+      };
+      const brandMark=()=>`<div class="brand-mark">${icon('cube')}</div>`;
+      const screenLabel=(key,i)=>i===1?t(key,{tamamlanan:completed(),toplam:25}):t(key);
+      const shell=()=>`<div class="app">
+        <header class="topbar"><div class="topbar-inner">
+          <div class="brand">${brandMark()}<div><div class="eyebrow">TedarikApp · V3-C · R1</div><h1>${esc(t('portal.welcome.title'))}</h1></div></div>
+          <div class="context">
+            <div class="context-item"><div class="context-label">${esc(t('portal.welcome.company'))}</div><div class="context-value">V3C-2026-0042</div></div>
+            <div class="context-item"><div class="context-label">${esc(t('portal.welcome.list'))}</div><div class="context-value">DDP · Sakarya · R1</div></div>
+            <div class="context-item"><div class="context-label">${esc(t('portal.progress.answered'))}</div><div class="context-value">${completed()}/25</div></div>
+          </div>
+          <div class="top-actions">
+            <div class="lang" aria-label="${esc(t('portal.instruction.language_help'))}">${['tr','en','zh'].map(l=>`<button type="button" data-lang="${l}" aria-current="${state.lang===l}">${l.toUpperCase()}</button>`).join('')}</div>
+            <button type="button" class="connection" data-action="toggle-online" title="${esc(t('portal.system.offline'))}">${icon(state.online?'wifi':'offline')}</button>
+          </div>
+        </div></header>
+        <div class="workflow-wrap"><div class="workflow">${workflow.map(([code,key],i)=>{const ci=workflow.findIndex(x=>x[0]===state.workflow);return `<button type="button" data-workflow="${code}" class="${i<ci?'done':''} ${i===ci?'current':''}"><span class="wf-dot">${i<ci?'✓':i+1}</span><span class="wf-text"><span class="wf-code">${code}</span><span class="wf-label">${esc(t(key))}</span></span></button>`}).join('')}</div></div>
+        <div class="page">
+          <aside class="side" aria-label="V3-C">${screens.map((key,i)=>`<button type="button" data-screen="${i}" class="${state.screen===i?'active':''}"><span class="step-no">${String(i+1).padStart(2,'0')}</span><span class="step-label">${esc(screenLabel(key,i))}</span></button>`).join('')}<div class="source-proof">portal-metinleri.json<br>111 portal.*<br>cikti-terimleri.json<br>status.*</div></aside>
+          <main class="surface"><div class="screen-head"><div><div class="screen-kicker">0${state.screen+1} / 07</div><h2>${esc(screenLabel(screens[state.screen],state.screen))}</h2>${keyline(screens[state.screen])}</div>${saveState()}</div>${offlineBanner()}${renderScreen()}</main>
+        </div>${bottomBar()}
+      </div>`;
+      const offlineBanner=()=>state.online?'':`<div class="notice danger" style="margin-bottom:14px">${esc(t('portal.system.offline'))}${keyline('portal.system.offline')}</div>`;
+      const welcome=()=>`<section class="card hero">
+        <div class="hero-main"><div class="screen-kicker">TedarikApp · V3-C</div><h3>${esc(t('portal.welcome.title'))}</h3>${keyline('portal.welcome.title')}<p>${esc(t('portal.welcome.subtitle'))}</p>
+          <div class="hero-meta"><div class="meta-pill">${esc(t('portal.welcome.company'))}${keyline('portal.welcome.company')}</div><div class="meta-pill">${esc(t('portal.welcome.list'))}${keyline('portal.welcome.list')}</div><div class="meta-pill">DDP · Sakarya · Incoterms® 2020</div><div class="meta-pill">25 · R1 · 18.09.2026</div></div>
+        </div>
+        <div class="hero-side"><div><div class="instruction-title">${icon('info')}<span>${esc(t('portal.instruction.title'))}</span></div>${keyline('portal.instruction.title')}<div class="instruction-list">
+          ${['portal.instruction.summary','portal.instruction.source_readonly','portal.instruction.confidential','portal.instruction.language_help'].map(k=>`<div class="instruction-item">${icon('check')}<div>${esc(t(k))}${keyline(k)}</div></div>`).join('')}
+        </div></div><button class="btn btn-gold" type="button" data-screen="1">${esc(t('portal.action.continue'))}${icon('arrow')}</button></div>
+      </section>`;
+      const productList=()=>{
+        let rows=products.filter(p=>!state.search||`${p.code} ${value(p.name)}`.toLocaleLowerCase().includes(state.search.toLocaleLowerCase()));
+        if(state.filter)rows=rows.filter(p=>p.status===state.filter);
+        return `<section class="card progress-card"><div class="progress-figure">${completed()}/25</div><div><div class="progress-track"><div class="progress-fill" style="width:${completed()/25*100}%"></div></div>${keyline('portal.progress.completed')}</div><div class="progress-copy">${esc(t('portal.progress.answered'))} · ${esc(t('portal.progress.remaining'))}: ${25-completed()}</div></section>
+          <section class="card toolbar section"><label class="search">${icon('search')}<input id="search" value="${esc(state.search)}" aria-label="${esc(t('portal.field.source_product'))}"></label><div class="chips">${['unanswered','found','not_found','alternative_available'].map(s=>`<button type="button" class="chip ${state.filter===s?'active':''}" data-filter="${s}">${esc(t(statusKey(s)))}</button>`).join('')}</div></section>
+          <section class="card product-list section"><div class="product-list-head"><div>${esc(t('portal.field.source_product'))}</div><div>${esc(t('portal.field.source_variation'))}</div><div>${esc(t('portal.field.requested_quantity'))}</div><div>${esc(t('portal.field.response_status'))}</div><div></div></div>
+          ${rows.length?rows.map(p=>`<article class="product-row"><div class="product-cell"><div class="product-main"><div class="thumb">${icon('box')}</div><div><div class="product-code">${p.code}</div><div class="product-name">${esc(value(p.name))}</div></div></div></div><div class="product-cell cell-stack"><span class="cell-mobile-label">${esc(t('portal.field.source_variation'))}</span><span class="cell-value">${esc(value(p.variant))}</span></div><div class="product-cell cell-stack"><span class="cell-mobile-label">${esc(t('portal.field.requested_quantity'))}</span><span class="cell-value">${esc(value(p.qty))}</span></div><div class="product-cell cell-stack"><span class="cell-mobile-label">${esc(t('portal.field.response_status'))}</span>${statusPill(p.status)}</div><div class="product-cell"><button type="button" class="btn btn-soft" data-open-row="${p.code}">${esc(t('portal.action.continue'))}</button></div></article>`).join(''):`<div class="empty">${esc(t('portal.validation.remaining_rows',{hata_sayisi:0}))}</div>`}</section>`;
+      };
+      const field=(name,key,opts={})=>{const err=state.errors[name];const tag=opts.tag||'input';const val=state.form[name]??'';let control='';if(tag==='select'){control=`<select data-field="${name}">${opts.options.map(x=>`<option value="${x}" ${val===x?'selected':''}>${x}</option>`).join('')}</select>`}else if(tag==='textarea'){control=`<textarea data-field="${name}">${esc(val)}</textarea>`}else{control=`<input data-field="${name}" value="${esc(val)}" type="${opts.type||'text'}" ${opts.inputmode?`inputmode="${opts.inputmode}"`:''}>`}
+        return `<div class="field ${opts.span?`span-${opts.span}`:''} ${err?'has-error':''}"><label>${esc(t(key))}${opts.required?'<span class="required">*</span>':''}${keyline(key)}</label>${control}${err?`<div class="error">${esc(t(err))}</div>`:''}</div>`};
+      const sourceCard=()=>{const p=currentProduct();return `<section class="card source-card"><div class="thumb">${icon('box')}</div><div><div class="product-code">${esc(p.code)} · RFQ-L${esc(p.code.slice(-3))}</div><div class="source-title">${esc(value(p.name))}</div><div class="source-fields"><div class="source-field"><span>${esc(t('portal.field.source_variation'))}</span><strong>${esc(value(p.variant))}</strong></div><div class="source-field"><span>${esc(t('portal.field.requested_quantity'))}</span><strong>${esc(value(p.qty))}</strong></div></div></div><a class="btn btn-soft" href="https://detail.1688.com/offer/000000000000.html" target="_blank" rel="noopener noreferrer">${icon('link')}${esc(t('portal.action.open_source'))}</a></section>`};
+      const pricingFields=(isAlt=false)=>`<div class="fields">
+        ${field('price','portal.field.ddp_unit_price_vat_included',{span:6,required:true,type:'number',inputmode:'decimal'})}${field('currency','portal.field.currency',{span:3,required:true,tag:'select',options:['TRY','USD','CNY','EUR']})}
+        <div class="field span-3"><label>${esc(t('portal.progress.required'))}${keyline('portal.progress.required')}</label><div class="check"><input id="vat" data-field="vat" type="checkbox" ${state.form.vat?'checked':''}><label for="vat">${esc(t('portal.submit.ddp_checkbox'))}</label></div>${state.errors.vat?`<div class="error">${esc(t(state.errors.vat))}</div>`:''}</div>
+        ${field('moq','portal.field.moq',{span:3,required:true,type:'number',inputmode:'decimal'})}${field('lead','portal.field.lead_time',{span:3,required:true,type:'number',inputmode:'numeric'})}${field('leadUnit','portal.field.lead_time_unit',{span:3,required:true,tag:'select',options:['calendar_day','working_day','week']})}${field('leadStart','portal.field.lead_time_start',{span:3,required:true,tag:'select',options:['order_confirmation','deposit_received','sample_approval','artwork_approval']})}
+      </div>${Number(state.form.moq)>600?`<div class="notice" style="margin-top:12px">${esc(t('portal.validation.quantity_below_moq'))}${keyline('portal.validation.quantity_below_moq')}</div>`:''}`;
+      const tiers=()=>`<div class="form-section"><div class="form-section-head"><div><h3>${esc(t('portal.field.tier_pricing'))}</h3>${keyline('portal.field.tier_pricing')}</div><button type="button" class="btn btn-soft" data-action="add-tier">${esc(t('portal.action.add_tier'))}</button></div><div class="tier-table">${state.form.tiers.map((r,i)=>`<div class="tier-row"><input data-tier="${i}:min" aria-label="${esc(t('portal.field.tier_min_quantity'))}" value="${esc(r.min)}" inputmode="decimal" placeholder="${esc(t('portal.field.tier_min_quantity'))}"><input data-tier="${i}:max" aria-label="${esc(t('portal.field.tier_max_quantity'))}" value="${esc(r.max)}" inputmode="decimal" placeholder="${esc(t('portal.field.tier_max_quantity'))}"><input data-tier="${i}:price" aria-label="${esc(t('portal.field.tier_unit_price'))}" value="${esc(r.price)}" inputmode="decimal" placeholder="${esc(t('portal.field.tier_unit_price'))}"><button type="button" class="tier-remove" data-remove-tier="${i}" aria-label="${esc(t('portal.action.cancel'))}">×</button></div>`).join('')}</div>${state.errors.tiers?`<div class="error">${esc(t(state.errors.tiers))}</div>`:''}</div>`;
+      const packageFields=()=>`<div class="form-section"><div class="form-section-head"><div><h3>${esc(t('portal.field.carton_dimensions'))}</h3>${keyline('portal.field.carton_dimensions')}</div></div><div class="fields">${field('units','portal.field.units_per_carton',{span:3,type:'number',inputmode:'numeric'})}${field('length','portal.field.carton_length_cm',{span:3,type:'number',inputmode:'decimal'})}${field('width','portal.field.carton_width_cm',{span:3,type:'number',inputmode:'decimal'})}${field('height','portal.field.carton_height_cm',{span:3,type:'number',inputmode:'decimal'})}${field('cbm','portal.field.carton_cbm',{span:3,type:'number',inputmode:'decimal'})}${field('gross','portal.field.carton_gross_weight_kg',{span:3,type:'number',inputmode:'decimal'})}${field('net','portal.field.carton_net_weight_kg',{span:3,type:'number',inputmode:'decimal'})}${field('packaging','portal.field.packaging',{span:3})}</div></div>`;
+      const statusArea=()=>`<div class="form-section"><div class="form-section-head"><div><h3>${esc(t('portal.field.response_status'))}</h3>${keyline('portal.field.response_status')}</div>${statusPill(state.form.status)}</div><div class="segmented">${['unanswered','found','not_found','alternative_available'].map(s=>`<button type="button" data-status="${s}" class="${state.form.status===s?'selected':''}">${esc(t(statusKey(s)))}</button>`).join('')}</div>${state.pendingStatus?`<div class="notice confirm-change"><div>${statusPill(state.pendingStatus)}${keyline(statusKey(state.pendingStatus))}</div><div class="confirm-actions"><button class="btn" type="button" data-action="cancel-status">${esc(t('portal.action.cancel'))}</button><button class="btn btn-primary" type="button" data-action="confirm-status">${esc(t('portal.action.continue'))}</button></div></div>`:''}</div>`;
+      const responseBody=()=>{
+        if(state.form.status==='unanswered')return `<div class="form-section"><div class="notice info">${esc(t('portal.status.unanswered'))} ≠ ${esc(t('portal.status.not_found'))}${keyline('portal.status.unanswered · portal.status.not_found')}</div></div>`;
+        if(state.form.status==='not_found')return `<div class="form-section"><div class="form-section-head"><div><h3>${esc(t('portal.status.not_found'))}</h3>${keyline('portal.status.not_found')}</div></div><div class="fields">${field('note','portal.field.note',{span:12,required:true,tag:'textarea'})}</div></div>`;
+        if(state.form.status==='alternative_available')return `<div class="form-section"><div class="notice danger" style="margin-bottom:14px">${statusPill('not_found')} <strong>${esc(currentProduct().code)}</strong></div><div class="form-section-head"><div><h3>${esc(t('portal.field.alternative_proposal'))}</h3>${keyline('portal.field.alternative_proposal')}</div>${statusPill('alternative_available')}</div><div class="fields">${field('altLink','portal.field.alternative_link',{span:6,required:true})}${field('altDetails','portal.field.alternative_details',{span:6,required:true,tag:'textarea'})}</div><div style="margin-top:14px">${pricingFields(true)}</div></div>${tiers()}${packageFields()}`;
+        return `<div class="form-section"><div class="form-section-head"><div><h3>${esc(t('portal.field.ddp_unit_price_vat_included'))}</h3>${keyline('portal.field.ddp_unit_price_vat_included')}</div></div>${pricingFields()}</div>${tiers()}${packageFields()}<div class="form-section"><div class="fields">${field('note','portal.field.note',{span:12,tag:'textarea'})}</div></div>`;
+      };
+      const boundaryDemo=()=>`<section class="section"><div class="section-title"><div><h3>${esc(t('portal.instruction.source_readonly'))}</h3>${keyline('portal.instruction.source_readonly')}</div></div><div class="boundary-grid">
+        <div class="boundary">${statusPill('unanswered')}<div class="raw">"" · "-" · "price pending"</div></div>
+        <div class="boundary">${statusPill('not_found')}<div class="raw">"yok" · "not available" · "未找到"</div></div>
+        <div class="boundary">${statusPill('alternative_available')}<div class="raw">TH-018 → ALT-018-A · linked response</div></div>
+      </div></section>`;
+      const chatPanel=()=>{const keys=['portal.chat.checking_supplier','portal.chat.price_pending','portal.chat.need_specs','portal.chat.unavailable','portal.chat.alternative_proposed','portal.chat.moq_confirmation','portal.chat.lead_time_confirmation','portal.chat.carton_pending'];return `<section class="card card-pad section"><div class="section-title"><div><h3>${esc(t('portal.status.needs_information'))}</h3>${keyline('portal.status.needs_information')}</div>${state.chatMessage?statusPill('unanswered'):''}</div><div class="chat-grid">${keys.map(k=>`<button type="button" class="chat-option ${state.chatMessage===k?'selected':''}" data-chat="${k}">${esc(t(k))}${keyline(k)}</button>`).join('')}</div>${state.chatMessage?`<div class="notice info section">${esc(t(state.chatMessage))}</div>`:''}</section>`};
+      const responseForm=()=>`${sourceCard()}<section class="card form-card section">${statusArea()}${responseBody()}</section>${chatPanel()}${boundaryDemo()}`;
+      const partial=()=>`<section class="card card-pad"><div class="notice info">${esc(t('portal.partial.description'))}${keyline('portal.partial.description')}</div><div class="partial-grid section"><div class="card metric"><div class="metric-number">18</div><div class="metric-label">${esc(t('portal.partial.ready_count',{tamamlanan:18}))}${keyline('portal.partial.ready_count')}</div></div><div class="card metric"><div class="metric-number">7</div><div class="metric-label">${esc(t('portal.partial.remaining_count',{kalan:7}))}${keyline('portal.partial.remaining_count')}</div></div></div><div class="notice section">${esc(t('portal.partial.confirm',{tamamlanan:18,kalan:7}))}${keyline('portal.partial.confirm')}</div>${state.partialSubmitted?`<div class="notice success section">${esc(t('portal.partial.success',{tamamlanan:18}))}${keyline('portal.partial.success')}</div>`:''}</section>`;
+      const submit=()=>{const ready=completed()===25;return `<section class="card submit-box"><h3>${esc(t('portal.submit.title'))}</h3>${keyline('portal.submit.title')}<p>${esc(t('portal.submit.confirm_intro'))}</p><div class="progress-card" style="padding-left:0;padding-right:0"><div class="progress-figure">${completed()}/25</div><div class="progress-track"><div class="progress-fill" style="width:${completed()/25*100}%"></div></div><div class="progress-copy">${esc(t('portal.progress.completed',{tamamlanan:completed(),toplam:25}))}</div></div>${!ready?`<div class="notice danger">${esc(t('portal.submit.blocked_incomplete'))}<br>${esc(t('portal.validation.remaining_rows',{hata_sayisi:7}))}${keyline('portal.submit.blocked_incomplete · portal.validation.remaining_rows')}</div>`:''}<div class="submit-checks">${['portal.submit.validity_checkbox','portal.submit.ddp_checkbox','portal.submit.completeness_checkbox'].map((k,i)=>`<div class="check"><input id="submit-${i}" data-submit-check="${i}" type="checkbox" ${state.submitChecks[i]?'checked':''}><label for="submit-${i}">${esc(t(k))}${keyline(k)}</label></div>`).join('')}</div><button type="button" class="btn btn-primary" style="width:100%" data-action="final-submit" ${!ready||!state.online||state.submitChecks.some(x=>!x)?'disabled':''}>${esc(t('portal.submit.button'))}</button></section>`};
+      const readonlyCards=()=>`<div class="readonly-grid"><div class="readonly-item"><span>${esc(t('portal.field.ddp_unit_price_vat_included'))}</span><strong>186.50 TRY / ${esc(unit(1).split(' ')[1])}</strong></div><div class="readonly-item"><span>${esc(t('portal.field.moq'))}</span><strong>${esc(unit(600))}</strong></div><div class="readonly-item"><span>${esc(t('portal.field.lead_time'))}</span><strong>35 · calendar_day</strong></div><div class="readonly-item"><span>${esc(t('portal.field.units_per_carton'))}</span><strong>${esc(unit(48))}</strong></div><div class="readonly-item"><span>${esc(t('portal.field.carton_dimensions'))}</span><strong>52 × 38 × 41 cm</strong></div><div class="readonly-item"><span>${esc(t('portal.field.carton_cbm'))}</span><strong>0.081016 m³</strong></div></div>`;
+      const success=()=>`<section class="card success-hero"><div class="success-icon">${icon('check')}</div><h3>${esc(t('portal.success.title'))}</h3>${keyline('portal.success.title')}<p>${esc(t('portal.success.body'))}</p><div class="reference"><span>${esc(t('portal.success.reference'))}</span><span>${esc(t('portal.success.sent_at'))}</span></div><div class="notice success section">${esc(t('portal.success.read_only'))}${keyline('portal.success.read_only')}</div></section><section class="card card-pad section">${readonlyCards()}<div class="notice info section">${esc(t('portal.success.revision_notice'))}${keyline('portal.success.revision_notice')}</div><p style="text-align:center;color:#69768d;font-weight:750">${esc(t('portal.success.close'))}</p></section>`;
+      const revision=()=>`<section class="card" style="overflow:hidden"><div class="revision-band"><div><h3>${esc(t('portal.success.revision_notice'))}</h3>${keyline('portal.success.revision_notice')}<p>${esc(t('portal.welcome.list',{liste_adi:vars.liste_adi}))}</p></div><div class="round-chip">R1 → R2</div></div><div class="diff-list">
+        <div class="diff-row"><div class="diff-product">TH-003 · ${esc(value(products.find(p=>p.code==='TH-003').name))}<small>${esc(t('portal.field.moq'))}</small></div><div class="diff-value">${esc(unit(1000))}</div><div class="arrow">→</div><div class="diff-value new">${esc(unit(600))}</div></div>
+        <div class="diff-row"><div class="diff-product">TH-009 · ${esc(value(products.find(p=>p.code==='TH-009').name))}<small>${esc(t('portal.field.lead_time'))}</small></div><div class="diff-value">45 · calendar_day</div><div class="arrow">→</div><div class="diff-value new">36 · calendar_day</div></div>
+        <div class="diff-row"><div class="diff-product">TH-016 · ${esc(value(products.find(p=>p.code==='TH-016').name))}<small>${esc(t('portal.field.ddp_unit_price_vat_included'))}</small></div><div class="diff-value">248 TRY / ${esc(unit(1).split(' ')[1])}</div><div class="arrow">→</div><div class="diff-value new">274 TRY / ${esc(unit(1).split(' ')[1])}</div></div>
+      </div></section><section class="card card-pad section"><div class="notice info">${esc(t('portal.success.read_only'))}${keyline('portal.success.read_only')}</div><div class="section">${readonlyCards()}</div></section>`;
+      const renderScreen=()=>[welcome,productList,responseForm,partial,submit,success,revision][state.screen]();
+      const bottomBar=()=>{let left=`<button type="button" class="btn" data-screen="${Math.max(0,state.screen-1)}" ${state.screen===0?'disabled':''}>${esc(t('portal.action.back'))}</button><button type="button" class="btn btn-soft" data-action="save">${icon('save')}${esc(t('portal.action.save_draft'))}</button>`;let right='';
+        if(state.screen===1)right=`<button type="button" class="btn" data-screen="3" ${!state.online?'disabled':''}>${esc(t('portal.action.submit_partial'))}</button><button type="button" class="btn btn-primary" data-screen="4" ${!state.online?'disabled':''}>${esc(t('portal.action.submit_quote'))}</button>`;
+        else if(state.screen===2)right=`<button type="button" class="btn" data-action="previous-row">${esc(t('portal.action.previous_product'))}</button><button type="button" class="btn btn-primary" data-action="next-row">${esc(t('portal.action.next_product'))}</button>`;
+        else if(state.screen===3)right=`<button type="button" class="btn btn-primary" data-action="partial-submit" ${!state.online?'disabled':''}>${esc(t('portal.partial.button'))}</button>`;
+        else if(state.screen===4)right=`<button type="button" class="btn btn-primary" data-action="final-submit" ${completed()!==25||!state.online||state.submitChecks.some(x=>!x)?'disabled':''}>${esc(t('portal.submit.button'))}</button>`;
+        else if(state.screen===0)right=`<button type="button" class="btn btn-primary" data-screen="1">${esc(t('portal.action.continue'))}${icon('arrow')}</button>`;
+        else if(state.screen===6)right=`<button type="button" class="btn btn-primary" data-screen="2">${esc(t('portal.action.continue'))}${icon('arrow')}</button>`;
+        return `<div class="bottom"><div class="bottom-inner"><div class="bottom-left">${left}</div><div class="bottom-right">${right}</div></div></div>`;
+      };
+      const clearCommercial=()=>{Object.assign(state.form,{price:'',vat:false,moq:'',lead:'',tiers:[]})};
+      const requestStatus=s=>{if(s===state.form.status)return;if(state.form.price&&['unanswered','not_found'].includes(s)){state.pendingStatus=s;render();return}state.form.status=s;state.pendingStatus=null;state.errors={};scheduleSave(true)};
+      const validate=()=>{const e={};const f=state.form;if(f.status==='unanswered')e.status='portal.validation.status_required';if(['found','alternative_available'].includes(f.status)){if(!(Number(f.price)>0))e.price='portal.validation.found_price_required';if(!f.currency)e.currency='portal.validation.currency_required';if(!f.vat)e.vat='portal.validation.ddp_vat_confirmation_required';if(!(Number(f.moq)>0))e.moq='portal.validation.found_moq_required';if(!(Number(f.lead)>0))e.lead='portal.validation.found_lead_time_required'}if(f.status==='not_found'&&f.note.trim().length<3)e.note='portal.validation.not_found_note_required';if(f.status==='alternative_available'&&!f.altLink.trim()&&!f.altDetails.trim())e.altLink='portal.validation.alternative_details_required';const dims=[f.length,f.width,f.height];if(dims.some(Boolean)&&!dims.every(Boolean))e.length='portal.validation.carton_dimensions_together';if(f.tiers.some(r=>!r.min||!r.price))e.tiers='portal.validation.tier_incomplete';for(let i=1;i<f.tiers.length;i++){if(Number(f.tiers[i].min)<=Number(f.tiers[i-1].min))e.tiers='portal.validation.tier_order';if(f.tiers[i-1].max&&Number(f.tiers[i].min)<=Number(f.tiers[i-1].max))e.tiers='portal.validation.tier_overlap'}state.errors=e;render();return Object.keys(e).length===0};
+      const render=()=>{document.documentElement.lang=state.lang==='zh'?'zh-CN':state.lang;document.getElementById('app').innerHTML=shell();bind()};
+      const bind=()=>{
+        document.querySelectorAll('[data-lang]').forEach(b=>b.onclick=()=>{state.lang=b.dataset.lang;render()});
+        document.querySelectorAll('[data-screen]').forEach(b=>b.onclick=()=>{state.screen=Number(b.dataset.screen);render();window.scrollTo({top:0,behavior:'smooth'})});
+        document.querySelectorAll('[data-workflow]').forEach(b=>b.onclick=()=>{state.workflow=b.dataset.workflow;if(state.workflow==='RESPONDED')state.screen=4;if(state.workflow==='APPROVED')state.screen=5;render()});
+        document.querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>{state.filter=state.filter===b.dataset.filter?null:b.dataset.filter;render()});
+        document.querySelectorAll('[data-open-row]').forEach(b=>b.onclick=()=>{state.activeProduct=b.dataset.openRow;state.form.status=currentProduct().status;state.pendingStatus=null;state.errors={};state.screen=2;render()});
+        document.querySelectorAll('[data-chat]').forEach(b=>b.onclick=()=>{state.chatMessage=b.dataset.chat;showToast(t(state.chatMessage));render()});
+        const search=document.getElementById('search');if(search)search.oninput=e=>{state.search=e.target.value;const pos=e.target.selectionStart;render();const next=document.getElementById('search');next.focus();next.setSelectionRange(pos,pos)};
+        document.querySelectorAll('[data-status]').forEach(b=>b.onclick=()=>requestStatus(b.dataset.status));
+        document.querySelectorAll('[data-field]').forEach(el=>{el.oninput=e=>{const k=e.target.dataset.field;state.form[k]=e.target.type==='checkbox'?e.target.checked:e.target.value;delete state.errors[k];scheduleSave()};el.onchange=el.oninput});
+        document.querySelectorAll('[data-tier]').forEach(el=>el.oninput=e=>{const [i,k]=e.target.dataset.tier.split(':');state.form.tiers[Number(i)][k]=e.target.value;scheduleSave()});
+        document.querySelectorAll('[data-remove-tier]').forEach(b=>b.onclick=()=>{state.form.tiers.splice(Number(b.dataset.removeTier),1);scheduleSave(true)});
+        document.querySelectorAll('[data-submit-check]').forEach(el=>el.onchange=e=>{state.submitChecks[Number(e.target.dataset.submitCheck)]=e.target.checked;render()});
+        document.querySelectorAll('[data-action]').forEach(b=>b.onclick=()=>{
+          const a=b.dataset.action;
+          if(a==='toggle-online'){state.online=!state.online;showToast(t(state.online?'portal.system.reconnected':'portal.system.offline'));render()}
+          if(a==='save'){state.save='saving';render();setTimeout(()=>{state.save='saved';showToast(t('portal.system.saved_at',{kayit_zamani:state.savedAt}));render()},550)}
+          if(a==='add-tier'){state.form.tiers.push({min:'',max:'',price:''});scheduleSave(true)}
+          if(a==='confirm-status'){state.form.status=state.pendingStatus;clearCommercial();state.pendingStatus=null;state.errors={};scheduleSave(true)}
+          if(a==='cancel-status'){state.pendingStatus=null;render()}
+          if(a==='next-row'){if(validate()){showToast(t('portal.system.sync_complete'));state.screen=1;render()}}
+          if(a==='previous-row'){state.screen=1;render()}
+          if(a==='partial-submit'){if(!state.online){showToast(t('portal.system.offline'));return}state.partialSubmitted=true;showToast(t('portal.partial.success',{tamamlanan:18}));render()}
+          if(a==='final-submit'){if(completed()!==25){showToast(t('portal.submit.blocked_incomplete'));return}if(state.submitChecks.some(x=>!x))return;state.workflow='RESPONDED';state.screen=5;showToast(t('portal.success.title'));render()}
+        });
+      };
+      render();
+    })();
+  </script>
+</body>
+</html>

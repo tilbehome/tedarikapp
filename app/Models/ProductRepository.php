@@ -732,6 +732,46 @@ final class ProductRepository
         return $adet;
     }
 
+    /**
+     * Medya işi KUYRUKTA BEKLEYEN ürünler (v1.2.2 D1) — tek sorgu, N+1 yok.
+     *
+     * `media_pending` TÜRETİLMİŞ bir gerçektir, kolon değil: "ana görsel uzak
+     * VE açık bir medya işi var". Kolon olsaydı iki yerde (products + jobs)
+     * aynı gerçek tutulur ve biri geride kalırdı — bu turun tekrar eden
+     * teması. Kuyruk tablosu yoksa (eski kurulum) boş döner: "bilinmiyor",
+     * "bekliyor" sayılmaz.
+     *
+     * @param  list<int> $productIds
+     * @return list<int>
+     */
+    public function medyaBekleyenler(array $productIds): array
+    {
+        $ids = array_values(array_unique(array_map('intval', $productIds)));
+        if ($ids === []) {
+            return [];
+        }
+
+        $anahtarlar = array_map(static fn (int $id): string => 'urun:' . $id, $ids);
+        $yerTutucular = implode(',', array_fill(0, count($anahtarlar), '?'));
+
+        try {
+            $statement = $this->connection->pdo()->prepare(
+                "SELECT anahtar FROM jobs WHERE tur = 'medya' AND durum IN ('bekliyor', 'calisiyor')
+                 AND anahtar IN ({$yerTutucular})",
+            );
+            $statement->execute($anahtarlar);
+        } catch (\Throwable) {
+            return [];
+        }
+
+        $bekleyen = [];
+        foreach ($statement->fetchAll(\PDO::FETCH_COLUMN) ?: [] as $anahtar) {
+            $bekleyen[] = (int) substr((string) $anahtar, 5);
+        }
+
+        return $bekleyen;
+    }
+
     /** @return list<array<string, mixed>> */
     public function images(int $productId): array
     {

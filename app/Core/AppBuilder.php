@@ -157,11 +157,33 @@ final class AppBuilder
         // ölü rafına atardı.
         // A3: HTTP kompozisyonunda da SAAT taşınır — panel ziyaretinde açılan
         // tur da uzun sürebilir ve her geçiş kendi anını okumalıdır.
+        // D1: MedyaService kuyruk işleyicilerinden ÖNCE kurulur — medya işi
+        // kompoze servisi (ve testte sahte indiriciyi) kullanır.
+        $allowedHosts = array_map('trim', explode(',', $config->get('MEDIA_ALLOWED_HOSTS', 'alicdn.com,1688.com')));
+        $urlGuard = new UrlGuard($allowedHosts);
+        $mediaService ??= new MediaService(
+            $basePath,
+            $urlGuard,
+            $mediaFetcher ?? new CurlMediaFetcher($urlGuard, $config->getPositiveInt('MEDIA_DOWNLOAD_TIMEOUT', 25)),
+            $settingsRepository,
+            $config->getPositiveInt('MEDIA_MAX_MB', 8) * 1024 * 1024,
+            $config->get('MEDIA_PATH', 'public/media'),
+        );
+
         $kuyruk = new \App\Services\Kuyruk\JobQueue($connection, $services->bildirim);
+        // D6: devre kesici — tür bazlı, ayarlar tablosunda; panel turu da cron
+        // turu da AYNI kesiciyi görür (süreç belleğinde olsaydı her tur sıfırlanırdı).
+        $devreKesici = new \App\Services\Kuyruk\DevreKesici(
+            $settingsRepository,
+            $services->clock,
+            esik: $config->getPositiveInt('KUYRUK_DEVRE_KESICI_ESIK', 5),
+            dakika: $config->getPositiveInt('KUYRUK_DEVRE_KESICI_DAKIKA', 15),
+        );
         $kuyrukKosucusu = new \App\Services\Kuyruk\JobRunner(
             $kuyruk,
             $logger,
             saat: $services->clock,
+            devreKesici: $devreKesici,
         );
         \App\Services\Kuyruk\KuyrukIsleyicileri::kaydet(
             $kuyrukKosucusu,
@@ -171,6 +193,7 @@ final class AppBuilder
             $basePath,
             $services->clock,
             $services->bildirim,
+            medyaServisi: $mediaService,
         );
         $kuyrukTetikleyici = new \App\Services\Kuyruk\KuyrukTetikleyici(
             $kuyrukKosucusu,
@@ -202,17 +225,6 @@ final class AppBuilder
         $stateMachine = new StateMachine();
         $mutationPolicy = new ListMutationPolicy();
 
-        $allowedHosts = array_map('trim', explode(',', $config->get('MEDIA_ALLOWED_HOSTS', 'alicdn.com,1688.com')));
-        $urlGuard = new UrlGuard($allowedHosts);
-        $mediaService ??= new MediaService(
-            $basePath,
-            $urlGuard,
-            $mediaFetcher ?? new CurlMediaFetcher($urlGuard, $config->getPositiveInt('MEDIA_DOWNLOAD_TIMEOUT', 25)),
-            $settingsRepository,
-            $config->getPositiveInt('MEDIA_MAX_MB', 8) * 1024 * 1024,
-            $config->get('MEDIA_PATH', 'public/media'),
-        );
-
         // Güncelleme yolu (İE#5 §12): kurulum kilitlendikten sonra migration koşmanın
         // kimlik doğrulamalı yolu. Yazma ucu ayrıca CSRF ister.
         $system = new SystemController(
@@ -226,6 +238,8 @@ final class AppBuilder
             $katalogDurumu,
             // A6-EK: "Yeniden çevir" düğmesi ürünleri MEVCUT çeviri kuyruğuna alır.
             $kuyruk,
+            // v1.2.2 B2: APP_KEY emaneti için şifre yeniden doğrulaması.
+            $services->passwords,
             $logger,
         );
         Routes\SystemRoutes::register($app, $system, $services, $responseFactory);
@@ -502,6 +516,8 @@ final class AppBuilder
             ),
             new \App\Controllers\SurumNotuController($settingsRepository, $basePath),
             new \App\Controllers\GunlukController($connection, $services->timezone),
+            // v1.2.2 D2: K47 görsel vekili.
+            new \App\Controllers\MediaProxyController($mediaService),
         );
 
         // Panel (İE#8 §5): Vite çıktısı public/panel/ altındadır. Var olan dosyaları

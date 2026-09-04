@@ -514,7 +514,7 @@ if ($calistirmaSorunlari !== []) {
  * PAKET ÇALIŞTIRMA DENETİMİ (K99 · V3-B paket düzeltmesi EK-1).
  *
  * Zip'i geçici bir dizine açar ve uygulamayı ORADAN kullanır. Dosya saymaz —
- * dosyaları KULLANIR. Sınanan altı şey:
+ * dosyaları KULLANIR. Sınanan YEDİ şey:
  *
  *   1. Bildirim olay kataloğu yüklenir ve olay taşır.
  *   2. Panorama brifing kataloğu yüklenir ve brifing taşır.
@@ -525,6 +525,9 @@ if ($calistirmaSorunlari !== []) {
  *      bekleyen migration KALMAZ. Reddedilen paket canlıya kuruldu ve 0035
  *      koştu; düzeltilmiş paket onun ÜSTÜNE kurulacak. "Bekleyen migration
  *      yok" demezse kullanıcı sihirbazda takılırdı.
+ *   7. v1.2.1 SENARYOSU: 0035 uygulanmış ama 0036 UYGULANMAMIŞ bir defterde
+ *      0036 BEKLEYEN görünmeli. Genişletme migration'ı sessizce atlanırsa
+ *      kolon dar kalır ve şifreli erişim anahtarı MySQL'de reddedilir.
  *
  * exec/proc_open KULLANILMAZ (docs/04 §7): denetim aynı süreçte, paketin
  * autoloader'ı ayrı bir dizinden yüklenerek yapılır.

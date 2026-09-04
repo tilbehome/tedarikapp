@@ -120,10 +120,19 @@ final class MediaMigrator
      *         SONRASINDA çağrılır; kira kaybedilmişse istisna atar ve döngü durur
      * @return array{indirilen: int, basarisiz: list<array{id: int, url: string, hata: string}>}
      *
+     * @param  ?\App\Services\Kuyruk\BellekButcesi $butce D6 — her indirmeden ÖNCE sorulur;
+     *         dolmuşsa kalan görseller sonraki tura kalır ve iş ERTELENİR (hata değil).
+     *         İnenler korunur: satırları zaten `local`e çevrilmiştir.
+     *
      * @throws MedyaEksik eksik görsel kaldıysa (A4) — iş BİTMİŞ sayılmaz
+     * @throws \App\Services\Kuyruk\IsErtelendi bellek bütçesi dolduysa (D6)
      */
-    public function urununMedyasi(int $urunId, int $limit = 24, ?callable $kontrol = null): array
-    {
+    public function urununMedyasi(
+        int $urunId,
+        int $limit = 24,
+        ?callable $kontrol = null,
+        ?\App\Services\Kuyruk\BellekButcesi $butce = null,
+    ): array {
         $indirilen = 0;
         $basarisiz = [];
         /**
@@ -148,6 +157,7 @@ final class MediaMigrator
         $anaSorgu->execute(['id' => $urunId]);
         $ana = $anaSorgu->fetch(\PDO::FETCH_ASSOC);
         if (is_array($ana)) {
+            $this->butceyiDenetle($butce, $indirilen, 'ana görsel');
             // A2: DIŞ ADIMDAN ÖNCE. Kira bizde değilse indirmeye hiç başlamayız.
             if ($kontrol !== null) {
                 $kontrol();
@@ -180,6 +190,7 @@ final class MediaMigrator
             $kaynak = (string) ($satir['source_url'] ?? '') !== ''
                 ? (string) $satir['source_url']
                 : (string) $satir['path'];
+            $this->butceyiDenetle($butce, $indirilen, 'galeri #' . (int) $satir['id']);
             if ($kontrol !== null) {
                 $kontrol();
             }
@@ -212,6 +223,31 @@ final class MediaMigrator
         }
 
         return ['indirilen' => $indirilen, 'basarisiz' => $basarisiz];
+    }
+
+    /**
+     * D6 — PAHALI ADIMDAN ÖNCE BÜTÇE SORULUR.
+     *
+     * Bütçe dolmuşsa istisna atılır ve döngü orada durur. O ana kadar inen
+     * görsellerin satırları zaten `local`e çevrilmiştir; erteleme "kaldığı
+     * yerden devam" sözünü bu sayede tutar. Bütçe verilmemişse sınır yoktur
+     * (mevcut çağıranlar kırılmaz).
+     *
+     * @throws \App\Services\Kuyruk\IsErtelendi
+     */
+    private function butceyiDenetle(?\App\Services\Kuyruk\BellekButcesi $butce, int $indirilen, string $adim): void
+    {
+        if ($butce === null || !$butce->asildi()) {
+            return;
+        }
+
+        throw new \App\Services\Kuyruk\IsErtelendi(sprintf(
+            'bellek bütçesi doldu (%d/%d MB) — %s öncesinde durdu, %d görsel indi, kalanlar sonraki tura',
+            $butce->kullanimMb(),
+            $butce->butceMb(),
+            $adim,
+            $indirilen,
+        ));
     }
 
     /** Taşınmayı bekleyen toplam uzak kayıt sayısı (main_image + galeri). */

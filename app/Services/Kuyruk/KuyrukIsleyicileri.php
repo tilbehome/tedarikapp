@@ -54,6 +54,13 @@ final class KuyrukIsleyicileri
         ?Clock $clock = null,
         // V3-B A3: çeviri işi bitince/patlayınca bildirim doğar.
         ?\App\Services\Bildirim\BildirimYayinci $bildirim = null,
+        // v1.2.2 D1: KOMPOZE MedyaService. Eskiden işleyici kendi MediaService'ini
+        // kuruyordu (kendi cURL indiricisiyle) ve enjekte edilen servisi hiç
+        // görmüyordu — testte sahte indirici yakalamayı sınıyor, kuyruğu
+        // sınayamıyordu. Yakalama artık indirmediğine göre indiren TEK yol
+        // kuyruktur; o yolun da kompozisyonla sınanması şart. Verilmezse
+        // (bin/kuyruk.php) eski kurulum aynen.
+        ?MediaService $medyaServisi = null,
     ): void {
         $clock ??= SystemClock::fromConfig($config);
         $urunler = new ProductRepository($connection);
@@ -182,24 +189,27 @@ final class KuyrukIsleyicileri
             array $yuk,
             array $is,
             ?IsBaglami $baglam = null,
-        ) use ($config, $connection, $basePath, $clock): void {
+        ) use ($config, $connection, $basePath, $clock, $medyaServisi): void {
             $urunId = (int) ($yuk['urun_id'] ?? 0);
             if ($urunId <= 0) {
                 throw new RuntimeException('Medya işi ürün kimliği taşımıyor.');
             }
 
-            $urlGuard = new UrlGuard(array_map(
-                'trim',
-                explode(',', $config->get('MEDIA_ALLOWED_HOSTS', '')),
-            ));
-            $medya = new MediaService(
-                $basePath,
-                $urlGuard,
-                new CurlMediaFetcher($urlGuard, $config->getPositiveInt('MEDIA_DOWNLOAD_TIMEOUT', 25)),
-                new SettingsRepository($connection),
-                $config->getPositiveInt('MEDIA_MAX_MB', 8) * 1024 * 1024,
-                $config->get('MEDIA_PATH', 'public/media'),
-            );
+            $medya = $medyaServisi;
+            if ($medya === null) {
+                $urlGuard = new UrlGuard(array_map(
+                    'trim',
+                    explode(',', $config->get('MEDIA_ALLOWED_HOSTS', '')),
+                ));
+                $medya = new MediaService(
+                    $basePath,
+                    $urlGuard,
+                    new CurlMediaFetcher($urlGuard, $config->getPositiveInt('MEDIA_DOWNLOAD_TIMEOUT', 25)),
+                    new SettingsRepository($connection),
+                    $config->getPositiveInt('MEDIA_MAX_MB', 8) * 1024 * 1024,
+                    $config->get('MEDIA_PATH', 'public/media'),
+                );
+            }
 
             // Arşiv modu kapalıysa (klasör yazılamıyor) iş BAŞARISIZ sayılmaz:
             // indirme mümkün değildir, tekrar denemek de düzeltmez. Kayıtlar
@@ -217,11 +227,16 @@ final class KuyrukIsleyicileri
             // A4: eksik görsel kalırsa `urununMedyasi()` MedyaEksik atar; iş
             // BİTMİŞ sayılmaz. Geçici hatada kuyruk yeniden dener ve ikinci tur
             // yalnız eksikleri indirir (inenler artık `local`).
+            // D6: İŞÇİ BAŞINA BELLEK BÜTÇESİ. Bütçe dolunca kalan görseller sonraki
+            // tura kalır ve iş ERTELENİR (hata değil, deneme hakkı yakmaz).
+            // Sınıra çarpıp ölmek yerine sınırdan önce durmak: ölen süreç iz
+            // bırakmaz, duran süreç "ertelendi" der.
             (new MediaMigrator($connection, $medya))->urununMedyasi(
                 $urunId,
                 kontrol: $baglam === null ? null : static function () use ($baglam, $clock): void {
                     $baglam->kontrolNoktasi($clock->now());
                 },
+                butce: BellekButcesi::megabayttan($config->getPositiveInt('KUYRUK_BELLEK_BUTCESI_MB', 64)),
             );
         });
     }

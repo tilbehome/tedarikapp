@@ -30,6 +30,13 @@ use Tests\Support\TasinamayanMediaService;
  *   1. nihai dosya VAR,
  *   2. `.tmp` YOK,
  *   3. `main_image` alanı diskteki dosyayı gösterir (yol eşleşmesi).
+ *
+ * v1.2.2 D1 SONRASI: yakalama artık İNDİRMEZ. Kalıcılaşma KUYRUK TURUNDA olur.
+ * Bu süit bu yüzden iki adımlı: yakalama → (ana görsel KAYNAK adresle,
+ * `media_pending`) → kuyruk turu → kanıt. Tur, `AppBuilder` ile aynı yoldan
+ * kurulur (`KuyrukIsleyicileri::kaydet` + KOMPOZE `MediaService`): işleyici
+ * kendi indiricisini kurmaz, enjekte edileni kullanır — aksi hâlde sahte
+ * indirici yakalamayı sınar, indiren tek yol olan kuyruğu sınayamazdı.
  */
 final class MedyaKompozisyonTest extends AuthTestCase
 {
@@ -119,6 +126,55 @@ final class MedyaKompozisyonTest extends AuthTestCase
     }
 
     /**
+     * D1 — yakalama sonrası ara durum: ana görsel KAYNAK adresle, iş kuyrukta.
+     */
+    private function bekliyorKanitla(int $urunId): void
+    {
+        $anaGorsel = (string) $this->pdo->query(
+            'SELECT main_image FROM products WHERE id = ' . $urunId,
+        )->fetchColumn();
+        self::assertStringStartsWith('https://', $anaGorsel, 'D1: yakalama indirmez; ana görsel KAYNAK adresle yazılır.');
+        self::assertSame(0, $this->mediaFetcher?->callCount ?? 0, 'D1: yakalama sırasında indirme YAPILMAMALI.');
+
+        $is = (new \App\Services\Kuyruk\JobQueue(Connection::fromCallable(fn (): \PDO => $this->pdo)))
+            ->bul(\App\Services\Kuyruk\KuyrukIsleyicileri::TUR_MEDYA, 'urun:' . $urunId);
+        self::assertNotNull($is, 'Medya işi kuyruğa girmeli.');
+    }
+
+    /**
+     * KUYRUK TURU — üretimdeki kompozisyonun aynısı (AppBuilder ile aynı kayıt),
+     * indirici sahte. İşleyici enjekte edilen MediaService'i kullanmak ZORUNDA:
+     * kendi cURL'ünü kursaydı bu tur ağa çıkar ve test kırmızı olurdu.
+     */
+    private function kuyrukTurunuKos(): array
+    {
+        $baglanti = Connection::fromCallable(fn (): \PDO => $this->pdo);
+        $config = $this->config();
+        $urlGuard = new UrlGuard(['alicdn.com', '1688.com']);
+        $medya = new \App\Services\MediaService(
+            dirname(__DIR__, 2),
+            $urlGuard,
+            $this->mediaFetcher ?? new FakeMediaFetcher(),
+            new SettingsRepository($baglanti),
+            8 * 1024 * 1024,
+        );
+        $kuyruk = new \App\Services\Kuyruk\JobQueue($baglanti);
+        $kosucu = new \App\Services\Kuyruk\JobRunner($kuyruk, new \Psr\Log\NullLogger(), saat: $this->clock);
+        \App\Services\Kuyruk\KuyrukIsleyicileri::kaydet(
+            $kosucu,
+            $config,
+            $baglanti,
+            new \Psr\Log\NullLogger(),
+            dirname(__DIR__, 2),
+            $this->clock,
+            null,
+            medyaServisi: $medya,
+        );
+
+        return $kosucu->kos();
+    }
+
+    /**
      * Üçlü doğrulama: nihai dosya var · `.tmp` yok · adres diski gösteriyor.
      */
     private function medyaKanitla(int $urunId): void
@@ -151,6 +207,9 @@ final class MedyaKompozisyonTest extends AuthTestCase
         $urunId = (int) $this->json($yanit)['data']['product_id'];
         self::assertGreaterThan(0, $urunId);
 
+        $this->bekliyorKanitla($urunId);
+        $tur = $this->kuyrukTurunuKos();
+        self::assertSame(1, $tur['basarili'], 'Medya işi kuyruk turunda BİTMELİ: ' . $tur['durma_nedeni']);
         $this->medyaKanitla($urunId);
     }
 
@@ -180,6 +239,10 @@ final class MedyaKompozisyonTest extends AuthTestCase
         )->fetchColumn();
         self::assertGreaterThan(0, $urunId, 'Gelen Kutusu kaydı ürüne bağlanmalı.');
 
+        // D1: Gelen Kutusu'ndan taşıma yolu da medya işini kuyruğa yazar
+        // (eskiden yazmıyordu — taşınan ürünün galerisi sonsuza kadar uzak kalırdı).
+        $this->bekliyorKanitla($urunId);
+        $this->kuyrukTurunuKos();
         $this->medyaKanitla($urunId);
     }
 
@@ -192,6 +255,8 @@ final class MedyaKompozisyonTest extends AuthTestCase
      */
     public function testTASIMABASARISIZSA_KAYNAGADUSULUR_VE_TMPSILINIR(): void
     {
+        // D1 sonrası: yakalama zaten yazmaz; bu test kayıtta KAYNAK adresin
+        // durduğunu ve diske hiçbir `.tmp` düşmediğini korur.
         $oncekiTmpler = $this->tmpDosyalari();
 
         $this->mediaService = new TasinamayanMediaService(
@@ -257,6 +322,15 @@ final class MedyaKompozisyonTest extends AuthTestCase
         )->fetchAll(\PDO::FETCH_COLUMN);
 
         self::assertSame(['https://cbu01.alicdn.com/img/ibank/temiz-galeri.jpg'], $satirlar);
+
+        $this->mediaFetcher?->respondWith('https://cbu01.alicdn.com/img/ibank/temiz-galeri.jpg', $this->jpeg(), 'image/jpeg');
+        $this->kuyrukTurunuKos();
         $this->medyaKanitla($urunId);
+        // Galeri dosyası da üretildi; temizlenmek üzere kaydedilir.
+        foreach ($this->medyaDosyalari() as $dosya) {
+            if (!in_array($dosya, $this->uretilenler, true)) {
+                $this->uretilenler[] = $dosya;
+            }
+        }
     }
 }

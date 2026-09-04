@@ -106,6 +106,16 @@ export interface Product {
   sku_selection: unknown;
   sku_matrix: unknown;
   main_image: string | null;
+  /**
+   * v1.2.2 D1/D2 — ana görsel henüz arşive alınmadı (kuyruk indirecek).
+   * Uzak adres tarayıcıda çizilemez (alicdn Referer ACL); panel bu yüzden
+   * `main_image_gosterim`i çizer ve rozetle "uzak" der.
+   */
+  main_image_uzak: boolean;
+  /** Panelin ÇİZECEĞİ adres: yerelse kendisi, uzaksa K47 vekili. */
+  main_image_gosterim: string | null;
+  /** Medya işi kuyrukta bekliyor (türetilmiş; kolon değil). */
+  media_pending: boolean;
   video_url: string | null;
   qty: number;
   price_yuan: string;
@@ -247,6 +257,11 @@ export interface SystemStatus {
    * gösteren bir uyarı bir süre sonra okunmaz hâle gelir.
    */
   sozluksuz_ceviri: number;
+  /**
+   * v1.2.2 D6: AÇIK devre kesici (varsa). Kapalıyken null — "kapalı" satırı
+   * göstermek, sıfır gösteren sayaç gibi bir süre sonra okunmaz olurdu.
+   */
+  kuyruk_devre_kesici: { tur: string; kapanma_at: string | null; esik: number; dakika: number } | null;
 }
 
 /** POST /api/system/media-migrate — K47 arşive taşıma parti sonucu. */
