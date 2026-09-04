@@ -371,3 +371,110 @@ export interface TurGonderimSonucu extends TeklifTuru {
   erisim_anahtari: string;
   satir_sayisi: number;
 }
+
+/** V3-C Aşama 2.2 — firma yanıtı: kademeli fiyat (kaynak sınır korunur, ara miktar hesaplanmaz). */
+export interface YanitKademe {
+  min_adet: string;
+  max_adet: string | null;
+  birim_fiyat: string;
+  para_birimi: string | null;
+  kademe_tipi: 'esik' | 'aralik';
+}
+
+export type YanitDurumu = 'unanswered' | 'found' | 'not_found' | 'alternative_available';
+
+/**
+ * Kanonik yanıt satırı — `quote_lines` ile aynı adlar. Para/miktar DİZEDİR (K14).
+ * `temizle`: yalnız uygulama gövdesinde; boş alan mevcut değeri SİLMEZ, silme açık listeyle olur.
+ */
+export interface YanitSatiri {
+  rfq_satir_id: string;
+  yanit_durumu: YanitDurumu;
+  ddp_birim_fiyat: string | null;
+  para_birimi: string | null;
+  ddp_kdv_dahil_onayi: boolean | null;
+  moq_deger: string | null;
+  moq_birim: string | null;
+  termin_baslangici: string | null;
+  termin_baslangici_aciklamasi: string | null;
+  termin_suresi: number | null;
+  termin_birimi: string | null;
+  koli_ici_adet: number | null;
+  koli_uzunluk_cm: string | null;
+  koli_genislik_cm: string | null;
+  koli_yukseklik_cm: string | null;
+  koli_cbm: string | null;
+  koli_brut_kg: string | null;
+  koli_net_kg: string | null;
+  ambalaj: string | null;
+  firma_notu: string | null;
+  alternatif_baglanti: string | null;
+  alternatif_aciklama: string | null;
+  kademeler: YanitKademe[];
+  temizle?: string[];
+}
+
+export interface YanitAlanHatasi {
+  satir_id?: string;
+  alan: string;
+  deger: unknown;
+  kural: string;
+}
+
+/** Yapıştır-ayrıştır önizlemesi (yazmaz). */
+export interface YapistirOnizlemeSatiri {
+  rfq_satir_id: string;
+  urun_kodu: string | null;
+  urun_adi: { tr?: string; en?: string; zh?: string } | null;
+  talep_miktar: string;
+  yeni: YanitSatiri;
+  eski: YanitSatiri | null;
+  hatalar: YanitAlanHatasi[];
+  eksik_zorunlu: string[];
+  secilebilir: boolean;
+  varsayilan_secili: boolean;
+}
+
+export interface YapistirOnizleme {
+  parmak_izi: string;
+  satirlar: YapistirOnizlemeSatiri[];
+  /** Bağlanamayan parçalar — asla bir satıra yazılmaz; aday listesi + YASAK işlem. */
+  belirsiz: { parca: string; aday_satir_idleri: string[]; neden: string; yasak_otomatik_islem: string }[];
+  dogrulama_hatalari: YanitAlanHatasi[];
+  eslesmeyen_satirlar: string[];
+}
+
+export type ExcelOnizlemeGrubu = 'uygulanabilir' | 'uyarili' | 'hatali' | 'belirsiz' | 'degisiklik_yok';
+
+export interface ExcelOnizlemeSatiri {
+  rfq_satir_id: string;
+  hucre: string;
+  urun_kodu: string | null;
+  urun_adi: { tr?: string; en?: string; zh?: string } | null;
+  talep_miktar: string | null;
+  grup: ExcelOnizlemeGrubu;
+  secilebilir: boolean;
+  varsayilan_secili: boolean;
+  imza_bozuk: boolean;
+  eski: YanitSatiri | null;
+  yeni: YanitSatiri | null;
+  degisen: string[];
+  hatalar: string[];
+  uyarilar: string[];
+  belirsiz: string[];
+}
+
+export interface ExcelOnizleme {
+  parmak_izi: string;
+  manifest: { schema_version: number; exported_at: string; supplier_round_id: number; rfq_snapshot_id: number; row_count: number; tur_satir_sayisi: number };
+  ozet: Record<ExcelOnizlemeGrubu, number>;
+  satirlar: ExcelOnizlemeSatiri[];
+}
+
+export interface YanitUygulamaSonucu {
+  tekrar: boolean;
+  yazilan: number;
+  satirlar: string[];
+  state: TeklifTuruDurumu;
+  yanit: Record<string, YanitSatiri>;
+}

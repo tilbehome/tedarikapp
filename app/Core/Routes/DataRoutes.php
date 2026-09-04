@@ -65,6 +65,8 @@ final class DataRoutes
         \App\Controllers\GunlukController $gunlukController,
         // V3-C Aşama 2.1: teklif turu + firma uçları (sahip tarafı).
         ?\App\Controllers\TeklifTuruController $teklifTuru = null,
+        // V3-C Aşama 2.2: firma yanıtı (yapıştır-ayrıştır + Excel gel-git).
+        ?\App\Controllers\TurYanitController $turYanit = null,
     ): void {
         // İE#19 G7 — AKTİVİTE DEFTERİ BİLEREK KAPI DIŞINDA.
         //
@@ -147,7 +149,7 @@ final class DataRoutes
             // güncelleme olduğunu anlayamıyordu.
             ->add(new MigrationGuard($connection, $migrationsDir, $responseFactory));
 
-        $app->group('/api', static function (RouteCollectorProxy $group) use ($listController, $productController, $trashController, $exportController, $shareController, $inboxController, $translationController, $teklifTuru): void {
+        $app->group('/api', static function (RouteCollectorProxy $group) use ($listController, $productController, $trashController, $exportController, $shareController, $inboxController, $translationController, $teklifTuru, $turYanit): void {
             // V3-C Aşama 2.1 — TEKLİF TURU (liste × firma × tur, K103). Her geçiş
             // kendi eylem ucudur; sahibin elle durum yazma yolu YOKTUR (VIEWED
             // bir gözlemdir). Tam token + anahtar yalnız gönderim yanıtında.
@@ -163,6 +165,19 @@ final class DataRoutes
                 $group->post('/turlar/{id}/onayla', [$teklifTuru, 'onayla']);
                 $group->post('/turlar/{id}/vazgec', [$teklifTuru, 'vazgec']);
                 $group->post('/turlar/{id}/revizyon', [$teklifTuru, 'revizyon']);
+            }
+
+            // V3-C Aşama 2.2 — FİRMA YANITI: yapıştır-ayrıştır + Excel gel-git.
+            // Önizleme uçları YAZMAZ; yazım yalnız `yanit-uygula` ile, parmak izi
+            // ile idempotent, tek transaction. Excel şablonu POST'tur (CSRF'li indirme,
+            // İE#11 Görev E kalıbı).
+            if ($turYanit !== null) {
+                $group->get('/turlar/{id}/yanit', [$turYanit, 'yanit']);
+                $group->post('/turlar/{id}/yapistir-ayristir', [$turYanit, 'yapistirAyristir']);
+                $group->post('/turlar/{id}/yanit-uygula', [$turYanit, 'uygula']);
+                $group->post('/turlar/{id}/excel-sablon', [$turYanit, 'excelSablon']);
+                $group->post('/turlar/{id}/excel-ice-aktar', [$turYanit, 'excelIceAktar']);
+                $group->post('/turlar/{id}/excel-sonuc', [$turYanit, 'excelSonuc']);
             }
 
             $group->get('/lists', [$listController, 'index']);

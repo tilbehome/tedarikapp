@@ -17,9 +17,13 @@ use RuntimeException;
  */
 final class TurIslemiReddedildi extends RuntimeException
 {
+    /**
+     * @param list<array<string, mixed>> $ayrintilar Satır bazlı hata listesi (V3-C 2.2 yanıt uygulama) — zarfın `meta.hatalar`ına gider.
+     */
     public function __construct(
         public readonly string $kod,
         string $mesaj,
+        public readonly array $ayrintilar = [],
     ) {
         parent::__construct($mesaj);
     }

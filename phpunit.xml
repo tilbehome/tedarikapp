@@ -62,6 +62,7 @@
             <file>tests/Http/RevisionSequenceTest.php</file>
             <file>tests/Http/ShareEndpointsTest.php</file>
             <file>tests/Http/TeklifTuruTest.php</file>
+            <file>tests/Http/TurYanitTest.php</file>
             <file>tests/Http/SistemListesiKorumasiTest.php</file>
             <file>tests/Http/TransactionIntegrityTest.php</file>
         </testsuite>

@@ -17,6 +17,11 @@ import type {
   TeklifTuru,
   TurGonderimSonucu,
   Firma,
+  TeklifTuruDurumu,
+  YanitSatiri,
+  YapistirOnizleme,
+  YanitUygulamaSonucu,
+  ExcelOnizleme,
 } from './types';
 
 /**
@@ -477,6 +482,15 @@ export const teklifler = {
   revizyon: (turId: number, body: { sebep: string; rate_policy?: 'inherit' | 'refresh' }) =>
     api.post<TeklifTuru>(`/api/turlar/${turId}/revizyon`, body),
   vazgec: (turId: number, body: { sebep?: string } = {}) => api.post<TeklifTuru>(`/api/turlar/${turId}/vazgec`, body),
+  // ── V3-C Aşama 2.2: firma yanıtı — ÖNİZLE (yazmaz) → UYGULA (parmak izi ile idempotent) ──
+  yanit: (turId: number) => api.get<{ tur_id: number; state: TeklifTuruDurumu; satirlar: Record<string, YanitSatiri> }>(`/api/turlar/${turId}/yanit`),
+  yapistirAyristir: (turId: number, metin: string) => api.post<YapistirOnizleme>(`/api/turlar/${turId}/yapistir-ayristir`, { metin }),
+  yanitUygula: (turId: number, body: { kaynak: 'yapistir' | 'excel'; parmak_izi: string; etiket?: string; satirlar: YanitSatiri[] }) =>
+    api.post<YanitUygulamaSonucu>(`/api/turlar/${turId}/yanit-uygula`, body),
+  /** Firmaya gidecek şablon (.xlsx) — mevcut taslak önceden dolu gelir. CSRF'li POST indirme. */
+  excelSablon: (turId: number, dil?: 'tr' | 'en' | 'zh') => api.postBlob(`/api/turlar/${turId}/excel-sablon`, dil ? { dil } : {}),
+  excelIceAktar: (turId: number, dosyaBase64: string) => api.post<ExcelOnizleme>(`/api/turlar/${turId}/excel-ice-aktar`, { dosya_base64: dosyaBase64 }),
+  excelSonuc: (turId: number, onizleme: ExcelOnizleme & { uygulanan?: string[] }) => api.postBlob(`/api/turlar/${turId}/excel-sonuc`, { onizleme }),
   gonderimGunlugu: (listId: number) =>
     api.get<{ id: number; supplier_round_id: number | null; kanal: string; alici: string | null; dil: string | null; token_prefix: string; created_at: string }[]>(
       `/api/lists/${listId}/gonderim-gunlugu`,

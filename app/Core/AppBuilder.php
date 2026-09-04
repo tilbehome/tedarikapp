@@ -339,6 +339,18 @@ final class AppBuilder
             $config,
         );
 
+        // V3-C Aşama 2.2: firma yanıtı — yapıştır-ayrıştır + Excel gel-git (önizle → uygula).
+        $satirImzasi = new \App\Services\Yanit\SatirImzasi((string) $config->get('APP_KEY', ''));
+        $turYanitController = new \App\Controllers\TurYanitController(
+            $teklifTuruDepo,
+            new \App\Services\Yanit\YanitUygulayici($connection, $teklifTuruDepo, new \App\Models\YanitRepository($connection), $services->activity),
+            new \App\Services\Yanit\YapistirAyristirici(),
+            new \App\Services\Yanit\ExcelSablonu($satirImzasi),
+            new \App\Services\Yanit\ExcelIceAktarici($satirImzasi, $basePath . '/storage/tmp'),
+            new \App\Services\Yanit\ExcelSonucDosyasi(),
+            $services->clock,
+        );
+
         // İE#11 Faz 3: eklenti uçları — Bearer + CORS allowlist + hız sınırı (ExtensionAuth).
         $inboxRepository = new \App\Models\InboxRepository($connection);
         $captureService = new \App\Services\CaptureService($connection, $lists, $products, $mediaService, $validator);
@@ -511,6 +523,8 @@ final class AppBuilder
             new \App\Controllers\GunlukController($connection, $services->timezone),
             // V3-C Aşama 2.1: teklif turu uçları.
             $teklifTuruController,
+            // V3-C Aşama 2.2: firma yanıtı uçları.
+            $turYanitController,
         );
 
         // Panel (İE#8 §5): Vite çıktısı public/panel/ altındadır. Var olan dosyaları

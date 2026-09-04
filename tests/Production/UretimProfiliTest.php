@@ -121,6 +121,12 @@ final class UretimProfiliTest extends AuthTestCase
             // hata kimliği gösterilir. Yazım K44 sınırı içindedir (yalnız storage/) ve
             // dizin yazılamıyorsa sessizce atlanır — hata sayfası yine gösterilir.
             'public/index.php',
+            // V3-C Aşama 2.2: firmadan dönen Excel'in içe aktarımı. PhpSpreadsheet okuyucusu
+            // ZipArchive üzerinden çalışır ve yalnız DOSYA YOLU kabul eder (bellek akışı yok);
+            // gövde storage/tmp altına rastgele adla yazılır, okuma biter bitmez silinir
+            // (finally). Yazım K44 sınırı içindedir (storage/, web'den kapalı); dizin
+            // yazılamıyorsa içe aktarım net hatayla durur, sessiz atlama yoktur.
+            'app/Services/Yanit/ExcelIceAktarici.php',
         ];
         $pattern = '/(?<![>\w$:])(?<!function )(file_put_contents|fwrite|mkdir|tempnam|touch)\s*\(|(?<![>\w$:])fopen\s*\([^)]*,\s*[\'"][waxc]/';
 

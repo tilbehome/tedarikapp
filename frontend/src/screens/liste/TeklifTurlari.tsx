@@ -6,6 +6,7 @@ import { messageOf, useAsync } from '../../lib/useAsync';
 import { dateTime } from '../../lib/format';
 import { useToast } from '../../components/Toast';
 import { ErrorNote, Skeleton } from '../../components/ui';
+import TurYanitPaneli from './TurYanitPaneli';
 
 /**
  * LİSTE DETAYI › TEKLİF TURLARI (V3-C Aşama 2.1).
@@ -310,6 +311,12 @@ function TurSatiri({
             {gonderim.satir_sayisi ? ` ${gonderim.satir_sayisi} satır donduruldu.` : ''}
           </p>
         </div>
+      ) : null}
+
+      {/* V3-C Aşama 2.2: firma yanıtı — yapıştır-ayrıştır + Excel gel-git. Yalnız yanıt
+          kabul eden durumlarda (SENT/VIEWED/PRICING); kilitli turda sunucu zaten reddeder. */}
+      {tur.state === 'SENT' || tur.state === 'VIEWED' || tur.state === 'PRICING' ? (
+        <TurYanitPaneli tur={tur} onDegisti={onDegisti} onBilgi={onBilgi} onHata={onHata} />
       ) : null}
 
       {revizyonAcik ? (

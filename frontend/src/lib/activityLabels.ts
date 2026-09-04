@@ -21,6 +21,7 @@ const labels: Record<string, string> = {
   remember_theft: 'Şüpheli hatırlama kaydı iptal edildi',
   remember_revoked: 'Cihaz oturumu kapatıldı',
   round_drafted: 'Teklif turu taslağı açıldı',
+  quote_imported: 'Firma yanıtı panelden uygulandı (yapıştır/Excel)',
   round_sent: 'Teklif turu firmaya gönderildi',
   round_approved: 'Teklif onaylandı',
   round_abandoned: 'Teklif turundan vazgeçildi',
