@@ -47,6 +47,13 @@ final class JobQueue
     public const OLU = 'olu';
 
     /**
+     * `hata_sinifi` değeri: iş ERTELENDİ (v1.2.2 D6). Hata sınıfı değil,
+     * "koşullar uygun değildi" kaydıdır — panelde ayrı sayılır, deneme
+     * hakkı yakmaz.
+     */
+    public const SINIF_ERTELENDI = 'ertelendi';
+
+    /**
      * Bir işleyicinin işi elinde tutabileceği azami süre; sonrasında iş geri alınır.
      *
      * D9-KESİN (25 Ağu 2026): 900 sn (15 dk) SAHADA ÇOK UZUNDU. Cron beş dakikada
@@ -270,8 +277,10 @@ final class JobQueue
      * Sıradaki işi SAHİPLENİR. Yoksa null.
      *
      * @return array<string, mixed>|null
+     * @param list<string> $haricTurler D6 — devre kesicisi AÇIK türler; bu turda
+     *                                  alınmazlar (diğer türler akmaya devam eder)
      */
-    public function sahiplen(string $isleyiciKimligi, DateTimeImmutable $now): ?array
+    public function sahiplen(string $isleyiciKimligi, DateTimeImmutable $now, array $haricTurler = []): ?array
     {
         $pdo = $this->connection->pdo();
         $zaman = Dates::toStorage($now);
@@ -301,6 +310,15 @@ final class JobQueue
         $sira->execute($this->alinabilirParametreleri($zaman));
         /** @var list<array<string, mixed>> $turler */
         $turler = $sira->fetchAll();
+        // D6: kesicisi açık tür ADAY BİLE OLMAZ. Filtre SQL'de değil burada:
+        // dinamik IN listesi yer tutucu disiplinini karmaşıklaştırırdı ve tür
+        // sayısı bir elin parmaklarını geçmez.
+        if ($haricTurler !== []) {
+            $turler = array_values(array_filter(
+                $turler,
+                static fn (array $satir): bool => !in_array((string) $satir['tur'], $haricTurler, true),
+            ));
+        }
         if ($turler === []) {
             $this->sonSecimNedeni = self::SECIM_BOS;
 
@@ -640,6 +658,88 @@ final class JobQueue
     }
 
     /**
+     * DEVRE KESİCİ AÇILDI — denetim izi + bildirim (v1.2.2 D6).
+     *
+     * Bildirim kataloğu 37 olayla KİLİTLİDİR (K99/K102 bekçisi); yeni olay
+     * kodu PM kararı ister. Bu yüzden en yakın mevcut olay kullanılır:
+     * `NTF-QUEUE-STALLED` — "kuyruk ilerlemiyor". Kesici tam olarak bunu
+     * söyler: o tür 15 dakika ilerlemeyecek. Bağlam kesici bilgisini taşır;
+     * kendine ait bir olay kodu PM onayıyla gelirse tek satır değişir.
+     *
+     * @param array<string, mixed> $durum
+     */
+    public function devreKesiciAcildi(string $tur, array $durum, DateTimeImmutable $now): void
+    {
+        $this->duyurDenetimli(
+            'NTF-QUEUE-STALLED',
+            0,
+            'circuit_open',
+            sprintf(
+                '%s işleri için devre kesici açıldı: art arda %d geçici hata; %d dakika yeni iş alınmayacak (kapanış %s)',
+                $tur,
+                (int) ($durum['esik'] ?? 0),
+                (int) ($durum['dakika'] ?? 0),
+                (string) ($durum['kapanma_at'] ?? '?'),
+            ),
+            $now,
+            [
+                'bekleme_dakika' => (int) ($durum['dakika'] ?? 0),
+                'bekleyen' => $this->turdekiBekleyen($tur),
+                'is_turu' => $tur,
+                'devre_kesici' => true,
+            ],
+        );
+    }
+
+    private function turdekiBekleyen(string $tur): int
+    {
+        $statement = $this->connection->pdo()->prepare('SELECT COUNT(*) FROM jobs WHERE tur = :tur AND durum = :durum');
+        $statement->execute(['tur' => $tur, 'durum' => self::BEKLIYOR]);
+
+        return (int) $statement->fetchColumn();
+    }
+
+    /**
+     * İŞİ ERTELER — deneme hakkı YAKMADAN, sahiplik denetimiyle (v1.2.2 D6).
+     *
+     * Erteleme bir hata değildir: bellek bütçesi doldu, kalan iş sonraki
+     * tura kaldı. `basarisiz()`tan üç farkı var:
+     *   1. `deneme` GERİ ALINIR (sahiplenmede artmıştı) — üç tur üst üste
+     *      ertelenen iş ölü rafına düşmez,
+     *   2. `hata_sinifi` = `ertelendi` — panel bunu hata oranına katmaz,
+     *   3. yeniden deneme bildirimi DOĞMAZ — bildirim merkezi, olmayan bir
+     *      arızayla dolmaz.
+     *
+     * Yazım yine TEK CAS'tır: kirası devralınmış işleyici erteleme de yazamaz.
+     *
+     * @throws KiraKaybedildi kira artık bu işleyicinin değilse
+     */
+    public function ertele(int $id, string $token, DateTimeImmutable $now, string $sebep, int $saniye): void
+    {
+        $statement = $this->connection->pdo()->prepare(
+            'UPDATE jobs SET durum = :durum, hata = :hata, hata_sinifi = :sinif, kilit_sahibi = NULL,
+                    kilit_token = NULL, kilitlendi_at = NULL, kilit_bitis = NULL,
+                    deneme = CASE WHEN deneme > 0 THEN deneme - 1 ELSE 0 END,
+                    calisacak_at = :sonra, updated_at = :simdi
+             WHERE id = :id AND durum = :calisiyor AND kilit_token = :token',
+        );
+        $statement->execute([
+            'durum' => self::BEKLIYOR,
+            'hata' => mb_substr($sebep, 0, 2000),
+            'sinif' => self::SINIF_ERTELENDI,
+            'sonra' => Dates::toStorage($now->modify('+' . max(1, $saniye) . ' seconds')),
+            'simdi' => Dates::toStorage($now),
+            'id' => $id,
+            'calisiyor' => self::CALISIYOR,
+            'token' => $token,
+        ]);
+
+        if ($statement->rowCount() !== 1) {
+            throw new KiraKaybedildi($id, 'ertele');
+        }
+    }
+
+    /**
      * BAŞARISIZ İŞ — TEK CAS YAZIMI (v1.2.1 A1).
      *
      * Deneme hakkı varsa GERİ BIRAKILIR (artan bekleme), yoksa ÖLÜ RAFINA.
@@ -891,7 +991,7 @@ final class JobQueue
      *     alinabilir: int, ileri_tarihli: int, en_yakin_calisacak_dakika: int|null,
      *     turler: array<string, int>, saatlik_biten: int, saatlik_olen: int,
      *     hata_orani_yuzde: int, yeniden_denenen: int
-     * }
+     * , ertelenen: int}
      */
     public function saglik(DateTimeImmutable $now): array
     {
@@ -949,10 +1049,16 @@ final class JobQueue
         // Yeniden denemeye düşmüş (hatalı ama hâlâ hayatta) işler de hata oranına
         // girer: yalnız ölenlere bakmak, üç kez patlayıp dördüncüde tutan bir
         // sağlayıcıyı "sağlıklı" gösterirdi.
+        // D6: ertelenen iş HATALI DEĞİLDİR; "yeniden denenen" sayısına girmez,
+        // kendi sayısıyla görünür. İkisini karıştırmak, bellek bütçesinin
+        // dolduğu bir geceyi "sağlayıcı arızası" gibi gösterirdi.
         $bekleyenHatali = $pdo->prepare(
-            'SELECT COUNT(*) FROM jobs WHERE durum = :durum AND hata IS NOT NULL',
+            'SELECT COUNT(*) FROM jobs WHERE durum = :durum AND hata IS NOT NULL AND (hata_sinifi IS NULL OR hata_sinifi <> :ertelendi)',
         );
-        $bekleyenHatali->execute(['durum' => self::BEKLIYOR]);
+        $bekleyenHatali->execute(['durum' => self::BEKLIYOR, 'ertelendi' => self::SINIF_ERTELENDI]);
+
+        $ertelenen = $pdo->prepare('SELECT COUNT(*) FROM jobs WHERE durum = :durum AND hata_sinifi = :ertelendi');
+        $ertelenen->execute(['durum' => self::BEKLIYOR, 'ertelendi' => self::SINIF_ERTELENDI]);
 
         $ileri = $this->ileriTarihliler($now);
 
@@ -974,6 +1080,8 @@ final class JobQueue
                 ? (int) round($olenSaatlik / $toplamSaatlik * 100)
                 : 0,
             'yeniden_denenen' => (int) $bekleyenHatali->fetchColumn(),
+            // D6: bütçe/koşul yüzünden sonraki tura kalan işler.
+            'ertelenen' => (int) $ertelenen->fetchColumn(),
         ];
     }
 

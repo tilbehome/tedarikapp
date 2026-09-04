@@ -68,6 +68,7 @@ const labels: Record<string, string> = {
   migrate_baseline: 'Veritabanı defteri gerçeğe eşitlendi',
   app_key_revealed: 'Kurtarma anahtarı görüntülendi',
   app_key_reveal_failed: 'Kurtarma anahtarı: şifre doğrulanamadı',
+  circuit_open: 'Devre kesici açıldı (art arda geçici hata)',
   backup_created: 'Yedek alındı',
   media_migrate: 'Görseller arşive taşındı',
   media_check: 'Görsel bütünlüğü denetlendi',

@@ -158,10 +158,19 @@ final class AppBuilder
         // A3: HTTP kompozisyonunda da SAAT taşınır — panel ziyaretinde açılan
         // tur da uzun sürebilir ve her geçiş kendi anını okumalıdır.
         $kuyruk = new \App\Services\Kuyruk\JobQueue($connection, $services->bildirim);
+        // D6: devre kesici — tür bazlı, ayarlar tablosunda; panel turu da cron
+        // turu da AYNI kesiciyi görür (süreç belleğinde olsaydı her tur sıfırlanırdı).
+        $devreKesici = new \App\Services\Kuyruk\DevreKesici(
+            $settingsRepository,
+            $services->clock,
+            esik: $config->getPositiveInt('KUYRUK_DEVRE_KESICI_ESIK', 5),
+            dakika: $config->getPositiveInt('KUYRUK_DEVRE_KESICI_DAKIKA', 15),
+        );
         $kuyrukKosucusu = new \App\Services\Kuyruk\JobRunner(
             $kuyruk,
             $logger,
             saat: $services->clock,
+            devreKesici: $devreKesici,
         );
         \App\Services\Kuyruk\KuyrukIsleyicileri::kaydet(
             $kuyrukKosucusu,
@@ -504,6 +513,8 @@ final class AppBuilder
             ),
             new \App\Controllers\SurumNotuController($settingsRepository, $basePath),
             new \App\Controllers\GunlukController($connection, $services->timezone),
+            // v1.2.2 D2: K47 görsel vekili.
+            new \App\Controllers\MediaProxyController($mediaService),
         );
 
         // Panel (İE#8 §5): Vite çıktısı public/panel/ altındadır. Var olan dosyaları

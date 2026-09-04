@@ -238,9 +238,16 @@ interface GaleriKaresi {
 }
 
 function Galeri({ urun }: { urun: Product }) {
+  // D2: ana görsel UZAKSA vekil adresinden çizilir (alicdn Referer ACL'i
+  // tarayıcıda boş kare bırakır); rozet "uzak" der. Yerel görsel doğrudan.
   const gorseller: GaleriKaresi[] = [
     ...(typeof urun.main_image === 'string' && urun.main_image !== ''
-      ? [{ adres: urun.main_image, uzak: urun.main_image.startsWith('http') }]
+      ? [
+          {
+            adres: urun.main_image_gosterim ?? urun.main_image,
+            uzak: urun.main_image_uzak ?? urun.main_image.startsWith('http'),
+          },
+        ]
       : []),
     ...urun.images
       .filter((gorsel) => gorsel.url !== '')
@@ -271,12 +278,24 @@ function Galeri({ urun }: { urun: Product }) {
           Görsel yüklenemedi
         </div>
       ) : (
-        <img
-          src={gosterilen.adres}
-          alt=""
-          onError={() => setHatali((onceki) => ({ ...onceki, [gosterilen.adres]: true }))}
-          className="h-48 w-full rounded-xl border border-line object-contain"
-        />
+        <div className="relative">
+          <img
+            src={gosterilen.adres}
+            alt=""
+            onError={() => setHatali((onceki) => ({ ...onceki, [gosterilen.adres]: true }))}
+            className="h-48 w-full rounded-xl border border-line object-contain"
+          />
+          {/* D2: YEREL / UZAK rozeti — kullanıcı görselin nereden geldiğini bilir. */}
+          <span
+            className={`absolute right-2 top-2 rounded px-1.5 py-0.5 text-[10px] font-medium ${
+              gosterilen.uzak ? 'bg-warn-soft text-warn' : 'bg-ok-bg text-ok'
+            }`}
+            data-testid="galeri-rozet"
+            title={gosterilen.uzak ? 'Kaynak siteden (vekil) gösteriliyor; arşive alınınca yerel olacak.' : 'Arşivde (kendi sunucumuzda).'}
+          >
+            {gosterilen.uzak ? 'uzak' : 'yerel'}
+          </span>
+        </div>
       )}
       {gorseller.length > 1 ? (
         <div className="mt-2 flex gap-2 overflow-x-auto">
@@ -313,8 +332,8 @@ function Galeri({ urun }: { urun: Product }) {
       </p>
       {bekleyen > 0 ? (
         <p className="mt-1 text-xs text-warn" data-testid="galeri-uzak">
-          {count(bekleyen)} görsel henüz arşive alınmadı — kaynak siteden gösteriliyor, birkaç
-          dakika içinde indirilecek.
+          {count(bekleyen)} görsel henüz arşive alınmadı — kaynak siteden gösteriliyor
+          {urun.media_pending ? ', indirme kuyrukta bekliyor' : ''}.
         </p>
       ) : null}
     </div>

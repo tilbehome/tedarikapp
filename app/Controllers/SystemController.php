@@ -610,6 +610,9 @@ final class SystemController
             'saatlik_olen' => $saglik['saatlik_olen'],
             'hata_orani_yuzde' => $saglik['hata_orani_yuzde'],
             'yeniden_denenen' => $saglik['yeniden_denenen'],
+            // D6: ertelenen (bütçe/koşul) ayrı sayı; devre kesici durumu.
+            'ertelenen' => $saglik['ertelenen'],
+            'devre_kesici' => $this->acikDevreKesici(),
             // Cron koşmuyorsa bekleyen iş yaşlanır; eşik geçilince panel uyarır.
             'uyari' => $this->kuyrukUyarisi($saglik),
         ]);
@@ -620,6 +623,17 @@ final class SystemController
      */
     private function kuyrukUyarisi(array $saglik): ?string
     {
+        // D6: kesici açıksa en önce o söylenir — diğer uyarılar onun sonucudur.
+        $kesici = $this->acikDevreKesici();
+        if ($kesici !== null) {
+            return sprintf(
+                '%s işleri için devre kesici açık: art arda %d geçici hata alındı, %s\'e kadar yeni iş alınmayacak. '
+                . 'Kaynak site ya da ağ erişimi sorunlu olabilir; kesici kendiliğinden kapanır.',
+                $kesici['tur'],
+                $kesici['esik'],
+                (string) $kesici['kapanma_at'],
+            );
+        }
         if ((int) $saglik['olu'] > 0) {
             return $saglik['olu'] . ' iş kalıcı olarak başarısız oldu (ölü raf). Hatalarını inceleyip yeniden deneyin.';
         }
@@ -873,7 +887,49 @@ final class SystemController
             // panel kartı GİZLER — sıfır gösteren uyarı bir süre sonra okunmaz
             // hâle gelir ve gerçek uyarıyı da görünmez kılar.
             'sozluksuz_ceviri' => $this->sozluksuzSayisi(),
+            // D6: devre kesici açıksa Sistem durumu'nda UYARI. Açık değilken null —
+            // "kapalı" diye bir satır göstermek, sıfır gösteren sayaç gibi bir
+            // süre sonra okunmaz olurdu.
+            'kuyruk_devre_kesici' => $this->acikDevreKesici(),
         ]);
+    }
+
+    /**
+     * Şu an AÇIK olan devre kesici (varsa) — tür + kapanış zamanı.
+     *
+     * Türler işleyici kataloğundan alınır; ayarlar tablosunda başka tür
+     * anahtarı olsa da yalnız bilinenler sorulur.
+     *
+     * @return array{tur: string, kapanma_at: string|null, esik: int, dakika: int}|null
+     */
+    private function acikDevreKesici(): ?array
+    {
+        if ($this->appConfig === null) {
+            return null;
+        }
+
+        try {
+            $kesici = new \App\Services\Kuyruk\DevreKesici(
+                new \App\Models\SettingsRepository($this->connection),
+                $this->clock,
+                esik: $this->appConfig->getPositiveInt('KUYRUK_DEVRE_KESICI_ESIK', 5),
+                dakika: $this->appConfig->getPositiveInt('KUYRUK_DEVRE_KESICI_DAKIKA', 15),
+            );
+            foreach ([
+                \App\Services\Kuyruk\KuyrukIsleyicileri::TUR_MEDYA,
+                \App\Services\Kuyruk\KuyrukIsleyicileri::TUR_CEVIRI,
+                \App\Services\Kuyruk\KuyrukIsleyicileri::TUR_SKOR,
+            ] as $tur) {
+                $durum = $kesici->durum($tur);
+                if ($durum['acik']) {
+                    return ['tur' => $tur, 'kapanma_at' => $durum['kapanma_at'], 'esik' => $durum['esik'], 'dakika' => $durum['dakika']];
+                }
+            }
+        } catch (Throwable) {
+            // Ayarlar tablosu yoksa kesici de yoktur.
+        }
+
+        return null;
     }
 
     /**

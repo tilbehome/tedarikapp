@@ -77,6 +77,15 @@ export default function KuyrukDurumu() {
             />
           </div>
 
+          {/* D6: ERTELENEN ≠ BAŞARISIZ. Bellek bütçesi dolduğu için sonraki tura
+              kalan iş hata yapmamıştır; onu hata oranına katmak, bütçenin dolduğu
+              bir geceyi "sağlayıcı arızası" gibi gösterirdi. */}
+          {(veri.ertelenen ?? 0) > 0 ? (
+            <p className="mt-2 text-xs text-ink-3" data-testid="kuyruk-ertelenen">
+              {veri.ertelenen} iş ertelendi (bellek bütçesi / koşul) — hata değil, sonraki turda kaldığı yerden sürer.
+            </p>
+          ) : null}
+
           {veri.uyari ? (
             <p className="mt-3 flex items-start gap-2 rounded-lg bg-warn-bg p-2 text-xs text-warn">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />

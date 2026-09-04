@@ -97,7 +97,14 @@ try {
         exit(0);
     }
 
-    $kosucu = new JobRunner($kuyruk, $logger, $sure, saat: $saat);
+    // D6: cron turu da devre kesiciyi görür — ayarlar tablosundan okur.
+    $devreKesici = new \App\Services\Kuyruk\DevreKesici(
+        new \App\Models\SettingsRepository($connection),
+        $saat,
+        esik: $config->getPositiveInt('KUYRUK_DEVRE_KESICI_ESIK', 5),
+        dakika: $config->getPositiveInt('KUYRUK_DEVRE_KESICI_DAKIKA', 15),
+    );
+    $kosucu = new JobRunner($kuyruk, $logger, $sure, saat: $saat, devreKesici: $devreKesici);
     KuyrukIsleyicileri::kaydet($kosucu, $config, $connection, $logger, $basePath);
 
     // TUR YARIDA KESİLİRSE İŞ ASILI KALMASIN (D9-KESİN, 25 Ağu 2026).
@@ -136,14 +143,21 @@ try {
 
     $sonuc = $kosucu->kos($now);
 
+    // D6: ertelenen ve zirve bellek raporda — bütçenin doğru ayarlanıp
+    // ayarlanmadığı ancak ölçülürse bilinir.
     printf(
-        "KUYRUK TURU: %d iş · %d başarılı · %d başarısız · %.1f sn · duruş: %s\n",
+        "KUYRUK TURU: %d iş · %d başarılı · %d başarısız · %d ertelenen · %.1f sn · zirve bellek %.1f MB · duruş: %s\n",
         $sonuc['islenen'],
         $sonuc['basarili'],
         $sonuc['basarisiz'],
+        $sonuc['ertelenen'],
         $sonuc['sure'],
+        $sonuc['bellek_zirve_mb'],
         $sonuc['durma_nedeni'],
     );
+    if ($sonuc['atlanan_turler'] !== []) {
+        printf("DEVRE KESİCİ AÇIK: %s — bu türlerde yeni iş alınmadı.\n", implode(', ', $sonuc['atlanan_turler']));
+    }
 
     // Biten işler 7 günden sonra temizlenir; ölü işler DURUR (arıza kaydıdır).
     $temizlenen = $kuyruk->temizle($now);

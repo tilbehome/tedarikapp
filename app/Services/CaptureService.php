@@ -122,11 +122,24 @@ final class CaptureService
     }
 
     /**
-     * MEDYA HAZIRLIĞI — AĞ İŞİ, TRANSACTION DIŞINDA (İE#19 G6).
+     * MEDYA HAZIRLIĞI — YAKALAMA SIRASINDA İNDİRME YOK (v1.2.2 D1).
      *
-     * Görsel indirme saniyeler sürebilir; bunu transaction içine almak satır
-     * kilitlerini ağ süresince tutar ve paylaşımlı hostingde kilit zaman aşımı
-     * üretir. Bu yüzden ağ ÖNCE koşar, DB yazımı sonra tek atomik blokta yapılır.
+     * ESKİ HÂL (İE#19 G6): ana görsel yakalama isteği içinde indiriliyordu —
+     * transaction dışında ama İSTEK içinde. alicdn ~7,5 sn yanıt veriyor;
+     * eklenti "kaydediliyor…" derken kullanıcı bekliyor, zaman aşımında istek
+     * 25 sn'ye uzuyordu. Galeri zaten kuyruğa gidiyordu; ana görselin
+     * gitmemesi tutarsızdı ve her yakalamayı ağ hızına bağlıyordu.
+     *
+     * YENİ HÂL: hiçbir görsel indirilmez. Ana görsel KAYNAK adresiyle yazılır
+     * (`main_image` = kaynak URL, `main_image_source` = aynı); medya işi kuyruğa
+     * girer (`CaptureApplier::medyaIsiYaz`) ve tur, ana görseli + galeriyi
+     * indirip mevcut satır CAS'ıyla (`MediaMigrator::anaGorseliYaz`,
+     * `WHERE main_image = :eski`) sonlandırır. Panel bekleme süresince görseli
+     * K47 vekiliyle gösterir ve "uzak" der.
+     *
+     * SSRF DENETİMİ KALIR: adres beyaz listeden geçmezse ürün yine reddedilir
+     * — indirmemek, adresi denetlememek demek değildir; o adres kuyruğa ve
+     * vekile gidecek.
      *
      * @param array<string, mixed> $payload
      *
@@ -146,17 +159,12 @@ final class CaptureService
         if ($images !== []) {
             $mainSource = array_shift($images);
             try {
-                // E7: ertelenmiş yazım — dosya `.tmp` adında bekler, kalıcı ada
-                // ancak ürün satırı COMMIT olunca taşınır (yetim medya yok).
-                $stored = $this->media->store($mainSource, ertele: true);
-                $mainImage = $stored['url'];
-                $temp = $stored['temp'] ?? null;
-                $path = $stored['path'];
+                $this->media->assertAllowed($mainSource);
             } catch (MediaDeniedException $e) {
                 throw new CaptureException('Görsel adresi reddedildi: ' . $e->getMessage());
-            } catch (MediaException) {
-                $mainImage = $mainSource; // K47 dayanıklılığı: indirme hatası kaydı bozmaz — remote kalır
             }
+            // D1: indirme YOK — kaynak adres yazılır, kuyruk indirir.
+            $mainImage = $mainSource;
         }
 
         return [

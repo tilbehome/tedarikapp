@@ -220,6 +220,35 @@ class MediaService
     }
 
     /**
+     * K47 VEKİLİ İÇİN GETİRİR — indirme hattıyla AYNI denetimler, diske yazmaz (D2).
+     *
+     * Sıra `store()` ile birebir: beyaz liste + DNS pinleme (guard), indirme
+     * (boyut sınırı fetcher'da), yönlendirme sonrası adres denetimi, GERÇEK
+     * görsel imzası. Yeniden kodlama YAPILMAZ: vekil bir "geçici gösterim"dir,
+     * her istekte GD çalıştırmak paylaşımlı hostingde gereksiz yüktür; imza
+     * denetimi tarayıcıya görsel dışı içerik gitmemesini zaten garanti eder.
+     *
+     * @return array{body: string, mime: string}
+     *
+     * @throws MediaDeniedException beyaz liste / güvenlik reddi
+     * @throws MediaException      ağ hatası ya da görsel olmayan içerik
+     */
+    public function vekilGetir(string $url): array
+    {
+        $this->guard->assertAllowed($url);
+
+        $fetched = $this->fetcher->fetch($url, $this->maxBytes);
+        if ($fetched['final_url'] !== $url) {
+            $this->guard->assertAllowed($fetched['final_url']);
+        }
+
+        $uzanti = $this->assertImage($fetched['body'], $fetched['content_type']);
+        $mime = (string) array_search($uzanti, self::ALLOWED_MIME, true);
+
+        return ['body' => $fetched['body'], 'mime' => $mime !== '' ? $mime : 'image/jpeg'];
+    }
+
+    /**
      * Diskteki göreli yolu tarayıcının göreceği adrese çevirir.
      *
      * Dosya `<kök>/public/media/…` altında durur ama Apache'nin docroot'u `public/`tir;

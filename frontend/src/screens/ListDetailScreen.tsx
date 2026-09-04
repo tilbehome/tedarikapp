@@ -514,7 +514,9 @@ function Row({ label, value, strong }: { label: string; value: string; strong?: 
 function Thumb({ product, onChanged }: { product: Product; onChanged?: () => void }) {
   const [broken, setBroken] = useState(false);
   const [retrying, setRetrying] = useState(false);
-  const source = product.main_image ?? product.images[0]?.url ?? null;
+  // D2: uzak ana görsel vekilden çizilir; yerelse doğrudan.
+  const source = product.main_image_gosterim ?? product.main_image ?? product.images[0]?.url ?? null;
+  const uzak = product.main_image_uzak === true;
   if (!source) {
     return <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-g100 text-xs text-ink-3">—</span>;
   }
@@ -550,13 +552,23 @@ function Thumb({ product, onChanged }: { product: Product; onChanged?: () => voi
   }
 
   return (
-    <img
-      src={source}
-      alt=""
-      loading="lazy"
-      onError={() => setBroken(true)}
-      className="h-14 w-14 shrink-0 rounded-xl border border-line object-cover"
-    />
+    <span className="relative inline-block shrink-0" title={uzak ? 'Uzak görsel — kuyruk arşive alacak' : 'Yerel görsel'}>
+      <img
+        src={source}
+        alt=""
+        loading="lazy"
+        onError={() => setBroken(true)}
+        className="h-14 w-14 shrink-0 rounded-xl border border-line object-cover"
+      />
+      {uzak ? (
+        <span
+          className="absolute -right-1 -top-1 rounded bg-warn-soft px-1 text-[9px] font-medium text-warn"
+          data-testid="thumb-uzak"
+        >
+          uzak
+        </span>
+      ) : null}
+    </span>
   );
 }
 

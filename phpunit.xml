@@ -39,6 +39,7 @@
             <file>tests/Http/ListDuplicateNamingTest.php</file>
             <file>tests/Http/LoginVitrinTest.php</file>
             <file>tests/Http/MediaArchiveEndpointsTest.php</file>
+            <file>tests/Http/MedyaProxyTest.php</file>
             <file>tests/Http/PanelSupportEndpointsTest.php</file>
             <file>tests/Http/PaylasimFirmaGorunumuTest.php</file>
             <file>tests/Http/SetupTeshisTest.php</file>
@@ -66,6 +67,7 @@
         </testsuite>
         <testsuite name="http-3">
             <file>tests/Http/CaptureEndpointsTest.php</file>
+            <file>tests/Http/YakalamaMedyaKuyruguTest.php</file>
             <file>tests/Http/DesteModuTest.php</file>
             <file>tests/Http/ErisimAnahtariTest.php</file>
             <file>tests/Http/GaleriGorselleriTest.php</file>

@@ -217,11 +217,16 @@ final class KuyrukIsleyicileri
             // A4: eksik görsel kalırsa `urununMedyasi()` MedyaEksik atar; iş
             // BİTMİŞ sayılmaz. Geçici hatada kuyruk yeniden dener ve ikinci tur
             // yalnız eksikleri indirir (inenler artık `local`).
+            // D6: İŞÇİ BAŞINA BELLEK BÜTÇESİ. Bütçe dolunca kalan görseller sonraki
+            // tura kalır ve iş ERTELENİR (hata değil, deneme hakkı yakmaz).
+            // Sınıra çarpıp ölmek yerine sınırdan önce durmak: ölen süreç iz
+            // bırakmaz, duran süreç "ertelendi" der.
             (new MediaMigrator($connection, $medya))->urununMedyasi(
                 $urunId,
                 kontrol: $baglam === null ? null : static function () use ($baglam, $clock): void {
                     $baglam->kontrolNoktasi($clock->now());
                 },
+                butce: BellekButcesi::megabayttan($config->getPositiveInt('KUYRUK_BELLEK_BUTCESI_MB', 64)),
             );
         });
     }

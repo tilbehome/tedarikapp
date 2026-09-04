@@ -204,6 +204,10 @@ export interface KuyrukDurumuVerisi {
   saatlik_olen?: number;
   hata_orani_yuzde?: number;
   yeniden_denenen?: number;
+  /** v1.2.2 D6: bütçe/koşul yüzünden sonraki tura kalan işler — hata DEĞİL. */
+  ertelenen?: number;
+  /** v1.2.2 D6: açık devre kesici (varsa). */
+  devre_kesici?: { tur: string; kapanma_at: string | null; esik: number; dakika: number } | null;
   olu_isler: {
     id: number;
     tur: string;

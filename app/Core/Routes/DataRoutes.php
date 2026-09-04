@@ -63,6 +63,8 @@ final class DataRoutes
         \App\Controllers\SurumNotuController $surumNotuController,
         // V3-B F2: panel içi günlük görüntüleyici (Ayarlar > 16).
         \App\Controllers\GunlukController $gunlukController,
+        // v1.2.2 D2: K47 görsel vekili — uzak görsel, kuyruk indirene kadar buradan çizilir.
+        ?\App\Controllers\MediaProxyController $mediaProxyController = null,
     ): void {
         // İE#19 G7 — AKTİVİTE DEFTERİ BİLEREK KAPI DIŞINDA.
         //
@@ -145,7 +147,13 @@ final class DataRoutes
             // güncelleme olduğunu anlayamıyordu.
             ->add(new MigrationGuard($connection, $migrationsDir, $responseFactory));
 
-        $app->group('/api', static function (RouteCollectorProxy $group) use ($listController, $productController, $trashController, $exportController, $shareController, $inboxController, $translationController): void {
+        $app->group('/api', static function (RouteCollectorProxy $group) use ($listController, $productController, $trashController, $exportController, $shareController, $inboxController, $translationController, $mediaProxyController): void {
+            // v1.2.2 D2: K47 vekili — GET, CSRF muaf, Auth ZORUNLU (grup ara katmanı).
+            // Yalnız MEDIA_ALLOWED_HOSTS; gerçek görsel şartı (bkz. MediaProxyController).
+            if ($mediaProxyController !== null) {
+                $group->get('/media/proxy', [$mediaProxyController, 'proxy']);
+            }
+
             $group->get('/lists', [$listController, 'index']);
             $group->post('/lists', [$listController, 'store']);
             $group->get('/lists/{id}', [$listController, 'show']);
