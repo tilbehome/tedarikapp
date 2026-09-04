@@ -55,3 +55,15 @@ Bu dosya Claude Code için bağlayıcıdır. Her oturumda geçerlidir, iş emirl
   değişen alanın süitleri + PHPStan/CS-Fixer (+ frontend değiştiyse tsc/eslint) koşulur.
   Tam süit doğrulaması CI'nın işidir: push → PR → 5 job. CI kırmızı çıkarsa düzeltme
   commit'i atılır — bu kabul edilmiş bir risktir.
+
+## 8. Karar Noktalarında Durma (PM kuralı, 4 Eyl 2026)
+- HİÇBİR İŞ İÇİN ONAY BEKLENMEZ. PM hükmü gerektiren bir nokta çıkarsa:
+  a) Kayıtlı kararlarla (docs/08, yol haritası, K numaraları, PM hükümleri) en uyumlu ve en az
+     geri alınamaz seçenek uygulanır — veri silme / şema kaldırma / dış servise yazma gerektiren seçenek ASLA.
+  b) docs/08'e "SAPMA-ADAY: <konu> — uygulanan: X — PM onayı bekliyor" satırı yazılır.
+  c) Devam edilir; soru ve uygulanan seçenek raporun "PM'e sorular" bölümüne konur.
+- Bir madde gerçekten yapılamıyorsa (kaynak dosya yok, dış erişim yok) o madde atlanır, raporda
+  "YAPILAMADI: neden" yazılır, sonraki maddeye geçilir. Tüm emir durdurulmaz.
+- Merge / push / CI gibi komutlar izin ayarıyla serbesttir: sorulmaz, koşturulur, sonuç raporlanır.
+- Tek istisna: canlı sunucuya yazan işlem (kurulum, paket kurma) — emirle gelir; emirde yoksa yapılmaz.
+- Emir bitince raporlanır; rapor gelene kadar sohbette ara mesaj yazılmaz.
