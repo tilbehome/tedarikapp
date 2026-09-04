@@ -10,6 +10,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
+use Slim\Psr7\Factory\StreamFactory;
 
 /**
  * API yalnızca JSON konuşur (docs/10 §1).
@@ -59,6 +60,11 @@ final class JsonRequest implements MiddlewareInterface
         if (!in_array(strtoupper($request->getMethod()), self::WRITE_METHODS, true)) {
             return $handler->handle($request);
         }
+        // v1.2.1 D7: boyutu bilinmeyen gövde ÖNCE sınırlı okunur ve isteğe
+        // GERİ VERİLİR; sonra normal denetim işler. Sıra böyle olmak zorunda,
+        // yoksa denetim koruduğu isteği tüketir.
+        $request = $this->govdeyiOlculebilirYap($request);
+
         $asim = $this->govdeSiniriAsildi($request);
         if ($asim !== null) {
             return Response::error(
@@ -124,6 +130,48 @@ final class JsonRequest implements MiddlewareInterface
         }
 
         return null;
+    }
+
+    /**
+     * BOYUTU BİLİNMEYEN GÖVDEYİ ÖLÇÜLEBİLİR HÂLE GETİRİR (v1.2.1 D7 · TDR-023).
+     *
+     * Eskiden boyut bilinmiyorsa denetim SESSİZCE ATLANIYORDU: chunked istek
+     * (`Transfer-Encoding`) boyut bildirmez, dolayısıyla iki denetim de devre
+     * dışı kalıyordu. Yorumdaki gerekçe "PHP'nin kendi sınırları devrede" idi
+     * ama JSON gövdesi `php://input`ten AKIŞ olarak okunur ve `post_max_size`
+     * orada devreye girmez. Yani sınır, onu atlamak İSTEYEN için hiç yoktu;
+     * yalnız dürüst istemciler için vardı.
+     *
+     * Tavan + 1 bayt okunur — fazlası varsa aşım kesindir, yoksa gövde zaten
+     * tamamen elimizdedir. Okunan içerik YENİ bir akışa sarılıp isteğe geri
+     * verilir: denetim, koruduğu isteği tüketmemelidir.
+     *
+     * İLK YAZIMDA HATALIYDI: geri sarılamayan akış KOŞULSUZ reddediliyordu ve
+     * gövdesiz bir POST bile 413 alıyordu. Boyut sınırı, boyutu aşmayan isteği
+     * engellemez — okunanı geri vermek yeterlidir.
+     */
+    private function govdeyiOlculebilirYap(ServerRequestInterface $request): ServerRequestInterface
+    {
+        $govde = $request->getBody();
+        if ($govde->getSize() !== null || !$govde->isReadable()) {
+            return $request;
+        }
+
+        $tavan = max(1, $this->maxGovdeKb) * 1024;
+        $okunan = $govde->read($tavan + 1);
+
+        if ($govde->isSeekable()) {
+            $govde->rewind();
+
+            // Geri sarılabiliyorsa aşağı akış zaten eksiksiz okur; yalnız
+            // ÖLÇÜMÜ taşımak için boyutu bilinen bir kopya veririz.
+            return $request->withBody((new StreamFactory())->createStream($okunan));
+        }
+
+        // Sarılamıyor: okuduğumuz baytlar elimizdeki TEK kopya. Yeni akış hem
+        // ölçülebilir hem de aşağı akış için eksiksizdir (tavanı aşan istek
+        // zaten 413 ile durur; kalan bayt okunmadan bağlantı kapanır).
+        return $request->withBody((new StreamFactory())->createStream($okunan));
     }
 
     /** İstek bir HTML form yüzeyine mi gidiyor? (JSON şartından muaf) */

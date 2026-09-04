@@ -41,7 +41,66 @@ final class ShareKeyService
         // uygulama kodundan hiçbir başvuru kalmadı.
         private readonly \App\Models\ShareRepository $shares,
         private readonly string $appKey,
+        /**
+         * v1.2.1 D8 (TDR-034) — anahtarın DİNLENMEDE şifrelenmesi.
+         *
+         * `share_key_plain` (K103 sonrası `shares.key_plain`) düz saklanıyordu ve bu bilinçli bir istisnaydı
+         * (K62): anahtar 6 hanedir ve panelin onu KULLANICIYA GÖSTERMESİ
+         * gerekir. Ama "gösterilebilir olması" ile "düz saklanması" aynı şey
+         * değildir: veritabanı yedeği sızarsa (off-site yedek, çalınan dump)
+         * bütün paylaşım anahtarları okunur hâlde çıkar. Geri döndürülebilir
+         * şifreleme gösterilebilirliği korur, yedeği tek başına yetersiz kılar.
+         *
+         * OPSİYONEL: verilmezse davranış eskisi gibidir (düz). Bakım betikleri
+         * ve eski çağrılar kırılmaz.
+         */
+        private readonly ?\App\Core\Encrypter $sifreleyici = null,
     ) {
+    }
+
+    /**
+     * Saklanacak biçim: şifreleyici varsa şifreli, yoksa düz.
+     */
+    private function saklanacak(string $anahtar): string
+    {
+        return $this->sifreleyici?->encrypt($anahtar) ?? $anahtar;
+    }
+
+    /**
+     * Saklanan değeri okur — TEMBEL GÖÇ.
+     *
+     * Migration YOK: mevcut satırlar DÜZ metin taşıyor ve onları toplu
+     * dönüştürmek, kurulu her sistemde bir veri göçü demek olurdu. Çözme
+     * başarısızsa değer düz kabul edilir; satır bir sonraki yenilemede
+     * kendiliğinden şifreliye döner.
+     *
+     * Bu tolerans bir açık DEĞİL: şifreli metin ancak doğru anahtarla çözülür,
+     * çözülemeyen değer zaten şifreli olamaz.
+     */
+    private function okunan(?string $saklanan): string
+    {
+        if (!is_string($saklanan) || $saklanan === '' || $this->sifreleyici === null) {
+            return (string) $saklanan;
+        }
+
+        try {
+            return $this->sifreleyici->decrypt($saklanan);
+        } catch (\Throwable) {
+            return $saklanan; // göç öncesi düz değer
+        }
+    }
+
+    /**
+     * Panelde GÖSTERİLECEK anahtar — çözülmüş hâli.
+     *
+     * @param array<string, mixed> $row
+     */
+    public function gosterilecek(array $row): string
+    {
+        // K103: yalnız paylaşım satırı (`shares.key_plain`); `lists` kolonu okunmaz (bekçi: PaylasimKolonuBekcisiTest).
+        $saklanan = $row['key_plain'] ?? null;
+
+        return $this->okunan(is_string($saklanan) ? $saklanan : null);
     }
 
     /** Yeni anahtar üretir — kriptografik rastgelelik (tahmin edilemez olmalı). */
@@ -80,7 +139,7 @@ final class ShareKeyService
         }
 
         $anahtar = $this->uret();
-        $this->shares->anahtariYaz((int) $paylasim['id'], $this->hash($anahtar), $anahtar, $now);
+        $this->shares->anahtariYaz((int) $paylasim['id'], $this->hash($anahtar), $this->saklanacak($anahtar), $now);
 
         return $anahtar;
     }
@@ -103,7 +162,8 @@ final class ShareKeyService
         }
 
         $anahtar = $this->uret();
-        $this->shares->anahtariYaz((int) $paylasim['id'], $this->hash($anahtar), $anahtar, $now);
+        // D8: saklanan biçim ŞİFRELİ (Encrypter varsa); dönen satır DÜZ taşır — çağıran onu kullanıcıya gösterir.
+        $this->shares->anahtariYaz((int) $paylasim['id'], $this->hash($anahtar), $this->saklanacak($anahtar), $now);
 
         $paylasim['key_hash'] = $this->hash($anahtar);
         $paylasim['key_plain'] = $anahtar;

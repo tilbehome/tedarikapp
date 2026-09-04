@@ -361,7 +361,7 @@ abstract class AuthTestCase extends TestCase
         // kolonları yukarıda DURUYOR çünkü göç testi göç ÖNCESİ dünyayı
         // kurmak için onları yazıyor — canlının ikizi ancak böyle olur.
         //
-        // Şema `migrations/0037_paylasim_tablosu.php` ile AYNI olmalı: eksik
+        // Şema `migrations/0038_paylasim_tablosu.php` ile AYNI olmalı: eksik
         // bir kolon burada "çalışıyor" görünüp üretimde patlar.
         $this->pdo->exec(
             'CREATE TABLE shares (
@@ -527,8 +527,8 @@ abstract class AuthTestCase extends TestCase
             '0028_kuyruk_sertlestirme',
             // V3-C Aşama 2.1: firma × tur tabloları (0036) ve belgeler/şablonlar
             // (0039) — teklif turu uçları her HTTP testinde bu şemayı bulmalı.
-            '0036_firmalar_ve_turlar',
-            '0039_belgeler_ve_sablonlar',
+            '0037_firmalar_ve_turlar',
+            '0040_belgeler_ve_sablonlar',
         ] as $ad) {
             /** @var \App\Core\Migration $migration */
             $migration = require dirname(__DIR__, 2) . '/migrations/' . $ad . '.php';

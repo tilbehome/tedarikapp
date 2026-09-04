@@ -22,6 +22,7 @@ use App\Services\Translation\LayeredTranslator;
 use App\Services\Translation\LlmIstemci;
 use App\Services\Translation\LlmTranslator;
 use App\Services\Translation\MyMemoryTranslator;
+use App\Services\Translation\SozlukFabrikasi;
 use App\Services\Translation\TranslationService;
 use App\Services\UrlGuard;
 use Psr\Log\LoggerInterface;
@@ -80,7 +81,10 @@ final class KuyrukIsleyicileri
                 throw new RuntimeException('Ürün bulunamadı (silinmiş olabilir): #' . $urunId);
             }
 
-            $glossary = new Glossary($basePath);
+            // v1.2.1 A6: sözlük TEK FABRİKADAN. Burada elle kurulmuştu ve
+            // `config`/`storage` eklerini kaçırıyordu: kuyrukla çevrilen her
+            // ürün BOŞ sözlükle çevriliyordu, üstelik sessizce.
+            $glossary = SozlukFabrikasi::kur($basePath);
             $makine = new TranslationService(
                 new TranslationCacheRepository($connection),
                 new MyMemoryTranslator(
@@ -174,7 +178,11 @@ final class KuyrukIsleyicileri
         //
         // Neden kuyrukta: 20 görsel indirmek yakalamayı dakikalarca bekletirdi;
         // eklenti "gönderildi" diyemezdi. Kuyruk bunu arka planda yapar.
-        $kosucu->kaydet(self::TUR_MEDYA, static function (array $yuk) use ($config, $connection, $basePath): void {
+        $kosucu->kaydet(self::TUR_MEDYA, static function (
+            array $yuk,
+            array $is,
+            ?IsBaglami $baglam = null,
+        ) use ($config, $connection, $basePath, $clock): void {
             $urunId = (int) ($yuk['urun_id'] ?? 0);
             if ($urunId <= 0) {
                 throw new RuntimeException('Medya işi ürün kimliği taşımıyor.');
@@ -200,7 +208,21 @@ final class KuyrukIsleyicileri
                 return;
             }
 
-            (new MediaMigrator($connection, $medya))->urununMedyasi($urunId);
+            // A2: HER GÖRSELDEN ÖNCE VE SONRA KALP ATIŞI. On görselli bir ürün
+            // (görsel başına 25 sn zaman aşımı) 300 sn'lik kirayı aşabilir; kira
+            // dolarsa iş devralınır ve İKİ işleyici aynı dosyaları indirir.
+            // Kira kaybedilirse `kontrolNoktasi()` istisna atar ve indirme
+            // döngüsü ORADA durur — yan etki sahiplik kaybından sonra sürmez.
+            //
+            // A4: eksik görsel kalırsa `urununMedyasi()` MedyaEksik atar; iş
+            // BİTMİŞ sayılmaz. Geçici hatada kuyruk yeniden dener ve ikinci tur
+            // yalnız eksikleri indirir (inenler artık `local`).
+            (new MediaMigrator($connection, $medya))->urununMedyasi(
+                $urunId,
+                kontrol: $baglam === null ? null : static function () use ($baglam, $clock): void {
+                    $baglam->kontrolNoktasi($clock->now());
+                },
+            );
         });
     }
 }

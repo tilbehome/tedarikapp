@@ -17,7 +17,7 @@ use App\Core\Migration;
  * `suppliers` bir KAYITTIR, bir hesap değil.
  *
  * K23: bu dosya YALNIZ DDL yapar. Paylaşım göçü ve doldurma AYRI
- * migration'dadır (0037) — MySQL'de DDL örtük commit yapar; tek dosyada hem
+ * migration'dadır (0038) — MySQL'de DDL örtük commit yapar; tek dosyada hem
  * tablo açıp hem veri taşımak, yarıda kalırsa geri alınamayan bir hâl bırakır.
  *
  * K50 SINIRI: bu tabloların HİÇBİRİ belge üretimine bağlanmaz. Çıktının kuru

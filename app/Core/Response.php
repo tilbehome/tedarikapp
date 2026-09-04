@@ -37,10 +37,19 @@ final class Response
         int $status,
         array $fields = [],
         array $meta = [],
+        /**
+         * v1.2.1 C4 — teknik ayrıntı yerine TUTAMAK. Kullanıcıya ham istisna
+         * metni verilmez; günlükteki satırla eşleşen kısa kimlik verilir.
+         * Kimlik olmadan "bir şeyler ters gitti" mesajı hiçbir işe yaramaz.
+         */
+        ?string $hataKimligi = null,
     ): ResponseInterface {
         $error = ['code' => $code, 'message' => $message];
         if ($fields !== []) {
             $error['fields'] = $fields;
+        }
+        if ($hataKimligi !== null) {
+            $error['hata_kimligi'] = $hataKimligi;
         }
 
         return self::write($response, [

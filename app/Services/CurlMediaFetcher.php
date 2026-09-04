@@ -79,8 +79,10 @@ final class CurlMediaFetcher implements MediaFetcher
         $current = $url;
 
         for ($hop = 0; $hop <= self::MAX_REDIRECTS; $hop++) {
-            $this->guard->assertAllowed($current);
-            $result = $this->request($current, $maxBytes);
+            // D3: HOP BAŞINA TEK ÇÖZÜMLEME. Kapı çözer, sonuç cURL'e pinlenir;
+            // her yönlendirme sıçraması AYNI denetimden yeniden geçer.
+            $adresler = $this->guard->assertAllowed($current);
+            $result = $this->request($current, $maxBytes, $adresler);
 
             if ($result['redirect'] === null) {
                 return [
@@ -109,7 +111,11 @@ final class CurlMediaFetcher implements MediaFetcher
      *
      * @return array<int, mixed>
      */
-    public function requestOptions(string $url): array
+    /**
+     * @param  list<string>     $pinliAdresler D3 — `CURLOPT_RESOLVE` ile pinlenir
+     * @return array<int, mixed>
+     */
+    public function requestOptions(string $url, array $pinliAdresler = []): array
     {
         $matched = $this->headersFor($url);
 
@@ -130,11 +136,23 @@ final class CurlMediaFetcher implements MediaFetcher
             $options[CURLOPT_PROTOCOLS] = CURLPROTO_HTTPS;
         }
 
+        // D3 — DNS PİNİ. Kapının doğruladığı adrese bağlanılır; cURL adı
+        // YENİDEN ÇÖZMEZ ve rebinding penceresi kapanır. TLS doğrulaması yine
+        // ALAN ADINA yapılır (SNI ve sertifika adı korunur), yani pinleme
+        // güvenliği düşürmez — yalnız hangi IP'ye gidileceğini sabitler.
+        $pin = $this->guard->pinSecenekleri($url, $pinliAdresler);
+        if ($pin !== []) {
+            $options[CURLOPT_RESOLVE] = $pin;
+        }
+
         return $options;
     }
 
-    /** @return array{body: string, content_type: string, redirect: string|null} */
-    private function request(string $url, int $maxBytes): array
+    /**
+     * @param  list<string> $pinliAdresler D3 — cURL yeniden çözmesin diye
+     * @return array{body: string, content_type: string, redirect: string|null}
+     */
+    private function request(string $url, int $maxBytes, array $pinliAdresler = []): array
     {
         $handle = curl_init($url);
         if ($handle === false) {
@@ -142,7 +160,7 @@ final class CurlMediaFetcher implements MediaFetcher
         }
 
         $body = '';
-        curl_setopt_array($handle, $this->requestOptions($url) + [
+        curl_setopt_array($handle, $this->requestOptions($url, $pinliAdresler) + [
             CURLOPT_WRITEFUNCTION => static function ($_, string $chunk) use (&$body, $maxBytes): int {
                 $body .= $chunk;
                 if (strlen($body) > $maxBytes) {
@@ -154,10 +172,12 @@ final class CurlMediaFetcher implements MediaFetcher
         ]);
 
         $ok = curl_exec($handle);
+
         $status = (int) curl_getinfo($handle, CURLINFO_HTTP_CODE);
         $contentType = (string) curl_getinfo($handle, CURLINFO_CONTENT_TYPE);
         $redirect = curl_getinfo($handle, CURLINFO_REDIRECT_URL);
         $error = curl_error($handle);
+        $baglanilan = (string) curl_getinfo($handle, CURLINFO_PRIMARY_IP);
         curl_close($handle);
 
         if ($ok === false && strlen($body) > $maxBytes) {
@@ -165,6 +185,20 @@ final class CurlMediaFetcher implements MediaFetcher
         }
         if ($ok === false && $error !== '') {
             throw new MediaException('İndirme başarısız oldu.');
+        }
+
+        // D3 — SON SAVUNMA: gerçekten bağlanılan adres, onayladığımız listede mi?
+        // Pin bir şekilde uygulanmadıysa (eski cURL, araya giren proxy) istek
+        // yine de kesilir.
+        //
+        // SIRA ÖNEMLİ — İLK YAZIMDA YANLIŞTI: denetim `curl_exec`ten hemen sonra,
+        // BAŞARI KONTROLÜNDEN ÖNCE yapılıyordu. Bağlantı hiç kurulamadığında
+        // `PRIMARY_IP` boş döner ve kod bunu "adres doğrulanamadı" diye
+        // raporluyordu: ağsız ortamda her indirme, GÜVENLİK REDDİ gibi
+        // görünüyordu. Doğrulanacak bir bağlantı ancak KURULMUŞSA vardır;
+        // kurulamadıysa gerçek hata yukarıda zaten bildirildi.
+        if ($pinliAdresler !== [] && !$this->guard->baglantiDogru($baglanilan, $pinliAdresler)) {
+            throw new MediaDeniedException('Bağlanılan adres doğrulanamadı, indirme reddedildi.');
         }
         if ($status >= 300 && $status < 400) {
             if (!is_string($redirect) || $redirect === '') {

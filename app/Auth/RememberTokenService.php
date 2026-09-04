@@ -75,20 +75,37 @@ final class RememberTokenService
      *
      * @return string|null yeni çerez değeri (`selector:validator`); satır yoksa null
      */
-    public function rotate(int $tokenId, int $userId, DateTimeImmutable $now): ?string
-    {
+    public function rotate(
+        int $tokenId,
+        int $userId,
+        DateTimeImmutable $now,
+        string $mevcutSelector,
+        #[\SensitiveParameter] string $mevcutValidator,
+    ): ?string {
         $selector = bin2hex(random_bytes(8));
         $validator = bin2hex(random_bytes(32));
 
+        // v1.2.1 D4 — TEK KAZANANLI CAS. Koşul eskiden yalnız `id + user_id`
+        // idi: satırın VAR OLDUĞUNU denetliyor, elimizdeki token'ın HÂLÂ
+        // GEÇERLİ olduğunu denetlemiyordu. Çalınmış bir çerezle saldırgan ve
+        // gerçek kullanıcı aynı anda istek atarsa İKİSİ DE rotasyonu başarılı
+        // sayıyor ve İKİSİ DE geçerli yeni çerez alıyordu — rotasyonun bütün
+        // amacı boşa çıkıyordu: hırsızlık fark edilmiyor, kimse atılmıyordu.
+        //
+        // Artık "elimdeki token hâlâ bu satırdaki token mı?" sorulur. Kaybeden
+        // `null` alır ve güvenli biçimde yeniden kimlik doğrulamaya düşer.
         $statement = $this->connection->pdo()->prepare(
             'UPDATE remember_tokens SET selector = :selector, token_hash = :token_hash
-             WHERE id = :id AND user_id = :user_id',
+             WHERE id = :id AND user_id = :user_id
+               AND selector = :eski_selector AND token_hash = :eski_hash',
         );
         $statement->execute([
             'selector' => $selector,
             'token_hash' => hash('sha256', $validator),
             'id' => $tokenId,
             'user_id' => $userId,
+            'eski_selector' => $mevcutSelector,
+            'eski_hash' => hash('sha256', $mevcutValidator),
         ]);
 
         return $statement->rowCount() === 1 ? $selector . ':' . $validator : null;

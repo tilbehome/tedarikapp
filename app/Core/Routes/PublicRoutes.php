@@ -104,7 +104,12 @@ final class PublicRoutes
         // İE#18 G6 (K62): erişim anahtarı kapısı — "linki bilen görür" dönemi bitti.
         // K103: paylaşım kaydının tek erişim noktası.
         $shareDepo = new \App\Models\ShareRepository($connection);
-        $anahtar = new \App\Services\Share\ShareKeyService($shareDepo, (string) $config->get('APP_KEY', ''));
+        $anahtar = new \App\Services\Share\ShareKeyService(
+            $shareDepo,
+            (string) $config->get('APP_KEY', ''),
+            // D8: erişim anahtarı dinlenmede şifrelenir; bağlam TOTP'tan AYRI.
+            new \App\Core\Encrypter($config, baglam: \App\Core\Encrypter::BAGLAM_PAYLASIM_ANAHTARI),
+        );
         $kilitSayfasi = new \App\Services\Share\ShareLockPage();
         $surum = \App\Core\AppVersion::VALUE;
         // İE#18 G5 — ADRES ÖN EKİ: kanonik ön ek artık `/liste/`; `/p/` ALIAS

@@ -106,7 +106,9 @@ final class ShareController extends ApiController
         $paylasim = $this->anahtar?->hazirla($paylasim, $this->clock->now()) ?? $paylasim;
 
         return Response::success($response, [
-            'key' => (string) ($paylasim['key_plain'] ?? ''),
+            // D8 (v1.2.1): saklanan değer ŞİFRELİ olabilir; panele çözülmüş hâli gider.
+            // K103: kayıt `shares` tablosundadır. `gosterilecek()` göç öncesi düz satırları da okur.
+            'key' => $this->anahtar?->gosterilecek($paylasim) ?? (string) ($paylasim['key_plain'] ?? ''),
             'enabled' => (int) ($paylasim['key_enabled'] ?? 1) === 1,
         ]);
     }

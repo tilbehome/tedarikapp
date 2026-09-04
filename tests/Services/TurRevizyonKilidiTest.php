@@ -27,7 +27,7 @@ final class TurRevizyonKilidiTest extends TestCase
 {
     private function goc(): string
     {
-        return (string) file_get_contents(dirname(__DIR__, 2) . '/migrations/0036_firmalar_ve_turlar.php');
+        return (string) file_get_contents(dirname(__DIR__, 2) . '/migrations/0037_firmalar_ve_turlar.php');
     }
 
     public function testTURSNAPSHOTAREFERANSVERIR(): void

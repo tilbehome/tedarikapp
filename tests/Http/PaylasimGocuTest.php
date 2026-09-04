@@ -77,7 +77,7 @@ final class PaylasimGocuTest extends AuthTestCase
     private function gocuKos(): void
     {
         /** @var \App\Core\Migration $migration */
-        $migration = require dirname(__DIR__, 2) . '/migrations/0038_paylasim_gocu.php';
+        $migration = require dirname(__DIR__, 2) . '/migrations/0039_paylasim_gocu.php';
         $migration->up($this->pdo);
     }
 

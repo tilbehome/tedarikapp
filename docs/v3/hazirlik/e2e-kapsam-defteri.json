@@ -9,617 +9,719 @@
       "baslik": "Ürün sayfası değilse düğme yok",
       "durum": "kapsandi",
       "dosya": "frontend/src/eklenti/montaj.test.ts",
-      "test": "E2E-EKL-01 — desteklenmeyen sayfada arayüz YOK"
+      "test": "E2E-EKL-01 — desteklenmeyen sayfada arayüz YOK",
+      "k105": "p-borcu"
     },
     "E2E-EKL-02": {
       "baslik": "Kapalı durum ve tembel başlangıç",
       "durum": "kapsandi",
       "dosya": "frontend/src/eklenti/montaj.test.ts",
-      "test": "E2E-EKL-02/26 — kapalı durum, yerleşim ve izolasyon"
+      "test": "E2E-EKL-02/26 — kapalı durum, yerleşim ve izolasyon",
+      "k105": "p-borcu"
     },
     "E2E-EKL-03": {
       "baslik": "Kapalıdan okunuyor durumuna tek geçiş",
       "durum": "kapsandi",
       "dosya": "frontend/src/eklenti/akis.test.ts",
-      "test": "E2E-EKL-03/04/05 — tarama ve önizleme"
+      "test": "E2E-EKL-03/04/05 — tarama ve önizleme",
+      "k105": "p-borcu"
     },
     "E2E-EKL-04": {
       "baslik": "Okunuyor durumunda çift tıklama koruması",
       "durum": "kapsandi",
       "dosya": "extension/tests/durumMakinesi.test.ts",
-      "test": "E2E-EKL-04 — çift tık koruması"
+      "test": "E2E-EKL-04 — çift tık koruması",
+      "k105": "p-borcu"
     },
     "E2E-EKL-05": {
       "baslik": "Tam yakalama ile önizleme",
       "durum": "kapsandi",
       "dosya": "frontend/src/eklenti/panel.test.ts",
-      "test": "E2E-EKL-05/07 — önizleme ve varyantlar"
+      "test": "E2E-EKL-05/07 — önizleme ve varyantlar",
+      "k105": "p-borcu"
     },
     "E2E-EKL-06": {
       "baslik": "Koşullu fiyat uyarısı",
       "durum": "kapsandi",
       "dosya": "extension/tests/v2Senaryolari.test.ts",
-      "test": "E2E-EKL-06 — koşullu fiyat standart fiyatı EZMEZ"
+      "test": "E2E-EKL-06 — koşullu fiyat standart fiyatı EZMEZ",
+      "k105": "p-borcu"
     },
     "E2E-EKL-07": {
       "baslik": "Çok varyantlı SKU bütünlüğü",
       "durum": "kapsandi",
       "dosya": "extension/tests/v2Senaryolari.test.ts",
-      "test": "E2E-EKL-07 — çok varyantlı SKU bütünlüğü"
+      "test": "E2E-EKL-07 — çok varyantlı SKU bütünlüğü",
+      "k105": "p-borcu"
     },
     "E2E-EKL-08": {
       "baslik": "Özel MOQ ve stok yok uyarısı",
       "durum": "kapsandi",
       "dosya": "extension/tests/v2Senaryolari.test.ts",
-      "test": "E2E-EKL-08 — özel MOQ ve stok bilgisi genel MOQ ile karışmaz"
+      "test": "E2E-EKL-08 — özel MOQ ve stok bilgisi genel MOQ ile karışmaz",
+      "k105": "p-borcu"
     },
     "E2E-EKL-09": {
       "baslik": "Pozitif ve negatif video kararı",
       "durum": "kapsandi",
       "dosya": "extension/tests/v2Senaryolari.test.ts",
-      "test": "E2E-EKL-09 — video kararı: kanıt varsa var, yoksa yok"
+      "test": "E2E-EKL-09 — video kararı: kanıt varsa var, yoksa yok",
+      "k105": "p-borcu"
     },
     "E2E-EKL-10": {
       "baslik": "Kısmi okuma ve kontrollü devam",
       "durum": "kapsandi",
       "dosya": "frontend/src/eklenti/panel.test.ts",
-      "test": "E2E-EKL-10 — kısmi okumada devam düğmesi"
+      "test": "E2E-EKL-10 — kısmi okumada devam düğmesi",
+      "k105": "p-borcu"
     },
     "E2E-EKL-11": {
       "baslik": "Okuma hatası ve tekrar tara",
       "durum": "kapsandi",
       "dosya": "frontend/src/eklenti/akis.test.ts",
-      "test": "E2E-EKL-11 — zorunlu alan yoksa okuma hatası"
+      "test": "E2E-EKL-11 — zorunlu alan yoksa okuma hatası",
+      "k105": "p-borcu"
     },
     "E2E-EKL-12": {
       "baslik": "Önizlemeden gönderime geçiş ve kilit",
       "durum": "kapsandi",
       "dosya": "frontend/src/eklenti/akis.test.ts",
-      "test": "E2E-EKL-12/13/15 — gönderim ve idempotens"
+      "test": "E2E-EKL-12/13/15 — gönderim ve idempotens",
+      "k105": "p-borcu"
     },
     "E2E-EKL-13": {
       "baslik": "Başarılı gönderim ve panel bağlantısı",
       "durum": "kapsandi",
       "dosya": "frontend/src/eklenti/panel.test.ts",
-      "test": "E2E-EKL-13 — başarıda panelde aç"
+      "test": "E2E-EKL-13 — başarıda panelde aç",
+      "k105": "p-borcu"
     },
     "E2E-EKL-14": {
       "baslik": "Ağ kopması ve veri koruma",
       "durum": "kapsandi",
       "dosya": "extension/tests/kuyruk.test.ts",
-      "test": "MV3 uyanışında toparlama"
+      "test": "MV3 uyanışında toparlama",
+      "k105": "p-borcu"
     },
     "E2E-EKL-15": {
       "baslik": "HTTP 502, tekrar gönder ve idempotency",
       "durum": "kapsandi",
       "dosya": "frontend/src/eklenti/akis.test.ts",
-      "test": "502 sonrası tekrar AYNI capture_id ile gider"
+      "test": "502 sonrası tekrar AYNI capture_id ile gider",
+      "k105": "p-borcu"
     },
     "E2E-EKL-16": {
       "baslik": "Mükerrer durumu ve dört seçeneğin görünmesi",
       "durum": "kapsandi",
       "dosya": "frontend/src/eklenti/panel.test.ts",
-      "test": "E2E-EKL-16..20 — mükerrerde dört seçenek"
+      "test": "E2E-EKL-16..20 — mükerrerde dört seçenek",
+      "k105": "p-borcu"
     },
     "E2E-EKL-17": {
       "baslik": "Mükerrerde mevcut ürünü aç",
       "durum": "kapsandi",
       "dosya": "frontend/src/eklenti/akis.test.ts",
-      "test": "E2E-EKL-17 — mevcut ürünü panelde aç"
+      "test": "E2E-EKL-17 — mevcut ürünü panelde aç",
+      "k105": "p-borcu"
     },
     "E2E-EKL-18": {
       "baslik": "Mükerreri başka listeye ekle",
       "durum": "kapsandi",
       "dosya": "frontend/src/eklenti/akis.test.ts",
-      "test": "E2E-EKL-18 — başka listeye ekle önizlemeye döner"
+      "test": "E2E-EKL-18 — başka listeye ekle önizlemeye döner",
+      "k105": "p-borcu"
     },
     "E2E-EKL-19": {
       "baslik": "Mükerrerde mevcut kaydı güncelle",
       "durum": "kapsandi",
       "dosya": "frontend/src/eklenti/akis.test.ts",
-      "test": "\"mevcut kaydı güncelle\" aynı kimlikle yeniden gönderir"
+      "test": "\"mevcut kaydı güncelle\" aynı kimlikle yeniden gönderir",
+      "k105": "p-borcu"
     },
     "E2E-EKL-20": {
       "baslik": "Mükerrer işlemini iptal",
       "durum": "kapsandi",
       "dosya": "frontend/src/eklenti/akis.test.ts",
-      "test": "mükerrer yanıtı dört seçeneği açar; iptal önizlemeye döner"
+      "test": "mükerrer yanıtı dört seçeneği açar; iptal önizlemeye döner",
+      "k105": "p-borcu"
     },
     "E2E-EKL-21": {
       "baslik": "Geçersiz token ve bağlantıyı yenileme",
       "durum": "kapsandi",
       "dosya": "frontend/src/eklenti/akis.test.ts",
-      "test": "yetki hatası kendiliğinden tekrar denemez"
+      "test": "yetki hatası kendiliğinden tekrar denemez",
+      "k105": "p-borcu"
     },
     "E2E-EKL-22": {
       "baslik": "Hedef liste yükleme ve son seçimi hatırlama",
       "durum": "kapsandi",
       "dosya": "frontend/src/eklenti/akis.test.ts",
-      "test": "E2E-EKL-22 — hedef liste ve son seçim"
+      "test": "E2E-EKL-22 — hedef liste ve son seçim",
+      "k105": "p-borcu"
     },
     "E2E-EKL-23": {
       "baslik": "SPA offer değişiminde eski önizlemeyi temizleme",
       "durum": "kapsandi",
       "dosya": "frontend/src/eklenti/akis.test.ts",
-      "test": "E2E-EKL-23 — SPA değişimi"
+      "test": "E2E-EKL-23 — SPA değişimi",
+      "k105": "p-borcu"
     },
     "E2E-EKL-24": {
       "baslik": "İlk kullanım prominent disclosure",
       "durum": "kapsandi",
       "dosya": "frontend/src/eklenti/akis.test.ts",
-      "test": "E2E-EKL-24 — disclosure kapısı"
+      "test": "E2E-EKL-24 — disclosure kapısı",
+      "k105": "p-borcu"
     },
     "E2E-EKL-25": {
       "baslik": "Klavye, odak ve Esc turu",
       "durum": "kapsandi",
       "dosya": "frontend/src/eklenti/montaj.test.ts",
-      "test": "E2E-EKL-25 — Esc kapatır"
+      "test": "E2E-EKL-25 — Esc kapatır",
+      "k105": "p-borcu"
     },
     "E2E-EKL-26": {
       "baslik": "Yerleşim, çakışma ve Shadow DOM izolasyonu",
       "durum": "kapsandi",
       "dosya": "frontend/src/eklenti/montaj.test.ts",
-      "test": "arayüz KAPALI shadow DOM içindedir — sayfa scriptleri göremez"
+      "test": "arayüz KAPALI shadow DOM içindedir — sayfa scriptleri göremez",
+      "k105": "p-borcu"
     },
     "E2E-EKL-27": {
       "baslik": "Token, cookie ve oturum verisi sızıntı testi",
       "durum": "kapsandi",
       "dosya": "extension/tests/v2Senaryolari.test.ts",
-      "test": "E2E-EKL-27 — token, çerez ve oturum sızıntısı yok"
+      "test": "E2E-EKL-27 — token, çerez ve oturum sızıntısı yok",
+      "k105": "p-borcu"
     },
     "E2E-EKL-28": {
       "baslik": "GTİP/TAREKS kapsam dışı kalır",
       "durum": "kapsandi",
       "dosya": "frontend/src/eklenti/panel.test.ts",
-      "test": "GTİP/vergi gibi kapsam dışı alanlar panelde HİÇ görünmez"
+      "test": "GTİP/vergi gibi kapsam dışı alanlar panelde HİÇ görünmez",
+      "k105": "p-borcu"
     },
     "E2E-EKL-29": {
       "baslik": "Paneli kapatıp aynı önizlemeyi yeniden açma",
       "durum": "kapsandi",
       "dosya": "frontend/src/eklenti/panel.test.ts",
-      "test": "E2E-EKL-29 — aynı önizleme yeniden çizilir"
+      "test": "E2E-EKL-29 — aynı önizleme yeniden çizilir",
+      "k105": "p-borcu"
     },
     "E2E-PNL-01": {
       "baslik": "Kategori + skor bandı + platform AND birleşimi",
       "durum": "kapsandi",
       "dosya": "tests/Http/KesifHavuzuTest.php",
-      "test": "testE2E_PNL_01_UcFiltreVEileBirlesir"
+      "test": "testE2E_PNL_01_UcFiltreVEileBirlesir",
+      "k105": "p-borcu"
     },
     "E2E-PNL-02": {
       "baslik": "TR sorgu ZH yağlık kayıtlarını bulur",
       "durum": "kapsandi",
       "dosya": "tests/Http/KesifHavuzuTest.php",
-      "test": "testE2E_PNL_02_TurkceSorguCinceKaydiBulur"
+      "test": "testE2E_PNL_02_TurkceSorguCinceKaydiBulur",
+      "k105": "p-borcu"
     },
     "E2E-PNL-03": {
       "baslik": "TR sorgu ZH ayakkabı kutusu kayıtlarını bulur",
       "durum": "kapsandi",
       "dosya": "tests/Http/KesifHavuzuTest.php",
-      "test": "testE2E_PNL_03_OlcuVeTurkceKarakterNormalize"
+      "test": "testE2E_PNL_03_OlcuVeTurkceKarakterNormalize",
+      "k105": "p-borcu"
     },
     "E2E-PNL-04": {
       "baslik": "Skor kısıtı DM-003 > DM-007",
       "durum": "kapsandi",
       "dosya": "tests/Services/SkorKalibrasyonTest.php",
-      "test": "testKALIBRASYONSINAVI"
+      "test": "testKALIBRASYONSINAVI",
+      "k105": "p-borcu"
     },
     "E2E-PNL-05": {
       "baslik": "Skor kısıtı DM-038 > DM-034",
       "durum": "kapsandi",
       "dosya": "tests/Services/SkorKalibrasyonTest.php",
-      "test": "testKALIBRASYONSINAVI"
+      "test": "testKALIBRASYONSINAVI",
+      "k105": "p-borcu"
     },
     "E2E-PNL-06": {
       "baslik": "Skor kısıtı DM-023 > DM-025",
       "durum": "kapsandi",
       "dosya": "tests/Services/SkorKalibrasyonTest.php",
-      "test": "testKALIBRASYONSINAVI"
+      "test": "testKALIBRASYONSINAVI",
+      "k105": "p-borcu"
     },
     "E2E-PNL-07": {
       "baslik": "同款 yağlık kümesi açılımı",
       "durum": "kapsandi",
       "dosya": "tests/Http/KesifHavuzuTest.php",
-      "test": "testE2E_PNL_07_AyniUrunKumesiTekKartta"
+      "test": "testE2E_PNL_07_AyniUrunKumesiTekKartta",
+      "k105": "p-borcu"
     },
     "E2E-PNL-08": {
       "baslik": "同款 ayakkabı kutusu kümesi ve eksik veri işareti",
       "durum": "kapsandi",
       "dosya": "tests/Http/KesifHavuzuTest.php",
-      "test": "testE2E_PNL_08_KumesizUrunKENDIBASINAKUMEDIR"
+      "test": "testE2E_PNL_08_KumesizUrunKENDIBASINAKUMEDIR",
+      "k105": "p-borcu"
     },
     "E2E-PNL-09": {
       "baslik": "Karşılaştırma matrisi 2–6 ürün",
       "durum": "kapsandi",
       "dosya": "tests/Http/KesifHavuzuTest.php",
-      "test": "testE2E_PNL_09_IkiIleAltiUrunKarsilastirilir"
+      "test": "testE2E_PNL_09_IkiIleAltiUrunKarsilastirilir",
+      "k105": "p-borcu"
     },
     "E2E-PNL-10": {
       "baslik": "Yedinci karşılaştırma ürünü reddedilir",
       "durum": "kapsandi",
       "dosya": "tests/Http/KesifHavuzuTest.php",
-      "test": "testE2E_PNL_10_YedinciUrunREDDEDILIR"
+      "test": "testE2E_PNL_10_YedinciUrunREDDEDILIR",
+      "k105": "p-borcu"
     },
     "E2E-PNL-11": {
       "baslik": "Altı sütunlu matrisin görsel ve dokunsal okunabilirliği",
       "durum": "bekliyor",
       "dosya": "",
-      "test": "Kabul turu MANUEL maddesi KT-EK-1 (görsel/dokunsal yargı); Playwright altyapısı İE#22."
+      "test": "Kabul turu MANUEL maddesi KT-EK-1 (görsel/dokunsal yargı); Playwright altyapısı İE#22.",
+      "k105": "p-borcu"
     },
     "E2E-PNL-12": {
       "baslik": "Kaydedilmiş görünüm ve URL durumunun çift yönlü eşliği",
       "durum": "bekliyor",
       "dosya": "",
-      "test": "Kabul turu MANUEL maddesi KT-EK-2; Playwright altyapısı İE#22."
+      "test": "Kabul turu MANUEL maddesi KT-EK-2; Playwright altyapısı İE#22.",
+      "k105": "p-borcu"
     },
     "E2E-PNL-13": {
       "baslik": "Boş sonuç durumu ve filtreyi temizleme",
       "durum": "kapsandi",
       "dosya": "tests/Http/KesifHavuzuTest.php",
-      "test": "testE2E_PNL_13_BosSonucVeFiltreTemizleme"
+      "test": "testE2E_PNL_13_BosSonucVeFiltreTemizleme",
+      "k105": "p-borcu"
     },
     "E2E-PNL-14": {
       "baslik": "Sanal kaydırmada 100 ürünün tekilliği",
       "durum": "bekliyor",
       "dosya": "",
-      "test": "Kabul turu MANUEL maddesi KT-EK-3; Playwright altyapısı İE#22."
+      "test": "Kabul turu MANUEL maddesi KT-EK-3; Playwright altyapısı İE#22.",
+      "k105": "p-borcu"
     },
     "E2E-PNL-15": {
       "baslik": "Eksik metrikte skor GİZLİ",
       "durum": "kapsandi",
       "dosya": "tests/Http/KesifHavuzuTest.php",
-      "test": "testE2E_PNL_15_EksikMetriktekiSkorGIZLI"
+      "test": "testE2E_PNL_15_EksikMetriktekiSkorGIZLI",
+      "k105": "p-borcu"
     },
     "E2E-PNL-16": {
       "baslik": "J/K ile deste odağı, mutasyonsuz gezinme",
       "durum": "kapsandi",
       "dosya": "frontend/src/screens/inbox/DesteModu.test.tsx",
-      "test": "E2E-PNL-16"
+      "test": "E2E-PNL-16",
+      "k105": "p-borcu"
     },
     "E2E-PNL-17": {
       "baslik": "Space ile seçim aç/kapa",
       "durum": "kapsandi",
       "dosya": "frontend/src/screens/inbox/DesteModu.test.tsx",
-      "test": "E2E-PNL-17"
+      "test": "E2E-PNL-17",
+      "k105": "p-borcu"
     },
     "E2E-PNL-18": {
       "baslik": "Ok tuşlarıyla Çöpe/Havuza/Listeye üçlüsü",
       "durum": "kapsandi",
       "dosya": "tests/Http/DesteModuTest.php",
-      "test": "testE2E_PNL_18_SagOkLISTEYEGONDERIR"
+      "test": "testE2E_PNL_18_SagOkLISTEYEGONDERIR",
+      "k105": "p-borcu"
     },
     "E2E-PNL-19": {
       "baslik": "Son deste eylemini geri alma",
       "durum": "kapsandi",
       "dosya": "tests/Http/DesteModuTest.php",
-      "test": "testE2E_PNL_19_SonEylemGERIALINIR"
+      "test": "testE2E_PNL_19_SonEylemGERIALINIR",
+      "k105": "p-borcu"
     },
     "E2E-PNL-20": {
       "baslik": "Kural rozeti ve kural eylemini geri alma",
       "durum": "bekliyor",
       "dosya": "",
-      "test": "V3-B: kural motoru özelliğiyle birlikte (İE#22 defteri) — özellik yok, test yazılamaz."
+      "test": "V3-B: kural motoru özelliğiyle birlikte (İE#22 defteri) — özellik yok, test yazılamaz.",
+      "k105": "p-borcu"
     },
     "E2E-PNL-21": {
       "baslik": "Oturum grubunda toplu işlem atomikliği",
       "durum": "kapsandi",
       "dosya": "tests/Http/TopluTasimaAtomikTest.php",
-      "test": "testE2E_PNL_21_UCLU_GRUP_TEK_ISTEKTE_TASINIR"
+      "test": "testE2E_PNL_21_UCLU_GRUP_TEK_ISTEKTE_TASINIR",
+      "k105": "p-borcu"
     },
     "E2E-PNL-22": {
       "baslik": "Eksik ürün uyarı rozetleri",
       "durum": "kapsandi",
       "dosya": "frontend/src/screens/liste/UrunCekmecesi.test.tsx",
-      "test": "Ürün sağlığı C8 kapısını yansıtır"
+      "test": "Ürün sağlığı C8 kapısını yansıtır",
+      "k105": "p-borcu"
     },
     "E2E-PNL-23": {
       "baslik": "Filtre veya sayfa değişiminde seçim sıfırlama",
       "durum": "kapsandi",
       "dosya": "frontend/src/lib/secim.test.ts",
-      "test": "useSuzgecSecimi"
+      "test": "useSuzgecSecimi",
+      "k105": "p-borcu"
     },
     "E2E-PNL-24": {
       "baslik": "Çift tık mükerrer işlem üretmez",
       "durum": "kapsandi",
       "dosya": "frontend/src/screens/liste/TopluEylemCubugu.test.tsx",
-      "test": "E2E-PNL-24 — çift tık mükerrer işlem üretmez"
+      "test": "E2E-PNL-24 — çift tık mükerrer işlem üretmez",
+      "k105": "p-borcu"
     },
     "E2E-PNL-25": {
       "baslik": "Satır içi düzenleme ve Enter akışı",
       "durum": "kapsandi",
       "dosya": "frontend/src/screens/liste/MiktarHucresi.test.tsx",
-      "test": "Kaydetme"
+      "test": "Kaydetme",
+      "k105": "p-borcu"
     },
     "E2E-PNL-26": {
       "baslik": "Geçersiz satır içi değer kaydedilmez",
       "durum": "kapsandi",
       "dosya": "frontend/src/screens/liste/MiktarHucresi.test.tsx",
-      "test": "Geçersiz değer"
+      "test": "Geçersiz değer",
+      "k105": "p-borcu"
     },
     "E2E-PNL-27": {
       "baslik": "Eksik CBM ürünü HAZIR olamaz",
       "durum": "kapsandi",
       "dosya": "tests/Http/KaliteKapisiUcTest.php",
-      "test": "testEKSIKURUNHAZIRISARETLENEMEZ"
+      "test": "testEKSIKURUNHAZIRISARETLENEMEZ",
+      "k105": "p-borcu"
     },
     "E2E-PNL-28": {
       "baslik": "Boş liste tamamlanamaz",
       "durum": "kapsandi",
       "dosya": "tests/Http/KaliteKapisiUcTest.php",
-      "test": "testBOSLISTETAMAMLANABILIRDEGIL"
+      "test": "testBOSLISTETAMAMLANABILIRDEGIL",
+      "k105": "p-borcu"
     },
     "E2E-PNL-29": {
       "baslik": "Uyarı çipi ilgili eksik alana filtreler",
       "durum": "kapsandi",
       "dosya": "frontend/src/screens/liste/UyariCipleri.test.tsx",
-      "test": "Çip GÖTÜRÜR"
+      "test": "Çip GÖTÜRÜR",
+      "k105": "p-borcu"
     },
     "E2E-PNL-30": {
       "baslik": "İletildi sonrası kur kilidi",
       "durum": "kapsandi",
       "dosya": "tests/Services/KurTazelemeTest.php",
-      "test": "testKilitliListeASLADEGISMEZ"
+      "test": "testKilitliListeASLADEGISMEZ",
+      "k105": "p-borcu"
     },
     "E2E-PNL-31": {
       "baslik": "Toplu işlem çubuğu ve canlı toplam",
       "durum": "kapsandi",
       "dosya": "frontend/src/screens/liste/TopluEylemCubugu.test.tsx",
-      "test": "E2E-PNL-31 — canlı toplam"
+      "test": "E2E-PNL-31 — canlı toplam",
+      "k105": "p-borcu"
     },
     "E2E-PNL-32": {
       "baslik": "İzin verilen aşama geçişleri",
       "durum": "kapsandi",
       "dosya": "tests/Services/StateMachineTest.php",
-      "test": "testUrunGecisMatrisiTamdir"
+      "test": "testUrunGecisMatrisiTamdir",
+      "k105": "p-borcu"
     },
     "E2E-PNL-33": {
       "baslik": "Aşama atlama reddi",
       "durum": "kapsandi",
       "dosya": "tests/Services/StateMachineTest.php",
-      "test": "testUrunDurumAtlamaYasak"
+      "test": "testUrunDurumAtlamaYasak",
+      "k105": "p-borcu"
     },
     "E2E-PNL-34": {
       "baslik": "Revizyon numarası tek artar ve önceki sürüm korunur",
       "durum": "kapsandi",
       "dosya": "tests/Http/RevisionSequenceTest.php",
-      "test": "testUrunFiyatiDegisince_RevBirARTAR"
+      "test": "testUrunFiyatiDegisince_RevBirARTAR",
+      "k105": "p-borcu"
     },
     "E2E-PNL-35": {
       "baslik": "Paylaş penceresinde link + anahtar birlikte görünür ve kopyalanır",
       "durum": "kapsandi",
       "dosya": "frontend/src/screens/liste/PaylasPenceresi.test.tsx",
-      "test": "Erişim anahtarı bloğu"
+      "test": "Erişim anahtarı bloğu",
+      "k105": "p-borcu"
     },
     "E2E-PNL-36": {
       "baslik": "Anahtar yenileme ve eski anahtarın 401 olması",
       "durum": "kapsandi",
       "dosya": "tests/Http/ErisimAnahtariTest.php",
-      "test": "testANAHTAR_YENILENINCE_ESKI_CEREZ_OLUR"
+      "test": "testANAHTAR_YENILENINCE_ESKI_CEREZ_OLUR",
+      "k105": "p-borcu"
     },
     "E2E-PNL-37": {
       "baslik": "Paylaşım sayfası TR/EN/ZH tek dil (K81 istisnaları hariç)",
       "durum": "kapsandi",
       "dosya": "tests/Http/PaylasimDiliTest.php",
-      "test": "testK81_ISTISNA_DISINDA_TEK_DIL"
+      "test": "testK81_ISTISNA_DISINDA_TEK_DIL",
+      "k105": "p-borcu"
     },
     "E2E-PNL-38": {
       "baslik": "Karışık dil sızıntısı KIRMIZI (K81 istisnaları hariç)",
       "durum": "kapsandi",
       "dosya": "tests/Http/PaylasimDiliTest.php",
-      "test": "testK81_SECILEN_DIL_SAYFAYA_ISLENIR"
+      "test": "testK81_SECILEN_DIL_SAYFAYA_ISLENIR",
+      "k105": "p-borcu"
     },
     "E2E-PNL-39": {
       "baslik": "K55 orijinal satır üç dilde aynen korunur",
       "durum": "kapsandi",
       "dosya": "tests/Http/PaylasimDiliTest.php",
-      "test": "testE2E_PNL_39_ORIJINALSATIRUCDILDEAYNEN"
+      "test": "testE2E_PNL_39_ORIJINALSATIRUCDILDEAYNEN",
+      "k105": "p-borcu"
     },
     "E2E-PNL-40": {
       "baslik": "Excel/PDF başlık-durum-dipnot dili",
       "durum": "kapsandi",
       "dosya": "tests/Http/PaylasimDiliTest.php",
-      "test": "testPDF_BASLIK_SECILEN_DILDE_TEK_SATIR"
+      "test": "testPDF_BASLIK_SECILEN_DILDE_TEK_SATIR",
+      "k105": "p-borcu"
     },
     "E2E-PNL-41": {
       "baslik": "Kilit ekranının dar görünüm ve %200 yakınlaştırma kullanımı",
       "durum": "kapsandi",
       "dosya": "tests/Http/KilitEkraniTest.php",
-      "test": "testREFERANSDUZENIBASILIR"
+      "test": "testREFERANSDUZENIBASILIR",
+      "k105": "p-borcu"
     },
     "E2E-PNL-42": {
       "baslik": "Doğru anahtar içerik açar",
       "durum": "kapsandi",
       "dosya": "tests/Http/ErisimAnahtariTest.php",
-      "test": "testDOGRU_ANAHTAR_SAYFAYI_ACAR"
+      "test": "testDOGRU_ANAHTAR_SAYFAYI_ACAR",
+      "k105": "p-borcu"
     },
     "E2E-PNL-43": {
       "baslik": "Yanlış anahtar sabit hata ve hız sınırı",
       "durum": "kapsandi",
       "dosya": "tests/Http/ErisimAnahtariTest.php",
-      "test": "testDAKIKADA_BES_DENEMEDEN_SONRA_SABIT_404"
+      "test": "testDAKIKADA_BES_DENEMEDEN_SONRA_SABIT_404",
+      "k105": "p-borcu"
     },
     "E2E-PNL-44": {
       "baslik": "JavaScript'siz kilit formu yolu",
       "durum": "kapsandi",
       "dosya": "tests/Http/ErisimAnahtariTest.php",
-      "test": "testJS_KAPALIYKEN_HANELER_BIRLESTIRILIR"
+      "test": "testJS_KAPALIYKEN_HANELER_BIRLESTIRILIR",
+      "k105": "p-borcu"
     },
     "E2E-PNL-45": {
       "baslik": "Tazeleme sayacı tek istek üretir",
       "durum": "bekliyor",
       "dosya": "",
-      "test": "Kabul turu MANUEL maddesi KT-EK-4; Playwright altyapısı İE#22."
+      "test": "Kabul turu MANUEL maddesi KT-EK-4; Playwright altyapısı İE#22.",
+      "k105": "p-borcu"
     },
     "E2E-PNL-46": {
       "baslik": "WhatsApp köprüsü numara ve metni doğru kodlar",
       "durum": "kapsandi",
       "dosya": "frontend/src/screens/liste/PaylasPenceresi.test.tsx",
-      "test": "WhatsApp ve e-posta bağlantıları metni taşır"
+      "test": "WhatsApp ve e-posta bağlantıları metni taşır",
+      "k105": "p-borcu"
     },
     "E2E-PNL-47": {
       "baslik": "Çeviri sağlayıcısını kaydetme ve anahtar maskeleme",
       "durum": "kapsandi",
       "dosya": "frontend/src/screens/ayarlar/CeviriAyarlari.test.tsx",
-      "test": "E2E-PNL-47 — sağlayıcı kaydı ve anahtar maskeleme"
+      "test": "E2E-PNL-47 — sağlayıcı kaydı ve anahtar maskeleme",
+      "k105": "p-borcu"
     },
     "E2E-PNL-48": {
       "baslik": "Çeviri bağlantı testi hatası görünür",
       "durum": "kapsandi",
       "dosya": "frontend/src/screens/ayarlar/CeviriAyarlari.test.tsx",
-      "test": "E2E-PNL-48 — bağlantı testi hatası EKRANDA kalır"
+      "test": "E2E-PNL-48 — bağlantı testi hatası EKRANDA kalır",
+      "k105": "p-borcu"
     },
     "E2E-PNL-49": {
       "baslik": "Kur getir → onayla → kaydet",
       "durum": "kapsandi",
       "dosya": "tests/Http/KurOnerisiTest.php",
-      "test": "testONERI_UCU_KAYDETMEZ"
+      "test": "testONERI_UCU_KAYDETMEZ",
+      "k105": "p-borcu"
     },
     "E2E-PNL-50": {
       "baslik": "Geçerli sözlük CSV içe aktarımı",
       "durum": "kapsandi",
       "dosya": "tests/Http/SozlukCsvTest.php",
-      "test": "testICEAKTARIMYENITERIMEKLER"
+      "test": "testICEAKTARIMYENITERIMEKLER",
+      "k105": "p-borcu"
     },
     "E2E-PNL-51": {
       "baslik": "Hatalı sözlük CSV mevcut veriyi bozmaz",
       "durum": "kapsandi",
       "dosya": "tests/Http/SozlukCsvTest.php",
-      "test": "testBOZUKSATIRSAYILIRAMAAKISIDURDURMAZ"
+      "test": "testBOZUKSATIRSAYILIRAMAAKISIDURDURMAZ",
+      "k105": "p-borcu"
     },
     "E2E-PNL-52": {
       "baslik": "Hedef dil listesi değişimi ve bağımlı UI",
       "durum": "kapsandi",
       "dosya": "frontend/src/screens/ayarlar/CeviriAyarlari.test.tsx",
-      "test": "E2E-PNL-52 — hedef dil listesi"
+      "test": "E2E-PNL-52 — hedef dil listesi",
+      "k105": "p-borcu"
     },
     "E2E-EKL-30": {
       "baslik": "Panel içeriği yatay taşmaz (uzun URL + 6 varyant çipi)",
       "durum": "kapsandi",
       "dosya": "e2e/tests/08-eklenti-paneli.spec.ts",
       "test": "E2E-EKL-30 — panel yatay TAŞMAZ (rc7 D10-b)",
-      "not": "Gerçek tarayıcı ölçümü (scrollWidth/clientWidth + öğe sınırı); jsdom yerleşim hesaplamaz."
+      "not": "Gerçek tarayıcı ölçümü (scrollWidth/clientWidth + öğe sınırı); jsdom yerleşim hesaplamaz.",
+      "k105": "p-borcu"
     },
     "E2E-EKL-31": {
       "baslik": "Panel varsayılan KAPALI; düğme her yüklemede basılır",
       "durum": "kapsandi",
       "dosya": "e2e/tests/08-eklenti-paneli.spec.ts",
       "test": "E2E-EKL-31 — panel varsayılan KAPALI (rc7 EK-1 §5)",
-      "not": "5 ardışık yükleme; hesaplanmış display ölçülür. Montaj hedefi yoksa sağ-alt pill yedeği."
+      "not": "5 ardışık yükleme; hesaplanmış display ölçülür. Montaj hedefi yoksa sağ-alt pill yedeği.",
+      "k105": "p-borcu"
     },
     "E2E-EKL-32": {
       "baslik": "Panel gövdesi kendi içinde kaydırılır; alt aksiyon çubuğu sabit",
       "durum": "kapsandi",
       "dosya": "e2e/tests/08-eklenti-paneli.spec.ts",
       "test": "E2E-EKL-32 — panel gövdesi KENDİ İÇİNDE kaydırılır (v1.0 saha bulgusu, 27 Ağu)",
-      "not": "1366x768 ve 1920x1080; elementFromPoint ile tıklanabilirlik. Görünürlük tek başına yetmez."
+      "not": "1366x768 ve 1920x1080; elementFromPoint ile tıklanabilirlik. Görünürlük tek başına yetmez.",
+      "k105": "p-borcu"
     },
     "E2E-EKL-33": {
       "baslik": "Panel metin disiplini: yanıltıcı rozet yok, HTML varlığı çözülür, title balonu yok",
       "durum": "kapsandi",
       "dosya": "e2e/tests/08-eklenti-paneli.spec.ts",
       "test": "E2E-EKL-33 — panel metin disiplini (v1.0 A2/A3/A4, saha 27 Ağu)",
-      "not": "XSS regresyonu dâhil; birim karşılığı extension/tests/metin.test.ts."
+      "not": "XSS regresyonu dâhil; birim karşılığı extension/tests/metin.test.ts.",
+      "k105": "p-borcu"
     },
     "E2E-EKL-34": {
       "baslik": "Inline düğme satın alma bloğunun üstünde; dil geçişinde kaybolmaz",
       "durum": "kapsandi",
       "dosya": "e2e/tests/08-eklenti-paneli.spec.ts",
       "test": "E2E-EKL-34 — inline düğme SATIN ALMA BLOĞUNUN ÜSTÜNDE (v1.0 A5/A8)",
-      "not": "Ürün Sahibi'nin GERÇEK sayfa dökümleri (e2e/fixtures/1688, 27 Ağu 2026, oturumsuz). Dış CSS/JS yok, ağ route.abort() ile kapalı: ağaç gerçek, düzen gerçek sayfanın pikseli değil."
+      "not": "Ürün Sahibi'nin GERÇEK sayfa dökümleri (e2e/fixtures/1688, 27 Ağu 2026, oturumsuz). Dış CSS/JS yok, ağ route.abort() ile kapalı: ağaç gerçek, düzen gerçek sayfanın pikseli değil.",
+      "k105": "p-borcu"
     },
     "E2E-EKL-35": {
       "baslik": "Varyant çipleri salt görünüm Türkçe; veri orijinal kalır",
       "durum": "kapsandi",
       "dosya": "e2e/tests/08-eklenti-paneli.spec.ts",
       "test": "E2E-EKL-35 — varyant çipleri SALT GÖRÜNÜM Türkçe (v1.0.1 A9)",
-      "not": "K90: eklentide LLM yok, gömülü kapalı sözlük. Seçim geri çağrısının ORİJİNAL değeri taşıdığı da sınanır."
+      "not": "K90: eklentide LLM yok, gömülü kapalı sözlük. Seçim geri çağrısının ORİJİNAL değeri taşıdığı da sınanır.",
+      "k105": "p-borcu"
     },
     "E2E-PNL-53": {
       "baslik": "Bildirim zili okunmamış rozetini basar",
       "durum": "kapsandi",
       "dosya": "tests/Services/BildirimYayinciTest.php",
-      "test": "testHEPSIOKUNDUSAYACISIFIRLAR"
+      "test": "testHEPSIOKUNDUSAYACISIFIRLAR",
+      "k105": "p-borcu"
     },
     "E2E-PNL-54": {
       "baslik": "Aynı olay penceresi içinde \"×N\" olarak birleşir",
       "durum": "kapsandi",
       "dosya": "tests/Services/BildirimYayinciTest.php",
-      "test": "testBIRLESTIRMEACIKOLAYTEKSATIRDATOPLANIR"
+      "test": "testBIRLESTIRMEACIKOLAYTEKSATIRDATOPLANIR",
+      "k105": "p-borcu"
     },
     "E2E-PNL-55": {
       "baslik": "Kritik bildirim anlık kart olarak çıkar, modal DEĞİLDİR",
       "durum": "bekliyor",
-      "not": "Gerçek tarayıcı gerektirir (yerleşim/odak/SW kaydı); Playwright turunda kodlanacak."
+      "not": "Gerçek tarayıcı gerektirir (yerleşim/odak/SW kaydı); Playwright turunda kodlanacak.",
+      "k105": "p-borcu"
     },
     "E2E-PNL-56": {
       "baslik": "Panorama brifingleri öncelik sırasıyla dizilir",
       "durum": "kapsandi",
       "dosya": "tests/Http/PanoramaTest.php",
-      "test": "testOLUISBRIFINGIENYUKSEKONCELIKTE"
+      "test": "testOLUISBRIFINGIENYUKSEKONCELIKTE",
+      "k105": "p-borcu"
     },
     "E2E-PNL-57": {
       "baslik": "\"Henüz ölçülmüyor\" ayrı gösterilir",
       "durum": "kapsandi",
       "dosya": "tests/Http/PanoramaTest.php",
-      "test": "testOLCULEMEYENBRIFINGLERGEREKCELIDONER"
+      "test": "testOLCULEMEYENBRIFINGLERGEREKCELIDONER",
+      "k105": "p-borcu"
     },
     "E2E-PNL-58": {
       "baslik": "Ayarlar 16 sekme ve URL eşliği",
       "durum": "kapsandi",
       "dosya": "frontend/src/screens/ayarlar/korumaListesi.test.ts",
-      "test": "sekme sayısı 16 ve numaralar 1..16"
+      "test": "sekme sayısı 16 ve numaralar 1..16",
+      "k105": "p-borcu"
     },
     "E2E-PNL-59": {
       "baslik": "Boş sekme gizlenmez, gerekçesini söyler",
       "durum": "kapsandi",
       "dosya": "frontend/src/screens/ayarlar/korumaListesi.test.ts",
-      "test": "boş sekmenin GEREKÇESİ var"
+      "test": "boş sekmenin GEREKÇESİ var",
+      "k105": "p-borcu"
     },
     "E2E-PNL-60": {
       "baslik": "Üç tema modu ve kalıcılık",
       "durum": "bekliyor",
-      "not": "Gerçek tarayıcı gerektirir (yerleşim/odak/SW kaydı); Playwright turunda kodlanacak."
+      "not": "Gerçek tarayıcı gerektirir (yerleşim/odak/SW kaydı); Playwright turunda kodlanacak.",
+      "k105": "p-borcu"
     },
     "E2E-PNL-61": {
       "baslik": "Service worker kapsamı paylaşım sayfasını içermez",
       "durum": "kapsandi",
       "dosya": "frontend/src/lib/swKapsam.test.ts",
-      "test": "kayıt açıkça /panel/ kapsamı ister"
+      "test": "kayıt açıkça /panel/ kapsamı ister",
+      "k105": "p-borcu"
     },
     "E2E-PNL-62": {
       "baslik": "Sözlük CSV turu: indir, düzenle, yükle",
       "durum": "kapsandi",
       "dosya": "tests/Http/SozlukCsvTest.php",
-      "test": "testCAKISMADAKULLANICITERIMIKAZANIR"
+      "test": "testCAKISMADAKULLANICITERIMIKAZANIR",
+      "k105": "p-borcu"
     },
     "E2E-PNL-63": {
       "baslik": "Sol gezinme grupları ve bölüm geçişi",
       "durum": "kapsandi",
       "dosya": "e2e/tests/09-ayarlar-gorunum.spec.ts",
-      "test": "E2E-PNL-63"
+      "test": "E2E-PNL-63",
+      "k105": "p-borcu"
     },
     "E2E-PNL-64": {
       "baslik": "Arama ad, açıklama ve gizli sözcükleri süzer",
       "durum": "kapsandi",
       "dosya": "e2e/tests/09-ayarlar-gorunum.spec.ts",
-      "test": "E2E-PNL-64"
+      "test": "E2E-PNL-64",
+      "k105": "p-borcu"
     },
     "E2E-PNL-65": {
       "baslik": "KPI şeridi yalnız ölçülebilen bölümde",
       "durum": "kapsandi",
       "dosya": "e2e/tests/09-ayarlar-gorunum.spec.ts",
-      "test": "E2E-PNL-65"
+      "test": "E2E-PNL-65",
+      "k105": "p-borcu"
     },
     "E2E-PNL-66": {
       "baslik": "Dar ekranda gezinme açılır listeye döner",
       "durum": "kapsandi",
       "dosya": "e2e/tests/09-ayarlar-gorunum.spec.ts",
-      "test": "E2E-PNL-66"
+      "test": "E2E-PNL-66",
+      "k105": "p-borcu"
     },
     "E2E-PNL-67": {
       "baslik": "Sürüm rozeti AppVersion değerini basar",
       "durum": "kapsandi",
       "dosya": "e2e/tests/09-ayarlar-gorunum.spec.ts",
-      "test": "E2E-PNL-67"
+      "test": "E2E-PNL-67",
+      "k105": "p-borcu"
     },
     "E2E-PNL-68": {
       "baslik": "Listeler merkezi: sekme çipleri sunucu sayımlarını basar, filtre URL'de",
@@ -663,5 +765,6 @@
       "test": "şablon indirilir; yüklenen dosya gruplu önizlenir; yalnız uygulanabilir olan varsayılan seçilidir",
       "k105": "kapsandi"
     }
-  }
+  },
+  "_k105": "K105 MIKRO ETKILESIM STANDARDI (31 Agu 2026). Her senaryo satirinda \"k105\" alani, o ekranin K105 matrisindeki ZORUNLU hucreleri karsilayip karsilamadigini soyler. Degerler: \"kapsandi\" | \"kirmizi\" | \"yok\" (o senaryo bir ekran degil) | \"p-borcu\" (mevcut V3-A/B ekrani; V3-P fazinda kapanir). V3-C ve sonrasinda dogan HER YENI ekran icin \"kapsandi\" ZORUNLUDUR: karsilanmadan senaryo bitmis sayilmaz. Standart: docs/v3/k105-mikro-etkilesim-standardi.md"
 }

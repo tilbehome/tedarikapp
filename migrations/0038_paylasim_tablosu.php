@@ -5,7 +5,7 @@ declare(strict_types=1);
 use App\Core\Migration;
 
 /**
- * V3-C BLOK A1 — `shares` TABLOSU (yalnız DDL; göç 0038'de).
+ * V3-C BLOK A1 — `shares` TABLOSU (yalnız DDL; göç 0039'da). `key_plain` D8 (0036) şifreli zarfını taşıyacak genişliktedir (255).
  *
  * BUGÜN PAYLAŞIM `lists` KOLONLARINDA: `share_token_hash`, `share_token_prefix`,
  * `share_expires_at`, `share_key_hash`, `share_key_plain`, `share_key_enabled`.
@@ -58,7 +58,7 @@ return new class () implements Migration {
                 token_hash CHAR(64) NOT NULL,
                 token_prefix VARCHAR(12) NULL,
                 key_hash CHAR(64) NULL,
-                key_plain VARCHAR(12) NULL,
+                key_plain VARCHAR(255) NULL,
                 key_enabled TINYINT(1) NOT NULL DEFAULT 1,
                 expires_at DATETIME NULL,
                 revoked_at DATETIME NULL,

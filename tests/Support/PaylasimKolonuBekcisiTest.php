@@ -197,7 +197,7 @@ final class PaylasimKolonuBekcisiTest extends TestCase
     {
         // Muafiyetin gerekçesi doğrulanır: göç dosyası GERÇEKTEN taşımayı
         // yapıyor. Yapmasaydı muafiyet sessiz bir delik olurdu.
-        $goc = (string) file_get_contents(dirname(__DIR__, 2) . '/migrations/0038_paylasim_gocu.php');
+        $goc = (string) file_get_contents(dirname(__DIR__, 2) . '/migrations/0039_paylasim_gocu.php');
 
         self::assertStringContainsString('share_token_hash', $goc);
         self::assertStringContainsString('INSERT INTO shares', $goc);

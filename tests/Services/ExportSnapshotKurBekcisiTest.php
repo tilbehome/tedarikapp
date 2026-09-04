@@ -89,7 +89,7 @@ final class ExportSnapshotKurBekcisiTest extends TestCase
         // `supplier_rounds`a KOPYALANIR. Yalnız `rate_snapshot_id` tutulsaydı,
         // snapshot satırı sonradan değişince ya da silinince turun hangi kurla
         // konuşulduğu KAYBOLURDU — oysa #28 kanıt seti bunu şart koşuyor.
-        $goc = (string) file_get_contents(dirname(__DIR__, 2) . '/migrations/0036_firmalar_ve_turlar.php');
+        $goc = (string) file_get_contents(dirname(__DIR__, 2) . '/migrations/0037_firmalar_ve_turlar.php');
 
         foreach (['kur_para_birimi', 'kur_degeri', 'kur_kaynagi', 'kur_kilit_at'] as $kolon) {
             self::assertStringContainsString(

@@ -30,6 +30,18 @@ use Throwable;
 final class JobQueue
 {
     public const BEKLIYOR = 'bekliyor';
+
+    /**
+     * SON SEÇİM NEDENİ (v1.2.1 A7) — "boş" ile "yarış kaybı" AYRI ŞEYLERDİR.
+     *
+     * Eskiden ikisi de `null` dönüyordu; çağıran turu bitirip günlüğe
+     * "kuyruk boş" yazıyordu. Oysa kuyrukta iş VARDI, yalnız başkası kapmıştı.
+     * İki işleyici aynı anda koştuğunda kuyruk yarı hızda ilerliyor ve
+     * günlük yanlış sebep gösteriyordu.
+     */
+    public const SECIM_ALINDI = 'alindi';
+    public const SECIM_BOS = 'bos';
+    public const SECIM_YARIS = 'yaris';
     public const CALISIYOR = 'calisiyor';
     public const BITTI = 'bitti';
     public const OLU = 'olu';
@@ -48,6 +60,15 @@ final class JobQueue
      * ölmüştür ve işin başkasına geçmesi DOĞRU davranıştır.
      */
     public const KILIT_OMRU_SANIYE = 300;
+
+    /**
+     * Bir sahiplenme çağrısında kaç aday denenir (A7).
+     *
+     * Sınırsız denemek, yoğun çekişmede tek çağrıyı uzun bir döngüye çevirirdi.
+     * Beş deneme, iki-üç işleyicili gerçek yükte fazlasıyla yeterli; dolarsa
+     * cevap "boş" değil "çekişme" olur ve bir sonraki tur yeniden dener.
+     */
+    private const ADAY_DENEME_SINIRI = 5;
 
     /**
      * @param \App\Services\Bildirim\BildirimYayinci|null $bildirim V3-B A3 —
@@ -255,17 +276,24 @@ final class JobQueue
         $pdo = $this->connection->pdo();
         $zaman = Dates::toStorage($now);
 
-        // ADAY SEÇİMİ — TÜR ADALETİ (İE#21 B11).
+        // ADAY SEÇİMİ — TÜR ADALETİ SQL'DE VE DETERMİNİSTİK (v1.2.1 A7).
         //
         // Eski sıra "öncelik, zaman, id" idi. 500 çeviri işi kuyruğa girdiğinde
         // aralarına düşen tek bir skor işi, 500 çeviri bitene kadar bekliyordu:
         // kuyruk teknik olarak çalışıyor ama bir iş TÜRÜ açlıktan ölüyordu.
         //
-        // Çözüm dönüşümlü seçimdir: bu turda HANGİ TÜR en uzun süredir iş
-        // almadıysa ondan alınır. Öncelik hâlâ üstündür — adalet, önceliğin
-        // yerine geçmez, EŞİT öncelikler arasında paylaştırır.
+        // İlk çözüm PHP'de dönüşümlü bir sayaçtı ve SÜREÇ ÖMRÜNDEYDİ. Her cron
+        // turu sayacı sıfırdan başlatıyordu; turlar kısa ve sık olduğu için
+        // (5 dk) her turun ilk işi daima aynı türden geliyor, listenin
+        // sonundaki tür pratikte hiç sıra alamıyordu. "Dönüşüm" tek süreç
+        // içinde çalışıyor, süreçler arasında çalışmıyordu.
+        //
+        // YENİ KURAL: eşit öncelikli türler arasında EN ESKİ bekleyen işi olan
+        // tür seçilir. Süreç ömründen bağımsızdır ve deterministiktir: açlıktan
+        // ölen tür, bekledikçe kendiliğinden öne çıkar. Öncelik hâlâ üstündür —
+        // adalet, önceliğin yerine geçmez, EŞİT öncelikler arasında paylaştırır.
         $sira = $pdo->prepare(
-            'SELECT tur, MIN(oncelik) AS en_yuksek
+            'SELECT tur, MIN(oncelik) AS en_yuksek, MIN(calisacak_at) AS en_eski
              FROM jobs
              WHERE ' . self::ALINABILIR . '
              GROUP BY tur',
@@ -274,28 +302,120 @@ final class JobQueue
         /** @var list<array<string, mixed>> $turler */
         $turler = $sira->fetchAll();
         if ($turler === []) {
+            $this->sonSecimNedeni = self::SECIM_BOS;
+
             return null;
         }
 
-        $enYuksekOncelik = min(array_map(static fn (array $r): int => (int) $r['en_yuksek'], $turler));
-        $adaylar = array_values(array_filter(
-            $turler,
-            static fn (array $r): bool => (int) $r['en_yuksek'] === $enYuksekOncelik,
-        ));
-        $tur = (string) $adaylar[$this->siradakiTurIndeksi(count($adaylar))]['tur'];
+        $turler = $this->adaletSirasi($pdo, $turler);
 
-        $aday = $pdo->prepare(
-            'SELECT id FROM jobs
-             WHERE tur = :tur AND (' . self::ALINABILIR . ')
-             ORDER BY oncelik ASC, calisacak_at ASC, id ASC
-             LIMIT 1',
-        );
-        $aday->execute(['tur' => $tur] + $this->alinabilirParametreleri($zaman));
-        $id = $aday->fetchColumn();
-        if ($id === false) {
-            return null;
+        // SINIRLI YENİDEN ADAY (A7): seçilen iş başkası tarafından kapılmışsa
+        // tur BİTMEZ — sıradaki aday denenir. Eskiden tek kayıp `null` dönüyor
+        // ve çağıran "kuyruk boş" diye turu kapatıyordu; iki işleyici aynı anda
+        // koştuğunda kuyruk yarı hızda ilerliyordu.
+        $denenen = [];
+        for ($tekrar = 0; $tekrar < self::ADAY_DENEME_SINIRI; $tekrar++) {
+            $id = $this->siradakiAday($pdo, $turler, $zaman, $denenen);
+            if ($id === null) {
+                // Aday kalmadı: türler vardı ama hepsinin işleri kapılmış.
+                $this->sonSecimNedeni = $denenen === [] ? self::SECIM_BOS : self::SECIM_YARIS;
+
+                return null;
+            }
+            $denenen[] = $id;
+
+            $is = $this->sahiplenmeyiDene($pdo, $id, $isleyiciKimligi, $now, $zaman);
+            if ($is !== null) {
+                return $is;
+            }
         }
 
+        // Deneme sınırı doldu: kuyruk BOŞ DEĞİL, sadece çekişme var.
+        $this->sonSecimNedeni = self::SECIM_YARIS;
+
+        return null;
+    }
+
+    /**
+     * TÜR SIRASI — DETERMİNİSTİK VE SÜREÇTEN BAĞIMSIZ (v1.2.1 A7).
+     *
+     * Ölçüt sırası:
+     *   1. öncelik (küçük sayı önce) — adalet önceliğin yerine geçmez,
+     *   2. O AN KOŞAN İŞ SAYISI (az olan önce) — hâlâ hizmet almakta olan tür
+     *      geri çekilir; dönüşüm bundan doğar,
+     *   3. en eski bekleyen iş — açlıktan ölen tür bekledikçe öne çıkar,
+     *   4. tür adı — tam eşitlikte bile sonuç ÖNGÖRÜLEBİLİR olsun.
+     *
+     * (2) neden gerekli: eşit öncelikli ve AYNI ANDA eklenmiş işlerde yaş hiçbir
+     * ayrım üretmez; o hâlde tek tür bütün turu alırdı. Eski çözüm PHP'de bir
+     * sayaçtı ama SÜREÇ ÖMRÜNDEYDİ — her cron turu sıfırlanıyor ve daima aynı
+     * tür öne geçiyordu. Koşan iş sayısı veritabanındadır: süreçler arasında da
+     * çalışır.
+     *
+     * İki sorgu, tek sıralama: `ALINABILIR` koşulu CASE içine gömülseydi aynı
+     * yer tutucu iki kez geçerdi ve MySQL yerel prepare bunu HY093 ile
+     * reddederdi (SorguYerTutucuTest bunu zaten yasaklıyor).
+     *
+     * @param  list<array<string, mixed>> $turler
+     * @return list<array<string, mixed>>
+     */
+    private function adaletSirasi(\PDO $pdo, array $turler): array
+    {
+        $kosan = $pdo->prepare('SELECT tur, COUNT(*) AS adet FROM jobs WHERE durum = :calisiyor GROUP BY tur');
+        $kosan->execute(['calisiyor' => self::CALISIYOR]);
+
+        $sayilar = [];
+        foreach ($kosan->fetchAll() as $satir) {
+            $sayilar[(string) $satir['tur']] = (int) $satir['adet'];
+        }
+
+        usort($turler, static function (array $a, array $b) use ($sayilar): int {
+            return [(int) $a['en_yuksek'], $sayilar[(string) $a['tur']] ?? 0, (string) $a['en_eski'], (string) $a['tur']]
+               <=> [(int) $b['en_yuksek'], $sayilar[(string) $b['tur']] ?? 0, (string) $b['en_eski'], (string) $b['tur']];
+        });
+
+        return $turler;
+    }
+
+    /**
+     * Sıradaki adayı seçer: tür sırası SQL'den gelir, daha önce denenenler atlanır.
+     *
+     * @param list<array<string, mixed>> $turler öncelik+yaş sırasında
+     * @param list<int>                  $denenen bu turda zaten kaybedilen kimlikler
+     */
+    private function siradakiAday(\PDO $pdo, array $turler, string $zaman, array $denenen): ?int
+    {
+        foreach ($turler as $satir) {
+            $aday = $pdo->prepare(
+                'SELECT id FROM jobs
+                 WHERE tur = :tur AND (' . self::ALINABILIR . ')
+                 ORDER BY oncelik ASC, calisacak_at ASC, id ASC
+                 LIMIT 10',
+            );
+            $aday->execute(['tur' => (string) $satir['tur']] + $this->alinabilirParametreleri($zaman));
+
+            foreach ($aday->fetchAll(\PDO::FETCH_COLUMN) as $id) {
+                if (!in_array((int) $id, $denenen, true)) {
+                    return (int) $id;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Tek bir işi sahiplenmeyi dener; yarış kaybında `null`.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function sahiplenmeyiDene(
+        \PDO $pdo,
+        int $id,
+        string $isleyiciKimligi,
+        DateTimeImmutable $now,
+        string $zaman,
+    ): ?array {
         // TERK EDİLMİŞ İŞ (D9-KESİN): kirası dolmuş bir işi devralıyorsak, önceki
         // sahibi sonuç YAZMADAN düşmüş demektir. Bu sessizce tekrarlanırsa iş
         // sonsuza kadar "alınıyor ama bitmiyor" döngüsüne girer ve ölü rafında
@@ -312,16 +432,22 @@ final class JobQueue
             && (string) $terkSatir['durum'] === self::CALISIYOR
             && (int) $terkSatir['deneme'] >= (int) $terkSatir['max_deneme']
         ) {
-            $this->oldur(
+            // TOKENSIZ YOL BİLİNÇLİ: bu bir işleyici sonucu değil, TOPARLAYICI
+            // eylemidir. Ortada kirasını yazacak bir işleyici zaten yok — düşen
+            // sürecin token'ı kimsenin elinde değil. Sahiplik denetimi istemek
+            // burada işi sonsuza kadar rehin bırakırdı.
+            $this->oluYaz(
                 (int) $id,
                 'İşleyici sonuç yazmadan düştü; kira ' . (int) $terkSatir['deneme']
                 . ' kez devralındı. Süreç zaman/bellek sınırına takılıyor olabilir.',
                 $now,
                 HataSinifi::KALICI,
+                null,
             );
 
             // Aynı turda sıradaki işe geçilir; tek bir bozuk iş kuyruğu tıkamaz.
-            return $this->sahiplen($isleyiciKimligi, $now);
+            // Bu iş artık ÖLÜ; çağıran döngü onu "denenmiş" sayıp sıradakine geçer.
+            return null;
         }
 
         // Koşullu sahiplenme: iki işleyici arasındaki yarışı burası çözer.
@@ -362,28 +488,34 @@ final class JobQueue
         ]);
 
         if ($al->rowCount() !== 1) {
-            return null; // yarışı kaybettik; bir sonraki turda başka iş alınır
+            // YARIŞI KAYBETTİK — "boş" DEĞİL. Çağıran döngü sıradaki adayı dener.
+            return null;
         }
 
         $satir = $pdo->prepare('SELECT * FROM jobs WHERE id = :id');
         $satir->execute(['id' => (int) $id]);
         $is = $satir->fetch();
+        if (!is_array($is)) {
+            return null;
+        }
 
-        return is_array($is) ? $is : null;
+        $this->sonSecimNedeni = self::SECIM_ALINDI;
+
+        return $is;
     }
 
-    /**
-     * Dönüşümlü tür seçimi için sayaç — süreç ömründe artar.
-     *
-     * Kalıcı olması gerekmez: her cron turu birkaç iş işler ve tur içinde
-     * dönüşüm yeterlidir. Veritabanında sayaç tutmak, her sahiplenmeye fazladan
-     * bir yazma eklerdi.
-     */
-    private int $turSayaci = 0;
+    /** Son `sahiplen()` çağrısının sonucu — SECIM_* sabitlerinden biri. */
+    private string $sonSecimNedeni = self::SECIM_BOS;
 
-    private function siradakiTurIndeksi(int $turSayisi): int
+    /**
+     * Son sahiplenme denemesi neden sonuçsuz kaldı? (A7)
+     *
+     * Çağıran bunu turu bitirip bitirmeyeceğine karar vermek ve günlüğe
+     * DOĞRU sebebi yazmak için okur.
+     */
+    public function sonSecimNedeni(): string
     {
-        return $turSayisi > 0 ? $this->turSayaci++ % $turSayisi : 0;
+        return $this->sonSecimNedeni;
     }
 
     /**
@@ -448,34 +580,44 @@ final class JobQueue
     }
 
     /**
-     * @param string $token sahiplenmede verilen kira token'ı; boşsa doğrulama
-     *                      YAPILMAZ (eski çağrılar ve elle müdahale için)
+     * İŞ BAŞARIYLA BİTTİ — TEK CAS YAZIMI (v1.2.1 A1).
+     *
+     * WHERE üç koşul taşır: `id` + `durum = calisiyor` + `kilit_token`.
+     * Üçü birden tutmuyorsa yazım YAPILMAZ ve `KiraKaybedildi` atılır.
+     *
+     * ESKİDEN token OPSİYONELDİ ve boş geçilince sahiplik hiç denetlenmiyordu;
+     * `durum` da denetlenmiyordu. Kirası devralınmış yavaş bir işleyici,
+     * ikinci işleyicinin ÇALIŞAN işini "bitti" damgalayıp kirasını siliyordu.
+     *
+     * @throws KiraKaybedildi kira artık bu işleyicinin değilse
      */
-    public function basarili(int $id, DateTimeImmutable $now, string $token = ''): void
+    public function basarili(int $id, DateTimeImmutable $now, string $token): void
     {
-        $kosul = $token === '' ? '' : ' AND kilit_token = :token';
-        $statement = $this->connection->pdo()->prepare(
-            'UPDATE jobs SET durum = :durum, hata = NULL, hata_sinifi = NULL, kilit_sahibi = NULL,
-                    kilit_token = NULL, kilitlendi_at = NULL, kilit_bitis = NULL,
-                    bitti_at = :bitti_at, updated_at = :guncelleme_at
-             WHERE id = :id' . $kosul,
-        );
-        $zaman = Dates::toStorage($now);
-        $parametreler = [
-            'durum' => self::BITTI,
-            'bitti_at' => $zaman,
-            'guncelleme_at' => $zaman,
-            'id' => $id,
-        ];
-        if ($token !== '') {
-            $parametreler['token'] = $token;
-        }
         // Toparlanma bildirimi için deneme sayısı UPDATE'ten ÖNCE okunur:
         // sonrasında iş "bitti" olur ama `deneme` kolonu korunur — yine de
         // sıralamayı okumaya bırakmak, kolonun ileride sıfırlanması hâlinde
         // sessizce yanlış davranırdı.
         $onceki = $this->denemeSayisi($id);
-        $statement->execute($parametreler);
+
+        $statement = $this->connection->pdo()->prepare(
+            'UPDATE jobs SET durum = :durum, hata = NULL, hata_sinifi = NULL, kilit_sahibi = NULL,
+                    kilit_token = NULL, kilitlendi_at = NULL, kilit_bitis = NULL,
+                    bitti_at = :bitti_at, updated_at = :guncelleme_at
+             WHERE id = :id AND durum = :calisiyor AND kilit_token = :token',
+        );
+        $zaman = Dates::toStorage($now);
+        $statement->execute([
+            'durum' => self::BITTI,
+            'bitti_at' => $zaman,
+            'guncelleme_at' => $zaman,
+            'id' => $id,
+            'calisiyor' => self::CALISIYOR,
+            'token' => $token,
+        ]);
+
+        if ($statement->rowCount() !== 1) {
+            throw new KiraKaybedildi($id, 'basarili');
+        }
 
         // Yalnız DAHA ÖNCE BAŞARISIZ OLMUŞ iş "toparlandı" sayılır; ilk denemede
         // biten her işi duyurmak bildirim merkezini gürültüye boğardı.
@@ -498,10 +640,22 @@ final class JobQueue
     }
 
     /**
-     * Başarısız iş: deneme hakkı varsa GERİ BIRAKILIR (artan bekleme), yoksa ÖLÜ RAFINA.
+     * BAŞARISIZ İŞ — TEK CAS YAZIMI (v1.2.1 A1).
      *
-     * Artan bekleme (backoff) bilinçlidir: geçici bir ağ hatasında hemen tekrar
-     * denemek aynı hatayı alır ve deneme haklarını saniyeler içinde tüketir.
+     * Deneme hakkı varsa GERİ BIRAKILIR (artan bekleme), yoksa ÖLÜ RAFINA.
+     * Artan bekleme bilinçlidir: geçici bir ağ hatasında hemen tekrar denemek
+     * aynı hatayı alır ve deneme haklarını saniyeler içinde tüketir.
+     *
+     * ESKİ KOD ÖNCE OKUYUP SONRA YAZIYORDU: `SELECT kilit_token` → PHP'de
+     * karşılaştır → token'sız `UPDATE`. İki ifade arasında kira devralınabilir;
+     * okuma anında geçerli olan token yazma anında geçersizdir (TOCTOU). Daha
+     * kötüsü ölüm yolu `oldur()`a giriyordu ve o hiçbir denetim yapmıyordu —
+     * eski sahip, ikinci işleyicinin ÇALIŞAN işini ölü rafına atabiliyordu.
+     *
+     * Karar için okuma hâlâ var (deneme/max), ama YAZIM tek CAS'tır: karar
+     * yanlış satıra dayansa bile yazım tutmaz ve istisna atılır.
+     *
+     * @throws KiraKaybedildi kira artık bu işleyicinin değilse
      */
     public function basarisiz(
         int $id,
@@ -512,16 +666,11 @@ final class JobQueue
         string $token = '',
     ): void {
         $pdo = $this->connection->pdo();
-        $oku = $pdo->prepare('SELECT deneme, max_deneme, kilit_token FROM jobs WHERE id = :id');
+        $oku = $pdo->prepare('SELECT deneme, max_deneme FROM jobs WHERE id = :id');
         $oku->execute(['id' => $id]);
         $satir = $oku->fetch();
         if (!is_array($satir)) {
-            return;
-        }
-
-        // B11: kirası devralınmış işin ESKİ sahibi sonucu yazamaz.
-        if ($token !== '' && (string) ($satir['kilit_token'] ?? '') !== $token) {
-            return;
+            throw new KiraKaybedildi($id, 'basarisiz');
         }
 
         $deneme = (int) $satir['deneme'];
@@ -530,14 +679,9 @@ final class JobQueue
 
         // KALICI hata TEKRAR DENENMEZ: aynı sonucu üç kez üretmek kuyruğu meşgul
         // eder ve gerçek arızayı üç kat gecikmeyle görünür kılar.
-        if ($sinif === HataSinifi::KALICI) {
-            $this->oldur($id, $hata, $now, $sinif);
-
-            return;
-        }
-
-        if ($deneme >= $max) {
-            $this->oldur($id, $hata, $now, $sinif);
+        // Deneme hakkı bitmişse de aynı yol: ölü rafı — ama SAHİPLİK DENETİMİYLE.
+        if ($sinif === HataSinifi::KALICI || $deneme >= $max) {
+            $this->oluRafinaYaz($id, $hata, $now, $sinif, $token);
 
             return;
         }
@@ -548,7 +692,7 @@ final class JobQueue
             'UPDATE jobs SET durum = :durum, hata = :hata, hata_sinifi = :sinif, kilit_sahibi = NULL,
                     kilit_token = NULL, kilitlendi_at = NULL, kilit_bitis = NULL,
                     calisacak_at = :sonra, updated_at = :simdi
-             WHERE id = :id',
+             WHERE id = :id AND durum = :calisiyor AND kilit_token = :token',
         );
         $statement->execute([
             'durum' => self::BEKLIYOR,
@@ -557,7 +701,13 @@ final class JobQueue
             'sonra' => Dates::toStorage($now->modify('+' . $bekleme . ' seconds')),
             'simdi' => Dates::toStorage($now),
             'id' => $id,
+            'calisiyor' => self::CALISIYOR,
+            'token' => $token,
         ]);
+
+        if ($statement->rowCount() !== 1) {
+            throw new KiraKaybedildi($id, 'basarisiz');
+        }
 
         $this->duyur('NTF-JOB-RETRY-SCHEDULED', [
             'is_turu' => $this->isTuru($id),
@@ -568,40 +718,85 @@ final class JobQueue
     }
 
     /**
-     * İşi DOĞRUDAN ölü rafına gönderir — tekrar denemenin ANLAMSIZ olduğu hâller.
+     * YÖNETİCİ ÖLDÜRME — token İSTEMEZ, iş akışından çağrılMAZ.
      *
-     * `basarisiz()` geçici hatalar içindir (ağ, kota) ve deneme hakkı bırakır.
-     * Ama "tanınmayan iş türü" ya da "ürün silinmiş" gibi bir hata tekrar
-     * denemekle düzelmez: aynı sonucu üç kez üretir, kuyruğu meşgul eder ve
-     * gerçek arızayı üç kat gecikmeyle görünür kılar.
+     * Yöneticinin elinde kira token'ı yoktur; "bu iş bir daha denenmesin"
+     * diyebilmelidir. Bu yüzden bu yol denetimsizdir — ve ADI bunu açıkça
+     * söyler. Eskiden `oldur()` hem yönetici hem iş akışı tarafından
+     * kullanılıyordu; tek denetimsiz kapı iki amaca hizmet edince, iş akışı
+     * sahipliği doğrulamadan yazabiliyordu.
      */
-    public function oldur(
+    public function yoneticiOldur(
         int $id,
         string $hata,
         DateTimeImmutable $now,
         string $sinif = HataSinifi::KALICI,
     ): void {
+        $this->oluYaz($id, $hata, $now, $sinif, null);
+    }
+
+    /**
+     * İş akışı ölüm yolu — SAHİPLİK DENETİMLİ.
+     *
+     * @throws KiraKaybedildi kira artık bu işleyicinin değilse
+     */
+    private function oluRafinaYaz(
+        int $id,
+        string $hata,
+        DateTimeImmutable $now,
+        string $sinif,
+        string $token,
+    ): void {
+        if (!$this->oluYaz($id, $hata, $now, $sinif, $token)) {
+            throw new KiraKaybedildi($id, 'olu');
+        }
+    }
+
+    /**
+     * Ölü rafına tek UPDATE. `$token` null ise sahiplik denetlenmez (yönetici).
+     *
+     * @return bool yazım tuttu mu (yönetici yolunda daima true sayılır)
+     */
+    private function oluYaz(
+        int $id,
+        string $hata,
+        DateTimeImmutable $now,
+        string $sinif,
+        ?string $token,
+    ): bool {
+        $kosul = $token === null ? '' : ' AND durum = :calisiyor AND kilit_token = :token';
         $statement = $this->connection->pdo()->prepare(
             'UPDATE jobs SET durum = :durum, hata = :hata, hata_sinifi = :sinif, kilit_sahibi = NULL,
                     kilit_token = NULL, kilitlendi_at = NULL, kilit_bitis = NULL,
                     bitti_at = :bitti_at, updated_at = :guncelleme_at
-             WHERE id = :id',
+             WHERE id = :id' . $kosul,
         );
         $zaman = Dates::toStorage($now);
-        $statement->execute([
+        $parametreler = [
             'durum' => self::OLU,
             'hata' => mb_substr($hata, 0, 2000),
             'sinif' => $sinif,
             'bitti_at' => $zaman,
             'guncelleme_at' => $zaman,
             'id' => $id,
-        ]);
+        ];
+        if ($token !== null) {
+            $parametreler['calisiyor'] = self::CALISIYOR;
+            $parametreler['token'] = $token;
+        }
+        $statement->execute($parametreler);
+
+        if ($statement->rowCount() !== 1) {
+            return false;
+        }
 
         $this->duyurDenetimli('NTF-JOB-DEAD', $id, 'job_dead', $hata, $now, [
             'is_turu' => $this->isTuru($id),
             'hata_kodu' => $sinif,
             'is_id' => $id,
         ]);
+
+        return true;
     }
 
     /** İşin türü — bildirim bağlamı için; iş silinmişse null. */

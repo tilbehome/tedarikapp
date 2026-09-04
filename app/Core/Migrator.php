@@ -30,11 +30,14 @@ final class Migrator
      * veritabanında GERÇEKTEN var olması gereken nesne(ler).
      *  • ['table' => 'ad'] — tablo var olmalı
      *  • ['column' => ['tablo', 'kolon']] — kolon var olmalı (ALTER migration'ları)
+     *  • ['column_min_length' => ['tablo', 'kolon', 96]] — kolon EN AZ bu
+     *    genişlikte olmalı. GENİŞLETME migration'ları için: varlık ölçütü
+     *    onlarda yanlış yüklemdir (kolon zaten vardır, değişen genişliktir).
      * Haritada OLMAYAN migration baseline'lanamaz (güvenli varsayılan): atlanır ve
      * raporlanır — gelecekteki YENİ migration'lar böylece asla sahte "uygulanmış"
      * işaretlenemez, normal `run()` ile koşarlar.
      *
-     * @var array<string, list<array{table?: string, column?: array{string, string}}>>
+     * @var array<string, list<array{table?: string, column?: array{string, string}, column_min_length?: array{string, string, int}}>>
      */
     private const BASELINE_OBJECTS = [
         '0001_create_users' => [['table' => 'users']],
@@ -104,14 +107,29 @@ final class Migrator
         '0035_bildirimler' => [
             ['table' => 'notifications'],
         ],
-        // V3-C A1: firma döngüsü omurgası. DDL ve göç AYRI dosyalarda (K23);
+        // v1.2.1 D8: kolon GENİŞLETMESİ.
+        //
+        // VARLIK ÖLÇÜTÜ GENİŞLETME MIGRATION'LARI İÇİN YANLIŞ YÜKLEMDİR.
+        // `['column' => [...]]` "kolon var mı?" diye sorar; ama bu migration
+        // kolonu YARATMIYOR, GENİŞLETİYOR. Kolon `VARCHAR(12)` olarak zaten
+        // vardı — varlığa bakan bir baseline, migration'ı "uygulanmış" sayıp
+        // deftere işler ve genişletme HİÇ KOŞMAZ. Şifreli anahtar yazılmaya
+        // çalışıldığında MySQL "Data too long" verir; kurulum sessizce bozuk
+        // kalır ve sebebi migration defterinde "uygulandı" diye görünür.
+        //
+        // Ölçüt bu yüzden GENİŞLİKTİR: kolon en az 96 karakter mi?
+        '0036_paylasim_anahtari_sifreli_alan' => [
+            ['column_min_length' => ['lists', 'share_key_plain', 96]],
+        ],
+        // V3-C A1 (5 Eyl merge: D8 0036 kaldı, V3-C 0037-0040'a yeniden numaralandı):
+        // firma döngüsü omurgası. DDL ve göç AYRI dosyalarda (K23);
         // her biri haritada olmalı — 0032 dersi: haritada olmayan migration
         // K49 baseline akışında SESSİZCE atlanır.
         // Dosyanın YARATTIĞI HER TABLO listelenir: baseline kontrolü "hepsi
         // varsa uygulanmış say" der. Yarısını listeleseydik, eksik yaratılmış
-        // bir kurulumda 0036 "uygulanmış" damgalanır ve kalan tablolar bir
+        // bir kurulumda 0037 "uygulanmış" damgalanır ve kalan tablolar bir
         // daha ASLA açılmazdı.
-        '0036_firmalar_ve_turlar' => [
+        '0037_firmalar_ve_turlar' => [
             ['table' => 'suppliers'],
             ['table' => 'supplier_contacts'],
             ['table' => 'rfq_snapshots'],
@@ -122,17 +140,17 @@ final class Migrator
             ['table' => 'quote_price_tiers'],
             ['table' => 'quote_alternatives'],
         ],
-        '0037_paylasim_tablosu' => [
+        '0038_paylasim_tablosu' => [
             ['table' => 'shares'],
             ['table' => 'share_dispatch_log'],
         ],
         // Göç dosyasının "nesnesi" hedef tablodur: veri taşır, şema
         // değiştirmez. Baseline'da tablo varsa göç de uygulanmış sayılır —
         // dosya idempotenttir (WHERE NOT EXISTS), ikinci koşum satır çoğaltmaz.
-        '0038_paylasim_gocu' => [
+        '0039_paylasim_gocu' => [
             ['table' => 'shares'],
         ],
-        '0039_belgeler_ve_sablonlar' => [
+        '0040_belgeler_ve_sablonlar' => [
             ['table' => 'documents'],
             ['table' => 'document_links'],
             ['table' => 'list_templates'],
@@ -251,7 +269,7 @@ final class Migrator
     }
 
     /**
-     * @param list<array{table?: string, column?: array{string, string}}> $objects
+     * @param list<array{table?: string, column?: array{string, string}, column_min_length?: array{string, string, int}}> $objects
      *
      * @return string|null eksik nesnenin tanımı; hepsi varsa null
      */
@@ -263,6 +281,12 @@ final class Migrator
             }
             if (isset($object['column']) && !$this->columnExists($object['column'][0], $object['column'][1])) {
                 return 'kolon ' . $object['column'][0] . '.' . $object['column'][1];
+            }
+            if (isset($object['column_min_length'])) {
+                [$tablo, $kolon, $enAz] = $object['column_min_length'];
+                if (!$this->columnAtLeast($tablo, $kolon, $enAz)) {
+                    return sprintf('kolon %s.%s en az %d karakter olmalı (dar kalmış)', $tablo, $kolon, $enAz);
+                }
             }
         }
 
@@ -284,6 +308,43 @@ final class Migrator
         $statement->execute([$table]);
 
         return (int) $statement->fetchColumn() > 0;
+    }
+
+    /**
+     * Kolon EN AZ bu genişlikte mi? (v1.2.1 — genişletme migration'ları için)
+     *
+     * SQLite'ta VARCHAR uzunluğu BAĞLAYICI DEĞİLDİR: sürücü onu bir kısıt
+     * olarak uygulamaz. Bu yüzden orada kolon varsa yeterlidir — genişletme
+     * migration'ı da SQLite'ta zaten no-op'tur; "dar" diye bir durum yok.
+     *
+     * MySQL/MariaDB'de ölçüt `CHARACTER_MAXIMUM_LENGTH`tir. Dar kalmışsa
+     * migration BEKLEYEN sayılır ve normal koşumda uygulanır — yani kurulum
+     * kendini onarır, sessizce bozuk kalmaz.
+     */
+    private function columnAtLeast(string $table, string $column, int $enAz): bool
+    {
+        if (!$this->columnExists($table, $column)) {
+            return false;
+        }
+
+        if ($this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite') {
+            return true;
+        }
+
+        $statement = $this->pdo->prepare(
+            'SELECT CHARACTER_MAXIMUM_LENGTH FROM information_schema.columns
+             WHERE table_schema = DATABASE() AND table_name = ? AND column_name = ?',
+        );
+        $statement->execute([$table, $column]);
+        $uzunluk = $statement->fetchColumn();
+
+        // NULL uzunluk = metin olmayan tip (INT, DATETIME…). Genişlik ölçütü
+        // orada anlamsızdır; kolonun varlığı yeterli sayılır.
+        if ($uzunluk === null || $uzunluk === false) {
+            return true;
+        }
+
+        return (int) $uzunluk >= $enAz;
     }
 
     private function columnExists(string $table, string $column): bool

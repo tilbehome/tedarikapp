@@ -90,11 +90,13 @@
       <label>Şifre
         <input name="sifre" type="password" autocomplete="current-password" required>
       </label>
-      <!-- B14: yalnız hesapta 2FA tanımlıysa görünür. Herkese kod kutusu koymak,
-           2FA kullanmayan kullanıcıyı olmayan bir kodu aramaya iterdi. -->
-      <label id="sahiplik-kod-alani" hidden>Doğrulama kodu (2FA)
+      <!-- B14 idi: yalnız hesapta 2FA tanımlıysa görünüyordu. v1.2.1 C5 ile
+           DEĞİŞTİ: owner-check sabit yanıt verir, çünkü hesabın varlığı ve 2FA
+           durumu kimliksiz bir sorguyla öğrenilebiliyordu. Alan artık her zaman
+           görünür ve İSTEĞE BAĞLIDIR — 2FA kullanmayan kullanıcı boş bırakır. -->
+      <label id="sahiplik-kod-alani">Doğrulama kodu (2FA kullanıyorsanız)
         <input name="kod" inputmode="numeric" autocomplete="one-time-code" maxlength="8"
-               placeholder="6 haneli kod">
+               placeholder="6 haneli kod — yoksa boş bırakın">
       </label>
       <div class="actions">
         <button type="submit">Doğrula ve devam et</button>

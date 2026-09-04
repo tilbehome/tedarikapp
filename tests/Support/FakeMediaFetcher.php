@@ -20,6 +20,23 @@ final class FakeMediaFetcher implements MediaFetcher
 
     public int $callCount = 0;
 
+    /**
+     * İndirme BAŞLAMADAN önce koşacak kanca (v1.2.1 A5 testleri).
+     *
+     * Gerçek dünyada indirme saniyeler sürer ve o aralıkta satır değişebilir.
+     * Bu kanca o aralığı deterministik olarak taklit eder — `sleep` ile yarış
+     * kovalamak yerine, "tam bu anda başkası yazdı" durumunu kesin üretir.
+     *
+     * @var (callable(string): void)|null
+     */
+    private $indirmedenOnce = null;
+
+    /** @param callable(string): void $kanca */
+    public function indirmedenOnce(callable $kanca): void
+    {
+        $this->indirmedenOnce = $kanca;
+    }
+
     public function respondWith(string $url, string $body, string $contentType, ?string $finalUrl = null): void
     {
         $this->responses[$url] = [
@@ -33,6 +50,10 @@ final class FakeMediaFetcher implements MediaFetcher
     {
         $this->lastUrl = $url;
         $this->callCount++;
+
+        if ($this->indirmedenOnce !== null) {
+            ($this->indirmedenOnce)($url);
+        }
 
         if (!isset($this->responses[$url])) {
             throw new MediaException('Sahte indirici bu adres için yanıt tanımlanmamış: ' . $url);

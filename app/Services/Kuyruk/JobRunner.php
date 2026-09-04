@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Kuyruk;
 
+use App\Core\Clock;
 use DateTimeImmutable;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -23,7 +24,7 @@ use Throwable;
  */
 final class JobRunner
 {
-    /** @var array<string, callable(array<string, mixed>, array<string, mixed>): void> */
+    /** @var array<string, callable(array<string, mixed>, array<string, mixed>, IsBaglami): void> */
     private array $isleyiciler = [];
 
     public function __construct(
@@ -32,7 +33,26 @@ final class JobRunner
         /** Koşum bütçesi (saniye): cron aralığından KISA olmalı. */
         private readonly int $sureSiniri = 50,
         private readonly int $isSiniri = 25,
+        /**
+         * v1.2.1 A3 — ZAMAN KAYNAĞI. Tur 50 saniye sürebilir; tek bir `$now`
+         * bütün tura yayılırsa 48. saniyede alınan işin kirası 48 saniyesi
+         * yanmış hâlde başlar ve iş KOŞARKEN devralınabilir. Saat her durum
+         * geçişinde YENİDEN okunur. Verilmezse sistem saati.
+         */
+        private readonly ?Clock $saat = null,
     ) {
+    }
+
+    /**
+     * O anki zaman — HER DURUM GEÇİŞİNDE yeniden okunur (A3).
+     *
+     * `$dondurulmus`: çağıran `kos()`a açık bir `$now` verdiyse ve saat
+     * enjekte edilmemişse eski davranış korunur (donmuş zaman). Saat varsa
+     * DAİMA saat kazanır — üretimde zaman gerçekten akar.
+     */
+    private function simdi(?DateTimeImmutable $dondurulmus = null): DateTimeImmutable
+    {
+        return $this->saat?->now() ?? $dondurulmus ?? new DateTimeImmutable();
     }
 
     /**
@@ -51,8 +71,11 @@ final class JobRunner
     }
 
     /**
-     * @param callable(array<string, mixed>, array<string, mixed>): void $isleyici
-     *        (yük, iş satırı) alır; hata fırlatırsa iş başarısız sayılır
+     * @param callable(array<string, mixed>, array<string, mixed>, IsBaglami): void $isleyici
+     *        (yük, iş satırı, iş bağlamı) alır; hata fırlatırsa iş başarısız sayılır.
+     *        Üçüncü parametre A2 ile geldi ve OPSİYONEL BİLDİRİLEBİLİR: PHP,
+     *        daha az parametre bildiren kapanışlara fazladan argümanı sorunsuz
+     *        geçirir; eski işleyiciler değişmeden çalışır.
      */
     public function kaydet(string $tur, callable $isleyici): void
     {
@@ -150,8 +173,12 @@ final class JobRunner
      *
      * @return array{islenen: int, basarili: int, basarisiz: int, sure: float, durma_nedeni: string}
      */
-    public function kos(DateTimeImmutable $now, ?string $isleyiciKimligi = null, ?int $sureSiniri = null): array
+    public function kos(?DateTimeImmutable $now = null, ?string $isleyiciKimligi = null, ?int $sureSiniri = null): array
     {
+        // A3: `$now` GERİYE DÖNÜK UYUM İÇİNDİR. Saat enjekte edilmişse turun
+        // her adımı KENDİ anını okur; edilmemişse verilen an dondurulmuş
+        // sayılır ve eski davranış aynen sürer.
+        $dondurulmus = $now;
         // D12: SÜRE BÜTÇESİ ÇAĞRIYA GÖRE DEĞİŞİR. Cron turu cömerttir (50 sn);
         // panel ziyaretinde tetiklenen tur, bağlantı kapatılamıyorsa kullanıcıyı
         // bekletmemek için saniyelerle sınırlıdır. İş sınırı ve kira mekanizması
@@ -176,13 +203,21 @@ final class JobRunner
                 break;
             }
 
+            // Her tur adımı KENDİ anını okur: kira, alınma anından başlar.
+            $now = $this->simdi($dondurulmus);
             $is = $this->kuyruk->sahiplen($kimlik, $now);
             if ($is === null) {
                 // D9: "kuyruk boş" YALNIZ gerçekten boşken söylenir. Sahada
                 // panel "5 bekleyen" derken günlük her turda "kuyruk boş"
                 // yazıyordu ve çelişkiyi kimse fark etmiyordu; işçi artık
                 // neden hiçbir şey almadığını SÖYLER.
-                $durmaNedeni = $this->neden($now);
+                //
+                // v1.2.1 A7: ÇEKİŞME AYRI BİR SEBEPTİR. İş vardı ama başka bir
+                // işleyici kaptı — bunu "boş" diye raporlamak, iki işleyicinin
+                // birbirini yavaşlattığını görünmez kılardı.
+                $durmaNedeni = $this->kuyruk->sonSecimNedeni() === JobQueue::SECIM_YARIS
+                    ? 'çekişme: adaylar başka işleyicilerce alındı (kuyruk BOŞ değil)'
+                    : $this->neden($now);
 
                 break;
             }
@@ -191,10 +226,26 @@ final class JobRunner
             $tur = (string) $is['tur'];
             $isleyici = $this->isleyiciler[$tur] ?? null;
 
+            // B11: sahiplenmede verilen kira token'ı sonuç yazarken KANIT olur.
+            // Kirası dolup devralınan işin eski sahibi buraya geldiğinde token'ı
+            // eşleşmez ve sonucu yazamaz — çift koşan işin sonuçları birbirini ezmez.
+            $token = is_string($is['kilit_token'] ?? null) ? (string) $is['kilit_token'] : '';
+
             if ($isleyici === null) {
                 // Tanınmayan tür: sessizce tekrar denemek sonsuz döngüdür.
-                // Doğrudan ölü rafına gönderilir ki panelde GÖRÜNSÜN.
-                $this->kuyruk->oldur((int) $is['id'], 'Tanınmayan iş türü: ' . $tur, $now);
+                // Ölü rafına gönderilir ki panelde GÖRÜNSÜN — ama v1.2.1 A1
+                // gereği SAHİPLİK DENETİMLİ yoldan: kirayı biz aldık, yazımı da
+                // kiramızla yaparız. `yoneticiOldur()` iş akışından çağrılmaz.
+                $this->sonucYaz((int) $is['id'], function () use ($is, $tur, $now, $token): void {
+                    $this->kuyruk->basarisiz(
+                        (int) $is['id'],
+                        'Tanınmayan iş türü: ' . $tur,
+                        $now,
+                        HataSinifi::KALICI,
+                        null,
+                        $token,
+                    );
+                });
                 $this->askidaki = null;
                 $basarisiz++;
                 $this->logger->warning('Kuyrukta tanınmayan iş türü', ['tur' => $tur, 'id' => (int) $is['id']]);
@@ -204,34 +255,44 @@ final class JobRunner
 
             /** @var array<string, mixed> $yuk */
             $yuk = is_string($is['yuk'] ?? null) ? (json_decode((string) $is['yuk'], true) ?: []) : [];
-
-            // B11: sahiplenmede verilen kira token'ı sonuç yazarken KANIT olur.
-            // Kirası dolup devralınan işin eski sahibi buraya geldiğinde token'ı
-            // eşleşmez ve sonucu yazamaz — çift koşan işin sonuçları birbirini ezmez.
-            $token = is_string($is['kilit_token'] ?? null) ? (string) $is['kilit_token'] : '';
             // D9-KESİN: elimizdeki iş kayda geçer; süreç burada ölürse shutdown
             // kancası onu serbest bırakır.
             $this->askidaki = ['id' => (int) $is['id'], 'token' => $token];
 
             try {
-                $isleyici($yuk, $is);
-                $this->kuyruk->basarili((int) $is['id'], $now, $token);
+                // A2: işleyici artık kirasını uzatabilir ve kaybını GÖREBİLİR.
+                // Üçüncü parametre geriye dönük uyumludur — daha az parametre
+                // bildiren eski işleyiciler fazladan argümanı görmezden gelir.
+                $isleyici($yuk, $is, new IsBaglami($this->kuyruk, (int) $is['id'], $token));
+                $bitisAni = $this->simdi($dondurulmus);
+                $yazildi = $this->sonucYaz((int) $is['id'], function () use ($is, $bitisAni, $token): void {
+                    $this->kuyruk->basarili((int) $is['id'], $bitisAni, $token);
+                });
                 $this->askidaki = null;
-                $basarili++;
+                // KİRA KAYBEDİLDİYSE BAŞARI SAYILMAZ: iş başka bir işleyicide
+                // hâlâ çalışıyor; "bitti" saymak turun raporunu yalancı yapar.
+                if ($yazildi) {
+                    $basarili++;
+                } else {
+                    $basarisiz++;
+                }
             } catch (Throwable $hata) {
                 // B11: hata SINIFLANDIRILIR — kalıcı hata tekrar denenmez, hız
                 // sınırında sağlayıcının istediği süre beklenir, geçici hatada
                 // jitter'lı geri çekilme uygulanır (gerekçe: HataSinifi).
                 ['sinif' => $sinif, 'bekleme' => $saglayiciBeklemesi] = HataSinifi::siniflandir($hata);
 
-                $this->kuyruk->basarisiz(
-                    (int) $is['id'],
-                    $hata->getMessage(),
-                    $now,
-                    $sinif,
-                    $saglayiciBeklemesi,
-                    $token,
-                );
+                $hataAni = $this->simdi($dondurulmus);
+                $this->sonucYaz((int) $is['id'], function () use ($is, $hata, $hataAni, $sinif, $saglayiciBeklemesi, $token): void {
+                    $this->kuyruk->basarisiz(
+                        (int) $is['id'],
+                        $hata->getMessage(),
+                        $hataAni,
+                        $sinif,
+                        $saglayiciBeklemesi,
+                        $token,
+                    );
+                });
                 // İE22-D9-1 (rc6 denetim bulgusu): `basarisiz()` token'ı SİLER.
                 // Askıdaki kaydı temizlemezsek ve tur bu işle biterse, shutdown
                 // kancası eski token'la `birak()` çağırır; eşleşmez ve günlüğe
@@ -256,5 +317,37 @@ final class JobRunner
             'sure' => round(microtime(true) - $baslangic, 2),
             'durma_nedeni' => $durmaNedeni,
         ];
+    }
+
+    /**
+     * Sonuç yazımını KİRA KAYBI'na karşı sarar (v1.2.1 A1).
+     *
+     * `KiraKaybedildi` bir program hatası DEĞİLDİR: kira zaman aşımına uğramış,
+     * iş başkasına geçmiştir; bu beklenen bir yarıştır. Turu düşürmemeli ama
+     * SESSİZ de kalmamalı — sessiz kalırsa iki işleyicinin aynı işi koştuğu
+     * hiçbir yerde görünmez ve kira süresinin yanlış ayarlandığı anlaşılmaz.
+     *
+     * AYRICA BU SARMALAYICI ŞART: `basarisiz()` çağrısı `catch` bloğunun
+     * İÇİNDEDİR; oradan çıkan bir istisna turun tamamını düşürürdü.
+     *
+     * Başka her istisna yukarı verilir — onlar gerçekten arızadır.
+     *
+     * @param  callable(): void $yazim
+     * @return bool yazım tuttu mu
+     */
+    private function sonucYaz(int $isId, callable $yazim): bool
+    {
+        try {
+            $yazim();
+
+            return true;
+        } catch (KiraKaybedildi $kayip) {
+            $this->logger->warning('Kuyruk sonucu yazılamadı: kira kaybedildi', [
+                'id' => $isId,
+                'yazilmak_istenen' => $kayip->yazilmakIstenen,
+            ]);
+
+            return false;
+        }
     }
 }

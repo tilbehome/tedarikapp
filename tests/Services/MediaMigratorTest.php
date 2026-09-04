@@ -141,10 +141,18 @@ final class MediaMigratorTest extends AuthTestCase
         // Yanıt tanımlanmadı: indirme başarısız olur (403/404 taklidi).
         $id = $this->seedGalleryImage($urunId, 'https://cbu01.alicdn.com/img/ibank/yok.jpg');
 
-        $sonuc = $this->migrator()->urununMedyasi($urunId);
-
-        self::assertSame(1, $sonuc['indirilen'], 'Ana görsel inmeli.');
-        self::assertCount(1, $sonuc['basarisiz'], 'Başarısızlık SESSİZ kalmamalı.');
+        // v1.2.1 A4: başarısızlık artık DÖNÜŞLE değil İSTİSNAYLA bildirilir.
+        // Sınanan davranış aynı — "sessiz kalmaz, kaydı bozmaz" — ama dönüş
+        // değeri okunmayabiliyordu ve tam olarak okunmuyordu: kuyruk işleyicisi
+        // dönüşü hiç kontrol etmediği için kısmi hata tam başarı sayılıyordu.
+        try {
+            $this->migrator()->urununMedyasi($urunId);
+            self::fail('Eksik görsel varken MedyaEksik atılmalı.');
+        } catch (\App\Services\MedyaEksik $eksik) {
+            self::assertSame(1, $eksik->indirilenSayisi, 'Ana görsel inmeli.');
+            self::assertSame(1, $eksik->eksikSayisi, 'Başarısızlık SESSİZ kalmamalı.');
+            self::assertFalse($eksik->kalici, 'İndirilemeyen görsel geçici sayılır; sonraki tur dener.');
+        }
         // Kayıt BOZULMAZ: satır remote kalır, arayüz işaretler, sonraki tur dener.
         $satir = $this->pdo->query('SELECT storage_mode FROM product_images WHERE id = ' . $id)->fetch(\PDO::FETCH_ASSOC);
         self::assertSame('remote', $satir['storage_mode']);

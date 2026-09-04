@@ -465,6 +465,13 @@ export const system = {
    *  İE#10 5b: önceki turların başarısız kimlikleri geçilir — parti başı tıkanmaz. */
   mediaMigrate: (exclude?: { exclude_products?: number[]; exclude_images?: number[] }) =>
     api.post<MediaMigrateResult>('/api/system/media-migrate', exclude ?? {}),
+  /**
+   * A6-EK: boş sözlükle çevrilmiş ürünleri MEVCUT toplu çeviri kuyruğuna alır.
+   * Yeni çeviri hattı yoktur; iş anahtarı idempotenttir (iki kez basmak iki iş
+   * açmaz).
+   */
+  sozluksuzCeviriYenile: () =>
+    api.post<{ kuyruga_alinan: number }>('/api/system/sozluksuz-ceviri-yenile', {}),
   /** İE#10 5d: medya bütünlük denetimi — kayıp dosyaları kaynağından yeniden indirir. */
   mediaCheck: () =>
     api.post<{ mode: string; checked: number; missing: number; repaired: number; failed: unknown[] }>(
